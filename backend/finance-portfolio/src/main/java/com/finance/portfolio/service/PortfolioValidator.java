@@ -29,13 +29,9 @@ final class PortfolioValidator {
         if (entryDay != null && entryDay.isAfter(LocalDate.now())) {
             throw new BusinessException("error.portfolio.lot.entryDateInFuture");
         }
-        BigDecimal price = request.entryPrice();
-        if (price != null && limits.getMinPriceTry() != null && price.compareTo(limits.getMinPriceTry()) < 0) {
-            throw new BusinessException("error.portfolio.lot.priceTooLow", limits.getMinPriceTry());
-        }
-        if (price != null && limits.getMaxPriceTry() != null && price.compareTo(limits.getMaxPriceTry()) > 0) {
-            throw new BusinessException("error.portfolio.lot.priceTooHigh", limits.getMaxPriceTry());
-        }
+        // Price bounds are TRY (minPriceTry/maxPriceTry); the raw request price is still in its native
+        // currency here, so validate the converted price via validatePriceTry AFTER toTryOnDate — checking
+        // the raw native price against TRY bounds would mis-judge USD/EUR-priced lots.
         BigDecimal qty = request.quantity();
         if (qty != null && limits.getMinQuantity() != null && qty.compareTo(limits.getMinQuantity()) < 0) {
             throw new BusinessException("error.portfolio.lot.quantityTooLow", limits.getMinQuantity());
@@ -45,17 +41,33 @@ final class PortfolioValidator {
         }
     }
 
+    /** Validates a TRY-converted lot price against the configured TRY bounds (call AFTER currency conversion). */
+    static void validatePriceTry(BigDecimal priceTry, LotLimits limits) {
+        if (priceTry == null) return;
+        if (limits.getMinPriceTry() != null && priceTry.compareTo(limits.getMinPriceTry()) < 0) {
+            throw new BusinessException("error.portfolio.lot.priceTooLow", limits.getMinPriceTry());
+        }
+        if (limits.getMaxPriceTry() != null && priceTry.compareTo(limits.getMaxPriceTry()) > 0) {
+            throw new BusinessException("error.portfolio.lot.priceTooHigh", limits.getMaxPriceTry());
+        }
+    }
+
+    /** Validates an exit/close date: not before entry and not in the future. */
+    static void validateExit(LocalDate entryDate, LocalDate exitDate) {
+        if (exitDate == null) return;
+        if (entryDate != null && exitDate.isBefore(entryDate)) {
+            throw new BusinessException("error.portfolio.sell.dateBeforeEntry");
+        }
+        if (exitDate.isAfter(LocalDate.now())) {
+            throw new BusinessException("error.portfolio.sell.dateInFuture");
+        }
+    }
+
     /** Validates a sell: quantity not above the held amount, exit date not before entry and not in the future. */
     static void validateSell(PortfolioPosition position, PositionSellRequest request) {
         if (request.quantity().compareTo(position.getQuantity()) > 0) {
             throw new BusinessException("error.portfolio.sell.quantityExceedsPosition");
         }
-        LocalDate exitDay = request.exitDate().toLocalDate();
-        if (exitDay.isBefore(position.getEntryDate().toLocalDate())) {
-            throw new BusinessException("error.portfolio.sell.dateBeforeEntry");
-        }
-        if (exitDay.isAfter(LocalDate.now())) {
-            throw new BusinessException("error.portfolio.sell.dateInFuture");
-        }
+        validateExit(position.getEntryDate().toLocalDate(), request.exitDate().toLocalDate());
     }
 }

@@ -96,6 +96,15 @@ public class BackfillBatchCollector {
         Map<AssetKey, List<PortfolioPosition>> byAsset = groupByAsset(active);
         for (Map.Entry<AssetKey, List<PortfolioPosition>> entry : byAsset.entrySet()) {
             BigDecimal price = dayPrices.get(entry.getKey());
+            // Carry forward the prior day's price when the historical source has no observation
+            // (weekends, holidays, or a scraper cutoff trailing today). Without this fallback the
+            // asset is silently dropped from that day's aggregate, producing a sudden valley in the
+            // portfolio chart until the next live snapshot fills it back in — exactly the
+            // "yesterday dropped, today normal" pattern users see when running off stale market data.
+            if (price == null) {
+                PortfolioAssetDailySnapshot prior = priorAssetByKey.get(entry.getKey());
+                if (prior != null) price = prior.getUnitPriceTry();
+            }
             if (price == null) continue;
             PortfolioPosition first = entry.getValue().get(0);
             BigDecimal totalQty = sumField(entry.getValue(), PortfolioPosition::getQuantity);

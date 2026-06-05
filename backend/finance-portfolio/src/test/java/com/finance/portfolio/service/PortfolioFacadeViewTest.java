@@ -1,5 +1,8 @@
 package com.finance.portfolio.service;
 
+import com.finance.portfolio.service.performance.PortfolioPerformanceService;
+import com.finance.portfolio.service.summary.PortfolioSummaryService;
+
 
 import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.portfolio.dto.response.AllocationItem;
@@ -54,14 +57,14 @@ class PortfolioFacadeViewTest {
     private PortfolioSummaryResponse summary() {
         return new PortfolioSummaryResponse(
                 BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.ZERO,
-                null, null, null, null, null, java.util.Map.of());
+                null, null, null, null, null, null, java.util.Map.of());
     }
 
     @Test
     void shouldIncludeAllSections_whenAllRequested() {
         mockOwner();
         when(summaryService.getSummary(1L, null)).thenReturn(summary());
-        when(summaryService.getPositionsPaged(eq(1L), isNull(), isNull(), isNull(), isNull(), eq(0), eq(10)))
+        when(summaryService.getPositionsPaged(eq(1L), isNull(), isNull(), isNull(), isNull(), isNull(), eq(0), eq(10)))
                 .thenReturn(PagedResponse.of(List.<PositionResponse>of(), 0, 10, 0));
         when(summaryService.getAllocation(1L, "assetType", null, null)).thenReturn(List.<AllocationItem>of());
 
@@ -84,7 +87,7 @@ class PortfolioFacadeViewTest {
         assertThat(view.positions()).isNull();
         assertThat(view.allocation()).isNull();
         verify(summaryService, never())
-                .getPositionsPaged(anyLong(), isNull(), isNull(), isNull(), isNull(), anyInt(), anyInt());
+                .getPositionsPaged(anyLong(), isNull(), isNull(), isNull(), isNull(), isNull(), anyInt(), anyInt());
         verify(summaryService, never()).getAllocation(anyLong(), eq("assetType"), isNull(), isNull());
     }
 
@@ -93,7 +96,7 @@ class PortfolioFacadeViewTest {
         mockOwner();
         when(performanceService.getPerformance(1L, "1M", null)).thenReturn(List.of());
 
-        Object result = facade.getChart("user-1", 1L, "performance", "1M", null, null);
+        Object result = facade.getChart("user-1", 1L, "performance", "1M", null, null, null);
 
         assertThat(result).isInstanceOf(List.class);
         verify(performanceService).getPerformance(1L, "1M", null);
@@ -102,11 +105,11 @@ class PortfolioFacadeViewTest {
     @Test
     void shouldDelegateToAssetSeries_whenChartTypeIsAssetSeries() {
         mockOwner();
-        when(performanceService.getAssetSeries(1L, "STOCK", "THYAO.IS", "3M")).thenReturn(List.of());
+        when(performanceService.getAssetSeries(1L, "STOCK", "THYAO.IS", "3M", null)).thenReturn(List.of());
 
-        Object result = facade.getChart("user-1", 1L, "asset-series", "3M", "STOCK", "THYAO.IS");
+        Object result = facade.getChart("user-1", 1L, "asset-series", "3M", "STOCK", "THYAO.IS", null);
 
         assertThat(result).isInstanceOf(List.class);
-        verify(performanceService).getAssetSeries(1L, "STOCK", "THYAO.IS", "3M");
+        verify(performanceService).getAssetSeries(1L, "STOCK", "THYAO.IS", "3M", null);
     }
 }

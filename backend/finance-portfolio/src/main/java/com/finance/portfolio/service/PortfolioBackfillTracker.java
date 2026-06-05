@@ -117,7 +117,14 @@ public class PortfolioBackfillTracker {
         if (list == null) return;
         BackfillStatusResponse snap = snapshot(portfolioId);
         for (SseEmitter emitter : list) {
-            send(emitter, snap);
+            try {
+                send(emitter, snap);
+            } catch (RuntimeException ex) {
+                // A stale/already-completed emitter (completeWithError can re-throw) must not abort
+                // delivery to the remaining subscribers — drop it and keep broadcasting the terminal
+                // running:false event, otherwise the client's "preparing data" banner hangs.
+                remove(portfolioId, emitter);
+            }
         }
     }
 

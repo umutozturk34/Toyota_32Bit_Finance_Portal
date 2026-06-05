@@ -71,6 +71,8 @@ class SnapshotTotalsTest {
         assertThat(snapshot.getPortfolioId()).isEqualTo(PORTFOLIO_ID);
         assertThat(snapshot.getSnapshotDate()).isEqualTo(SNAP_DATE);
         assertThat(snapshot.getCreatedAt()).isEqualTo(BATCH_TS);
+        // totalValue = open MV + closed-lot exit cash (800 + 250 = 1050) — drives the unfiltered
+        // chart which must not dip on close day. cashTry tracks the realized portion separately.
         assertThat(snapshot.getTotalValueTry()).isEqualByComparingTo("1050.0000");
         assertThat(snapshot.getCashTry()).isEqualByComparingTo("250.0000");
         assertThat(snapshot.getTotalCostTry()).isEqualByComparingTo("1000.0000");

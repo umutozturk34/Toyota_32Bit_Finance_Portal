@@ -111,12 +111,6 @@ public class PortfolioPosition {
         return currentPrice.multiply(quantity).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
     }
 
-    /** Unrealized PnL in TRY against the given current price; zero when price is unknown. */
-    public BigDecimal unrealizedPnl(BigDecimal currentPrice) {
-        if (currentPrice == null) return BigDecimal.ZERO;
-        return currentPrice.subtract(entryPrice).multiply(quantity).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
-    }
-
     /** Mutates entry attributes in place; null arguments leave the corresponding field unchanged. */
     public void updateLot(LocalDateTime newEntryDate, BigDecimal newEntryPrice, BigDecimal newQuantity) {
         if (newEntryDate != null) this.entryDate = newEntryDate;

@@ -49,33 +49,6 @@ class PortfolioPositionTest {
     }
 
     @Test
-    void shouldComputePositiveUnrealizedPnl_whenCurrentPriceAboveEntry() {
-        PortfolioPosition pos = lot(new BigDecimal("100"), new BigDecimal("40"));
-
-        BigDecimal pnl = pos.unrealizedPnl(new BigDecimal("60"));
-
-        assertThat(pnl).isEqualByComparingTo(new BigDecimal("2000.0000"));
-    }
-
-    @Test
-    void shouldComputeNegativeUnrealizedPnl_whenCurrentPriceBelowEntry() {
-        PortfolioPosition pos = lot(new BigDecimal("100"), new BigDecimal("80"));
-
-        BigDecimal pnl = pos.unrealizedPnl(new BigDecimal("60"));
-
-        assertThat(pnl).isEqualByComparingTo(new BigDecimal("-2000.0000"));
-    }
-
-    @Test
-    void shouldReturnZeroUnrealizedPnl_whenPriceIsNull() {
-        PortfolioPosition pos = lot(new BigDecimal("100"), new BigDecimal("40"));
-
-        BigDecimal pnl = pos.unrealizedPnl(null);
-
-        assertThat(pnl).isEqualByComparingTo(BigDecimal.ZERO);
-    }
-
-    @Test
     void shouldOverwriteAllLotFields_whenAllArgumentsProvided() {
         PortfolioPosition pos = lot(new BigDecimal("100"), new BigDecimal("40"));
         LocalDateTime newDate = LocalDateTime.of(2024, 1, 1, 12, 0);

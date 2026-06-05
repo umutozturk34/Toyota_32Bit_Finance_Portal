@@ -125,10 +125,20 @@ public class DerivativePosition {
 
     /** Notional exposure in TRY at entry (entry price × contract size × lots); null when inputs are missing. */
     public BigDecimal nominalExposure() {
-        if (viopContract == null || entryPrice == null || quantityLot == null) return null;
+        return notionalAt(entryPrice);
+    }
+
+    /**
+     * Absolute (direction-blind) notional value at a given price: price × contract size × lots. This is the
+     * market-value basis used everywhere (open rowMv, the positions grid), so a SHORT's value/exit folds in
+     * as {@code close × size × lots}, not the directional {@code entryNotional + realized} which diverges.
+     * Null when inputs are missing.
+     */
+    public BigDecimal notionalAt(BigDecimal price) {
+        if (viopContract == null || price == null || quantityLot == null) return null;
         BigDecimal size = viopContract.getContractSize() != null
                 ? viopContract.getContractSize() : BigDecimal.ONE;
-        return entryPrice.multiply(size).multiply(quantityLot);
+        return price.multiply(size).multiply(quantityLot);
     }
 
     /**

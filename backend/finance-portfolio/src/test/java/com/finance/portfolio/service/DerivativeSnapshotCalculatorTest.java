@@ -273,6 +273,64 @@ class DerivativeSnapshotCalculatorTest {
     }
 
     @Test
+    void should_foldProceedsNotNotional_when_lotClosedBeforeSnapDateButStaleRowSurvives() {
+        // Arrange: the lot was closed BEFORE snapDate (entry 100 → close 110, realized +10), yet a stale
+        // countable per-symbol row (rowMv = 110 notional) is still the latest surviving row for the symbol.
+        ViopContract c = derivativeContract("F_X", new BigDecimal("1"), new BigDecimal("110"));
+        DerivativePosition pos = derivativePosition(c, new BigDecimal("100"), new BigDecimal("1"),
+                DerivativeDirection.LONG);
+        pos.closeWith(SNAP_DATE.minusDays(1), new BigDecimal("110"), DerivativeCloseReason.USER_CLOSED);
+        AssetKey key = new AssetKey(MarketType.VIOP, "F_X");
+        Map<AssetKey, BigDecimal> rowMvByKey = new HashMap<>();
+        rowMvByKey.put(key, new BigDecimal("110"));
+        SnapshotTotals totals = new SnapshotTotals();
+        Set<AssetKey> counted = new HashSet<>();
+
+        // Act
+        calculator.accumulateDerivativePositions(List.of(pos), SNAP_DATE, rowMvByKey, totals, counted);
+
+        // Assert: the already-closed lot contributes realized PROCEEDS (entry + realized = 110), not the raw
+        // notional via the rowMv path, and the stale row key is never counted (no double counting into MV).
+        assertThat(totals.cumulativeRealized).isEqualByComparingTo("10");
+        assertThat(totals.closedExitValue).isEqualByComparingTo("110");
+        assertThat(totals.totalMarketValue).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(counted).doesNotContain(key);
+    }
+
+    @Test
+    void should_recordEquityNotNotional_when_openShortProfits() {
+        // SHORT entry notional 100; row notional fell to 80 (price dropped → short profits +20). The snapshot's
+        // value leg must be EQUITY 120 (= entry + profit), ABOVE entry, so totalPnl (= totalValue − entry) reads
+        // +20 — NOT the backwards notional change 80 − 100 = −20 that the TRY time-series charts/PDF used to show.
+        ViopContract c = derivativeContract("F_X", new BigDecimal("1"), new BigDecimal("80"));
+        DerivativePosition pos = derivativePosition(c, new BigDecimal("100"), new BigDecimal("1"),
+                DerivativeDirection.SHORT);
+        AssetKey key = new AssetKey(MarketType.VIOP, "F_X");
+        Map<AssetKey, BigDecimal> rowMvByKey = new HashMap<>();
+        rowMvByKey.put(key, new BigDecimal("80"));
+        SnapshotTotals totals = new SnapshotTotals();
+
+        calculator.accumulateDerivativePositions(List.of(pos), SNAP_DATE, rowMvByKey, totals, new HashSet<>());
+
+        assertThat(totals.totalEntryValue).isEqualByComparingTo("100");
+        assertThat(totals.totalMarketValue).isEqualByComparingTo("120");   // equity, not the 80 notional
+    }
+
+    @Test
+    void should_recordEquityProceeds_when_closedShortProfits() {
+        ViopContract c = derivativeContract("F_X", new BigDecimal("1"), new BigDecimal("80"));
+        DerivativePosition pos = derivativePosition(c, new BigDecimal("100"), new BigDecimal("1"),
+                DerivativeDirection.SHORT);
+        pos.closeWith(SNAP_DATE.minusDays(1), new BigDecimal("80"), DerivativeCloseReason.USER_CLOSED);
+        SnapshotTotals totals = new SnapshotTotals();
+
+        calculator.accumulateDerivativePositions(List.of(pos), SNAP_DATE, new HashMap<>(), totals, new HashSet<>());
+
+        assertThat(totals.cumulativeRealized).isEqualByComparingTo("20");
+        assertThat(totals.closedExitValue).isEqualByComparingTo("120");    // equity proceeds, not the 80 notional
+    }
+
+    @Test
     void should_useRowMarketValue_when_keyIsPresentAndNotYetCounted() {
         ViopContract c = derivativeContract("F_X", new BigDecimal("1"), new BigDecimal("110"));
         DerivativePosition pos = derivativePosition(c, new BigDecimal("100"), new BigDecimal("1"),
@@ -306,6 +364,52 @@ class DerivativeSnapshotCalculatorTest {
 
         assertThat(totals.totalEntryValue).isEqualByComparingTo("200");
         assertThat(totals.totalMarketValue).isEqualByComparingTo("220");
+    }
+
+    @Test
+    void should_netByDirection_when_oneSymbolHoldsMixedLongAndShortLots() {
+        // Same symbol, equal & opposite lots: LONG entry 100 + SHORT entry 100 (each 1 lot, size 1) → entry 200.
+        // Price rose to 120 → rowMv (notional) = 120·1·2 = 240. The LONG gains +20, the SHORT loses 20, so the
+        // direction-aware EQUITY nets back to ~entry (200) — NOT the raw 240 the old "mixed → notional" branch
+        // returned, which read both lots as if LONG.
+        ViopContract c = derivativeContract("F_X", new BigDecimal("1"), new BigDecimal("120"));
+        DerivativePosition longLot = derivativePosition(c, new BigDecimal("100"), new BigDecimal("1"),
+                DerivativeDirection.LONG);
+        DerivativePosition shortLot = derivativePosition(c, new BigDecimal("100"), new BigDecimal("1"),
+                DerivativeDirection.SHORT);
+        AssetKey key = new AssetKey(MarketType.VIOP, "F_X");
+        Map<AssetKey, BigDecimal> rowMvByKey = new HashMap<>();
+        rowMvByKey.put(key, new BigDecimal("240"));
+        SnapshotTotals totals = new SnapshotTotals();
+
+        calculator.accumulateDerivativePositions(List.of(longLot, shortLot), SNAP_DATE, rowMvByKey, totals,
+                new HashSet<>());
+
+        assertThat(totals.totalEntryValue).isEqualByComparingTo("200");
+        assertThat(totals.totalMarketValue).isEqualByComparingTo("200");   // netted equity, not the 240 notional
+    }
+
+    @Test
+    void should_weightEquityPerLot_when_mixedDirectionsHaveDifferentLotCounts() {
+        // LONG 1 lot (entry 100) + SHORT 3 lots (entry 100 each → entry leg 300); entry 400. Price 120 →
+        // rowMv = 120·1·4 = 480, split by lot share: LONG gets 120 (gain +20 → equity 120), SHORT gets 360
+        // (loss −60 on its 300 entry → equity 240). Net equity 360, BELOW the 400 entry because the net is
+        // short-heavy and price rose — directional, and distinct from both the entry (400) and notional (480).
+        ViopContract c = derivativeContract("F_X", new BigDecimal("1"), new BigDecimal("120"));
+        DerivativePosition longLot = derivativePosition(c, new BigDecimal("100"), new BigDecimal("1"),
+                DerivativeDirection.LONG);
+        DerivativePosition shortLots = derivativePosition(c, new BigDecimal("100"), new BigDecimal("3"),
+                DerivativeDirection.SHORT);
+        AssetKey key = new AssetKey(MarketType.VIOP, "F_X");
+        Map<AssetKey, BigDecimal> rowMvByKey = new HashMap<>();
+        rowMvByKey.put(key, new BigDecimal("480"));
+        SnapshotTotals totals = new SnapshotTotals();
+
+        calculator.accumulateDerivativePositions(List.of(longLot, shortLots), SNAP_DATE, rowMvByKey, totals,
+                new HashSet<>());
+
+        assertThat(totals.totalEntryValue).isEqualByComparingTo("400");
+        assertThat(totals.totalMarketValue).isEqualByComparingTo("360");
     }
 
     @Test

@@ -87,7 +87,7 @@ class DerivativePriceResolverTest {
     }
 
     @Test
-    void shouldFallbackToNativeWhenNoFxRate_whenCurrencyForeign() {
+    void shouldReturnNullWhenNoFxRate_whenCurrencyForeign() {
         ViopContract c = contract("F_XAUUSD0625", "USD");
         when(candleRepository.findFirstBySymbolAndCandleDateLessThanEqualOrderByCandleDateDesc(any(), any()))
                 .thenReturn(Optional.of(ViopCandle.builder().close(new BigDecimal("10")).build()));
@@ -96,7 +96,9 @@ class DerivativePriceResolverTest {
 
         BigDecimal result = resolver.resolveHistoricalPriceTry(c, TARGET);
 
-        assertThat(result).isEqualByComparingTo("10");
+        // Foreign currency + no historical FX → null (callers must treat as "price unavailable").
+        // Returning native (10) would persist USD as TRY and corrupt close_price by ~30x.
+        assertThat(result).isNull();
     }
 
     @ParameterizedTest
@@ -139,12 +141,12 @@ class DerivativePriceResolverTest {
     }
 
     @Test
-    void shouldFallbackToNative_whenRateIsZero() {
+    void shouldReturnNull_whenRateIsZero() {
         when(historicalPricingPort.getPriceSeries(any(), any(), any(), any()))
                 .thenReturn(Map.of(TARGET, BigDecimal.ZERO));
 
         BigDecimal result = resolver.nativeToTryOnDate(new BigDecimal("10"), "USD", TARGET);
 
-        assertThat(result).isEqualByComparingTo("10");
+        assertThat(result).isNull();
     }
 }

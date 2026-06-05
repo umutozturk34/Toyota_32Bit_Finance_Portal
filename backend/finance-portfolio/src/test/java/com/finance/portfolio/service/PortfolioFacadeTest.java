@@ -1,5 +1,8 @@
 package com.finance.portfolio.service;
 
+import com.finance.portfolio.service.performance.PortfolioPerformanceService;
+import com.finance.portfolio.service.summary.PortfolioSummaryService;
+
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.portfolio.config.PortfolioProperties;
@@ -154,10 +157,10 @@ class PortfolioFacadeTest {
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER))
                 .thenReturn(Optional.of(mock(Portfolio.class)));
         PagedResponse<PositionResponse> page = PagedResponse.of(List.of(), 0, 10, 0);
-        when(summaryService.getPositionsPaged(PORTFOLIO_ID, "ak", "STOCK", "price", "asc", 0, 10))
+        when(summaryService.getPositionsPaged(PORTFOLIO_ID, "ak", "STOCK", "price", "asc", null, 0, 10))
                 .thenReturn(page);
 
-        assertThat(facade.getPositionsPaged(USER, PORTFOLIO_ID, "ak", "STOCK", "price", "asc", 0, 10))
+        assertThat(facade.getPositionsPaged(USER, PORTFOLIO_ID, "ak", "STOCK", "price", "asc", null, 0, 10))
                 .isSameAs(page);
     }
 
@@ -191,7 +194,7 @@ class PortfolioFacadeTest {
                 .thenReturn(Optional.of(mock(Portfolio.class)));
         when(portfolioProperties.getView()).thenReturn(new PortfolioProperties.View());
         when(summaryService.getSummary(PORTFOLIO_ID, null)).thenReturn(mock(PortfolioSummaryResponse.class));
-        when(summaryService.getPositionsPaged(PORTFOLIO_ID, null, null, null, null, 0, 10))
+        when(summaryService.getPositionsPaged(PORTFOLIO_ID, null, null, null, null, null, 0, 10))
                 .thenReturn(PagedResponse.of(List.of(), 0, 10, 0));
         when(summaryService.getAllocation(PORTFOLIO_ID, "assetType", null, null)).thenReturn(List.of());
 
@@ -208,9 +211,9 @@ class PortfolioFacadeTest {
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER))
                 .thenReturn(Optional.of(mock(Portfolio.class)));
         List<com.finance.portfolio.dto.response.AssetSeriesPoint> data = List.of();
-        when(performanceService.getAssetSeries(PORTFOLIO_ID, "STOCK", "AKBNK", "1M")).thenReturn(data);
+        when(performanceService.getAssetSeries(PORTFOLIO_ID, "STOCK", "AKBNK", "1M", null)).thenReturn(data);
 
-        Object result = facade.getChart(USER, PORTFOLIO_ID, "asset-series", "1M", "STOCK", "AKBNK");
+        Object result = facade.getChart(USER, PORTFOLIO_ID, "asset-series", "1M", "STOCK", "AKBNK", null);
 
         assertThat(result).isSameAs(data);
         verify(performanceService, never()).getPerformance(any(), any(), any());
@@ -223,7 +226,7 @@ class PortfolioFacadeTest {
         List<com.finance.portfolio.dto.response.PerformancePoint> data = List.of();
         when(performanceService.getPerformance(PORTFOLIO_ID, "1M", "STOCK")).thenReturn(data);
 
-        Object result = facade.getChart(USER, PORTFOLIO_ID, "performance", "1M", "STOCK", null);
+        Object result = facade.getChart(USER, PORTFOLIO_ID, "performance", "1M", "STOCK", null, null);
 
         assertThat(result).isSameAs(data);
     }

@@ -1,4 +1,4 @@
-package com.finance.portfolio.service;
+package com.finance.portfolio.service.pricing;
 
 import com.finance.market.macro.model.MacroIndicator;
 import com.finance.market.macro.model.MacroIndicatorPoint;

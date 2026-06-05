@@ -644,20 +644,23 @@ class DerivativePositionServiceTest {
     }
 
     @Test
-    void should_fallbackToNativePriceOnAutoClose_when_noFxSeriesAvailable() {
+    void should_skipAutoCloseAndLeavePositionOpen_when_foreignContractAndNoFxSeriesAvailable() {
         contract.setSymbol("F_XAUUSD0625");
         contract.setCurrency("USD");
         contract.setSettlementPrice(new BigDecimal("3.5"));
         contract.setExpiryDate(LocalDate.of(2026, 6, 30));
         DerivativePosition pos = openPosition();
         when(positionRepository.findOpenWithExpiredContract(any())).thenReturn(List.of(pos));
-        when(positionRepository.findOpenByPortfolio(PORTFOLIO_ID)).thenReturn(List.of());
         when(historicalPricingPort.getPriceSeries(any(), eq("USD"), any(), any()))
                 .thenReturn(java.util.Map.of());
 
-        service.autoCloseExpired();
+        int closed = service.autoCloseExpired();
 
-        assertThat(pos.getClosePrice()).isEqualByComparingTo("3.5");
+        // FX unavailable + non-TRY contract → skip rather than corrupt close_price by storing
+        // raw USD value as TRY. Position stays open; the next scheduler tick can retry.
+        assertThat(closed).isZero();
+        assertThat(pos.getClosePrice()).isNull();
+        assertThat(pos.isOpen()).isTrue();
     }
 
     @Test

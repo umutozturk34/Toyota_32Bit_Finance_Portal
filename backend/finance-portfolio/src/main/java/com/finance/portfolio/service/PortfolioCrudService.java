@@ -120,8 +120,11 @@ public class PortfolioCrudService {
         PortfolioValidator.validateLot(request, portfolioProperties.getLotLimits());
         AssetType assetType = EnumParser.parseOrBadRequest(AssetType.class,
                 request.assetType().toUpperCase(), "enum.field.assetType");
-        TrackedAsset trackedAsset = requireTrackedAsset(assetType, request.assetCode());
+        // Convert + validate the TRY price before the tracked-asset lookup: bounds are TRY, so the check
+        // must run on the converted value, and doing it first fails fast on a bad price before any DB hit.
         BigDecimal entryPriceTry = toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate());
+        PortfolioValidator.validatePriceTry(entryPriceTry, portfolioProperties.getLotLimits());
+        TrackedAsset trackedAsset = requireTrackedAsset(assetType, request.assetCode());
         PortfolioPosition position = PortfolioPosition.builder()
                 .portfolio(portfolio)
                 .assetType(assetType)
@@ -132,6 +135,9 @@ public class PortfolioCrudService {
                 .build();
         position.setTrackedAsset(trackedAsset);
         if (request.exitDate() != null && request.exitPrice() != null) {
+            PortfolioValidator.validateExit(
+                    request.entryDate() != null ? request.entryDate().toLocalDate() : null,
+                    request.exitDate().toLocalDate());
             BigDecimal exitPriceTry = toTryOnDate(request.exitPrice(), request.priceCurrency(), request.exitDate());
             position.closeWith(request.exitDate(), exitPriceTry);
         }
@@ -148,6 +154,7 @@ public class PortfolioCrudService {
         PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
         LocalDateTime previousEntry = position.getEntryDate();
         BigDecimal entryPriceTry = toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate());
+        PortfolioValidator.validatePriceTry(entryPriceTry, portfolioProperties.getLotLimits());
         position.updateLot(request.entryDate(), entryPriceTry, request.quantity());
         PortfolioPosition saved = positionRepository.save(position);
 
@@ -210,7 +217,9 @@ public class PortfolioCrudService {
             resulting = positionRepository.save(position);
         }
 
-        publishLotChange(portfolioId, position, position.getEntryDate(), true);
+        // Only valuations from the sell date forward change (the lot was held unchanged until then),
+        // so backfill from exitDate — not entryDate — to avoid rebuilding the lot's entire history.
+        publishLotChange(portfolioId, position, request.exitDate(), true);
         return mapper.toPositionResponseShell(resulting);
     }
 

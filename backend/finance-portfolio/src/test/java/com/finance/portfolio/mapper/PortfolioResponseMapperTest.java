@@ -1,6 +1,5 @@
 package com.finance.portfolio.mapper;
 
-import com.finance.portfolio.dto.response.AllocationItem;
 import com.finance.portfolio.dto.response.PortfolioSummaryResponse;
 import org.junit.jupiter.api.Test;
 
@@ -72,7 +71,7 @@ class PortfolioResponseMapperTest {
 
         PortfolioSummaryResponse response = mapper.toSummaryResponse(
                 total, entry, pnl, pnlPct, dailyPnl, dailyPnlPct, realPnl, realPnlPct, cpiGrowthPct,
-                java.util.Map.of());
+                BigDecimal.ZERO, java.util.Map.of());
 
         assertThat(response.totalValueTry()).isEqualByComparingTo(total);
         assertThat(response.totalEntryValueTry()).isEqualByComparingTo(entry);
@@ -83,29 +82,19 @@ class PortfolioResponseMapperTest {
         assertThat(response.realPnlTry()).isEqualByComparingTo(realPnl);
         assertThat(response.realPnlPercent()).isEqualByComparingTo(realPnlPct);
         assertThat(response.cpiGrowthPercent()).isEqualByComparingTo(cpiGrowthPct);
+        assertThat(response.realizedCashTry()).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
     void should_supportNullDailyPnl_when_buildingSummary() {
         PortfolioSummaryResponse response = mapper.toSummaryResponse(
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-                null, null, null, null, null, java.util.Map.of());
+                null, null, null, null, null, null, java.util.Map.of());
 
         assertThat(response.dailyPnlTry()).isNull();
         assertThat(response.dailyPnlPercent()).isNull();
         assertThat(response.realPnlTry()).isNull();
         assertThat(response.realPnlPercent()).isNull();
         assertThat(response.cpiGrowthPercent()).isNull();
-    }
-
-    @Test
-    void should_packArgumentsIntoAllocation_when_callingToAllocationItem() {
-        AllocationItem item = mapper.toAllocationItem(
-                "BTC", "CRYPTO", new BigDecimal("5000.00"), new BigDecimal("40.00"));
-
-        assertThat(item.label()).isEqualTo("BTC");
-        assertThat(item.assetType()).isEqualTo("CRYPTO");
-        assertThat(item.valueTry()).isEqualByComparingTo("5000.00");
-        assertThat(item.percent()).isEqualByComparingTo("40.00");
     }
 }

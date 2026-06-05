@@ -10,21 +10,10 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 /** Persistence for portfolio-level {@link PortfolioDailySnapshot} rows: range reads for charts and date-based deletes for backfill. */
 @Repository
 public interface PortfolioDailySnapshotRepository extends JpaRepository<PortfolioDailySnapshot, Long> {
-
-    boolean existsByPortfolioIdAndSnapshotDate(Long portfolioId, LocalDate snapshotDate);
-
-    Optional<PortfolioDailySnapshot> findFirstByPortfolioIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
-            Long portfolioId, LocalDateTime cutoff);
-
-    Optional<PortfolioDailySnapshot> findFirstByPortfolioIdAndCreatedAtGreaterThanOrderByCreatedAtAsc(
-            Long portfolioId, LocalDateTime cutoff);
-
-    Optional<PortfolioDailySnapshot> findFirstByPortfolioIdOrderByCreatedAtDesc(Long portfolioId);
 
     @Query("SELECT s FROM PortfolioDailySnapshot s WHERE s.portfolioId = :pid ORDER BY s.createdAt DESC")
     List<PortfolioDailySnapshot> findRecentByPortfolioId(@Param("pid") Long portfolioId, Pageable pageable);
@@ -53,8 +42,6 @@ public interface PortfolioDailySnapshotRepository extends JpaRepository<Portfoli
             @Param("end") LocalDateTime end);
 
     void deleteByPortfolioIdAndSnapshotDate(Long portfolioId, LocalDate snapshotDate);
-
-    void deleteByPortfolioIdAndSnapshotDateGreaterThanEqual(Long portfolioId, LocalDate from);
 
     void deleteByPortfolioIdAndSnapshotDateBetween(Long portfolioId, LocalDate from, LocalDate to);
 

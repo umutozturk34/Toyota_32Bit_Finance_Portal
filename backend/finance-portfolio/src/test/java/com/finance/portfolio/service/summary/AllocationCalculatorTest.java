@@ -1,4 +1,4 @@
-package com.finance.portfolio.service;
+package com.finance.portfolio.service.summary;
 
 import com.finance.common.model.MarketType;
 import com.finance.market.viop.model.ViopContract;
@@ -44,22 +44,25 @@ class AllocationCalculatorTest {
     @Mock private DerivativePositionRepository derivativePositionRepository;
     @Mock private PortfolioResponseMapper mapper;
     @Mock private com.finance.market.core.service.HistoricalPricingPort historicalPricingPort;
+    @Mock private com.finance.market.viop.repository.ViopCandleRepository viopCandleRepository;
+    @Mock private com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
 
     private AllocationCalculator calculator;
 
     @BeforeEach
     void setUp() {
         calculator = new AllocationCalculator(pricingPort, positionRepository,
-                derivativePositionRepository, mapper, historicalPricingPort);
+                derivativePositionRepository, mapper, historicalPricingPort,
+                viopCandleRepository, assetSnapshotRepository);
         lenient().when(mapper.toAllocationItem(anyString(), any(), any(), any(), any(), any()))
                 .thenAnswer(inv -> new AllocationItem(
                         inv.getArgument(0), inv.getArgument(1), inv.getArgument(2),
                         inv.getArgument(3), inv.getArgument(4), inv.getArgument(5)));
-        lenient().when(mapper.toAllocationItem(anyString(), any(), any(), any(), any(), any(), any()))
+        lenient().when(mapper.toAllocationItem(anyString(), any(), any(), any(), any(), any(), any(), any()))
                 .thenAnswer(inv -> new AllocationItem(
                         inv.getArgument(0), inv.getArgument(1), inv.getArgument(2),
                         inv.getArgument(3), inv.getArgument(4), inv.getArgument(5),
-                        inv.getArgument(6)));
+                        inv.getArgument(6), inv.getArgument(7)));
     }
 
     private PortfolioPosition openSpot(AssetType type, String code, String qty, String entry) {
@@ -112,11 +115,86 @@ class AllocationCalculatorTest {
     void shouldReturnEmptyList_whenPortfolioHasNoPositionsOrDerivatives() {
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
-        lenient().when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of());
+        lenient().when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of());
 
         List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, null, null);
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldAttachPerCurrencyEquity_toOpenShortDerivativeSlice() {
+        // Open SHORT: entry notional 2000 TRY (entry 100 × size 10 × 2 lots); current price 90 → notional 1800
+        // (price fell, short profits +200) → equity 2200. USD/TRY rose 10→12. The donut slice must carry per-date
+        // frames so the frontend shows cost@entryFX 200 + PnL +50 = $250 equity — NOT 2200÷12 = $183 (today spot).
+        ViopContract c = contract("F_XS", ViopContractKind.FUTURE, "10", "90", "TRY");
+        DerivativePosition shortPos = openDerivative(c, DerivativeDirection.SHORT, "100", "2");
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
+        when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(shortPos));
+        java.util.Map<java.time.LocalDate, BigDecimal> usdFx = new java.util.HashMap<>();
+        usdFx.put(java.time.LocalDate.of(2024, 1, 1), new BigDecimal("10"));   // entry-date FX
+        usdFx.put(java.time.LocalDate.of(2024, 6, 1), new BigDecimal("12"));   // latest ⇒ today's FX
+        when(historicalPricingPort.getPriceSeries(any(), eq("USD"), any(), any())).thenReturn(usdFx);
+
+        List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, null, null);
+
+        AllocationItem viop = result.stream().filter(i -> "F_XS".equals(i.label())).findFirst().orElseThrow();
+        assertThat(viop.valueTry()).isEqualByComparingTo("2200");                       // TRY equity
+        assertThat(viop.costByCurrency().get("USD")).isEqualByComparingTo("200");       // cost @ entry FX
+        assertThat(viop.realizedPnlByCurrency().get("USD")).isEqualByComparingTo("50"); // direction-aware PnL → $250 equity
+    }
+
+    @Test
+    void shouldUseEntryDateRateForOpenDerivativeCost_whenEntryPredatesLoadedFxWindow() {
+        // Open LONG entered 2024-01-01 (entry notional 100 × size 10 × 2 lots = 2000 TRY). With no closed
+        // positions/derivatives the FX-series window previously anchored on today, so this open entry fell
+        // OUTSIDE the loaded window: convertToFrames' floorEntry was null and it fell back to lastEntry =
+        // today's rate (20), reading cost as 2000/20 = $100. The fix extends the window back to the OLDEST
+        // entry across open AND closed positions, so the entry-date rate (10) is in the series and the cost
+        // leg converts at it: 2000/10 = $200. The mock filters by the requested window like the real port.
+        ViopContract c = contract("F_OLD", ViopContractKind.FUTURE, "10", "100", "TRY");
+        DerivativePosition openLong = openDerivative(c, DerivativeDirection.LONG, "100", "2");
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
+        when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(openLong));
+        lenient().when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of());
+        java.time.LocalDate entryDate = java.time.LocalDate.of(2024, 1, 1);
+        when(historicalPricingPort.getPriceSeries(any(), eq("USD"), any(), any()))
+                .thenAnswer(inv -> {
+                    java.time.LocalDate from = inv.getArgument(2);
+                    java.time.LocalDate to = inv.getArgument(3);
+                    java.util.Map<java.time.LocalDate, BigDecimal> out = new java.util.HashMap<>();
+                    if (!from.isAfter(entryDate) && !to.isBefore(entryDate)) {
+                        out.put(entryDate, new BigDecimal("10"));   // entry-date FX, only present if window reaches back
+                    }
+                    out.put(java.time.LocalDate.now(), new BigDecimal("20")); // today's spot ⇒ lastEntry fallback
+                    return out;
+                });
+
+        List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, null, null);
+
+        AllocationItem viop = result.stream().filter(i -> "F_OLD".equals(i.label())).findFirst().orElseThrow();
+        assertThat(viop.costByCurrency().get("USD")).isEqualByComparingTo("200"); // entryTry/entryRate, not /todayRate
+    }
+
+    @Test
+    void shouldAttachPerCurrencyFramesToOpenDerivative_whenAssetTypeFilterIsVIOP() {
+        // Asset-type filter (VIOP) does NOT emit a CASH bucket, so the FX series was previously skipped and the
+        // open derivative's per-currency cost frame came back empty. The fix loads the series whenever
+        // derivatives are in scope, so the VIOP slice carries cost@entry-FX even under a filter.
+        ViopContract c = contract("F_FILT", ViopContractKind.FUTURE, "10", "100", "TRY");
+        DerivativePosition openLong = openDerivative(c, DerivativeDirection.LONG, "100", "2");
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
+        when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(openLong));
+        lenient().when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of());
+        java.util.Map<java.time.LocalDate, BigDecimal> usdFx = new java.util.HashMap<>();
+        usdFx.put(java.time.LocalDate.of(2024, 1, 1), new BigDecimal("10"));
+        when(historicalPricingPort.getPriceSeries(any(), eq("USD"), any(), any())).thenReturn(usdFx);
+
+        List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, "VIOP", null);
+
+        AllocationItem viop = result.stream().filter(i -> "F_FILT".equals(i.label())).findFirst().orElseThrow();
+        assertThat(viop.costByCurrency()).containsKey("USD");
+        assertThat(viop.costByCurrency().get("USD")).isEqualByComparingTo("200");
     }
 
     @Test
@@ -125,7 +203,7 @@ class AllocationCalculatorTest {
         PortfolioPosition crypto = openSpot(AssetType.CRYPTO, "BTC", "1", "50000");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(stock, crypto));
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
-        when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of(
+        when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of(
                 new AssetKey(MarketType.STOCK, "AKBNK"), new BigDecimal("120"),
                 new AssetKey(MarketType.CRYPTO, "BTC"), new BigDecimal("60000")
         ));
@@ -144,7 +222,7 @@ class AllocationCalculatorTest {
         PortfolioPosition stock2 = openSpot(AssetType.STOCK, "THYAO", "5", "200");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(stock1, stock2));
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
-        when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of(
+        when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of(
                 new AssetKey(MarketType.STOCK, "AKBNK"), new BigDecimal("110"),
                 new AssetKey(MarketType.STOCK, "THYAO"), new BigDecimal("220")
         ));
@@ -157,17 +235,21 @@ class AllocationCalculatorTest {
     }
 
     @Test
-    void shouldUseZeroMarketValue_whenPriceMissing() {
+    void shouldFallbackToEntryValue_whenLivePriceAndSnapshotMissing() {
         PortfolioPosition stock = openSpot(AssetType.STOCK, "AKBNK", "10", "100");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(stock));
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
-        when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of());
+        when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of());
+        // Snapshot repository returns empty → final fallback is entryValue (10 × 100 = 1000).
+        // Earlier "zero on missing price" behaviour silently dropped a real holding from the
+        // pie while the summary card still summed it via its own snapshot fallback — produced
+        // the visible card-vs-pie gap.
 
         List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, null, null);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).valueTry()).isEqualByComparingTo("0");
-        assertThat(result.get(0).percent()).isEqualByComparingTo("0");
+        assertThat(result.get(0).valueTry()).isEqualByComparingTo("1000");
+        assertThat(result.get(0).percent()).isEqualByComparingTo("100");
     }
 
     @Test
@@ -175,7 +257,7 @@ class AllocationCalculatorTest {
         PortfolioPosition closed = closedSpot(AssetType.STOCK, "AKBNK", "10", "100", "150");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(closed));
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
-        lenient().when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of());
+        lenient().when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of());
 
         List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, null, null);
 
@@ -192,7 +274,7 @@ class AllocationCalculatorTest {
         closedNoExit.closeWith(LocalDateTime.of(2024, 6, 1, 12, 0), null);
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(closedNoExit));
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
-        lenient().when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of());
+        lenient().when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of());
 
         List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, null, null);
 
@@ -227,7 +309,7 @@ class AllocationCalculatorTest {
         PortfolioPosition stock = openSpot(AssetType.STOCK, "AKBNK", "10", "100");
         PortfolioPosition crypto = openSpot(AssetType.CRYPTO, "BTC", "1", "50000");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(stock, crypto));
-        when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of(
+        when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of(
                 new AssetKey(MarketType.STOCK, "AKBNK"), new BigDecimal("110")
         ));
 
@@ -250,7 +332,7 @@ class AllocationCalculatorTest {
         PortfolioPosition closed = closedSpot(AssetType.STOCK, "AKBNK", "10", "100", "150");
         PortfolioPosition open = openSpot(AssetType.STOCK, "THYAO", "5", "100");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(closed, open));
-        when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of(
+        when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of(
                 new AssetKey(MarketType.STOCK, "THYAO"), new BigDecimal("110")
         ));
 
@@ -265,7 +347,7 @@ class AllocationCalculatorTest {
         DerivativePosition dp = openDerivative(c, DerivativeDirection.LONG, "100", "2");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(dp));
-        lenient().when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of());
+        lenient().when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of());
 
         List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, null, null);
 
@@ -284,7 +366,7 @@ class AllocationCalculatorTest {
                 .build();
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(dp));
-        lenient().when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of());
+        lenient().when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of());
 
         List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, null, null);
 
@@ -297,7 +379,7 @@ class AllocationCalculatorTest {
         DerivativePosition dp = openDerivative(c, DerivativeDirection.LONG, "100", "2");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(dp));
-        lenient().when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of());
+        lenient().when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of());
 
         List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, "assetType", null, null);
 
@@ -337,7 +419,7 @@ class AllocationCalculatorTest {
                 .build();
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(dp));
-        lenient().when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of());
+        lenient().when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of());
 
         List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, null, null);
 
@@ -350,7 +432,7 @@ class AllocationCalculatorTest {
         DerivativePosition dp = closedDerivative(c, DerivativeDirection.LONG, "100", "2", "120");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(dp));
-        lenient().when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of());
+        lenient().when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of());
 
         List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, null, null);
 
@@ -363,8 +445,8 @@ class AllocationCalculatorTest {
         DerivativePosition dp = openDerivative(c, DerivativeDirection.LONG, "90", "1");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(dp));
-        lenient().when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of());
-        when(pricingPort.getExitPriceTry(eq(MarketType.FOREX), eq("USD"))).thenReturn(new BigDecimal("30"));
+        lenient().when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of());
+        when(pricingPort.getPriceTry(eq(MarketType.FOREX), eq("USD"))).thenReturn(new BigDecimal("30"));
 
         List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, null, null);
 
@@ -377,8 +459,8 @@ class AllocationCalculatorTest {
         DerivativePosition dp = openDerivative(c, DerivativeDirection.LONG, "90", "1");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(dp));
-        lenient().when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of());
-        when(pricingPort.getExitPriceTry(eq(MarketType.FOREX), eq("USD"))).thenReturn(null);
+        lenient().when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of());
+        when(pricingPort.getPriceTry(eq(MarketType.FOREX), eq("USD"))).thenReturn(null);
 
         List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, null, null);
 
@@ -436,6 +518,28 @@ class AllocationCalculatorTest {
     }
 
     @Test
+    void shouldReportClosedShortDerivativeProfit_inForeignCurrency_whenNoFilter() {
+        // SHORT closed at a profit (price fell 100→90): entry notional 2000 TRY, realized +200, close notional
+        // 1800 TRY. USD/TRY rose 10→12 between entry and close. Pricing proceeds (2200) at the close FX and
+        // subtracting cost at the entry FX gives 2200/12 − 2000/10 = −16.67 (a LOSS); the direction-aware
+        // value is −1×(1800/12 − 2000/10) = +50 (a PROFIT) — what the donut must show in USD.
+        ViopContract c = contract("XU030S", ViopContractKind.FUTURE, "10", "90", "TRY");
+        DerivativePosition dp = closedDerivative(c, DerivativeDirection.SHORT, "100", "2", "90");
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
+        when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(dp));
+        java.util.Map<java.time.LocalDate, BigDecimal> usdFx = new java.util.HashMap<>();
+        usdFx.put(java.time.LocalDate.of(2024, 1, 1), new BigDecimal("10"));   // entry-date FX
+        usdFx.put(java.time.LocalDate.of(2024, 7, 1), new BigDecimal("12"));   // close-date FX (TRY weakened)
+        when(historicalPricingPort.getPriceSeries(any(), eq("USD"), any(), any())).thenReturn(usdFx);
+
+        List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, "realizedPnl", null, null);
+
+        AllocationItem viop = result.stream().filter(i -> "VIOP".equals(i.label())).findFirst().orElseThrow();
+        assertThat(viop.realizedPnlTry()).isEqualByComparingTo("200");           // TRY profit (direction-aware)
+        assertThat(viop.realizedPnlByCurrency().get("USD")).isEqualByComparingTo("50");  // USD profit, not −16.67
+    }
+
+    @Test
     void shouldFilterRealizedPnlToVIOPOnly_whenAssetTypeFilterIsVIOP() {
         ViopContract c = contract("XU030F", ViopContractKind.FUTURE, "10", "120", "TRY");
         DerivativePosition dp = closedDerivative(c, DerivativeDirection.LONG, "100", "2", "120");
@@ -454,7 +558,7 @@ class AllocationCalculatorTest {
         PortfolioPosition d = openSpot(AssetType.STOCK, "D", "1", "100");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(a, b, c, d));
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
-        when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of(
+        when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of(
                 new AssetKey(MarketType.STOCK, "A"), new BigDecimal("400"),
                 new AssetKey(MarketType.STOCK, "B"), new BigDecimal("300"),
                 new AssetKey(MarketType.STOCK, "C"), new BigDecimal("200"),
@@ -477,7 +581,7 @@ class AllocationCalculatorTest {
         PortfolioPosition a = openSpot(AssetType.STOCK, "A", "1", "100");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(a));
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
-        when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of(
+        when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of(
                 new AssetKey(MarketType.STOCK, "A"), new BigDecimal("110")
         ));
 
@@ -491,7 +595,7 @@ class AllocationCalculatorTest {
         PortfolioPosition a = openSpot(AssetType.STOCK, "A", "1", "100");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(a));
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
-        when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of(
+        when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of(
                 new AssetKey(MarketType.STOCK, "A"), new BigDecimal("110")
         ));
 
@@ -506,7 +610,7 @@ class AllocationCalculatorTest {
         DerivativePosition dp = openDerivative(c, DerivativeDirection.LONG, "100", "1");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(dp));
-        lenient().when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of());
+        lenient().when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of());
 
         List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, null, null);
 
@@ -532,7 +636,7 @@ class AllocationCalculatorTest {
         PortfolioPosition stock = openSpot(AssetType.STOCK, "AKBNK", "1", "100");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(stock));
         lenient().when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(dp));
-        when(pricingPort.getExitPricesTry(anyCollection())).thenReturn(Map.of(
+        when(pricingPort.getPricesTry(anyCollection())).thenReturn(Map.of(
                 new AssetKey(MarketType.STOCK, "AKBNK"), new BigDecimal("110")
         ));
 

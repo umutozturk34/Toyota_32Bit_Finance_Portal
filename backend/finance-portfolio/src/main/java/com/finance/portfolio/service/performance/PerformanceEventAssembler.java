@@ -1,4 +1,4 @@
-package com.finance.portfolio.service;
+package com.finance.portfolio.service.performance;
 
 import com.finance.portfolio.derivative.model.DerivativePosition;
 import com.finance.portfolio.dto.response.PerformanceEvent;

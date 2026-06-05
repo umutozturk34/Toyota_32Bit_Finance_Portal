@@ -1,7 +1,8 @@
-package com.finance.portfolio.service;
+package com.finance.portfolio.service.performance;
 
 import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.portfolio.dto.response.PerformanceAssetDetail;
+import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.MoneyScale;
 import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
 import com.finance.shared.util.PercentChangeCalculator;
@@ -32,6 +33,7 @@ public class PerformanceAggregationHelper {
         List<PortfolioAssetDailySnapshot> deduped = sumByAssetCodeWithinGroup(assets);
         Map<String, BigDecimal[]> typeAgg = new LinkedHashMap<>();
         for (PortfolioAssetDailySnapshot a : deduped) {
+            if (isValuelessViopRow(a)) continue;   // value-less VIOP close-day row: no "+0" type contributor
             typeAgg.merge(a.getAssetType().name(),
                     new BigDecimal[]{a.getMarketValueTry(), a.getPnlTry()},
                     (ex, inc) -> new BigDecimal[]{ex[0].add(inc[0]), ex[1].add(inc[1])});
@@ -55,6 +57,9 @@ public class PerformanceAggregationHelper {
             totalValue = totalValue.add(snap.getMarketValueTry());
             totalPnl = totalPnl.add(snap.getPnlTry());
             totalCost = totalCost.add(snap.getTotalCostTry());
+            // A value-less VIOP close-day row (quantity 0, carries only dailyPnlTry) adds nothing to the totals
+            // above, but must NOT show as a "+0" contributor in the K/Z Katkısı breakdown.
+            if (isValuelessViopRow(snap)) continue;
             details.add(new PerformanceAssetDetail(
                     snap.getAssetCode(), snap.getAssetType().name(),
                     snap.getMarketValueTry(), snap.getPnlTry()));
@@ -64,7 +69,13 @@ public class PerformanceAggregationHelper {
         List<PerformanceAssetDetail> capped = capDetailsWithOther(details);
         PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalValue, totalCost, MoneyScale.PRICE);
         BigDecimal pnlPercent = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
-        return new AssetCodeAgg(totalValue, totalPnl, pnlPercent, capped);
+        return new AssetCodeAgg(totalValue, totalCost, totalPnl, pnlPercent, capped);
+    }
+
+    /** A VIOP close-day row is value-less (quantity 0, carries only dailyPnlTry) — kept out of the value/contributor
+     *  breakdown so it never renders as a "+0" entry; its daily move reaches the card via the daily-aggregation path. */
+    private static boolean isValuelessViopRow(PortfolioAssetDailySnapshot s) {
+        return s.getAssetType() == AssetType.VIOP && s.getQuantity() != null && s.getQuantity().signum() == 0;
     }
 
     /** Keeps the top-N details and folds the rest into a single OTHER row; input must be pre-sorted by value desc. */
@@ -121,7 +132,7 @@ public class PerformanceAggregationHelper {
         return x.add(y);
     }
 
-    public record AssetCodeAgg(BigDecimal totalValue, BigDecimal totalPnl, BigDecimal pnlPercent,
-                                List<PerformanceAssetDetail> details) {
+    public record AssetCodeAgg(BigDecimal totalValue, BigDecimal totalCost, BigDecimal totalPnl,
+                                BigDecimal pnlPercent, List<PerformanceAssetDetail> details) {
     }
 }

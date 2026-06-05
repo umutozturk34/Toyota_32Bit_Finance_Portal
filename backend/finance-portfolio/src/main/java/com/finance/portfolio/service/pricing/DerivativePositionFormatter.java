@@ -1,16 +1,11 @@
-package com.finance.portfolio.service;
+package com.finance.portfolio.service.pricing;
 
-import com.finance.common.model.MarketType;
-import com.finance.market.viop.model.ViopCandle;
-import com.finance.market.viop.repository.ViopCandleRepository;
 import com.finance.portfolio.derivative.model.DerivativePosition;
 import com.finance.portfolio.dto.response.DerivativeMeta;
 import com.finance.portfolio.dto.response.PositionResponse;
 import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.MoneyScale;
-import com.finance.shared.service.AssetPricingPort;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -25,20 +20,18 @@ import java.time.LocalTime;
  * Current price comes from the latest candle close (or contract last price) converted to TRY; closed
  * positions use the stored close price.
  */
-@Log4j2
 @Component
 @RequiredArgsConstructor
-class DerivativePositionFormatter {
+public class DerivativePositionFormatter {
 
     private static final String OPTION_KIND = "OPTION";
     private static final String LONG_DIRECTION = "LONG";
     private static final String CLOSED_SUFFIX = " · KAPALI";
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
-    private final ViopCandleRepository viopCandleRepository;
-    private final AssetPricingPort pricingPort;
+    private final DerivativePricingResolver pricingResolver;
 
-    PositionResponse toPositionResponse(DerivativePosition position) {
+    public PositionResponse toPositionResponse(DerivativePosition position) {
         if (position.getViopContract() == null) return null;
         DerivativeFigures f = computeFigures(position);
         DerivativeMeta meta = buildMeta(position, f);
@@ -78,7 +71,12 @@ class DerivativePositionFormatter {
         BigDecimal pnl = position.realizedOrUnrealizedPnl(currentPriceTry);
         if (pnl == null) pnl = BigDecimal.ZERO;
         pnl = pnl.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
-        BigDecimal marketValue = entryNotional.add(pnl).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        // Market value = current notional (current price × size × lots). PnL is reported separately and is
+        // direction-aware (realizedOrUnrealizedPnl), so for a SHORT value − cost ≠ pnl — the row shows the
+        // mark-to-market notional (falls as a short profits) and the signed PnL alongside it.
+        BigDecimal marketValue = (currentPriceTry != null ? currentPriceTry : entryPrice)
+                .multiply(contractSize).multiply(qty)
+                .setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
         BigDecimal pnlPercent = entryNotional.signum() > 0
                 ? pnl.multiply(HUNDRED).divide(entryNotional, MoneyScale.PRICE, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
@@ -90,9 +88,15 @@ class DerivativePositionFormatter {
 
     private BigDecimal resolveCurrentPrice(DerivativePosition position, boolean closed) {
         if (closed) return position.getClosePrice();
-        BigDecimal latestClose = latestCandleClose(position.getViopContract().getSymbol());
-        BigDecimal liveSource = latestClose != null ? latestClose : position.getViopContract().getLastPrice();
-        return convertLiveToTry(liveSource, position.getViopContract().resolvePriceCurrency());
+        // lastPrice first, candle close as fallback. Same ordering as PortfolioSummaryService
+        // openAndClosedDerivativeTotals and AllocationCalculator.addOpenDerivative — keeps the
+        // positions row's MV aligned with the summary card and the allocation pie's VIOP slice.
+        // Earlier "candle first, lastPrice fallback" picked the prior session's close even when a
+        // fresh intraday tick had landed, drifting the row 0-2% from the card.
+        BigDecimal contractLast = position.getViopContract().getLastPrice();
+        BigDecimal liveSource = contractLast != null
+                ? contractLast : pricingResolver.latestCandleClose(position.getViopContract().getSymbol());
+        return pricingResolver.convertLiveToTry(liveSource, position.getViopContract().resolvePriceCurrency());
     }
 
     private DerivativeMeta buildMeta(DerivativePosition position, DerivativeFigures f) {
@@ -116,19 +120,6 @@ class DerivativePositionFormatter {
                 maxLoss,
                 maxGain,
                 position.getViopContract().getDisplayName());
-    }
-
-    private BigDecimal latestCandleClose(String symbol) {
-        return viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc(symbol, BigDecimal.ZERO)
-                .map(ViopCandle::getClose)
-                .orElse(null);
-    }
-
-    private BigDecimal convertLiveToTry(BigDecimal nativePrice, String currency) {
-        if (nativePrice == null) return null;
-        if (currency == null || currency.isBlank() || "TRY".equalsIgnoreCase(currency)) return nativePrice;
-        BigDecimal rate = pricingPort.getExitPriceTry(MarketType.FOREX, currency.toUpperCase());
-        return rate != null && rate.signum() > 0 ? nativePrice.multiply(rate) : nativePrice;
     }
 
     private record DerivativeFigures(BigDecimal qty, BigDecimal entryPrice, BigDecimal currentPriceTry,

@@ -101,9 +101,27 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
         if (positions.isEmpty()) {
             return;
         }
+        // Delete-then-insert: every market-data tick re-snapshots VIOP, otherwise each tick
+        // appends a new row and today's per-asset table grows by N rows per derivative per day.
+        assetSnapshotRepository.deleteByPortfolioIdAndAssetTypeAndSnapshotDate(
+                portfolio.getId(), AssetType.VIOP, batchTimestamp.toLocalDate());
+        LocalDate today = batchTimestamp.toLocalDate();
         for (DerivativePosition position : positions) {
-            PortfolioAssetDailySnapshot snapshot = calculator.buildDerivativeAssetSnapshot(
-                    portfolio.getId(), position, batchTimestamp);
+            PortfolioAssetDailySnapshot snapshot;
+            if (position.getCloseDate() != null) {
+                // Closed BEFORE today: frozen, write NO row — its proceeds are already in totalValue via
+                // DerivativeSnapshotCalculator.addClosedEquity, and a countable row would double-count them.
+                if (position.getCloseDate().isBefore(today)) {
+                    continue;
+                }
+                // Closed TODAY: write a VALUE-LESS row (quantity/market/pnl = 0) carrying ONLY the close-day
+                // dailyPnl, so the Günlük K/Z card and per-symbol series book today's move. isCountableViopRow=false
+                // keeps it out of the value rowMv path, so the proceeds are still counted exactly once via
+                // addClosedEquity (no double-count) — the qty>0 row that would double is never written.
+                snapshot = calculator.buildClosedViopDailyRow(portfolio.getId(), position, batchTimestamp);
+            } else {
+                snapshot = calculator.buildDerivativeAssetSnapshot(portfolio.getId(), position, batchTimestamp);
+            }
             if (snapshot != null) {
                 assetSnapshotRepository.save(snapshot);
             }
@@ -138,11 +156,23 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
     private void insertAssetSnapshots(Portfolio portfolio, AssetType assetType,
                                        LocalDateTime batchTimestamp) {
         Long pid = portfolio.getId();
-        List<PortfolioPosition> open = positionRepository
+        LocalDate today = batchTimestamp.toLocalDate();
+        // Open lots PLUS lots closed TODAY: a lot sold today still moved today, so its close-day price move
+        // must reach the per-asset row (the daily card reads 0 otherwise on a full sell). buildSymbolRow keeps
+        // a sold lot out of market value (realized exit is folded by the aggregate), so this can't double-count.
+        List<PortfolioPosition> relevant = positionRepository
                 .findByPortfolioIdAndTrackedAsset_AssetTypeAndQuantityGreaterThan(
                         pid, TrackedAssetType.valueOf(assetType.name()), BigDecimal.ZERO)
-                .stream().filter(p -> !p.isClosed()).toList();
-        calculator.buildAssetSnapshotsForPositions(pid, open, batchTimestamp)
+                .stream()
+                .filter(p -> !p.isClosed()
+                        || (p.getExitDate() != null && p.getExitDate().toLocalDate().equals(today)))
+                .toList();
+        // Delete-then-insert per assetType: market-update ticks re-snapshot a single asset
+        // type at a time, so wiping by type avoids stomping on other types' rows that may
+        // have been written in a different tick today.
+        assetSnapshotRepository.deleteByPortfolioIdAndAssetTypeAndSnapshotDate(
+                pid, assetType, batchTimestamp.toLocalDate());
+        calculator.buildAssetSnapshotsForPositions(pid, relevant, batchTimestamp)
                 .forEach(assetSnapshotRepository::save);
     }
 
@@ -154,17 +184,37 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
     private PortfolioDailySnapshot generateFullSnapshot(Portfolio portfolio) {
         Long pid = portfolio.getId();
         LocalDateTime batchTimestamp = LocalDateTime.now();
-        List<PortfolioPosition> open = positionRepository
+        LocalDate today = batchTimestamp.toLocalDate();
+        // Open lots plus lots closed TODAY, so a sold-today lot's close-day move still reaches its per-asset
+        // row (see insertAssetSnapshots); buildSymbolRow keeps it out of market value, so no double-count.
+        List<PortfolioPosition> spotRelevant = positionRepository
                 .findByPortfolioIdAndQuantityGreaterThan(pid, BigDecimal.ZERO)
-                .stream().filter(p -> !p.isClosed()).toList();
+                .stream()
+                .filter(p -> !p.isClosed()
+                        || (p.getExitDate() != null && p.getExitDate().toLocalDate().equals(today)))
+                .toList();
         List<DerivativePosition> derivatives = derivativePositionRepository.findByPortfolioId(pid);
 
-        if (open.isEmpty() && derivatives.isEmpty()) return null;
+        if (spotRelevant.isEmpty() && derivatives.isEmpty()) return null;
 
-        calculator.buildAssetSnapshotsForPositions(pid, open, batchTimestamp)
+        // Full-portfolio snapshot: wipe today's rows across ALL asset types and re-build, so
+        // morning + evening schedulers (and any other full-snapshot trigger) replace rather
+        // than append. insertAggregateSnapshot does its own delete for the daily row.
+        assetSnapshotRepository.deleteByPortfolioIdAndSnapshotDate(pid, batchTimestamp.toLocalDate());
+        calculator.buildAssetSnapshotsForPositions(pid, spotRelevant, batchTimestamp)
                 .forEach(assetSnapshotRepository::save);
         for (DerivativePosition dpos : derivatives) {
-            PortfolioAssetDailySnapshot snap = calculator.buildDerivativeAssetSnapshot(pid, dpos, batchTimestamp);
+            PortfolioAssetDailySnapshot snap;
+            if (dpos.getCloseDate() != null) {
+                // Closed BEFORE today: frozen, no row (proceeds in totalValue via addClosedEquity). Closed TODAY:
+                // a value-less row carrying ONLY the close-day dailyPnl (see snapshotDerivativePositions).
+                if (dpos.getCloseDate().isBefore(today)) {
+                    continue;
+                }
+                snap = calculator.buildClosedViopDailyRow(pid, dpos, batchTimestamp);
+            } else {
+                snap = calculator.buildDerivativeAssetSnapshot(pid, dpos, batchTimestamp);
+            }
             if (snap != null) assetSnapshotRepository.save(snap);
         }
 

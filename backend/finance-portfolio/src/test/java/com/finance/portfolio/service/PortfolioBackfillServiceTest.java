@@ -112,8 +112,6 @@ class PortfolioBackfillServiceTest {
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(pos));
         when(historicalPricingPort.getPriceSeries(eq(MarketType.STOCK), eq("THYAO.IS"), eq(from), eq(yesterday)))
                 .thenReturn(Map.of(from, new BigDecimal("45"), yesterday, new BigDecimal("50")));
-        lenient().when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
-        lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
         when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
         when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
@@ -159,8 +157,6 @@ class PortfolioBackfillServiceTest {
                 .thenReturn(Map.of(from, new BigDecimal("45")));
         when(historicalPricingPort.getPriceSeries(eq(MarketType.CRYPTO), any(), any(), any()))
                 .thenReturn(Map.of(cutoff, new BigDecimal("2500000")));
-        lenient().when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
-        lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
         when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
         when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
@@ -185,8 +181,6 @@ class PortfolioBackfillServiceTest {
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(pos));
         when(historicalPricingPort.getPriceSeries(any(), any(), any(), any()))
                 .thenReturn(Map.of(priceDay, new BigDecimal("44")));
-        lenient().when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
-        lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
         when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
         when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
@@ -210,8 +204,6 @@ class PortfolioBackfillServiceTest {
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(lotA, lotB));
         when(historicalPricingPort.getPriceSeries(any(), any(), any(), any()))
                 .thenReturn(Map.of(from, new BigDecimal("70")));
-        lenient().when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
-        lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
         when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
         when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
@@ -233,9 +225,7 @@ class PortfolioBackfillServiceTest {
                 new BigDecimal("100"), new BigDecimal("40"), today.atStartOfDay());
         when(portfolioRepository.findById(PORTFOLIO_ID)).thenReturn(Optional.of(portfolio()));
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(pos));
-        lenient().when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today)).thenReturn(false);
-        lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today)).thenReturn(false);
-        when(assetPricingPort.getExitPricesTry(any()))
+        when(assetPricingPort.getPricesTry(any()))
                 .thenReturn(Map.of(new AssetPricingPort.AssetKey(MarketType.STOCK, "THYAO.IS"), new BigDecimal("55")));
         when(calculator.buildAggregatedAssetSnapshot(any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
@@ -300,8 +290,6 @@ class PortfolioBackfillServiceTest {
         when(portfolioRepository.findById(PORTFOLIO_ID)).thenReturn(Optional.of(portfolio()));
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(dpos));
-        lenient().when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today)).thenReturn(false);
-        lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today)).thenReturn(true);
         when(assetSnapshotRepository.findByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today)).thenReturn(List.of());
         when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
 
@@ -316,8 +304,6 @@ class PortfolioBackfillServiceTest {
         when(portfolioRepository.findById(PORTFOLIO_ID)).thenReturn(Optional.of(portfolio()));
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
-        lenient().when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today)).thenReturn(false);
-        lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today)).thenReturn(true);
 
         service.snapshotToday(PORTFOLIO_ID);
 
@@ -340,10 +326,9 @@ class PortfolioBackfillServiceTest {
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(existing, justAdded));
         lenient().when(assetSnapshotRepository.findByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today))
                 .thenReturn(List.of(earlierToday));
-        when(assetPricingPort.getExitPricesTry(any())).thenReturn(Map.of(
+        when(assetPricingPort.getPricesTry(any())).thenReturn(Map.of(
                 new AssetPricingPort.AssetKey(MarketType.FUND, "BLH"), new BigDecimal("47"),
                 new AssetPricingPort.AssetKey(MarketType.FUND, "FIL"), new BigDecimal("3.5")));
-        lenient().when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today)).thenReturn(true);
         when(calculator.buildAggregatedAssetSnapshot(any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
         when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any(), any()))
@@ -395,40 +380,111 @@ class PortfolioBackfillServiceTest {
     }
 
     @Test
+    void shouldDeleteOnlyActiveAssetTodayRows_whenSnapshotTodayRunsWithCloseDayMarkers() {
+        // Arrange: one active asset (gets a fresh today row → must be deleted-then-reinserted) plus a
+        // close-day pre-close + zero marker for an asset sold today (snapshotToday will NOT rebuild it).
+        LocalDate today = LocalDate.now();
+        PortfolioPosition active = lot(AssetType.STOCK, "THYAO.IS",
+                new BigDecimal("100"), new BigDecimal("40"), today.minusDays(10).atStartOfDay());
+        PortfolioAssetDailySnapshot activeTodayRow = PortfolioAssetDailySnapshot.builder()
+                .id(10L).portfolioId(PORTFOLIO_ID).assetType(AssetType.STOCK).assetCode("THYAO.IS")
+                .snapshotDate(today).createdAt(today.atStartOfDay().plusHours(9)).build();
+        PortfolioAssetDailySnapshot closeMarkerPre = PortfolioAssetDailySnapshot.builder()
+                .id(20L).portfolioId(PORTFOLIO_ID).assetType(AssetType.CRYPTO).assetCode("bitcoin")
+                .snapshotDate(today).createdAt(today.atStartOfDay()).build();
+        PortfolioAssetDailySnapshot closeMarkerZero = PortfolioAssetDailySnapshot.builder()
+                .id(21L).portfolioId(PORTFOLIO_ID).assetType(AssetType.CRYPTO).assetCode("bitcoin")
+                .snapshotDate(today).createdAt(today.atStartOfDay().plusSeconds(1)).build();
+        when(portfolioRepository.findById(PORTFOLIO_ID)).thenReturn(Optional.of(portfolio()));
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(active));
+        when(assetSnapshotRepository.findByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today))
+                .thenReturn(List.of(activeTodayRow, closeMarkerPre, closeMarkerZero));
+        when(assetPricingPort.getPricesTry(any()))
+                .thenReturn(Map.of(new AssetPricingPort.AssetKey(MarketType.STOCK, "THYAO.IS"), new BigDecimal("55")));
+        when(calculator.buildAggregatedAssetSnapshot(any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(mockAssetSnapshot());
+        when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any(), any()))
+                .thenReturn(mockDailySnapshot());
+
+        // Act
+        service.snapshotToday(PORTFOLIO_ID);
+
+        // Assert: only the active asset's stale today row is purged; close-day markers survive.
+        ArgumentCaptor<List<Long>> deletedIds = idListCaptor();
+        verify(assetSnapshotRepository).deleteAllByIdInBatch(deletedIds.capture());
+        assertThat(deletedIds.getValue()).containsExactly(10L);
+    }
+
+    @Test
+    void shouldNotDeleteCloseDayMarkers_whenOnlyClosedSpotLotChangedToday() {
+        // Arrange: the asset's last lot was sold today, so backfillAssetSinceDate already wrote the
+        // close-day markers and there is no active position. snapshotToday must leave them untouched.
+        LocalDate today = LocalDate.now();
+        PortfolioPosition closedLot = lot(AssetType.STOCK, "THYAO.IS",
+                new BigDecimal("100"), new BigDecimal("40"), today.minusDays(10).atStartOfDay());
+        closedLot.closeWith(today.atStartOfDay(), new BigDecimal("55"));
+        PortfolioAssetDailySnapshot closeMarkerZero = PortfolioAssetDailySnapshot.builder()
+                .id(31L).portfolioId(PORTFOLIO_ID).assetType(AssetType.STOCK).assetCode("THYAO.IS")
+                .snapshotDate(today).createdAt(today.atStartOfDay().plusSeconds(1)).build();
+        when(portfolioRepository.findById(PORTFOLIO_ID)).thenReturn(Optional.of(portfolio()));
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(closedLot));
+        lenient().when(assetSnapshotRepository.findByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today))
+                .thenReturn(List.of(closeMarkerZero));
+        when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any(), any()))
+                .thenReturn(mockDailySnapshot());
+
+        // Act
+        service.snapshotToday(PORTFOLIO_ID);
+
+        // Assert: nothing in the empty rebuild scope, so no delete fires and the marker survives.
+        verify(assetSnapshotRepository, never()).deleteAllByIdInBatch(any());
+    }
+
+    @Test
+    void shouldNotDeleteCloseDayDerivativeRows_whenDerivativeClosedToday() {
+        // Arrange: a derivative closed today already has its close-day VIOP rows written by
+        // rebuildPeerSnapshots; snapshotToday rebuilds only OPEN derivatives, so it must not delete them.
+        LocalDate today = LocalDate.now();
+        com.finance.market.viop.model.ViopContract contract =
+                com.finance.market.viop.model.ViopContract.builder().symbol("F_USDTRY0625").build();
+        com.finance.portfolio.derivative.model.DerivativePosition closedDeriv =
+                com.finance.portfolio.derivative.model.DerivativePosition.builder()
+                        .entryDate(today.minusDays(3))
+                        .closeDate(today)
+                        .entryPrice(new BigDecimal("4.95"))
+                        .closePrice(new BigDecimal("5.10"))
+                        .quantityLot(new BigDecimal("0.5"))
+                        .viopContract(contract)
+                        .direction(com.finance.portfolio.derivative.model.DerivativeDirection.LONG)
+                        .build();
+        PortfolioAssetDailySnapshot viopCloseZero = PortfolioAssetDailySnapshot.builder()
+                .id(41L).portfolioId(PORTFOLIO_ID).assetType(AssetType.VIOP).assetCode("F_USDTRY0625")
+                .snapshotDate(today).createdAt(today.atStartOfDay().plusSeconds(1)).build();
+        when(portfolioRepository.findById(PORTFOLIO_ID)).thenReturn(Optional.of(portfolio()));
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
+        when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(closedDeriv));
+        lenient().when(assetSnapshotRepository.findByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today))
+                .thenReturn(List.of(viopCloseZero));
+        when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any(), any()))
+                .thenReturn(mockDailySnapshot());
+
+        // Act
+        service.snapshotToday(PORTFOLIO_ID);
+
+        // Assert: the closed derivative is outside the rebuild scope, so its close-day rows are kept.
+        verify(assetSnapshotRepository, never()).deleteAllByIdInBatch(any());
+    }
+
+    @Test
     void shouldSkipTodaySnapshot_whenBothExistingForToday() {
         LocalDate today = LocalDate.now();
         when(portfolioRepository.findById(PORTFOLIO_ID)).thenReturn(Optional.of(portfolio()));
-        lenient().when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today)).thenReturn(true);
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
 
         service.snapshotToday(PORTFOLIO_ID);
 
         verify(assetSnapshotRepository, never()).saveAll(any());
         verify(dailySnapshotRepository, never()).saveAll(any());
-    }
-
-    @Test
-    void shouldSkipEntireBackfill_whenFromIsNull() {
-        // Arrange / Act
-        service.backfillEntirePortfolio(PORTFOLIO_ID, null);
-
-        // Assert
-        verify(transactionManager, never()).getTransaction(any());
-        verify(portfolioRepository, never()).findById(any());
-    }
-
-    @Test
-    void shouldWrapBackfillInTransaction_whenFromProvided() {
-        // Arrange
-        when(portfolioRepository.findById(PORTFOLIO_ID)).thenReturn(Optional.of(portfolio()));
-        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
-
-        // Act
-        service.backfillEntirePortfolio(PORTFOLIO_ID, LocalDate.now().minusDays(5));
-
-        // Assert
-        verify(transactionManager).getTransaction(any());
-        verify(portfolioRepository).findById(PORTFOLIO_ID);
     }
 
     private static Portfolio portfolio() {
@@ -456,6 +512,11 @@ class PortfolioBackfillServiceTest {
 
     @SuppressWarnings("unchecked")
     private static ArgumentCaptor<List<PortfolioPosition>> activeCaptor() {
+        return ArgumentCaptor.forClass(List.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ArgumentCaptor<List<Long>> idListCaptor() {
         return ArgumentCaptor.forClass(List.class);
     }
 }

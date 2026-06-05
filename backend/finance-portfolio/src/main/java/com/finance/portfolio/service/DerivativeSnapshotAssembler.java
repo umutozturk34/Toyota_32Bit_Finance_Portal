@@ -42,6 +42,7 @@ class DerivativeSnapshotAssembler {
                                          BigDecimal fxRateOverride, PortfolioAssetDailySnapshot priorOverride) {
         if (position.getViopContract() == null) return null;
         DerivativeMetrics m = computeMetrics(position, exitPrice, fxRateOverride, batchTimestamp.toLocalDate());
+        if (m == null) return null;
         DailyDelta delta = resolveDailyDelta(portfolioId, position, m, batchTimestamp, priorOverride);
         return PortfolioAssetDailySnapshot.builder()
                 .portfolioId(portfolioId)
@@ -68,10 +69,15 @@ class DerivativeSnapshotAssembler {
         BigDecimal fxRate = fxRateOverride != null && fxRateOverride.signum() > 0
                 ? fxRateOverride
                 : contractFxRate(position.getViopContract().resolvePriceCurrency(), snapDate);
+        if (fxRate == null) {
+            // Non-TRY contract with no usable FX rate (historical scraper outage + live cache miss).
+            // Persisting native USD/EUR as TRY would corrupt the snapshot row by the FX magnitude
+            // (~30x for USD). Returning null upstream forces the caller to skip writing this row;
+            // the next scheduler tick can retry once FX recovers.
+            return null;
+        }
         BigDecimal unitPrice = (exitPrice != null ? exitPrice : BigDecimal.ZERO)
                 .multiply(fxRate).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
-        BigDecimal marketValue = unitPrice.multiply(contractSize).multiply(qty)
-                .setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
         BigDecimal entryPriceTry = position.getEntryPrice() != null
                 ? position.getEntryPrice().setScale(MoneyScale.PRICE, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
@@ -81,12 +87,26 @@ class DerivativeSnapshotAssembler {
                 ? position.getDirection().pnlPerLot(entryPriceTry, unitPrice, contractSize)
                 : null;
         BigDecimal pnl = perLot != null ? perLot.multiply(qty) : BigDecimal.ZERO;
+        // Market value = current notional (unitPrice × size × lots) — the position's mark-to-market value.
+        // PnL is stored separately and is DIRECTION-AWARE (pnlPerLot): a SHORT profits as the notional
+        // falls, so value − cost ≠ PnL for a short, and consumers must read pnlTry, not (value − cost).
+        BigDecimal marketValue = unitPrice.multiply(contractSize).multiply(qty)
+                .setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
         return new DerivativeMetrics(qty, contractSize, unitPrice, marketValue, totalCost, pnl);
     }
 
     private DailyDelta resolveDailyDelta(Long portfolioId, DerivativePosition position,
                                           DerivativeMetrics m, LocalDateTime batchTimestamp,
                                           PortfolioAssetDailySnapshot priorOverride) {
+        // ENTRY DAY is contribution-immune: the lot opened today → no prior holding to measure a daily price move
+        // against; its whole P&L is an opening contribution, NOT a daily move (a backfill "prior" booked the full
+        // lifetime P&L as today's Günlük K/Z — "açtığımda 200"). A CLOSE-DAY row is NOT skipped: a position closed
+        // today still MOVED today (prior close → close price), and that move must count in Günlük K/Z exactly as an
+        // open position's would ("açık da bugün, kapalı da bugün → etkisi aynı"). So a hedge whose one leg is closed
+        // today still nets to ~0 — the open leg's offsetting move is summed alongside it via findLatestRowsPerAsset
+        // (the close-day skip was an obsolete workaround from before that multi-row-per-asset sum existed).
+        LocalDate snapDate = batchTimestamp.toLocalDate();
+        if (position.getEntryDate() != null && position.getEntryDate().equals(snapDate)) return DailyDelta.EMPTY;
         String code = position.getViopContract().getSymbol();
         PortfolioAssetDailySnapshot prior = priorOverride != null
                 ? priorOverride
@@ -107,7 +127,13 @@ class DerivativeSnapshotAssembler {
         return new DailyDelta(dailyPnl, dailyPercent);
     }
 
-    /** FX rate to TRY for the price currency on {@code snapDate}: historical first (30-day lookback), live rate as last resort, else 1. */
+    /**
+     * FX rate to TRY for the price currency on {@code snapDate}: historical first (30-day lookback),
+     * live rate as last resort. Returns 1 for TRY contracts (no conversion). Returns null when a
+     * non-TRY contract has neither historical nor live FX available — callers must NOT write a
+     * snapshot row in that case (the previous behaviour of falling back to 1 silently persisted
+     * native USD/EUR as TRY, a ~30x corruption on USD-denominated futures during FX outages).
+     */
     private BigDecimal contractFxRate(String currency, LocalDate snapDate) {
         if (currency == null || currency.isBlank() || "TRY".equalsIgnoreCase(currency)) {
             return BigDecimal.ONE;
@@ -119,8 +145,13 @@ class DerivativeSnapshotAssembler {
             BigDecimal historicalRate = closestPriorRate(fxSeries, snapDate);
             if (historicalRate != null && historicalRate.signum() > 0) return historicalRate;
         }
-        BigDecimal liveRate = pricingPort.getExitPriceTry(MarketType.FOREX, upper);
-        return liveRate != null && liveRate.signum() > 0 ? liveRate : BigDecimal.ONE;
+        // SELLING rate (getPriceTry), matching the live card, frozen entry cost and the historical path
+        // above, so this fallback snapshot row stays on the same FX basis as the card/chart; the
+        // exit/buying rate would drift the snapshot off the card by the bid/ask spread.
+        BigDecimal liveRate = pricingPort.getPriceTry(MarketType.FOREX, upper);
+        if (liveRate != null && liveRate.signum() > 0) return liveRate;
+        log.warn("FX rate unavailable currency={} snapDate={} — snapshot row will be skipped", currency, snapDate);
+        return null;
     }
 
     private static BigDecimal closestPriorRate(Map<LocalDate, BigDecimal> series, LocalDate target) {

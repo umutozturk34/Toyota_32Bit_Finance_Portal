@@ -45,7 +45,6 @@ public final class CountingAssetPricingPort implements AssetPricingPort {
         return metas.getOrDefault(new AssetKey(type, assetCode), new AssetMeta(null, null));
     }
 
-    @Override
     public Map<AssetKey, BigDecimal> getPricesTry(Collection<AssetKey> keys) {
         batchPricesCalls.incrementAndGet();
         Map<AssetKey, BigDecimal> result = new LinkedHashMap<>();
@@ -60,7 +59,6 @@ public final class CountingAssetPricingPort implements AssetPricingPort {
         return getPricesTry(keys);
     }
 
-    @Override
     public Map<AssetKey, PriceBundle> getBundles(Collection<AssetKey> keys) {
         batchBundlesCalls.incrementAndGet();
         Map<AssetKey, PriceBundle> result = new LinkedHashMap<>();

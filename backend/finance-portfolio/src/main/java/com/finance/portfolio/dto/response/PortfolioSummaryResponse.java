@@ -14,5 +14,7 @@ public record PortfolioSummaryResponse(
         BigDecimal realPnlTry,
         BigDecimal realPnlPercent,
         BigDecimal cpiGrowthPercent,
+        /** Closed-lot realised cash bucket (sum of exit_value − entry_value across closed positions). */
+        BigDecimal realizedCashTry,
         Map<String, CurrencyFramePct> frames
 ) {}

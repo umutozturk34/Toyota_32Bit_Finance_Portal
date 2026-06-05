@@ -167,11 +167,49 @@ public class PortfolioBackfillService {
 
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
         List<PortfolioPosition> active = BackfillBatchCollector.activePositionsOn(positions, today);
+        List<DerivativePosition> derivativesForScope = derivativePositionRepository.findByPortfolioId(portfolioId);
+
+        // Scope-aware today-delete: only wipe rows for the (assetType, assetCode) pairs this method
+        // will actually re-insert below — active spot assets plus open derivatives. The delete-then-
+        // insert invariant exists purely to stop repeated snapshotToday calls (manual UI bursts, bulk
+        // imports, or the demo seeder firing 16 events back-to-back) from appending duplicate today
+        // rows for those re-inserted assets. A blanket deleteByPortfolioIdAndSnapshotDate also wiped
+        // the close-day markers (pre-close + zero) that collectClosingSnapshot / DerivativeSnapshot-
+        // Maintenance just wrote for an asset or derivative CLOSED TODAY — rows snapshotToday never
+        // rebuilds (it only snapshots active/open holdings) — silently erasing the same-day close
+        // marker from the chart. Restricting the delete to the rebuild set keeps idempotency for
+        // active assets (still exactly one fresh row per tick) while preserving those close markers.
+        Set<RebuildKey> rebuildScope = rebuildScopeKeys(active, derivativesForScope, today);
+        deleteRebuildableTodayRows(portfolioId, today, rebuildScope);
 
         List<AssetKey> keys = active.stream().map(PortfolioPosition::toAssetKey).distinct().toList();
-        Map<AssetKey, BigDecimal> dayPrices = keys.isEmpty()
-                ? Map.of() : assetPricingPort.getExitPricesTry(keys);
+        // Two price sources exist: assetPricingPort.getPricesTry (live market_data tables:
+        // stocks.current_price, cryptos.current_price_try, forex SELLING rate, ...) and the candle
+        // history used by backfillSinceDate's nearestPriceOnOrBefore. The two diverge whenever the
+        // scraper wrote current_price at a slightly different intraday tick than the day's closing
+        // candle (typical: ~1bps for crypto), producing a small but visible jump between yesterday's
+        // backfill row and today's row. Reading from candles first matches the backfill source and
+        // keeps the line flat; live is the fallback when no candle exists yet today. Use getPricesTry
+        // (the OPEN-position mark, forex SELLING) — NOT getExitPricesTry (forex BUYING, only for a
+        // realised close). Marking today at the BUYING rate switched the FX field SELLING→BUYING with
+        // no new market data, dropping today's value by the bid/ask spread vs the candle-priced prior
+        // day (a phantom daily decline, and today disagreeing with the cards/positions which use SELLING).
+        Map<AssetKey, Map<LocalDate, BigDecimal>> seriesByKey = active.isEmpty()
+                ? Map.of() : collector.loadHistoricalSeries(active, today, today);
+        Map<AssetKey, BigDecimal> dayPrices = active.isEmpty()
+                ? Map.of() : collector.pricesForDay(active, today, seriesByKey);
+        Map<AssetKey, BigDecimal> livePrices = keys.isEmpty()
+                ? Map.of() : assetPricingPort.getPricesTry(keys);
         LocalDateTime ts = LocalDateTime.now();
+
+        // Skip today's snapshot ENTIRELY when no active spot asset has a fresh candle/live price, BEFORE
+        // writing any per-asset row. Otherwise the per-asset loop persists rows from the stale last-known
+        // fallback while the aggregate (written below) is skipped, leaving the asset chart showing a stale
+        // "today" the Tümü chart lacks. Derivative-only portfolios (active empty) are unaffected.
+        if (!active.isEmpty() && dayPrices.isEmpty() && livePrices.isEmpty()) {
+            log.info("Skipping snapshotToday for portfolio {} — no candle or live prices available, will retry on next market update", portfolioId);
+            return;
+        }
 
         if (!active.isEmpty()) {
             Map<AssetKey, List<PortfolioPosition>> byAsset = BackfillBatchCollector.groupByAsset(active);
@@ -179,6 +217,7 @@ public class PortfolioBackfillService {
             List<PortfolioAssetDailySnapshot> batch = new ArrayList<>();
             for (Map.Entry<AssetKey, List<PortfolioPosition>> entry : byAsset.entrySet()) {
                 BigDecimal price = dayPrices.get(entry.getKey());
+                if (price == null) price = livePrices.get(entry.getKey());
                 if (price == null) price = fallbackPrices.get(entry.getKey());
                 if (price == null) continue;
                 PortfolioPosition first = entry.getValue().get(0);
@@ -194,15 +233,10 @@ public class PortfolioBackfillService {
         List<PortfolioPosition> openedByToday = positions.stream()
                 .filter(p -> p.getEntryDate() != null && !p.getEntryDate().toLocalDate().isAfter(today))
                 .toList();
-        List<DerivativePosition> derivatives = derivativePositionRepository.findByPortfolioId(portfolioId);
-        List<DerivativePosition> derivativesOpenedByToday = derivatives.stream()
+        List<DerivativePosition> derivativesOpenedByToday = derivativesForScope.stream()
                 .filter(d -> d.getEntryDate() != null && !d.getEntryDate().isAfter(today))
                 .toList();
         if (openedByToday.isEmpty() && derivativesOpenedByToday.isEmpty()) return;
-        if (!active.isEmpty() && dayPrices.isEmpty()) {
-            log.info("Skipping snapshotToday for portfolio {} — live prices unavailable, will retry on next market update", portfolioId);
-            return;
-        }
         List<PortfolioAssetDailySnapshot> derivativeRows = new ArrayList<>();
         for (DerivativePosition dpos : derivativesOpenedByToday) {
             if (dpos.getCloseDate() != null) continue;
@@ -216,6 +250,48 @@ public class PortfolioBackfillService {
                 .findByPortfolioIdAndSnapshotDate(portfolio.getId(), today);
         dailySnapshotRepository.saveAll(List.of(
                 calculator.buildAggregateSnapshotAtFromRows(portfolio, ts, openedByToday, derivativesOpenedByToday, dayPrices, todayRows)));
+    }
+
+    /** Identifies a per-asset snapshot row by its (assetType, assetCode) — the grain snapshotToday re-inserts. */
+    private record RebuildKey(AssetType assetType, String assetCode) {
+    }
+
+    /**
+     * The (assetType, assetCode) pairs {@link #snapshotToday} will actually re-insert today: every
+     * active spot lot plus every derivative that is open today (entered on/before today, not closed).
+     * Anything closed today (a sold spot lot, an expired/closed derivative) is excluded so its
+     * close-day markers are never deleted by {@link #deleteRebuildableTodayRows}.
+     */
+    private Set<RebuildKey> rebuildScopeKeys(List<PortfolioPosition> active,
+                                             List<DerivativePosition> derivatives, LocalDate today) {
+        Set<RebuildKey> scope = new java.util.HashSet<>();
+        for (PortfolioPosition pos : active) {
+            scope.add(new RebuildKey(pos.getAssetType(), pos.getAssetCode()));
+        }
+        for (DerivativePosition dpos : derivatives) {
+            if (dpos.getCloseDate() != null) continue;
+            if (dpos.getEntryDate() == null || dpos.getEntryDate().isAfter(today)) continue;
+            if (dpos.getViopContract() == null) continue;
+            scope.add(new RebuildKey(AssetType.VIOP, dpos.getViopContract().getSymbol()));
+        }
+        return scope;
+    }
+
+    /**
+     * Deletes only today's per-asset rows whose (assetType, assetCode) is in {@code rebuildScope},
+     * preserving close-day markers for assets/derivatives closed today (which snapshotToday will not
+     * recreate). Keeps the delete-then-insert idempotency for the rows that ARE re-inserted.
+     */
+    private void deleteRebuildableTodayRows(Long portfolioId, LocalDate today, Set<RebuildKey> rebuildScope) {
+        if (rebuildScope.isEmpty()) return;
+        List<PortfolioAssetDailySnapshot> existing = assetSnapshotRepository
+                .findByPortfolioIdAndSnapshotDate(portfolioId, today);
+        List<Long> toDelete = existing.stream()
+                .filter(row -> rebuildScope.contains(new RebuildKey(row.getAssetType(), row.getAssetCode())))
+                .map(PortfolioAssetDailySnapshot::getId)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+        if (!toDelete.isEmpty()) assetSnapshotRepository.deleteAllByIdInBatch(toDelete);
     }
 
     /**
@@ -251,19 +327,6 @@ public class PortfolioBackfillService {
     }
 
     /**
-     * Backfills a portfolio's entire history in a fresh, per-portfolio serialized transaction. Used to
-     * seed snapshots for portfolios that entered the database outside the app's lot-change flow — e.g.
-     * the clone-and-run demo seed — which therefore never fired a {@link LotChangedEvent}. The open
-     * transaction also keeps lazy associations loadable when invoked off the request thread.
-     */
-    public void backfillEntirePortfolio(Long portfolioId, LocalDate from) {
-        if (from == null) return;
-        synchronized (lockFor(portfolioId)) {
-            transactionTemplate.executeWithoutResult(status -> backfillSinceDate(portfolioId, from));
-        }
-    }
-
-    /**
      * Rebuilds per-asset snapshots for a single spot asset from {@code from} through today, including
      * a closing (zero) row on the lot's exit day. Aborts (without deleting existing rows) if upstream
      * historical pricing is entirely unavailable for a range that should have history.
@@ -289,7 +352,13 @@ public class PortfolioBackfillService {
         Map<AssetKey, Map<LocalDate, BigDecimal>> seriesByKey = collector.loadHistoricalSeries(scopedLots, from, end);
         boolean allSeriesEmpty = seriesByKey.values().stream().allMatch(s -> s == null || s.isEmpty());
         boolean expectsHistory = !from.equals(end.plusDays(1)) && !from.equals(today);
-        if (allSeriesEmpty && expectsHistory) {
+        // A lot closed on/after `from` emits a zero closing marker (collectClosingSnapshot) that needs NO
+        // candle history. Without this guard, selling a no-history asset (e.g. a customized commodity) makes
+        // the whole rebuild abort and roll back, so the stale full-value rows survive and the held-value
+        // chart never drops at the sell point. When a closure is in range, proceed so the marker is written.
+        boolean hasClosure = scopedLots.stream().anyMatch(p ->
+                p.isClosed() && p.getExitDate() != null && !p.getExitDate().toLocalDate().isBefore(from));
+        if (allSeriesEmpty && expectsHistory && !hasClosure) {
             throw new com.finance.common.exception.BusinessException("error.portfolio.backfill.upstreamUnavailable",
                     "Historical pricing unavailable for " + assetType + ":" + assetCode + " — aborting to preserve existing snapshots");
         }

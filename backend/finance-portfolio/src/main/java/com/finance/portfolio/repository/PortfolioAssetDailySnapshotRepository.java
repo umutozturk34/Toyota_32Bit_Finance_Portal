@@ -21,8 +21,6 @@ import java.util.Optional;
 @Repository
 public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<PortfolioAssetDailySnapshot, Long> {
 
-    boolean existsByPortfolioIdAndSnapshotDate(Long portfolioId, LocalDate snapshotDate);
-
     Optional<PortfolioAssetDailySnapshot> findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
             Long portfolioId, Long trackedAssetId, LocalDateTime cutoff);
 
@@ -48,9 +46,6 @@ public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<Por
             @Param("trackedIds") Collection<Long> trackedIds,
             @Param("cutoff") LocalDateTime cutoff);
 
-    Optional<PortfolioAssetDailySnapshot> findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtGreaterThanOrderByCreatedAtAsc(
-            Long portfolioId, Long trackedAssetId, LocalDateTime cutoff);
-
     /** The single most recent row per (asset type, asset code) for the portfolio — its current per-asset state. */
     @Query("""
             SELECT s FROM PortfolioAssetDailySnapshot s
@@ -62,6 +57,20 @@ public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<Por
               )
             """)
     List<PortfolioAssetDailySnapshot> findLatestPerAsset(@Param("pid") Long portfolioId);
+
+    /** EVERY row at the latest createdAt per (asset type, asset code) — not just one. A same-symbol multi-lot
+     *  position (e.g. a LONG+SHORT VİOP hedge) writes one row per lot at the same instant; the daily aggregation
+     *  must SUM them so the day's net move is correct (the single-row {@link #findLatestPerAsset} returns only one
+     *  lot, making a balanced hedge's Günlük K/Z read one leg's move instead of the netted ~0). */
+    @Query("""
+            SELECT s FROM PortfolioAssetDailySnapshot s
+            WHERE s.portfolioId = :pid
+              AND s.createdAt = (
+                  SELECT MAX(t.createdAt) FROM PortfolioAssetDailySnapshot t
+                  WHERE t.portfolioId = :pid AND t.assetType = s.assetType AND t.assetCode = s.assetCode
+              )
+            """)
+    List<PortfolioAssetDailySnapshot> findLatestRowsPerAsset(@Param("pid") Long portfolioId);
 
     @Query("SELECT DISTINCT s.snapshotDate FROM PortfolioAssetDailySnapshot s WHERE s.portfolioId = :pid AND s.snapshotDate BETWEEN :from AND :to")
     List<LocalDate> findExistingDates(@Param("pid") Long portfolioId,
@@ -88,11 +97,6 @@ public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<Por
     void deleteByPortfolioIdAndAssetTypeAndSnapshotDate(Long portfolioId, AssetType assetType, LocalDate snapshotDate);
 
     void deleteByPortfolioIdAndAssetTypeAndAssetCode(Long portfolioId, AssetType assetType, String assetCode);
-
-    void deleteByPortfolioIdAndSnapshotDateGreaterThanEqual(Long portfolioId, LocalDate from);
-
-    void deleteByPortfolioIdAndAssetTypeAndAssetCodeAndSnapshotDateGreaterThanEqual(
-            Long portfolioId, AssetType assetType, String assetCode, LocalDate from);
 
     void deleteByPortfolioIdAndAssetTypeAndAssetCodeAndSnapshotDateBetween(
             Long portfolioId, AssetType assetType, String assetCode, LocalDate from, LocalDate to);

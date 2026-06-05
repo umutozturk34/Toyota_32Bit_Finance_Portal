@@ -160,9 +160,10 @@ public class PortfolioController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
             @PathVariable String assetType,
-            @PathVariable String assetCode) {
+            @PathVariable String assetCode,
+            @RequestParam(required = false) String direction) {
         return ApiResponse.success(translator.translate("api.portfolio.assetAggregateRetrieved"),
-                portfolioFacade.getAssetAggregate(jwt.getSubject(), portfolioId, assetType, assetCode));
+                portfolioFacade.getAssetAggregate(jwt.getSubject(), portfolioId, assetType, assetCode, direction));
     }
 
     @GetMapping("/{portfolioId}/positions")
@@ -173,12 +174,23 @@ public class PortfolioController {
             @RequestParam(required = false) String assetType,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String direction,
+            @RequestParam(required = false) Boolean closed,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(required = false) Integer size) {
         int resolvedSize = resolvePageSize(size, appProperties.getPagination().getPortfolio().getPositionsDefaultSize());
         return ApiResponse.success(translator.translate("api.portfolio.positionsRetrieved"),
                 portfolioFacade.getPositionsPaged(jwt.getSubject(), portfolioId,
-                        search, assetType, sort, direction, page, resolvedSize));
+                        search, assetType, sort, direction, closed, page, resolvedSize));
+    }
+
+    @GetMapping("/{portfolioId}/positions/by-asset")
+    public ApiResponse<List<PositionResponse>> getPositionsByAsset(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long portfolioId,
+            @RequestParam String assetType,
+            @RequestParam String assetCode) {
+        return ApiResponse.success(translator.translate("api.portfolio.positionsRetrieved"),
+                portfolioFacade.getPositionsByAsset(jwt.getSubject(), portfolioId, assetType, assetCode));
     }
 
     @GetMapping("/{portfolioId}/summary")
@@ -220,9 +232,10 @@ public class PortfolioController {
             @RequestParam String type,
             @RequestParam(defaultValue = DEFAULT_CHART_RANGE) String range,
             @RequestParam(required = false) String assetType,
-            @RequestParam(required = false) String assetCode) {
+            @RequestParam(required = false) String assetCode,
+            @RequestParam(required = false) String direction) {
         return ApiResponse.success(translator.translate("api.portfolio.chartRetrieved"),
-                portfolioFacade.getChart(jwt.getSubject(), portfolioId, type, range, assetType, assetCode));
+                portfolioFacade.getChart(jwt.getSubject(), portfolioId, type, range, assetType, assetCode, direction));
     }
 
     private int resolvePageSize(Integer size, int defaultSize) {

@@ -54,7 +54,7 @@ class SnapshotCalculationServiceTest {
     void shouldCalculatePnlFromCurrentVsEntryPrice_whenBuildingAssetSnapshot() {
         PortfolioPosition pos = stubPosition(AssetType.CRYPTO, "bitcoin",
                 new BigDecimal("0.50000000"), new BigDecimal("2500000.0000"));
-        when(pricingPort.getExitPriceTry(MarketType.CRYPTO, "bitcoin"))
+        when(pricingPort.getPriceTry(MarketType.CRYPTO, "bitcoin"))
                 .thenReturn(new BigDecimal("2600000.0000"));
         LocalDateTime timestamp = LocalDateTime.of(2026, 4, 10, 23, 0);
 
@@ -73,7 +73,7 @@ class SnapshotCalculationServiceTest {
     void shouldShowFullLossInAssetSnapshot_whenPriceIsNull() {
         PortfolioPosition pos = stubPosition(AssetType.STOCK, "DELISTED",
                 new BigDecimal("100.00000000"), new BigDecimal("50.0000"));
-        when(pricingPort.getExitPriceTry(MarketType.STOCK, "DELISTED")).thenReturn(null);
+        when(pricingPort.getPriceTry(MarketType.STOCK, "DELISTED")).thenReturn(null);
 
         PortfolioAssetDailySnapshot snapshot = service
                 .buildAssetSnapshotsForPositions(1L, List.of(pos), LocalDateTime.now()).get(0);
@@ -89,7 +89,7 @@ class SnapshotCalculationServiceTest {
                 new BigDecimal("100"), new BigDecimal("3.00"));
         PortfolioPosition lotB = stubPosition(AssetType.FUND, "BND",
                 new BigDecimal("50"), new BigDecimal("3.10"));
-        when(pricingPort.getExitPriceTry(MarketType.FUND, "BND")).thenReturn(new BigDecimal("3.20"));
+        when(pricingPort.getPriceTry(MarketType.FUND, "BND")).thenReturn(new BigDecimal("3.20"));
 
         List<PortfolioAssetDailySnapshot> snapshots = service
                 .buildAssetSnapshotsForPositions(1L, List.of(lotA, lotB), LocalDateTime.now());
@@ -109,9 +109,9 @@ class SnapshotCalculationServiceTest {
                 .thenReturn(List.of(
                         stubPosition(AssetType.CRYPTO, "bitcoin", new BigDecimal("1.00000000"), new BigDecimal("2400000.0000")),
                         stubPosition(AssetType.STOCK, "THYAO.IS", new BigDecimal("100.00000000"), new BigDecimal("40.0000"))));
-        when(pricingPort.getExitPriceTry(MarketType.CRYPTO, "bitcoin"))
+        when(pricingPort.getPriceTry(MarketType.CRYPTO, "bitcoin"))
                 .thenReturn(new BigDecimal("2500000.0000"));
-        when(pricingPort.getExitPriceTry(MarketType.STOCK, "THYAO.IS"))
+        when(pricingPort.getPriceTry(MarketType.STOCK, "THYAO.IS"))
                 .thenReturn(new BigDecimal("50.0000"));
 
         PortfolioDailySnapshot snapshot = service.buildAggregateSnapshot(portfolio, LocalDateTime.now());
@@ -127,7 +127,7 @@ class SnapshotCalculationServiceTest {
         when(positionRepository.findByPortfolioId(1L))
                 .thenReturn(List.of(stubPosition(AssetType.FUND, "AAK",
                         new BigDecimal("100.00000000"), new BigDecimal("100.0000"))));
-        when(pricingPort.getExitPriceTry(MarketType.FUND, "AAK"))
+        when(pricingPort.getPriceTry(MarketType.FUND, "AAK"))
                 .thenReturn(new BigDecimal("110.0000"));
 
         PortfolioDailySnapshot snapshot = service.buildAggregateSnapshot(portfolio, LocalDateTime.now());
@@ -169,6 +169,67 @@ class SnapshotCalculationServiceTest {
         assertThat(snapshot.getPnlPercent()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(snapshot.getTotalValueTry()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(snapshot.getTotalCostTry()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    void buildAssetSnapshots_booksCloseDayMoveAndExitEquity_whenSpotFullySoldToday() {
+        com.finance.common.model.TrackedAsset tracked = com.finance.common.model.TrackedAsset.builder()
+                .id(7L).assetType(com.finance.common.model.TrackedAssetType.STOCK).assetCode("THYAO.IS").build();
+        PortfolioPosition sold = PortfolioPosition.builder()
+                .assetType(AssetType.STOCK).assetCode("THYAO.IS").trackedAsset(tracked)
+                .quantity(new BigDecimal("100")).entryPrice(new BigDecimal("40.0000"))
+                .entryDate(LocalDateTime.of(2026, 4, 1, 0, 0)).build();
+        sold.closeWith(LocalDateTime.of(2026, 6, 5, 10, 0), new BigDecimal("42.7500"));
+        PortfolioAssetDailySnapshot prior = PortfolioAssetDailySnapshot.builder()
+                .quantity(new BigDecimal("100")).unitPriceTry(new BigDecimal("40.0000")).build();
+        when(assetSnapshotRepository
+                .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
+                        org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.eq(7L),
+                        org.mockito.ArgumentMatchers.any()))
+                .thenReturn(java.util.Optional.of(prior));
+
+        PortfolioAssetDailySnapshot row = service.buildAssetSnapshotsForPositions(
+                1L, List.of(sold), LocalDateTime.of(2026, 6, 5, 18, 0)).get(0);
+
+        // Sold in full today: close-day move = 100 × (42.75 − 40) = 275 is booked as the day's K/Z (it was 0
+        // before — a closed lot received no per-asset row); value = realized exit (100 × 42.75 = 4275).
+        assertThat(row.getDailyPnlTry()).isEqualByComparingTo("275.0000");
+        assertThat(row.getMarketValueTry()).isEqualByComparingTo("4275.0000");
+    }
+
+    @Test
+    void buildAssetSnapshots_addsSoldPortionMoveToDaily_butKeepsValueOpenOnly_whenSpotPartiallySoldToday() {
+        com.finance.common.model.TrackedAsset tracked = com.finance.common.model.TrackedAsset.builder()
+                .id(7L).assetType(com.finance.common.model.TrackedAssetType.STOCK).assetCode("THYAO.IS").build();
+        PortfolioPosition openHalf = PortfolioPosition.builder()
+                .assetType(AssetType.STOCK).assetCode("THYAO.IS").trackedAsset(tracked)
+                .quantity(new BigDecimal("50")).entryPrice(new BigDecimal("40.0000"))
+                .entryDate(LocalDateTime.of(2026, 4, 1, 0, 0)).build();
+        PortfolioPosition soldHalf = PortfolioPosition.builder()
+                .assetType(AssetType.STOCK).assetCode("THYAO.IS").trackedAsset(tracked)
+                .quantity(new BigDecimal("50")).entryPrice(new BigDecimal("40.0000"))
+                .entryDate(LocalDateTime.of(2026, 4, 1, 0, 0)).build();
+        soldHalf.closeWith(LocalDateTime.of(2026, 6, 5, 10, 0), new BigDecimal("42.7500"));
+        PortfolioAssetDailySnapshot prior = PortfolioAssetDailySnapshot.builder()
+                .quantity(new BigDecimal("100")).unitPriceTry(new BigDecimal("40.0000")).build();
+        when(assetSnapshotRepository
+                .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
+                        org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.eq(7L),
+                        org.mockito.ArgumentMatchers.any()))
+                .thenReturn(java.util.Optional.of(prior));
+        when(pricingPort.getPriceTry(MarketType.STOCK, "THYAO.IS")).thenReturn(new BigDecimal("42.7500"));
+
+        List<PortfolioAssetDailySnapshot> rows = service.buildAssetSnapshotsForPositions(
+                1L, List.of(openHalf, soldHalf), LocalDateTime.of(2026, 6, 5, 18, 0));
+
+        assertThat(rows).hasSize(1);
+        PortfolioAssetDailySnapshot row = rows.get(0);
+        // Daily = held-half move (50 × 2.75 = 137.5) + sold-half close-day move (50 × 2.75 = 137.5) = 275, the
+        // full position's day move; the headline card and the detail series both read THIS row, so they agree.
+        assertThat(row.getDailyPnlTry()).isEqualByComparingTo("275.0000");
+        // Value stays open-only (50 × 42.75 = 2137.5): the sold half's realized exit is folded by the aggregate,
+        // so counting it on this row too would double the value.
+        assertThat(row.getMarketValueTry()).isEqualByComparingTo("2137.5000");
     }
 
     private PortfolioPosition stubPosition(AssetType type, String code, BigDecimal qty, BigDecimal entryPrice) {
@@ -244,6 +305,71 @@ class SnapshotCalculationServiceTest {
     }
 
     @Test
+    void aggregateValue_staysWhole_whenViopPartiallySoldToday_withOpenRowPlusQtyZeroCloseRow() {
+        // REAL partial-close shape on the sell day: snapshotDerivativePositions writes an OPEN remainder row
+        // (countable, qty 0.5) AND a value-less qty=0 close-day row. The aggregate MUST be open equity + closed
+        // proceeds = the WHOLE position (110), NOT doubled (165) — this pins the "Tümü TRY doubles on sell day".
+        com.finance.market.viop.model.ViopContract c = derivativeContract(
+                "F_XAUUSD0826", BigDecimal.ONE, new BigDecimal("110"));
+        com.finance.portfolio.derivative.model.DerivativePosition openRemainder = derivativePosition(
+                c, new BigDecimal("100"), new BigDecimal("0.5"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
+        com.finance.portfolio.derivative.model.DerivativePosition closedSlice = derivativePosition(
+                c, new BigDecimal("100"), new BigDecimal("0.5"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
+        closedSlice.closeWith(java.time.LocalDate.of(2026, 6, 2), new BigDecimal("110"),
+                com.finance.portfolio.derivative.model.DerivativeCloseReason.USER_CLOSED);
+        Portfolio portfolio = Portfolio.builder().id(1L).build();
+        PortfolioAssetDailySnapshot openRow = PortfolioAssetDailySnapshot.builder()
+                .portfolioId(1L).assetType(AssetType.VIOP).assetCode("F_XAUUSD0826")
+                .snapshotDate(java.time.LocalDate.of(2026, 6, 2)).createdAt(LocalDateTime.of(2026, 6, 2, 18, 0))
+                .quantity(new BigDecimal("0.5")).unitPriceTry(new BigDecimal("110"))
+                .marketValueTry(new BigDecimal("55")).totalCostTry(new BigDecimal("50"))
+                .pnlTry(new BigDecimal("5")).build();
+        PortfolioAssetDailySnapshot zeroRow = PortfolioAssetDailySnapshot.builder()
+                .portfolioId(1L).assetType(AssetType.VIOP).assetCode("F_XAUUSD0826")
+                .snapshotDate(java.time.LocalDate.of(2026, 6, 2)).createdAt(LocalDateTime.of(2026, 6, 2, 18, 0))
+                .quantity(BigDecimal.ZERO).unitPriceTry(new BigDecimal("110"))
+                .marketValueTry(BigDecimal.ZERO).totalCostTry(BigDecimal.ZERO).pnlTry(BigDecimal.ZERO).build();
+
+        PortfolioDailySnapshot snap = service.buildAggregateSnapshotAtFromRows(
+                portfolio, LocalDateTime.of(2026, 6, 2, 18, 0),
+                java.util.List.of(), java.util.List.of(openRemainder, closedSlice),
+                java.util.Map.of(), java.util.List.of(openRow, zeroRow));
+
+        assertThat(snap.getTotalValueTry()).isEqualByComparingTo(new BigDecimal("110"));
+    }
+
+    @Test
+    void buildClosedViopDailyRow_carriesCloseDayMove_butZerosValueFields() {
+        com.finance.market.viop.model.ViopContract c = derivativeContract(
+                "F_USDTRY0626", new BigDecimal("1000"), new BigDecimal("36.00"));
+        com.finance.portfolio.derivative.model.DerivativePosition pos = derivativePosition(
+                c, new BigDecimal("35.20"), new BigDecimal("1"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
+        pos.closeWith(java.time.LocalDate.of(2026, 6, 5), new BigDecimal("36.00"),
+                com.finance.portfolio.derivative.model.DerivativeCloseReason.USER_CLOSED);
+        PortfolioAssetDailySnapshot prior = PortfolioAssetDailySnapshot.builder()
+                .unitPriceTry(new BigDecimal("35.50")).marketValueTry(new BigDecimal("35500")).build();
+        when(assetSnapshotRepository
+                .findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanOrderByCreatedAtDesc(
+                        org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(AssetType.VIOP),
+                        org.mockito.ArgumentMatchers.eq("F_USDTRY0626"), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(java.util.Optional.of(prior));
+
+        PortfolioAssetDailySnapshot row = service.buildClosedViopDailyRow(
+                1L, pos, LocalDateTime.of(2026, 6, 5, 18, 0));
+
+        // Close-day move = (36.00 − 35.50) × 1000 × 1 = 500 (LONG) booked in dailyPnlTry so the Günlük K/Z card
+        // sees today's move; value fields zeroed → isCountableViopRow=false, so the row never enters the value
+        // path and the proceeds are counted once via addClosedEquity (no double-count).
+        assertThat(row.getDailyPnlTry()).isEqualByComparingTo("500.0000");
+        assertThat(row.getQuantity()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(row.getMarketValueTry()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(row.getPnlTry()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
     void should_invertPnl_whenShortPositionPriceGoesUp() {
         com.finance.market.viop.model.ViopContract c = derivativeContract(
                 "F_USDTRY0626", new BigDecimal("1000"), new BigDecimal("35.50"));
@@ -269,24 +395,29 @@ class SnapshotCalculationServiceTest {
                 c, new BigDecimal("100"), new BigDecimal("1"),
                 com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
         Portfolio portfolio = Portfolio.builder().id(1L).build();
-        PortfolioAssetDailySnapshot bothRow = PortfolioAssetDailySnapshot.builder()
+        // On a partial close, snapshotToday writes ONLY the OPEN remainder's row (the closed slice gets no today
+        // row), so the symbol's rowMv is the open-lot notional (110), not both lots (220). The closed-on-snapDate
+        // slice must fold its proceeds via addClosedEquity and drop out of the open-lot aggregate; otherwise the
+        // open lot's equity allocation is halved (totalLots doubled) AND the proceeds are dropped — the 202k→101k
+        // "Tümü" halving. Correct total = 110 open + 110 closed proceeds = 220 (under the old logic this read 110).
+        PortfolioAssetDailySnapshot openLotRow = PortfolioAssetDailySnapshot.builder()
                 .portfolioId(1L).assetType(AssetType.VIOP).assetCode("F_TEST0626")
                 .snapshotDate(java.time.LocalDate.of(2026, 5, 1))
                 .createdAt(LocalDateTime.of(2026, 5, 1, 0, 0))
-                .quantity(new BigDecimal("2")).unitPriceTry(new BigDecimal("110"))
-                .marketValueTry(new BigDecimal("220")).totalCostTry(new BigDecimal("200"))
-                .pnlTry(new BigDecimal("20")).build();
+                .quantity(new BigDecimal("1")).unitPriceTry(new BigDecimal("110"))
+                .marketValueTry(new BigDecimal("110")).totalCostTry(new BigDecimal("100"))
+                .pnlTry(new BigDecimal("10")).build();
 
         PortfolioDailySnapshot snapshot = service.buildAggregateSnapshotAtFromRows(
                 portfolio, LocalDateTime.of(2026, 5, 1, 18, 0),
                 java.util.List.of(), java.util.List.of(lot1, lot2),
-                java.util.Map.of(), java.util.List.of(bothRow));
+                java.util.Map.of(), java.util.List.of(openLotRow));
 
         assertThat(snapshot.getTotalValueTry()).isEqualByComparingTo(new BigDecimal("220"));
     }
 
     @Test
-    void aggregate_includesClosedViopExitValue_whenLotPartiallyClosed() {
+    void aggregate_includesClosedViopExitValueInTotal_whenLotPartiallyClosed() {
         com.finance.market.viop.model.ViopContract c = derivativeContract(
                 "F_TEST0626", new BigDecimal("1"), new BigDecimal("110"));
         com.finance.portfolio.derivative.model.DerivativePosition lot1 = derivativePosition(
@@ -311,11 +442,15 @@ class SnapshotCalculationServiceTest {
                 java.util.List.of(), java.util.List.of(lot1, lot2),
                 java.util.Map.of(), java.util.List.of(lot2Row));
 
+        // totalValue = open lot MV (110) + closed lot's exit value (110) = 220. Keeps the
+        // unfiltered "Tümü" chart continuous on close day — the realized cash stays in totalValue
+        // as a cash bucket, and cashTry mirrors the realised PnL portion (10) for the dedicated card.
         assertThat(snapshot.getTotalValueTry()).isEqualByComparingTo(new BigDecimal("220"));
+        assertThat(snapshot.getCashTry()).isEqualByComparingTo(new BigDecimal("10"));
     }
 
     @Test
-    void aggregate_keepsContinuousTotalOnCloseDay_whenPeerlessViopClose() {
+    void aggregate_keepsExitValueInTotal_onPeerlessViopClose() {
         com.finance.market.viop.model.ViopContract c = derivativeContract(
                 "O_EREGLE0526C35.00", new BigDecimal("1"), new BigDecimal("1.14"));
         com.finance.portfolio.derivative.model.DerivativePosition pos = derivativePosition(
@@ -337,6 +472,8 @@ class SnapshotCalculationServiceTest {
                 java.util.List.of(), java.util.List.of(pos),
                 java.util.Map.of(), java.util.List.of(zeroRow));
 
+        // No open positions left but the exit value (1.14) remains in totalValue as a cash bucket
+        // so the unfiltered chart line stays continuous. cashTry carries the realised loss (-1.05).
         assertThat(snapshot.getTotalValueTry()).isEqualByComparingTo(new BigDecimal("1.14"));
         assertThat(snapshot.getCashTry()).isEqualByComparingTo(new BigDecimal("-1.05"));
     }
@@ -375,7 +512,7 @@ class SnapshotCalculationServiceTest {
         com.finance.portfolio.derivative.model.DerivativePosition pos = derivativePosition(
                 c, new BigDecimal("100.00"), new BigDecimal("1"),
                 com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
-        when(pricingPort.getExitPriceTry(MarketType.FOREX, "USD")).thenReturn(new BigDecimal("30.00"));
+        when(pricingPort.getPriceTry(MarketType.FOREX, "USD")).thenReturn(new BigDecimal("30.00"));
 
         PortfolioAssetDailySnapshot snap = service.buildDerivativeAssetSnapshot(1L, pos,
                 LocalDateTime.now());
@@ -384,19 +521,21 @@ class SnapshotCalculationServiceTest {
     }
 
     @Test
-    void should_fallBackToOneFxRate_whenPricingPortReturnsNonPositive() {
+    void should_returnNullSnapshot_whenForeignContractAndPricingPortReturnsNonPositive() {
         com.finance.market.viop.model.ViopContract c = derivativeContract(
                 "F_USD", new BigDecimal("1"), new BigDecimal("100.00"));
         c.setCurrency("USD");
         com.finance.portfolio.derivative.model.DerivativePosition pos = derivativePosition(
                 c, new BigDecimal("100.00"), new BigDecimal("1"),
                 com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
-        when(pricingPort.getExitPriceTry(MarketType.FOREX, "USD")).thenReturn(BigDecimal.ZERO);
+        when(pricingPort.getPriceTry(MarketType.FOREX, "USD")).thenReturn(BigDecimal.ZERO);
 
         PortfolioAssetDailySnapshot snap = service.buildDerivativeAssetSnapshot(1L, pos,
                 LocalDateTime.now());
 
-        assertThat(snap.getUnitPriceTry()).isEqualByComparingTo("100.0000");
+        // No FX → null snapshot (caller skips). Previous "fallback to 1" persisted native USD
+        // as TRY, a ~30x value error on USD-denominated derivatives during scraper outages.
+        assertThat(snap).isNull();
     }
 
     @Test
@@ -531,7 +670,7 @@ class SnapshotCalculationServiceTest {
         PortfolioPosition pos = stubPosition(AssetType.STOCK, "THYAO.IS",
                 new BigDecimal("100"), new BigDecimal("40.0000"));
         when(positionRepository.findByPortfolioId(1L)).thenReturn(List.of(pos));
-        when(pricingPort.getExitPriceTry(MarketType.STOCK, "THYAO.IS"))
+        when(pricingPort.getPriceTry(MarketType.STOCK, "THYAO.IS"))
                 .thenReturn(new BigDecimal("50.0000"));
 
         PortfolioAssetDailySnapshot held = PortfolioAssetDailySnapshot.builder()
@@ -555,7 +694,7 @@ class SnapshotCalculationServiceTest {
         PortfolioPosition pos = stubPosition(AssetType.STOCK, "THYAO.IS",
                 new BigDecimal("100"), new BigDecimal("40.0000"));
         when(positionRepository.findByPortfolioId(1L)).thenReturn(List.of(pos));
-        when(pricingPort.getExitPriceTry(MarketType.STOCK, "THYAO.IS"))
+        when(pricingPort.getPriceTry(MarketType.STOCK, "THYAO.IS"))
                 .thenReturn(new BigDecimal("50.0000"));
 
         PortfolioAssetDailySnapshot foreign = PortfolioAssetDailySnapshot.builder()

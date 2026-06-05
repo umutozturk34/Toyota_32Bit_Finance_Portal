@@ -12,7 +12,11 @@ import java.time.LocalDateTime;
 /**
  * Mutable accumulator that sums a portfolio's open market value, closed exit/realized value and cost
  * basis across positions for one day, then folds them into a {@link PortfolioDailySnapshot}. Total
- * value is open market value plus closed exit value; realized proceeds are surfaced as {@code cashTry}.
+ * value contains <em>only open-position market value</em>; closed-lot exit value lives separately as
+ * {@code cashTry} (cumulativeRealized). PnL still spans the full lifecycle —
+ * {@code (open MV + realized cash) − total cost} — so the headline PnL captures both unrealised and
+ * realised gains while the asset-type chart can drop a closed lot to 0 on exit day without distorting
+ * the total.
  */
 final class SnapshotTotals {
 
@@ -36,7 +40,12 @@ final class SnapshotTotals {
         BigDecimal realized = cumulativeRealized.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
         BigDecimal closed = closedExitValue.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
         BigDecimal entry = totalEntryValue.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
-        BigDecimal totalValue = mv.add(closed).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        // Total value = open MV + closed-lot exit value (cash bucket). This drives the unfiltered
+        // "Tümü" chart, which must NOT dip on a close day (selling TUPRS converts MV into cash
+        // of equal value, not a loss). Asset-type charts (Hisse/Kripto/…) avoid the cash bucket
+        // by reading per-asset snapshot rows directly via PortfolioPerformanceService.getAssetTypePerformance —
+        // closed lots there carry-forward as zero and drop the asset's contribution to that filter's chart.
+        BigDecimal totalValue = mv.add(closed);
         PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalValue, entry, MoneyScale.PRICE);
         BigDecimal pnl = pct.amount() != null ? pct.amount() : BigDecimal.ZERO;
         BigDecimal pnlPct = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;

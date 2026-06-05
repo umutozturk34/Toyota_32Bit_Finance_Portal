@@ -23,6 +23,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -106,6 +107,35 @@ class DerivativeSnapshotAssemblerTest {
     }
 
     @Test
+    void shouldComputeCloseDayDailyMove_whenPositionClosedToday() {
+        // A leg closed TODAY still moved today (prior close -> close price); that move must count in Günlük K/Z
+        // exactly as an open position's would, so a hedge's closed-today leg nets with its still-open peer.
+        // (The obsolete close-day EMPTY skip dropped this move, leaving the open leg's move un-netted.)
+        ViopContract c = contract("XU030F", "10", "TRY");
+        DerivativePosition closedToday = DerivativePosition.builder()
+                .viopContract(c).direction(DerivativeDirection.LONG)
+                .entryDate(LocalDate.of(2024, 1, 1))
+                .entryPrice(new BigDecimal("100")).quantityLot(new BigDecimal("2"))
+                .closeDate(BATCH_TS.toLocalDate())
+                .closePrice(new BigDecimal("120"))
+                .build();
+        PortfolioAssetDailySnapshot prior = PortfolioAssetDailySnapshot.builder()
+                .unitPriceTry(new BigDecimal("110"))
+                .marketValueTry(new BigDecimal("2200"))
+                .build();
+        when(assetSnapshotRepository.findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanOrderByCreatedAtDesc(
+                eq(PORTFOLIO_ID), eq(AssetType.VIOP), eq("XU030F"), eq(BATCH_TS)))
+                .thenReturn(Optional.of(prior));
+
+        PortfolioAssetDailySnapshot result = assembler.buildAt(
+                PORTFOLIO_ID, closedToday, BATCH_TS, new BigDecimal("120"), null, null);
+
+        // (120 - 110) * size 10 * qty 2 = 200 — the close-day move, NOT null
+        assertThat(result.getDailyPnlTry()).isEqualByComparingTo("200");
+        assertThat(result.getDailyPnlPercent()).isNotNull();
+    }
+
+    @Test
     void shouldReturnEmptyDailyDelta_whenNoPriorSnapshot() {
         ViopContract c = contract("XU030F", "10", "TRY");
         DerivativePosition dp = position(c, DerivativeDirection.LONG, "100", "2");
@@ -144,7 +174,13 @@ class DerivativeSnapshotAssemblerTest {
         PortfolioAssetDailySnapshot result = assembler.buildAt(
                 PORTFOLIO_ID, dp, BATCH_TS, new BigDecimal("80"), null, null);
 
+        // A SHORT profits when price drops (100→80): pnl = (100−80)×10×2 = 400, stored DIRECTION-AWARE.
         assertThat(result.getPnlTry()).isEqualByComparingTo("400");
+        // Market value = current notional (80×10×2 = 1600), the mark-to-market value. For a SHORT the
+        // notional falls as the position profits, so value − cost (1600 − 2000 = −400) ≠ pnl (+400) —
+        // consumers read pnlTry, not (value − cost).
+        assertThat(result.getTotalCostTry()).isEqualByComparingTo("2000");
+        assertThat(result.getMarketValueTry()).isEqualByComparingTo("1600");
     }
 
     @Test
@@ -166,7 +202,7 @@ class DerivativeSnapshotAssemblerTest {
         DerivativePosition dp = position(c, DerivativeDirection.LONG, "10", "1");
         when(assetSnapshotRepository.findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanOrderByCreatedAtDesc(
                 any(), any(), any(), any())).thenReturn(Optional.empty());
-        when(pricingPort.getExitPriceTry(eq(MarketType.FOREX), eq("USD"))).thenReturn(new BigDecimal("25"));
+        when(pricingPort.getPriceTry(eq(MarketType.FOREX), eq("USD"))).thenReturn(new BigDecimal("25"));
 
         PortfolioAssetDailySnapshot result = assembler.buildAt(
                 PORTFOLIO_ID, dp, BATCH_TS, new BigDecimal("10"), null, null);
@@ -188,17 +224,19 @@ class DerivativeSnapshotAssemblerTest {
     }
 
     @Test
-    void shouldFallbackFxToOne_whenForexRateMissingOrZero() {
+    void shouldReturnNullSnapshot_whenForeignContractAndForexRateMissing() {
         ViopContract c = contract("F_XAUUSD0625", "1", "USD");
         DerivativePosition dp = position(c, DerivativeDirection.LONG, "10", "1");
-        when(assetSnapshotRepository.findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanOrderByCreatedAtDesc(
+        lenient().when(assetSnapshotRepository.findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanOrderByCreatedAtDesc(
                 any(), any(), any(), any())).thenReturn(Optional.empty());
-        when(pricingPort.getExitPriceTry(eq(MarketType.FOREX), eq("USD"))).thenReturn(null);
+        when(pricingPort.getPriceTry(eq(MarketType.FOREX), eq("USD"))).thenReturn(null);
 
         PortfolioAssetDailySnapshot result = assembler.buildAt(
                 PORTFOLIO_ID, dp, BATCH_TS, new BigDecimal("10"), null, null);
 
-        assertThat(result.getUnitPriceTry()).isEqualByComparingTo("10");
+        // Foreign contract + no FX → null. Earlier "fallback to 1" silently persisted native USD
+        // as TRY, a ~30x corruption on USD-denominated futures during scraper outages.
+        assertThat(result).isNull();
     }
 
     @Test

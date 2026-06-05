@@ -1,5 +1,8 @@
 package com.finance.portfolio.service;
 
+import com.finance.portfolio.service.performance.PortfolioPerformanceService;
+import com.finance.portfolio.service.summary.PortfolioSummaryService;
+
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.portfolio.config.PortfolioProperties;
@@ -95,16 +98,23 @@ public class PortfolioFacade {
     }
 
     public AssetAggregateResponse getAssetAggregate(
-            String userSub, Long portfolioId, String assetType, String assetCode) {
+            String userSub, Long portfolioId, String assetType, String assetCode, String direction) {
         validateOwner(userSub, portfolioId);
-        return summaryService.getAssetAggregate(portfolioId, assetType, assetCode);
+        return summaryService.getAssetAggregate(portfolioId, assetType, assetCode, direction);
     }
 
     public PagedResponse<PositionResponse> getPositionsPaged(String userSub, Long portfolioId,
                                                                String search, String assetType, String sortBy,
-                                                               String direction, int page, int size) {
+                                                               String direction, Boolean closed,
+                                                               int page, int size) {
         validateOwner(userSub, portfolioId);
-        return summaryService.getPositionsPaged(portfolioId, search, assetType, sortBy, direction, page, size);
+        return summaryService.getPositionsPaged(portfolioId, search, assetType, sortBy, direction, closed, page, size);
+    }
+
+    public List<PositionResponse> getPositionsByAsset(String userSub, Long portfolioId,
+                                                      String assetType, String assetCode) {
+        validateOwner(userSub, portfolioId);
+        return summaryService.getPositionsByAsset(portfolioId, assetType, assetCode);
     }
 
     public PortfolioSummaryResponse getSummary(String userSub, Long portfolioId, String assetType) {
@@ -126,7 +136,7 @@ public class PortfolioFacade {
                 ? summaryService.getSummary(portfolioId, null) : null;
 
         PagedResponse<PositionResponse> positions = includes.contains(INCLUDE_POSITIONS)
-                ? summaryService.getPositionsPaged(portfolioId, null, null, null, null,
+                ? summaryService.getPositionsPaged(portfolioId, null, null, null, null, null,
                         FIRST_PAGE, portfolioProperties.getView().getPositionPageSize()) : null;
 
         List<AllocationItem> allocation = includes.contains(INCLUDE_ALLOCATION)
@@ -135,12 +145,13 @@ public class PortfolioFacade {
         return new PortfolioViewResponse(summary, positions, allocation);
     }
 
-    /** Routes a chart request: {@code asset-series} returns a single asset's series, otherwise the portfolio performance series. */
+    /** Routes a chart request: {@code asset-series} returns a single asset's series (optionally scoped to a
+     *  LONG/SHORT direction for VIOP), otherwise the portfolio performance series. */
     public Object getChart(String userSub, Long portfolioId, String type,
-                           String range, String assetType, String assetCode) {
+                           String range, String assetType, String assetCode, String direction) {
         validateOwner(userSub, portfolioId);
         if (CHART_TYPE_ASSET_SERIES.equals(type)) {
-            return performanceService.getAssetSeries(portfolioId, assetType, assetCode, range);
+            return performanceService.getAssetSeries(portfolioId, assetType, assetCode, range, direction);
         }
         return performanceService.getPerformance(portfolioId, range, assetType);
     }

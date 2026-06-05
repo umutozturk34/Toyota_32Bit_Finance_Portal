@@ -221,6 +221,39 @@ class PortfolioSnapshotServiceTest {
     }
 
     @Test
+    void onMarketUpdate_writesValuelessCloseDayRowForClosedTodayViop_butSkipsClosedBeforeToday() {
+        Portfolio portfolio = portfolio(1L);
+        com.finance.portfolio.derivative.model.DerivativePosition open =
+                org.mockito.Mockito.mock(com.finance.portfolio.derivative.model.DerivativePosition.class);
+        com.finance.portfolio.derivative.model.DerivativePosition closedToday =
+                org.mockito.Mockito.mock(com.finance.portfolio.derivative.model.DerivativePosition.class);
+        com.finance.portfolio.derivative.model.DerivativePosition closedYesterday =
+                org.mockito.Mockito.mock(com.finance.portfolio.derivative.model.DerivativePosition.class);
+        when(closedToday.getCloseDate()).thenReturn(LocalDate.now());
+        when(closedYesterday.getCloseDate()).thenReturn(LocalDate.now().minusDays(1));
+        when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
+        when(derivativePositionRepository.findByPortfolioId(1L))
+                .thenReturn(List.of(open, closedToday, closedYesterday));
+        when(calculator.buildDerivativeAssetSnapshot(any(), any(), any()))
+                .thenReturn(org.mockito.Mockito.mock(PortfolioAssetDailySnapshot.class));
+        when(calculator.buildClosedViopDailyRow(any(), any(), any()))
+                .thenReturn(org.mockito.Mockito.mock(PortfolioAssetDailySnapshot.class));
+        when(calculator.buildAggregateSnapshot(any(), any()))
+                .thenReturn(org.mockito.Mockito.mock(PortfolioDailySnapshot.class));
+
+        service.onMarketUpdate(MarketType.VIOP);
+
+        // OPEN → a full per-asset row. CLOSED TODAY → a VALUE-LESS row (buildClosedViopDailyRow) carrying ONLY the
+        // close-day dailyPnl, so the Günlük K/Z card books today's move WITHOUT the countable qty>0 row that would
+        // double-count value vs addClosedEquity. CLOSED BEFORE today → no row (proceeds via addClosedEquity).
+        verify(calculator).buildDerivativeAssetSnapshot(eq(1L), eq(open), any());
+        verify(calculator, never()).buildDerivativeAssetSnapshot(eq(1L), eq(closedToday), any());
+        verify(calculator).buildClosedViopDailyRow(eq(1L), eq(closedToday), any());
+        verify(calculator, never()).buildClosedViopDailyRow(eq(1L), eq(closedYesterday), any());
+        verify(calculator, never()).buildDerivativeAssetSnapshot(eq(1L), eq(closedYesterday), any());
+    }
+
+    @Test
     void generateDailySnapshots_includesDerivatives_whenFullSnapshotIsGenerated() {
         Portfolio portfolio = portfolio(1L);
         com.finance.portfolio.derivative.model.DerivativePosition deriv =
@@ -297,6 +330,50 @@ class PortfolioSnapshotServiceTest {
         ArgumentCaptor<List<PortfolioPosition>> positionsCaptor = ArgumentCaptor.forClass(List.class);
         verify(calculator).buildAssetSnapshotsForPositions(eq(1L), positionsCaptor.capture(), any());
         assertThat(positionsCaptor.getValue()).containsExactly(open);
+    }
+
+    @Test
+    void onMarketUpdate_excludesClosedDerivative_whenBuildingDerivativeSnapshots() {
+        Portfolio portfolio = portfolio(1L);
+        com.finance.portfolio.derivative.model.DerivativePosition open =
+                org.mockito.Mockito.mock(com.finance.portfolio.derivative.model.DerivativePosition.class);
+        com.finance.portfolio.derivative.model.DerivativePosition closed =
+                org.mockito.Mockito.mock(com.finance.portfolio.derivative.model.DerivativePosition.class);
+        when(closed.getCloseDate()).thenReturn(LocalDate.now().minusDays(1));
+        when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
+        when(derivativePositionRepository.findByPortfolioId(1L)).thenReturn(List.of(open, closed));
+        when(calculator.buildDerivativeAssetSnapshot(eq(1L), eq(open), any()))
+                .thenReturn(mock(PortfolioAssetDailySnapshot.class));
+        when(calculator.buildAggregateSnapshot(any(), any())).thenReturn(mock(PortfolioDailySnapshot.class));
+
+        service.onMarketUpdate(MarketType.VIOP);
+
+        verify(calculator).buildDerivativeAssetSnapshot(eq(1L), eq(open), any());
+        verify(calculator, never()).buildDerivativeAssetSnapshot(eq(1L), eq(closed), any());
+        verify(assetSnapshotRepository, times(1)).save(any());
+    }
+
+    @Test
+    void generateDailySnapshots_excludesClosedDerivative_whenBuildingFullSnapshot() {
+        Portfolio portfolio = portfolio(1L);
+        com.finance.portfolio.derivative.model.DerivativePosition open =
+                org.mockito.Mockito.mock(com.finance.portfolio.derivative.model.DerivativePosition.class);
+        com.finance.portfolio.derivative.model.DerivativePosition closed =
+                org.mockito.Mockito.mock(com.finance.portfolio.derivative.model.DerivativePosition.class);
+        when(closed.getCloseDate()).thenReturn(LocalDate.now().minusDays(1));
+        when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
+        when(positionRepository.findByPortfolioIdAndQuantityGreaterThan(1L, BigDecimal.ZERO))
+                .thenReturn(List.of());
+        when(derivativePositionRepository.findByPortfolioId(1L)).thenReturn(List.of(open, closed));
+        when(calculator.buildDerivativeAssetSnapshot(eq(1L), eq(open), any()))
+                .thenReturn(mock(PortfolioAssetDailySnapshot.class));
+        when(calculator.buildAggregateSnapshot(any(), any())).thenReturn(mock(PortfolioDailySnapshot.class));
+
+        service.generateDailySnapshots("scheduler");
+
+        verify(calculator).buildDerivativeAssetSnapshot(eq(1L), eq(open), any());
+        verify(calculator, never()).buildDerivativeAssetSnapshot(eq(1L), eq(closed), any());
+        verify(assetSnapshotRepository, times(1)).save(any());
     }
 
     @Test

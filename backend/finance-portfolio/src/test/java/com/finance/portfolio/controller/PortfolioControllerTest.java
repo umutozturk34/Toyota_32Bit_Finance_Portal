@@ -140,12 +140,12 @@ class PortfolioControllerTest {
         AppProperties.Pagination pagination = pagination();
         when(appProperties.getPagination()).thenReturn(pagination);
         PagedResponse<PositionResponse> data = PagedResponse.of(List.of(), 0, 10, 0);
-        when(portfolioFacade.getPositionsPaged(eq(USER), eq(7L), any(), any(), any(), any(), anyInt(), anyInt()))
+        when(portfolioFacade.getPositionsPaged(eq(USER), eq(7L), any(), any(), any(), any(), any(), anyInt(), anyInt()))
                 .thenReturn(data);
 
-        controller.getPositions(jwt, 7L, null, null, null, null, 0, null);
+        controller.getPositions(jwt, 7L, null, null, null, null, null, 0, null);
 
-        verify(portfolioFacade).getPositionsPaged(USER, 7L, null, null, null, null, 0, 10);
+        verify(portfolioFacade).getPositionsPaged(USER, 7L, null, null, null, null, null, 0, 10);
     }
 
     @ParameterizedTest
@@ -160,12 +160,12 @@ class PortfolioControllerTest {
         AppProperties.Pagination pagination = pagination();
         when(appProperties.getPagination()).thenReturn(pagination);
         PagedResponse<PositionResponse> data = PagedResponse.of(List.of(), 0, expected, 0);
-        when(portfolioFacade.getPositionsPaged(eq(USER), eq(7L), any(), any(), any(), any(), anyInt(), eq(expected)))
+        when(portfolioFacade.getPositionsPaged(eq(USER), eq(7L), any(), any(), any(), any(), any(), anyInt(), eq(expected)))
                 .thenReturn(data);
 
-        controller.getPositions(jwt, 7L, null, null, null, null, 0, requested);
+        controller.getPositions(jwt, 7L, null, null, null, null, null, 0, requested);
 
-        verify(portfolioFacade).getPositionsPaged(USER, 7L, null, null, null, null, 0, expected);
+        verify(portfolioFacade).getPositionsPaged(USER, 7L, null, null, null, null, null, 0, expected);
     }
 
     @Test
@@ -205,10 +205,10 @@ class PortfolioControllerTest {
     @Test
     void getChart_delegatesAllArgsToFacade() {
         Object chart = new Object();
-        when(portfolioFacade.getChart(USER, 7L, "performance", "1M", null, null)).thenReturn(chart);
+        when(portfolioFacade.getChart(USER, 7L, "performance", "1M", null, null, null)).thenReturn(chart);
         when(translator.translate("api.portfolio.chartRetrieved")).thenReturn("ok");
 
-        ApiResponse<?> response = controller.getChart(jwt, 7L, "performance", "1M", null, null);
+        ApiResponse<?> response = controller.getChart(jwt, 7L, "performance", "1M", null, null, null);
 
         assertThat(response.getData()).isSameAs(chart);
     }

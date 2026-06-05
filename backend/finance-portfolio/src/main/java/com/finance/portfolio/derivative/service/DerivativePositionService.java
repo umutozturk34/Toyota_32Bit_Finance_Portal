@@ -171,7 +171,9 @@ public class DerivativePositionService {
         }
         String symbol = position.getViopContract().getSymbol();
         rebuildPeerSnapshots(portfolioId, symbol, primary, partial ? position : null);
-        publishLotChange(portfolioId, primary, primary.getEntryDate());
+        // Closing only changes valuations from the close date forward, so backfill from closeDate
+        // rather than the position's entry date to avoid rebuilding the whole contract history.
+        publishLotChange(portfolioId, primary, request.closeDate());
         log.info("DerivativePosition closed id={} portfolio={} closeDate={} partial={}",
                 positionId, portfolioId, request.closeDate(), partial);
         return mapper.toResponse(primary);
@@ -324,20 +326,36 @@ public class DerivativePositionService {
     public int autoCloseExpired() {
         List<DerivativePosition> orphaned = positionRepository.findOpenWithExpiredContract(LocalDate.now());
         int closed = 0;
+        int skippedNoPrice = 0;
+        int skippedNoFx = 0;
         for (DerivativePosition pos : orphaned) {
             ViopContract contract = pos.getViopContract();
             BigDecimal settlementNative = contract.getSettlementPrice() != null
                     ? contract.getSettlementPrice()
                     : contract.getLastPrice();
-            if (settlementNative == null) continue;
+            if (settlementNative == null) {
+                skippedNoPrice++;
+                continue;
+            }
             BigDecimal settlementTry = priceResolver.nativeToTryOnDate(settlementNative,
                     contract.resolvePriceCurrency(), contract.getExpiryDate());
+            // null means non-TRY contract with no historical FX rate available. Closing with a
+            // raw foreign-currency number would persist garbage as TRY (the bug we hit on USD
+            // futures during FX outages). Skip and retry next scheduler tick — better to leave
+            // the position open than corrupt close_price.
+            if (settlementTry == null) {
+                log.warn("Skipping autoClose for position={} contract={} — settlement FX unavailable on expiry {}",
+                        pos.getId(), contract.getSymbol(), contract.getExpiryDate());
+                skippedNoFx++;
+                continue;
+            }
             pos.closeWith(contract.getExpiryDate(), settlementTry, DerivativeCloseReason.EXPIRED);
             rebuildPeerSnapshots(pos.getPortfolio().getId(), contract.getSymbol(), pos, null);
             closed++;
         }
-        if (closed > 0) {
-            log.info("Auto-closed {} expired derivative positions", closed);
+        if (closed > 0 || skippedNoPrice > 0 || skippedNoFx > 0) {
+            log.info("autoCloseExpired closed={} skippedNoPrice={} skippedNoFx={}",
+                    closed, skippedNoPrice, skippedNoFx);
         }
         return closed;
     }

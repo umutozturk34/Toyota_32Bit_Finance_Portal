@@ -67,20 +67,15 @@ public abstract class PortfolioResponseMapper {
                                                       BigDecimal realPnlTry,
                                                       BigDecimal realPnlPercent,
                                                       BigDecimal cpiGrowthPercent,
+                                                      BigDecimal realizedCashTry,
                                                       java.util.Map<String, com.finance.portfolio.dto.response.CurrencyFramePct> frames) {
         return new PortfolioSummaryResponse(
                 totalValueTry, totalEntryValueTry, totalPnlTry, pnlPercent,
                 dailyPnlTry, dailyPnlPercent,
                 realPnlTry, realPnlPercent, cpiGrowthPercent,
+                realizedCashTry,
                 frames
         );
-    }
-
-    public AllocationItem toAllocationItem(String label,
-                                           String assetType,
-                                           BigDecimal valueTry,
-                                           BigDecimal percent) {
-        return new AllocationItem(label, assetType, valueTry, percent, null, null);
     }
 
     public AllocationItem toAllocationItem(String label,
@@ -98,8 +93,10 @@ public abstract class PortfolioResponseMapper {
                                            BigDecimal percent,
                                            BigDecimal costTry,
                                            BigDecimal realizedPnlTry,
-                                           java.util.Map<String, BigDecimal> realizedPnlByCurrency) {
+                                           java.util.Map<String, BigDecimal> realizedPnlByCurrency,
+                                           java.util.Map<String, BigDecimal> costByCurrency) {
         return new AllocationItem(label, assetType, valueTry, percent, costTry, realizedPnlTry,
-                realizedPnlByCurrency != null ? realizedPnlByCurrency : java.util.Map.of());
+                realizedPnlByCurrency != null ? realizedPnlByCurrency : java.util.Map.of(),
+                costByCurrency != null ? costByCurrency : java.util.Map.of());
     }
 }

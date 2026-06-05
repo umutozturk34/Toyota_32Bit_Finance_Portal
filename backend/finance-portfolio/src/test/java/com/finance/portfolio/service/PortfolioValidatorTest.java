@@ -60,20 +60,16 @@ class PortfolioValidatorTest {
 
     @Test
     void shouldThrow_whenPriceBelowMin() {
-        PositionRequest req = request(LocalDateTime.now().minusDays(1),
-                new BigDecimal("0.000001"), new BigDecimal("10"));
-
-        assertThatThrownBy(() -> PortfolioValidator.validateLot(req, defaultLimits()))
+        // Price bounds are TRY and validated post-conversion via validatePriceTry (validateLot no longer
+        // checks the raw native price against TRY bounds).
+        assertThatThrownBy(() -> PortfolioValidator.validatePriceTry(new BigDecimal("0.000001"), defaultLimits()))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("error.portfolio.lot.priceTooLow");
     }
 
     @Test
     void shouldThrow_whenPriceAboveMax() {
-        PositionRequest req = request(LocalDateTime.now().minusDays(1),
-                new BigDecimal("2000000000"), new BigDecimal("10"));
-
-        assertThatThrownBy(() -> PortfolioValidator.validateLot(req, defaultLimits()))
+        assertThatThrownBy(() -> PortfolioValidator.validatePriceTry(new BigDecimal("2000000000"), defaultLimits()))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("error.portfolio.lot.priceTooHigh");
     }

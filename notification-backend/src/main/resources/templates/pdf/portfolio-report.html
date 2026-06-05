@@ -417,7 +417,7 @@
                         th:text="${p.isClosed() and p.exitDate() != null ? #temporals.format(p.exitDate(), 'dd MMM yy') : '—'}">—</td>
                     <td class="r num" th:text="${money.of(p.entryPrice())}">—</td>
                     <td class="r num" th:text="${money.of(p.currentPriceTry())}">—</td>
-                    <td class="r num" style="font-weight:600;" th:text="${money.of(p.marketValueTry())}">—</td>
+                    <td class="r num" style="font-weight:600;" th:text="${money.of(p.displayMarketValueTry())}">—</td>
                     <td class="r num" style="font-weight:700;"
                         th:classappend="${p.pnlTry() != null and p.pnlTry().signum() >= 0} ? 'gain' : 'loss'"
                         th:text="${money.signed(p.pnlTry())}">—</td>

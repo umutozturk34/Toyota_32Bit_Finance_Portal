@@ -132,6 +132,44 @@ class ReportPositionTest {
         assertThat(result).isEqualTo("1000");
     }
 
+    @Test
+    void should_returnEquity_when_viopShortMarketValueIsDirectionBlindNotional() {
+        // SHORT profited as the notional fell: raw marketValueTry=80, but equity = entry 100 + pnl 20.
+        ReportPosition position = valued("VIOP", new BigDecimal("100"), new BigDecimal("80"),
+                new BigDecimal("20"));
+
+        BigDecimal result = position.displayMarketValueTry();
+
+        assertThat(result).isEqualByComparingTo("120");
+    }
+
+    @Test
+    void should_returnRawMarketValue_when_assetIsNotViop() {
+        ReportPosition position = valued("STOCK", new BigDecimal("100"), new BigDecimal("80"),
+                new BigDecimal("20"));
+
+        BigDecimal result = position.displayMarketValueTry();
+
+        assertThat(result).isEqualByComparingTo("80");
+    }
+
+    @Test
+    void should_fallBackToMarketValue_when_viopMissingEntryOrPnlLeg() {
+        ReportPosition position = valued("VIOP", null, new BigDecimal("80"), null);
+
+        BigDecimal result = position.displayMarketValueTry();
+
+        assertThat(result).isEqualByComparingTo("80");
+    }
+
+    private ReportPosition valued(String assetType, BigDecimal entryValueTry,
+                                  BigDecimal marketValueTry, BigDecimal pnlTry) {
+        return new ReportPosition(
+                1L, assetType, "X", "X", BigDecimal.ONE,
+                LocalDateTime.of(2026, 1, 1, 0, 0), BigDecimal.ONE, null, null, BigDecimal.ONE,
+                entryValueTry, marketValueTry, pnlTry, BigDecimal.ZERO);
+    }
+
     private ReportPosition position(String assetType, String assetCode, String assetName,
                                     LocalDateTime exitDate, BigDecimal quantity) {
         return new ReportPosition(

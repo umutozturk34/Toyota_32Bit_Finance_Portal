@@ -96,4 +96,17 @@ public record ReportPosition(
         if (stripped.scale() < 0) stripped = stripped.setScale(0);
         return stripped.toPlainString();
     }
+
+    /**
+     * Market-value figure shown in the positions table. For VİOP the raw {@code marketValueTry} is
+     * direction-blind notional (it falls as a SHORT gains), so the displayed value is the position's
+     * equity — entry notional plus signed P&L — matching the on-screen lots table. Spot/forex rows,
+     * and any row missing the entry or P&L leg, fall back to {@code marketValueTry}.
+     */
+    public BigDecimal displayMarketValueTry() {
+        if ("VIOP".equalsIgnoreCase(assetType) && entryValueTry != null && pnlTry != null) {
+            return entryValueTry.add(pnlTry);
+        }
+        return marketValueTry;
+    }
 }

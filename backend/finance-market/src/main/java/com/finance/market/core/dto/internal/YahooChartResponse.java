@@ -12,9 +12,6 @@ import java.util.List;
 public record YahooChartResponse(Chart chart) {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Chart(List<Result> result) {
-        public Result firstResult() {
-            return (result != null && !result.isEmpty()) ? result.getFirst() : null;
-        }
     }
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Result(
@@ -54,14 +51,5 @@ public record YahooChartResponse(Chart chart) {
             List<BigDecimal> close,
             List<Long> volume
     ) {
-        public boolean isValidAt(int index) {
-            return safeGet(open, index) != null
-                    && safeGet(high, index) != null
-                    && safeGet(low, index) != null
-                    && safeGet(close, index) != null;
-        }
-        private static <T> T safeGet(List<T> list, int index) {
-            return (list != null && index < list.size()) ? list.get(index) : null;
-        }
     }
 }

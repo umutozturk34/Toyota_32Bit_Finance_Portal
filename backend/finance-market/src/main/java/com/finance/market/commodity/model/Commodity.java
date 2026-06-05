@@ -86,7 +86,7 @@ public class Commodity extends BaseAsset {
     @JsonIgnore
     private List<CommodityCandle> candles;
 
-    /** Applies a TRY price snapshot (with USD prices retained), preferring Yahoo's change percent. */
+    /** Applies a TRY price snapshot (with USD prices retained as a fixed secondary). */
     public void applyPriceSnapshot(CommoditySnapshotInput snapshot, int scale) {
         if (snapshot == null || snapshot.tryPrice() == null) return;
         this.currentPrice = scaleValue(snapshot.tryPrice(), scale);
@@ -96,8 +96,10 @@ public class Commodity extends BaseAsset {
         this.dayHigh = scaleValue(snapshot.tryDayHigh(), scale);
         this.dayLow = scaleValue(snapshot.tryDayLow(), scale);
         this.volume = snapshot.volume();
-        applyChangePreferring(snapshot.tryPrice(), snapshot.tryPreviousClose(),
-                null, snapshot.yahooChangePercent(), scale);
+        // Commodity is TRY-primary: changeAmount AND changePercent must both come from the TRY pair, not
+        // Yahoo's USD-basis daily percent — TRY/USD also moves, so the USD percent describes a different
+        // quantity than the displayed TRY price/amount (they would disagree, e.g. ons vs gram).
+        applyChange(snapshot.tryPrice(), snapshot.tryPreviousClose(), scale);
         this.yahooUpdatedAt = LocalDateTime.now();
     }
 

@@ -15,7 +15,6 @@ public enum ViopCategory {
     CURRENCY_FUTURE_USD(ViopUnderlyingClass.CURRENCY),
     METAL_FUTURE_TRY(ViopUnderlyingClass.METAL),
     METAL_FUTURE_USD(ViopUnderlyingClass.METAL),
-    METAL_FUTURE(ViopUnderlyingClass.METAL),
     PAY_OPTION(ViopUnderlyingClass.PAY),
     INDEX_OPTION(ViopUnderlyingClass.INDEX),
     CURRENCY_OPTION(ViopUnderlyingClass.CURRENCY);

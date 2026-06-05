@@ -3,7 +3,9 @@ package com.finance.market.crypto.service.assetpricing;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.core.service.ExchangeRateProvider;
+import com.finance.market.core.service.ExchangeRateSnapshot;
 import com.finance.market.crypto.model.Crypto;
+import com.finance.market.crypto.model.CryptoCandle;
 import com.finance.market.crypto.repository.CryptoCandleRepository;
 import com.finance.shared.service.AssetPricingPort;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,8 +15,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -100,5 +104,78 @@ class CryptoPricingStrategyTest {
         assertThat(bundle.price()).isEqualByComparingTo(new BigDecimal("1234.5600"));
         assertThat(bundle.meta().name()).isEqualTo("BTC");
         assertThat(bundle.meta().image()).isEqualTo("img");
+    }
+
+    @Test
+    void getExitPriceTry_valuesAtCandleCloseTimesSellingSpot_whenCandleExists() {
+        CryptoCandle candle = mock(CryptoCandle.class);
+        when(candle.getClose()).thenReturn(new BigDecimal("100"));
+        when(candleRepository.findFirstByCryptoIdAndCloseGreaterThanOrderByCandleDateDesc(CODE, BigDecimal.ZERO))
+                .thenReturn(Optional.of(candle));
+        when(exchangeRateProvider.getCurrentUsdTry()).thenReturn(new ExchangeRateSnapshot(new BigDecimal("38"), null));
+
+        BigDecimal price = strategy.getExitPriceTry(CODE);
+
+        assertThat(price).isEqualByComparingTo(new BigDecimal("3800.0000"));
+    }
+
+    @Test
+    void getExitPriceTry_fallsBackToCurrentPriceTry_whenNoCandle() {
+        when(candleRepository.findFirstByCryptoIdAndCloseGreaterThanOrderByCandleDateDesc(CODE, BigDecimal.ZERO))
+                .thenReturn(Optional.empty());
+        Crypto crypto = Crypto.builder().build();
+        crypto.setCurrentPriceTry(new BigDecimal("4200"));
+        when(cacheService.getSnapshot(CODE)).thenReturn(crypto);
+
+        BigDecimal price = strategy.getExitPriceTry(CODE);
+
+        assertThat(price).isEqualByComparingTo(new BigDecimal("4200.0000"));
+    }
+
+    @Test
+    void getExitPriceTry_leavesTetherTryNative_withoutCrossConversion() {
+        CryptoCandle candle = mock(CryptoCandle.class);
+        when(candle.getClose()).thenReturn(new BigDecimal("33.5"));
+        when(candleRepository.findFirstByCryptoIdAndCloseGreaterThanOrderByCandleDateDesc("tether", BigDecimal.ZERO))
+                .thenReturn(Optional.of(candle));
+
+        BigDecimal price = strategy.getExitPriceTry("tether");
+
+        assertThat(price).isEqualByComparingTo(new BigDecimal("33.5000"));
+    }
+
+    @Test
+    void getPriceTry_valuesAtCandleCloseOverSnapshot_whenCandleExists() {
+        // The card / per-position / allocation pricing now uses the Binance candle close × selling spot so it
+        // matches the performance chart; the divergent CoinGecko snapshot (9999) is ignored when a candle exists.
+        Crypto crypto = Crypto.builder().build();
+        crypto.setCurrentPriceTry(new BigDecimal("9999"));
+        org.mockito.Mockito.lenient().when(cacheService.getSnapshot(CODE)).thenReturn(crypto);
+        CryptoCandle candle = mock(CryptoCandle.class);
+        when(candle.getClose()).thenReturn(new BigDecimal("100"));
+        when(candleRepository.findFirstByCryptoIdAndCloseGreaterThanOrderByCandleDateDesc(CODE, BigDecimal.ZERO))
+                .thenReturn(Optional.of(candle));
+        when(exchangeRateProvider.getCurrentUsdTry()).thenReturn(new ExchangeRateSnapshot(new BigDecimal("38"), null));
+
+        BigDecimal price = strategy.getPriceTry(CODE);
+
+        assertThat(price).isEqualByComparingTo(new BigDecimal("3800.0000"));
+    }
+
+    @Test
+    void getBundle_pricesAtCandleCloseOverSnapshot_whenCandleExists() {
+        Crypto crypto = Crypto.builder().symbol("BTC").image("img").build();
+        crypto.setCurrentPriceTry(new BigDecimal("9999"));
+        when(cacheService.getSnapshot(CODE)).thenReturn(crypto);
+        CryptoCandle candle = mock(CryptoCandle.class);
+        when(candle.getClose()).thenReturn(new BigDecimal("100"));
+        when(candleRepository.findFirstByCryptoIdAndCloseGreaterThanOrderByCandleDateDesc(CODE, BigDecimal.ZERO))
+                .thenReturn(Optional.of(candle));
+        when(exchangeRateProvider.getCurrentUsdTry()).thenReturn(new ExchangeRateSnapshot(new BigDecimal("38"), null));
+
+        AssetPricingPort.PriceBundle bundle = strategy.getBundle(CODE);
+
+        assertThat(bundle.price()).isEqualByComparingTo(new BigDecimal("3800.0000"));
+        assertThat(bundle.meta().name()).isEqualTo("BTC");
     }
 }

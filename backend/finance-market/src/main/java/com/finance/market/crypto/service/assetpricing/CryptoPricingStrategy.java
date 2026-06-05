@@ -13,9 +13,11 @@ import java.math.BigDecimal;
 import java.util.Set;
 
 /**
- * Prices crypto in TRY from the cached snapshot's TRY price, falling back to the latest candle close
- * converted at the current USD/TRY rate. Tether/USDT is treated as already TRY-quoted, so its close
- * is not cross-converted.
+ * Prices crypto in TRY candle-first: the latest Binance candle close (crypto_candles) converted at the
+ * current USD/TRY rate, with the CoinGecko snapshot (cryptos.current_price_try) only as a fallback when no
+ * candle exists. This is the SAME basis the performance chart/backfill and entry cost use, so the whole
+ * portfolio (card, per-position rows, allocation pie, chart) values crypto identically. Tether/USDT is
+ * already TRY-quoted, so its close is not cross-converted.
  */
 @Component
 public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
@@ -42,12 +44,34 @@ public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
 
     @Override
     public BigDecimal getPriceTry(String assetCode) {
-        Crypto crypto = cacheService.getSnapshot(assetCode);
-        BigDecimal current = crypto != null ? normalize(crypto.getCurrentPriceTry()) : null;
-        if (current != null && current.signum() > 0) return current;
-        return candleRepository.findFirstByCryptoIdAndCloseGreaterThanOrderByCandleDateDesc(assetCode, BigDecimal.ZERO)
+        return candleFirstPriceTry(assetCode);
+    }
+
+    @Override
+    public BigDecimal getExitPriceTry(String assetCode) {
+        return candleFirstPriceTry(assetCode);
+    }
+
+    /**
+     * The portfolio's single crypto price basis: the latest Binance candle close (crypto_candles) converted
+     * at the current USD/TRY SELLING spot — the same price source and FX field the entry cost and the
+     * chart/snapshot backfill use ({@code HistoricalPricingAdapter}: candle close × forex selling). The
+     * CoinGecko snapshot ({@code cryptos.current_price_try}) is a fallback ONLY when no candle exists yet
+     * (e.g. a brand-new listing). Crypto ingests two independent feeds — Binance klines and the CoinGecko
+     * markets snapshot — that diverge by a fraction of a percent; pricing the live card, per-position rows
+     * and allocation off the candle keeps the whole portfolio on ONE basis (card == chart) instead of the
+     * card reading CoinGecko while the chart reads the candle. USDT/tether stays TRY-native via
+     * {@link #convertCandleCloseToTry}. The market screen prices crypto from the CoinGecko snapshot directly
+     * and is unaffected — it does not go through this strategy.
+     */
+    private BigDecimal candleFirstPriceTry(String assetCode) {
+        BigDecimal candleClose = candleRepository
+                .findFirstByCryptoIdAndCloseGreaterThanOrderByCandleDateDesc(assetCode, BigDecimal.ZERO)
                 .map(c -> normalize(convertCandleCloseToTry(assetCode, c.getClose())))
-                .orElse(current);
+                .orElse(null);
+        if (candleClose != null && candleClose.signum() > 0) return candleClose;
+        Crypto crypto = cacheService.getSnapshot(assetCode);
+        return crypto != null ? normalize(crypto.getCurrentPriceTry()) : null;
     }
 
     /** Converts a USD candle close to TRY at the current spot, leaving tether/USDT closes as-is. */
@@ -75,17 +99,12 @@ public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
     @Override
     public AssetPricingPort.PriceBundle getBundle(String assetCode) {
         Crypto crypto = cacheService.getSnapshot(assetCode);
-        if (crypto == null) {
-            return new AssetPricingPort.PriceBundle(null, EMPTY_META);
-        }
-        BigDecimal price = normalize(crypto.getCurrentPriceTry());
-        if (price == null || price.signum() <= 0) {
-            price = candleRepository.findFirstByCryptoIdAndCloseGreaterThanOrderByCandleDateDesc(assetCode, BigDecimal.ZERO)
-                    .map(c -> normalize(convertCandleCloseToTry(assetCode, c.getClose())))
-                    .orElse(price);
-        }
-        return new AssetPricingPort.PriceBundle(
-                price,
-                new AssetPricingPort.AssetMeta(crypto.resolveDisplayName(), crypto.getImage()));
+        AssetPricingPort.AssetMeta meta = crypto != null
+                ? new AssetPricingPort.AssetMeta(crypto.resolveDisplayName(), crypto.getImage())
+                : EMPTY_META;
+        // Price candle-first (same basis as getPriceTry) so a held position's per-row value matches the card
+        // and the performance chart; meta still comes from the CoinGecko snapshot. Candle-less new listings
+        // fall back to the snapshot price inside candleFirstPriceTry.
+        return new AssetPricingPort.PriceBundle(candleFirstPriceTry(assetCode), meta);
     }
 }

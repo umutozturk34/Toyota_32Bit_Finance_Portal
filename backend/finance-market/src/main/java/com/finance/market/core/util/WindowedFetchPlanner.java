@@ -37,7 +37,9 @@ public final class WindowedFetchPlanner {
         List<DateWindow> windows = new ArrayList<>();
         LocalDate currentWindowEnd = endDate;
 
-        while (currentWindowEnd.isAfter(limitDate)) {
+        // Inclusive of limitDate (mirrors planForward): a strict isAfter dropped the boundary day, so a
+        // single-day gap (endDate == limitDate) returned NO windows and that day's candle was never fetched.
+        while (!currentWindowEnd.isBefore(limitDate)) {
             LocalDate currentWindowStart = currentWindowEnd.minusDays(windowSize);
             if (currentWindowStart.isBefore(limitDate)) {
                 currentWindowStart = limitDate;

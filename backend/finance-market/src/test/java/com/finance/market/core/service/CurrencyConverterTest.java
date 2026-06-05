@@ -1,7 +1,6 @@
 package com.finance.market.core.service;
 
 import com.finance.common.model.Currency;
-import com.finance.shared.model.value.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -70,6 +69,34 @@ class CurrencyConverterTest {
     }
 
     @Test
+    void rateAtReturnsOneWhenCurrenciesEqual() {
+        BigDecimal result = converter.rateAt(Currency.USD, Currency.USD, LocalDate.of(2024, 1, 1));
+
+        assertThat(result).isEqualByComparingTo("1");
+    }
+
+    @Test
+    void rateAtReturnsProviderRateWithoutMoneyScaleRounding() {
+        LocalDate date = LocalDate.of(2024, 5, 1);
+        BigDecimal highPrecisionInverse = new BigDecimal("0.0255571932");
+        when(provider.rateAt(Currency.TRY, Currency.USD, date))
+                .thenReturn(Optional.of(highPrecisionInverse));
+
+        BigDecimal result = converter.rateAt(Currency.TRY, Currency.USD, date);
+
+        assertThat(result).isEqualByComparingTo(highPrecisionInverse);
+    }
+
+    @Test
+    void rateAtThrowsWhenRateMissing() {
+        LocalDate date = LocalDate.of(2024, 5, 1);
+        when(provider.rateAt(Currency.USD, Currency.EUR, date)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> converter.rateAt(Currency.USD, Currency.EUR, date))
+                .isInstanceOf(FxRateUnavailableException.class);
+    }
+
+    @Test
     void convertSeriesSkipsMissingDatesAndAppliesRates() {
         LocalDate d1 = LocalDate.of(2024, 1, 1);
         LocalDate d2 = LocalDate.of(2024, 2, 1);
@@ -103,26 +130,5 @@ class CurrencyConverterTest {
     void convertSeriesHandlesNullAndEmptyInput() {
         assertThat(converter.convertSeries(null, Currency.USD, Currency.TRY)).isEmpty();
         assertThat(converter.convertSeries(Map.of(), Currency.USD, Currency.TRY)).isEmpty();
-    }
-
-    @Test
-    void convertMoneyAppliesRate() {
-        LocalDate date = LocalDate.of(2024, 5, 1);
-        when(provider.rateAt(Currency.USD, Currency.TRY, date))
-                .thenReturn(Optional.of(new BigDecimal("32")));
-
-        Money result = converter.convertMoney(Money.of("100", Currency.USD), Currency.TRY, date);
-
-        assertThat(result.amount()).isEqualByComparingTo("3200.0000");
-        assertThat(result.currency()).isEqualTo(Currency.TRY);
-    }
-
-    @Test
-    void convertMoneyReturnsSameWhenAlreadyTarget() {
-        Money usd = Money.of("100", Currency.USD);
-
-        Money result = converter.convertMoney(usd, Currency.USD, LocalDate.of(2024, 1, 1));
-
-        assertThat(result).isEqualTo(usd);
     }
 }

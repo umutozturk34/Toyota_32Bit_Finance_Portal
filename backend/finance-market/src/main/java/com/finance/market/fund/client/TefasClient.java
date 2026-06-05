@@ -108,7 +108,7 @@ public class TefasClient {
 
             if (body != null && body.trim().startsWith("<")) {
                 log.warn("TEFAS WAF block: {} {} ({} to {})", fundType, fundCode, startDate, endDate);
-                throw new ExternalApiRequestException("TEFAS",
+                throw new ExternalApiRequestException(
                         "WAF blocked request for " + fundType + " " + (fundCode != null ? fundCode : "all")
                         + " (range " + startDate + " to " + endDate + ")");
             }
@@ -221,7 +221,7 @@ public class TefasClient {
             }
             if (body.trim().startsWith("<")) {
                 log.warn("TEFAS {} WAF block", label);
-                throw new ExternalApiRequestException("TEFAS", "WAF blocked " + label + " request");
+                throw new ExternalApiRequestException("WAF blocked " + label + " request");
             }
             TefasGenericResponse<T> response = objectMapper.readValue(body, typeRef);
             if (response.errorCode() != null) {

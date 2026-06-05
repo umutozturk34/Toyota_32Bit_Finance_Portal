@@ -134,13 +134,18 @@ public class HistoricalFxRateAdapter implements FxRateProvider {
     private SortedMap<LocalDate, BigDecimal> crossViaTry(SortedMap<LocalDate, BigDecimal> fromTry,
                                                          SortedMap<LocalDate, BigDecimal> toTry) {
         SortedMap<LocalDate, BigDecimal> out = new TreeMap<>();
-        for (var entry : fromTry.entrySet()) {
-            BigDecimal toRate = toTry.get(entry.getKey());
-            if (toRate == null || toRate.signum() <= 0) {
-                toRate = closestPriorRate(toTry, entry.getKey()).orElse(null);
-                if (toRate == null || toRate.signum() <= 0) continue;
-            }
-            out.put(entry.getKey(), entry.getValue().divide(toRate, RATE_SCALE, RoundingMode.HALF_UP));
+        // Key the cross over the UNION of both legs' candle dates and resolve EACH leg independently via its
+        // own closest-prior rate. Iterating only the from-leg's keys (the previous behaviour) dropped every
+        // date where only the to-leg moved — the two TRY legs are ingested separately so their calendars
+        // diverge — freezing the cross at a stale to-leg rate (e.g. a missed EUR/TRY jump → wrong USD-in-EUR
+        // value). Each leg must use its own closest-prior at the date, then divide.
+        java.util.TreeSet<LocalDate> dates = new java.util.TreeSet<>(fromTry.keySet());
+        dates.addAll(toTry.keySet());
+        for (LocalDate date : dates) {
+            BigDecimal fromRate = closestPriorRate(fromTry, date).orElse(null);
+            BigDecimal toRate = closestPriorRate(toTry, date).orElse(null);
+            if (fromRate == null || toRate == null || toRate.signum() <= 0) continue;
+            out.put(date, fromRate.divide(toRate, RATE_SCALE, RoundingMode.HALF_UP));
         }
         return out;
     }

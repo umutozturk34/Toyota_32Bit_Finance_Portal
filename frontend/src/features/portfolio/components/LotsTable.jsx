@@ -14,6 +14,18 @@ const lotDirectionSign = (lot) => {
   return direction === 'SHORT' ? -1 : 1;
 };
 
+// VIOP value shown in the Lots table must be DIRECTION-AWARE EQUITY (entry notional + signed PnL), matching the
+// asset chart (assetChartBuilder equityTry = costTry + pnlTry) and the portfolio summary card. Raw marketValueTry
+// is the direction-blind notional, which FALLS as a SHORT profits and reads as "value leaving". Spot/LONG:
+// entryValueTry + pnlTry === marketValueTry, so this is a no-op there.
+const lotDisplayValueTry = (lot) => {
+  const market = Number(lot.marketValueTry);
+  if (lot.assetType !== 'VIOP') return market;
+  const entry = Number(lot.entryValueTry);
+  const pnl = Number(lot.pnlTry);
+  return Number.isFinite(entry) && Number.isFinite(pnl) ? entry + pnl : market;
+};
+
 export function LotsTable({ lots, t, money, bigMoney, nativeCurrency, frame, onEditLot, onSellLot, onReopenLot, onDeleteLot }) {
   const today = new Date().toLocaleDateString('sv-SE');
   // Per-lot K/Z in the display-currency frame (entry cost @ entry-date FX, value @ today/exit FX) via the
@@ -131,8 +143,8 @@ export function LotsTable({ lots, t, money, bigMoney, nativeCurrency, frame, onE
               <span className="text-[11px] font-mono text-fg text-left truncate">
                 {money(lot.entryPrice, 'TRY', { dateAt: lot.entryDate, natural: nativeCurrency })}
               </span>
-              <span className="text-[11px] font-mono text-fg text-left truncate" title={money(lot.marketValueTry, 'TRY', isLotClosed ? { dateAt: lot.exitDate, natural: nativeCurrency } : { natural: nativeCurrency })}>
-                {isLotClosed ? money(lot.marketValueTry, 'TRY', { dateAt: lot.exitDate, natural: nativeCurrency }) : bigMoney(lot.marketValueTry)}
+              <span className="text-[11px] font-mono text-fg text-left truncate" title={money(lotDisplayValueTry(lot), 'TRY', isLotClosed ? { dateAt: lot.exitDate, natural: nativeCurrency } : { natural: nativeCurrency })}>
+                {isLotClosed ? money(lotDisplayValueTry(lot), 'TRY', { dateAt: lot.exitDate, natural: nativeCurrency }) : bigMoney(lotDisplayValueTry(lot))}
               </span>
               <div className="text-left min-w-0">
                 <p className={`text-[11px] font-mono font-semibold ${changeColors[lotPnlClass]} truncate`} title={lotPnlText}>
@@ -225,7 +237,7 @@ export function LotsTable({ lots, t, money, bigMoney, nativeCurrency, frame, onE
                 </div>
                 <div className="rounded-md bg-bg-base/60 px-2 py-1.5">
                   <p className="text-fg-muted text-[10px]">{t('portfolio.positions.marketValueCol')}</p>
-                  <p className="font-mono text-fg truncate" title={money(lot.marketValueTry, 'TRY', isLotClosed ? { dateAt: lot.exitDate, natural: nativeCurrency } : { natural: nativeCurrency })}>{isLotClosed ? money(lot.marketValueTry, 'TRY', { dateAt: lot.exitDate, natural: nativeCurrency }) : bigMoney(lot.marketValueTry)}</p>
+                  <p className="font-mono text-fg truncate" title={money(lotDisplayValueTry(lot), 'TRY', isLotClosed ? { dateAt: lot.exitDate, natural: nativeCurrency } : { natural: nativeCurrency })}>{isLotClosed ? money(lotDisplayValueTry(lot), 'TRY', { dateAt: lot.exitDate, natural: nativeCurrency }) : bigMoney(lotDisplayValueTry(lot))}</p>
                 </div>
                 <div className="rounded-md bg-bg-base/60 px-2 py-1.5">
                   <p className="text-fg-muted text-[10px]">{t('portfolio.positions.pnlCol')}</p>

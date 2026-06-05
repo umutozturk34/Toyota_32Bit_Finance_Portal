@@ -60,6 +60,14 @@ public class DerivativePositionService {
                 portfolioId, AssetType.VIOP, symbol, from, true));
     }
 
+    /** Earliest non-null of two dates; the rebuild window must span BOTH the old and new entry so a later-moved
+     *  entry still wipes the vacated days' stale daily aggregates. */
+    private static LocalDate earliestOf(LocalDate a, LocalDate b) {
+        if (a == null) return b;
+        if (b == null) return a;
+        return a.isBefore(b) ? a : b;
+    }
+
     @Transactional(readOnly = true)
     public List<DerivativePositionResponse> list(Long portfolioId, String userSub) {
         requireOwnedPortfolio(portfolioId, userSub);
@@ -267,9 +275,13 @@ public class DerivativePositionService {
         if (entryPrice == null) {
             throw new BadRequestException("error.viop.entryPriceUnavailable", contract.getSymbol());
         }
+        LocalDate previousEntry = position.getEntryDate();
         position.updateEntry(request.direction(), request.entryDate(), entryPrice, request.quantityLot());
         rebuildPeerSnapshots(portfolioId, contract.getSymbol(), position, null);
-        publishLotChange(portfolioId, position, position.getEntryDate());
+        // Rebuild back to the EARLIER of old/new entry: moving the entry LATER vacates the old days, whose stale
+        // daily aggregates must also be wiped (the TRY chart reads stored snapshots, so a new-date-only fromDate
+        // left a phantom step at the old entry). Mirrors PortfolioCrudService.updatePosition's earliestOf for spot.
+        publishLotChange(portfolioId, position, earliestOf(previousEntry, position.getEntryDate()));
         log.info("DerivativePosition entry updated id={} portfolio={} entryDate={} qty={}",
                 positionId, portfolioId, request.entryDate(), request.quantityLot());
         return mapper.toResponse(position);

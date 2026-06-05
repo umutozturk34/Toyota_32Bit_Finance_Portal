@@ -173,6 +173,29 @@ class DerivativePositionServiceTest {
     }
 
     @Test
+    void should_publishLotChangeFromOldEntry_when_entryDateMovedLater() {
+        // Entry moves LATER (1 Apr -> 15 Apr). The rebuild event must carry the EARLIER date (1 Apr) so the wipe +
+        // rebuild covers the VACATED days; a new-date-only fromDate left their stale daily aggregates as a phantom
+        // step on the TRY chart (USD/EUR recompute live and were unaffected).
+        UpdateDerivativePositionRequest req = new UpdateDerivativePositionRequest(
+                DerivativeDirection.SHORT, LocalDate.of(2026, 4, 15),
+                new BigDecimal("36.00"), new BigDecimal("3"));
+        DerivativePosition position = openPosition();   // entryDate = 2026-04-01
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID)).thenReturn(Optional.of(position));
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(position));
+
+        service.updateOpen(POSITION_ID, PORTFOLIO_ID, USER_SUB, req);
+
+        org.mockito.ArgumentCaptor<Object> cap = org.mockito.ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, org.mockito.Mockito.atLeastOnce()).publishEvent(cap.capture());
+        com.finance.portfolio.service.PortfolioBackfillService.LotChangedEvent ev = cap.getAllValues().stream()
+                .filter(o -> o instanceof com.finance.portfolio.service.PortfolioBackfillService.LotChangedEvent)
+                .map(o -> (com.finance.portfolio.service.PortfolioBackfillService.LotChangedEvent) o)
+                .findFirst().orElseThrow();
+        assertThat(ev.fromDate()).isEqualTo(LocalDate.of(2026, 4, 1));
+    }
+
+    @Test
     void should_clearCloseFieldsAndRebuildSnapshots_when_reopeningClosedPosition() {
         DerivativePosition position = closedPosition();
         when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID)).thenReturn(Optional.of(position));

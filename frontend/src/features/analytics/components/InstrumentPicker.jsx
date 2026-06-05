@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lightbulb, Search } from 'lucide-react';
 import SearchSuggestions from '../../../shared/components/form/SearchSuggestions';
 import { INSTRUMENT_TYPES, PRESET_INSTRUMENTS, SERIES_COLORS } from '../constants';
+import { commodityLabel } from '../../../shared/utils/commodityName';
 
 const MARKET_TO_ANALYTICS = {
   STOCK: 'SPOT',
@@ -79,7 +80,7 @@ export default function InstrumentPicker({ value, onChange, max = 6 }) {
                 <span className="hidden sm:inline font-mono text-[10px] uppercase tracking-[0.12em] text-fg-subtle">
                   {typeDef?.labelKey ? t(`analytics.${typeDef.labelKey}`, { defaultValue: inst.type }) : inst.type}
                 </span>
-                <span className="text-fg truncate max-w-[140px] sm:max-w-[200px]">{inst.labelKey ? t(inst.labelKey, { defaultValue: inst.name || inst.code }) : (inst.name || inst.code)}</span>
+                <span className="text-fg truncate max-w-[140px] sm:max-w-[200px]">{inst.labelKey ? t(inst.labelKey, { defaultValue: inst.name || inst.code }) : commodityLabel(t, inst.type, inst.code, inst.name || inst.code)}</span>
                 <button
                   type="button"
                   onClick={() => remove(idx)}
@@ -114,7 +115,7 @@ export default function InstrumentPicker({ value, onChange, max = 6 }) {
               onSelect={handleSearchSelect}
               navigateOnSelect={false}
               excludeCodes={excludedCodes}
-              excludeTypes={['BOND']}
+              excludeTypes={['BOND', 'MACRO_INFLATION']}
               placeholder={t('analytics.searchPlaceholder', { defaultValue: 'ASELS, altın, bitcoin, TP.TRYTAS...' })}
             />
           </motion.div>
@@ -143,7 +144,7 @@ export default function InstrumentPicker({ value, onChange, max = 6 }) {
                       : 'bg-bg-base/60 hover:bg-accent/10 hover:text-accent text-fg'
                 }`}
               >
-                {p.labelKey ? t(p.labelKey, { defaultValue: p.name }) : p.name}
+                {p.labelKey ? t(p.labelKey, { defaultValue: p.name }) : commodityLabel(t, p.type, p.code, p.name)}
               </button>
             );
           })}

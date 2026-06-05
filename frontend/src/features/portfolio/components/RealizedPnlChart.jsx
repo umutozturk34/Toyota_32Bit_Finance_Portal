@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
@@ -20,7 +20,7 @@ const RED_SHADES = ['#ef4444', '#f87171', '#fb7185', '#f43f5e', '#fca5a5', '#e11
 function RealizedPnlChart({ portfolioId, forPrint = false }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const { format: money, formatCompact: moneyCompact, currency: displayCurrency } = useMoney();
+  const { format: money, formatCompact: moneyCompact, currency: displayCurrency, convert } = useMoney();
   const chartRef = useRef(null);
   const [hovered, setHovered] = useState(null);
   const [activeTab, setActiveTab] = useSessionState('portfolio-realized-tab', 'ALL');
@@ -32,7 +32,9 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
     activeTab !== 'ALL' ? activeTab : undefined,
     6
   );
-  const loading = activeTab !== 'ALL' && typeLoading;
+  // Spinner only when a filtered sub-tab has NO data yet — a background refetch (typeLoading=isFetching) keeps
+  // the existing slices visible instead of blanking to a spinner on every sub-tab switch.
+  const loading = activeTab !== 'ALL' && typeLoading && !typeData?.length;
 
   const availableTypes = useMemo(() => new Set((allData || []).map((d) => d.assetType)), [allData]);
   const items = useMemo(() => {
@@ -45,26 +47,44 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
     if (frameBase === 'TRY') return Number(it.realizedPnlTry || 0);
     const byCurrency = it.realizedPnlByCurrency || {};
     const frame = byCurrency[frameBase];
-    return frame != null ? Number(frame) : Number(it.realizedPnlTry || 0);
-  }, [frameBase]);
+    // Backend per-date frame missing (FX history empty for this frame): convert the TRY value at spot
+    // so the bar stays in frameBase and is rendered with the matching symbol, instead of stamping the
+    // USD/EUR symbol on a raw TRY magnitude.
+    return frame != null ? Number(frame) : Number(convert(Number(it.realizedPnlTry || 0), 'TRY'));
+  }, [frameBase, convert]);
+  // Cost basis on the SAME per-date FX frame as realizedFor: costByCurrency is the backend's per-
+  // entry-date conversion, so the USD/EUR cost sits on the same dates as the realized gain beside it
+  // instead of today's spot.
+  const costFor = useCallback((it) => {
+    if (frameBase === 'TRY') return Number(it.costTry || 0);
+    const frame = (it.costByCurrency || {})[frameBase];
+    return frame != null ? Number(frame) : Number(convert(Number(it.costTry || 0), 'TRY'));
+  }, [frameBase, convert]);
 
   const netPnl = useMemo(
     () => items.reduce((sum, i) => sum + realizedFor(i), 0),
     [items, realizedFor]
   );
+  // Slice proportions / weight %s use the TRY magnitude so they stay currency-independent and match the
+  // backend's TRY-basis AllocationItem.percent. Displayed amounts still use realizedFor (display currency).
+  // Computing weights from the FX-converted amounts made the same data show different slice %s per frame.
+  const weightTry = useCallback((it) => Math.abs(Number(it.realizedPnlTry || 0)), []);
   const absTotal = useMemo(
-    () => items.reduce((sum, i) => sum + Math.abs(realizedFor(i)), 0),
-    [items, realizedFor]
+    () => items.reduce((sum, i) => sum + weightTry(i), 0),
+    [items, weightTry]
   );
 
-  const highlight = useCallback((name) => {
+  // SINGLE source of truth for emphasis: the `hovered` slice name, set by BOTH the chart slices (mouseover)
+  // and the legend rows (onMouseEnter) — like the fund-detail pie. applyEmphasis syncs ECharts to it (downplay
+  // all, then highlight the hovered slice). Driving everything through one state + one applier avoids the
+  // imperative-vs-native desync that stuck the donut, AND re-asserts the right state after a notMerge data
+  // refetch (which would otherwise preserve a stale highlight). hovered=null → just downplay → neutral.
+  const applyEmphasis = useCallback(() => {
     const inst = chartRef.current?.getEchartsInstance?.();
-    if (inst) inst.dispatchAction({ type: 'highlight', seriesIndex: 0, name });
-  }, []);
-  const downplay = useCallback((name) => {
-    const inst = chartRef.current?.getEchartsInstance?.();
-    if (inst) inst.dispatchAction({ type: 'downplay', seriesIndex: 0, name });
-  }, []);
+    if (!inst) return;
+    inst.dispatchAction({ type: 'downplay', seriesIndex: 0 });
+    if (hovered != null) inst.dispatchAction({ type: 'highlight', seriesIndex: 0, name: hovered });
+  }, [hovered]);
   const labelFor = useCallback((it) => {
     if (it.label === 'OTHER') return t('portfolio.allocation.otherLabel');
     return activeTab === 'ALL'
@@ -74,7 +94,11 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
 
   const chartEvents = useMemo(() => (forPrint ? {} : {
     mouseover: (params) => setHovered(params?.name ?? null),
+    // No clearEmphasis on per-slice mouseout — that fought ECharts' native slice→slice move (it dimmed the
+    // slice the cursor was entering). Native handles slice↔slice + slice→empty; globalout + the container
+    // onMouseLeave clear only when the cursor actually leaves the whole donut.
     mouseout: () => setHovered(null),
+    globalout: () => setHovered(null),
     click: (params) => {
       if (activeTab !== 'ALL') return;
       const it = items.find((i) => i.label === params?.name || labelFor(i) === params?.name);
@@ -104,15 +128,16 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
 
   const seriesData = useMemo(() => items.map((it) => {
     const realized = realizedFor(it);
-    const cost = Number(it.costTry || 0);
+    const cost = costFor(it);
     return {
       name: labelFor(it),
-      value: Math.abs(realized),
+      value: weightTry(it),
       itemStyle: { color: colorFor(it) },
       _cost: cost,
       _realized: realized,
+      _weightTry: weightTry(it),
     };
-  }), [items, labelFor, colorFor, realizedFor]);
+  }), [items, labelFor, colorFor, realizedFor, costFor, weightTry]);
 
   const palette = chartPalette(isDark);
   const tooltipBg = palette.tooltipBg;
@@ -142,11 +167,11 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
         const cost = d._cost ?? 0;
         const sign = realized >= 0 ? '+' : '−';
         const color = realized >= 0 ? '#10b981' : '#ef4444';
-        const pct = absTotal > 0 ? ((Math.abs(realized) / absTotal) * 100).toFixed(1) : '0.0';
+        const pct = absTotal > 0 ? (((d._weightTry ?? 0) / absTotal) * 100).toFixed(1) : '0.0';
         return `<div style="padding:4px 0;min-width:160px">
             <div style="font-size:11px;color:${tooltipFg};opacity:0.85;margin-bottom:4px">${params.name}</div>
             <div style="font-size:13px;font-family:ui-monospace,monospace;font-weight:700;color:${color}">${sign} ${money(Math.abs(realized), frameBase)}</div>
-            <div style="font-size:10px;color:${labelMuted};margin-top:4px">${t('portfolio.allocation.costLabel')}: ${money(cost, 'TRY')} · %${pct}</div>
+            <div style="font-size:10px;color:${labelMuted};margin-top:4px">${t('portfolio.allocation.costLabel')}: ${money(cost, frameBase)} · %${pct}</div>
           </div>`;
       },
     },
@@ -190,6 +215,11 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
     }],
   }), [seriesData, netPnl, absTotal, tooltipBg, tooltipBorder, tooltipFg, labelMuted, ringStroke, money, moneyCompact, t, totalLabel, frameBase, forPrint]);
 
+  // Sync ECharts' emphasis to `hovered` on every hover change AND after each data refetch (notMerge re-applies
+  // the option and would otherwise preserve a stale highlight). One applier, one state — legend-hover and
+  // slice-hover both flow through it, so they never desync and the donut never stays stuck at rest.
+  useEffect(() => { applyEmphasis(); }, [applyEmphasis, seriesData]);
+
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="show" className="space-y-4 min-w-0">
       <div className="flex items-center gap-2">
@@ -218,21 +248,23 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
           </div>
         ) : (
           <div className="space-y-4">
-            <ReactECharts
-              ref={chartRef}
-              key={`${isDark}-${activeTab}-${displayCurrency}-${forPrint}`}
-              option={option}
-              notMerge
-              style={forPrint ? { height: 260, width: '100%', pointerEvents: 'none' } : { height: 'min(40vh, 260px)', minHeight: 200, width: '100%' }}
-              opts={{ renderer: forPrint ? 'svg' : 'canvas' }}
-              onEvents={chartEvents}
-            />
+            <div onMouseLeave={() => setHovered(null)}>
+              <ReactECharts
+                ref={chartRef}
+                key={`${isDark}-${displayCurrency}-${forPrint}`}
+                option={option}
+                notMerge
+                style={forPrint ? { height: 260, width: '100%', pointerEvents: 'none' } : { height: 'min(40vh, 260px)', minHeight: 200, width: '100%' }}
+                opts={{ renderer: forPrint ? 'svg' : 'canvas' }}
+                onEvents={chartEvents}
+              />
+            </div>
 
-            <div className="space-y-1.5 max-h-[260px] sm:max-h-none overflow-y-auto">
+            <div className="space-y-1.5 max-h-[260px] sm:max-h-[300px] overflow-y-auto" onMouseLeave={() => setHovered(null)}>
               {items.map((it) => {
                 const realized = realizedFor(it);
-                const cost = Number(it.costTry || 0);
-                const pct = absTotal > 0 ? (Math.abs(realized) / absTotal) * 100 : 0;
+                const cost = costFor(it);
+                const pct = absTotal > 0 ? (weightTry(it) / absTotal) * 100 : 0;
                 const color = colorFor(it);
                 const signColor = realized >= 0 ? '#10b981' : '#ef4444';
                 const displayLabel = labelFor(it);
@@ -241,8 +273,7 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
                 return (
                   <div
                     key={it.label}
-                    onMouseEnter={() => highlight(displayLabel)}
-                    onMouseLeave={() => downplay(displayLabel)}
+                    onMouseEnter={() => setHovered(displayLabel)}
                     onClick={() => { if (clickable) setActiveTab(it.label); }}
                     className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
                       clickable ? 'cursor-pointer' : 'cursor-default'
@@ -252,7 +283,7 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-fg truncate">{displayLabel}</p>
                       <p className="text-[10px] font-mono mt-0.5">
-                        <span className="text-fg-muted">{money(cost, 'TRY')}</span>
+                        <span className="text-fg-muted">{money(cost, frameBase)}</span>
                         <span style={{ color: signColor }}> {realized >= 0 ? '+' : '−'} {money(Math.abs(realized), frameBase)}</span>
                       </p>
                     </div>

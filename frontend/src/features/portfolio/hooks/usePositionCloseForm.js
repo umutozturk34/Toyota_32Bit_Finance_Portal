@@ -6,12 +6,12 @@ import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
 import { ONE_HOUR_MS, toYearMonth, buildPriceIndex } from '../lib/positionFormHelpers';
 
-export const todayIso = () => new Date().toISOString().slice(0, 10);
+export const todayIso = () => new Date().toLocaleDateString('sv-SE');
 
 const yesterdayIso = () => {
   const d = new Date();
   d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
+  return d.toLocaleDateString('sv-SE');
 };
 
 export function formatDateLabel(iso, localeTag) {
@@ -58,14 +58,14 @@ export function usePositionCloseForm({
   const dateMonth = useMemo(() => toYearMonth(date), [date]);
   const historicalPriceTry = dateMonth === viewMonth ? viewPrices.get(date) : undefined;
   const historicalPriceDisplay = historicalPriceTry != null
-    ? Number(convertAt(historicalPriceTry, 'TRY', date) ?? historicalPriceTry)
+    ? Number(convertAt(historicalPriceTry, 'TRY', date, resolvedNative) ?? historicalPriceTry)
     : null;
 
   const today = todayIso();
   const isToday = date === today;
 
   const liveSuggestedInDisplay = liveSuggestedPriceTry != null
-    ? Number(convertAt(liveSuggestedPriceTry, 'TRY', today) ?? liveSuggestedPriceTry)
+    ? Number(convertAt(liveSuggestedPriceTry, 'TRY', today, resolvedNative) ?? liveSuggestedPriceTry)
     : null;
 
   const dateSuggestedInDisplay = useMemo(() => {

@@ -25,6 +25,13 @@ export const portfolioService = {
     return res.data.data;
   },
 
+  getPositionsByAsset: async (portfolioId, assetType, assetCode) => {
+    const res = await api.get(`${BASE}/${portfolioId}/positions/by-asset`, {
+      params: { assetType, assetCode },
+    });
+    return res.data.data;
+  },
+
   addPosition: async (portfolioId, payload) => {
     const res = await api.post(`${BASE}/${portfolioId}/positions`, payload);
     return res.data.data;
@@ -50,8 +57,9 @@ export const portfolioService = {
     return res.data.data;
   },
 
-  getAssetAggregate: async (portfolioId, assetType, assetCode) => {
-    const res = await api.get(`${BASE}/${portfolioId}/assets/${assetType}/${encodeURIComponent(assetCode)}/summary`);
+  getAssetAggregate: async (portfolioId, assetType, assetCode, direction = null) => {
+    const params = direction ? { direction } : undefined;
+    const res = await api.get(`${BASE}/${portfolioId}/assets/${assetType}/${encodeURIComponent(assetCode)}/summary`, { params });
     return res.data.data;
   },
 
@@ -80,10 +88,10 @@ export const portfolioService = {
     return res.data.data;
   },
 
-  getAssetSeries: async (portfolioId, assetType, assetCode, range = '1M') => {
-    const res = await api.get(`${BASE}/${portfolioId}/chart`, {
-      params: { type: 'asset-series', assetType, assetCode, range },
-    });
+  getAssetSeries: async (portfolioId, assetType, assetCode, range = '1M', direction = null) => {
+    const params = { type: 'asset-series', assetType, assetCode, range };
+    if (direction) params.direction = direction;
+    const res = await api.get(`${BASE}/${portfolioId}/chart`, { params });
     return res.data.data;
   },
 

@@ -43,13 +43,20 @@ export function computeClosedAggregate(lots) {
   let totalEntryQty = 0;
   let weightedNum = 0;
   let totalRealizedPnl = 0;
+  let totalClosedMarket = 0;
   let earliest = null;
+  // For a fully-closed lot the backend freezes currentPriceTry to the exit/close price and marketValueTry
+  // to the close-frozen notional (PortfolioSummaryService / DerivativePositionFormatter). Surfacing the first
+  // lot's close price keeps the "Güncel Fiyat" card showing the real realized price instead of a phantom 0.
+  let closePrice = null;
   for (const l of lots) {
     const q = Number(l.quantity) || 0;
     const ep = Number(l.entryPrice) || 0;
     totalEntryQty += q;
     weightedNum += q * ep;
     totalRealizedPnl += Number(l.realizedPnlTry ?? l.pnlTry ?? 0);
+    totalClosedMarket += Number(l.marketValueTry) || 0;
+    if (closePrice == null && l.currentPriceTry != null) closePrice = Number(l.currentPriceTry);
     if (l.entryDate && (!earliest || new Date(l.entryDate) < new Date(earliest))) {
       earliest = l.entryDate;
     }
@@ -60,11 +67,11 @@ export function computeClosedAggregate(lots) {
     : 0;
   return {
     lotCount: lots.length,
-    totalQuantity: 0,
+    totalQuantity: totalEntryQty,
     weightedAvgEntryPrice: weightedAvg,
     earliestEntryDate: earliest,
-    currentPriceTry: 0,
-    totalMarketValueTry: 0,
+    currentPriceTry: closePrice,
+    totalMarketValueTry: totalClosedMarket,
     totalPnlTry: totalRealizedPnl,
     pnlPercent,
   };

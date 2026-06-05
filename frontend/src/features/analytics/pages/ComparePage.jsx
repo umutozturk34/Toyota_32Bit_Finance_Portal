@@ -11,6 +11,8 @@ import Spinner from '../../../shared/components/feedback/Spinner';
 import EmptyState from '../../../shared/components/feedback/EmptyState';
 import SearchSuggestions from '../../../shared/components/form/SearchSuggestions';
 import { usePortfolioList } from '../../portfolio/hooks/usePortfolioData';
+import { useMacroIndicators } from '../../macro/hooks/useMacroIndicators';
+import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
 import { useTheme } from '../../../shared/context/useTheme';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
@@ -25,7 +27,7 @@ import {
   fetchSeries,
   colorFor,
   parseInitialSelection,
-  forwardFillToToday,
+  forwardFillTo,
   forwardFillDaily,
   backFillToWindowStart,
   displayLabel,
@@ -47,6 +49,7 @@ const ASSET_ROUTE = {
 
 function buildBackTarget(from, fromType, fromCode) {
   if (from === 'beaters') return '/analytics?tab=beaters';
+  if (from === 'portfolio') return '/portfolio';
   if (from === 'asset' && fromType && fromCode) {
     const segment = ASSET_ROUTE[fromType];
     if (segment) return `/${segment}/${encodeURIComponent(fromCode)}`;
@@ -66,6 +69,17 @@ export default function ComparePage() {
   const { convertBetween } = useRateHistory();
   const [params, setParams] = useSearchParams();
   const { data: userPortfolios } = usePortfolioList();
+  // code -> i18n label key for every macro indicator, so a macro selected in compare (which only carries
+  // {type,code,name}) can resolve its localized name via marketOverview.macro.<label>.
+  const { data: macroList } = useMacroIndicators();
+  const macroLabelByCode = useMemo(
+    () => Object.fromEntries((macroList || []).map((m) => [m.code, m.label]).filter(([, l]) => l)),
+    [macroList],
+  );
+  const macroUnitByCode = useMemo(
+    () => Object.fromEntries((macroList || []).map((m) => [m.code, m.unit]).filter(([, u]) => u)),
+    [macroList],
+  );
   const [portfolioPickerOpen, setPortfolioPickerOpen] = useState(false);
   const portfolioPickerRef = useRef(null);
   const navigate = useNavigate();
@@ -95,6 +109,44 @@ export default function ComparePage() {
       return changed ? next : prev;
     });
   }, [userPortfolios, setSelected]);
+
+  // URL/beater hand-offs arrive with name === code for market assets (the link only carries codes), so the
+  // legend/info-bar/chips would show "PHN" instead of "NEO PORTFÖY İKİNCİ SERBEST FON". Backfill the real
+  // long name from the market API. Commodities (i18n) and macros (label map) and the id-only portfolio
+  // resolve their names elsewhere and are skipped; each (type,code) is fetched at most once.
+  const enrichedAssetNamesRef = useRef(new Set());
+  useEffect(() => {
+    const needs = selected.filter((s) =>
+      s.type !== 'PORTFOLIO' && s.type !== 'COMMODITY' && !isMacro(s.type)
+      && (!s.name || s.name === s.code)
+      && !enrichedAssetNamesRef.current.has(`${s.type}:${s.code}`));
+    if (needs.length === 0) return undefined;
+    let cancelled = false;
+    needs.forEach((s) => enrichedAssetNamesRef.current.add(`${s.type}:${s.code}`));
+    (async () => {
+      const resolved = await Promise.all(needs.map(async (s) => {
+        try {
+          const asset = await unifiedMarketService.getByCode(s.type, s.code);
+          return asset?.name && asset.name !== s.code ? { key: `${s.type}:${s.code}`, name: asset.name } : null;
+        } catch {
+          return null;
+        }
+      }));
+      if (cancelled) return;
+      const byKey = new Map(resolved.filter(Boolean).map((r) => [r.key, r.name]));
+      if (byKey.size === 0) return;
+      setSelected((prev) => {
+        let changed = false;
+        const next = prev.map((s) => {
+          const nm = byKey.get(`${s.type}:${s.code}`);
+          if (nm && (!s.name || s.name === s.code)) { changed = true; return { ...s, name: nm }; }
+          return s;
+        });
+        return changed ? next : prev;
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [selected, setSelected]);
   const [rangeId, setRangeId] = useChartRange();
   const initialRangeRef = useRef(params.get('range'));
   const initialStartRef = useRef(params.get('start'));
@@ -114,18 +166,35 @@ export default function ComparePage() {
     );
     return set.size === 1 ? [...set][0] : null;
   }, [selected]);
+  // A TR-only inflation index (CPI/TÜFE) — and the portfolio-vs-any-TR-indexed case — forces the WHOLE
+  // chart into TRY. CPI lives only in TRY (here +1800%), so a EUR/USD deposit left in its own currency
+  // (a few % growth) looks crushed by inflation, when in TRY terms (its FX-converted growth = native
+  // interest + TRY depreciation, ~+2500%) it actually BEAT it. Pinning to TRY converts every non-TRY
+  // series per-date so "did it beat inflation" is a real apples-to-apples read. An explicit URL currency
+  // or a single non-TRY deposit frame still wins over this.
+  const forceTryFrame = useMemo(() => {
+    if (initialCurrencyRef.current) return false;
+    const hasInflation = selected.some((s) => s.type === 'MACRO_INFLATION');
+    const hasPortfolio = selected.some((s) => s.type === 'PORTFOLIO');
+    const hasTrIndexed = selected.some((s) => isRateLike(s.type));
+    return hasInflation || (hasTrIndexed && hasPortfolio);
+  }, [selected]);
   const targetCurrency = useMemo(() => {
     if (initialCurrencyRef.current) return initialCurrencyRef.current;
+    // CPI/inflation framing (TRY) wins over a single non-TRY deposit frame too: a EUR deposit vs CPI is
+    // only meaningful in TRY (deposit's TRY-terms growth vs TRY inflation), not in EUR vs a TRY index.
+    if (forceTryFrame) return 'TRY';
     if (depositFrameCurrency) return depositFrameCurrency;
     if (displayCurrency !== 'ORIGINAL') return displayCurrency;
     const first = selected.find((s) => !isMacro(s.type) && s.type !== 'PORTFOLIO');
     return first ? nativeCurrencyFor(first.type, first.code) : 'TRY';
-  }, [displayCurrency, selected, depositFrameCurrency]);
-  // "Original" view (each series in its own native) only when no explicit currency is in effect:
-  // a URL currency (USD/EUR beater) or a selected non-TRY deposit forces conversion to that currency.
+  }, [displayCurrency, selected, depositFrameCurrency, forceTryFrame]);
+  // "Original" view (each series in its own native) only when no explicit currency / non-TRY deposit frame
+  // / forced-TRY inflation frame is in effect.
   const originalView = displayCurrency === 'ORIGINAL'
     && !initialCurrencyRef.current
-    && !depositFrameCurrency;
+    && !depositFrameCurrency
+    && !forceTryFrame;
 
   useEffect(() => {
     if (initialRangeRef.current) {
@@ -219,19 +288,49 @@ export default function ComparePage() {
   });
   const isLoading = queries.some((q) => q.isLoading);
 
+  // A "rate-vs-rate" compare (every selected series is a PERCENT-unit rate/deposit) can be read two ways: as
+  // the actual rate LEVEL over time (how interest rose/fell) or as a cumulative growth index. Only then do the
+  // series share one % axis; mixing an asset or a CPI-index series forces the normalized % view.
+  // Deposits are ALWAYS interest rates (PERCENT) — treat MACRO_DEPOSIT as eligible directly rather than
+  // looking it up in macroUnitByCode (the macro-indicator list the map is built from may not include every
+  // deposit tenor, which otherwise hid the level/cumulative toggle for a deposit-vs-deposit compare). Only
+  // MACRO_RATE needs the unit check, since it can be a PERCENT rate (toggle) or an INDEX level (no toggle).
+  const homogeneousRates = useMemo(
+    () => selected.length >= 2 && selected.every((s) =>
+      s.type === 'MACRO_DEPOSIT'
+      || (s.type === 'MACRO_RATE' && macroUnitByCode[s.code] === 'PERCENT')),
+    [selected, macroUnitByCode],
+  );
+  const [valueMode, setValueMode] = useSessionState('compare:valueMode', 'level');
+  const levelMode = homogeneousRates && valueMode === 'level';
+
+  // Right edge for rate compounding and forward-fill. Local-zone sv-SE (never UTC toISOString, which
+  // shifts a day in non-Istanbul / pre-03:00 zones). With explicit bounds (Beater hand-off pinning a
+  // past window) the tail stops at bounds.to, otherwise it runs to today.
+  const fillUntil = useMemo(
+    () => (useExplicitBounds ? bounds.to : new Date().toLocaleDateString('sv-SE')),
+    [useExplicitBounds, bounds.to],
+  );
+
   const rawSeriesData = useMemo(
     () => selected.map((ind, idx) => {
       const raw = queries[idx]?.data || [];
-      // In comparison, a deposit's interest-rate series is compounded into a cumulative growth
-      // curve so it ranks against assets' returns (its own detail page keeps the raw rate).
-      const points = ind.type === 'MACRO_DEPOSIT' ? compoundRateSeries(raw) : raw;
+      // In comparison, a rate series (deposit interest, TLREF/policy rate) is compounded into a
+      // cumulative growth curve so it ranks against assets' returns. But a MACRO_RATE already expressed
+      // as an INDEX (e.g. the BIST TLREF Index, ~6022) is ALREADY cumulative — compounding it again
+      // explodes the value, so index-unit rates follow the price path (raw levels, normalized from
+      // baseline). Mirrors backend ScenarioService.shouldCompound: compound only when unit == PERCENT.
+      const macroUnit = macroUnitByCode[ind.code];
+      const compound = !levelMode && (ind.type === 'MACRO_DEPOSIT'
+        || (ind.type === 'MACRO_RATE' && macroUnit === 'PERCENT'));
+      const points = compound ? compoundRateSeries(raw, fillUntil) : raw;
       return {
-        indicator: { ...ind, displayName: displayLabel(ind) },
+        indicator: { ...ind, displayName: displayLabel(t, ind, macroLabelByCode) },
         points,
         color: colorFor(ind, idx),
       };
     }),
-    [selected, queries]
+    [selected, queries, t, macroLabelByCode, macroUnitByCode, levelMode, fillUntil]
   );
 
   const backfilledSeriesData = useMemo(
@@ -255,59 +354,110 @@ export default function ComparePage() {
   }, [backfilledSeriesData]);
 
   const convertedData = useMemo(() => {
-    const todayIso = new Date().toISOString().slice(0, 10);
-    // When the page was opened with explicit start/end bounds (e.g. Beater hand-off
-    // pinning the user to a specific past window), forward-filling must stop at
-    // bounds.to — otherwise the last in-window value gets stamped across every day
-    // up to today, producing a flat tail that masquerades as "no price change".
-    const fillUntil = useExplicitBounds ? bounds.to : todayIso;
+    // fillUntil (lifted above) is the local-zone right edge: bounds.to under explicit Beater bounds,
+    // else today. Forward-fill must stop there so a past-pinned window doesn't stamp the last value
+    // across every day up to today, producing a flat tail that masquerades as "no price change".
     return backfilledSeriesData.map((s) => {
+      // No commonStartDate trim: every series keeps its full history (so CPI shows its pre-window data)
+      // and the chart builder normalizes each series from commonStartDate's value as the shared baseline.
       let pts = s.points || [];
-      if (commonStartDate) {
-        const inRange = pts.filter((p) => p.date >= commonStartDate);
-        if (inRange.length === 0 && pts.length > 0) {
-          const lastBefore = [...pts]
-            .sort((a, b) => String(a.date).localeCompare(String(b.date)))
-            .filter((p) => p.date < commonStartDate)
-            .pop();
-          pts = lastBefore
-            ? [{ date: commonStartDate, value: lastBefore.value, _anchored: true }]
-            : [];
-        } else {
-          pts = inRange;
-        }
-      }
       const native = nativeCurrencyFor(s.indicator.type, s.indicator.code);
-      const shouldConvert = !isRateLike(s.indicator.type)
-        && !originalView
-        && native !== targetCurrency;
-      if (shouldConvert) {
+      const isPortfolioSeries = s.indicator.type === 'PORTFOLIO';
+      if (isPortfolioSeries) {
+        // The portfolio TWR index line is FX-converted per-date to the target currency exactly like the
+        // asset lines (only outside originalView, where each series stays in its own native). Converting
+        // the index per-date and letting the builder normalize from the shared start yields the correct
+        // currency-adjusted return — idx(t)/FX(t) ÷ idx(0)/FX(0) = TRY-return × FX(0)/FX(t) — NOT a
+        // distortion. Leaving it raw showed a TRY return beside USD/EUR-converted assets, a large gap
+        // given TRY depreciation. For a TRY view (or originalView, or a portfolio-vs-CPI compare where
+        // targetCurrency stays TRY) native == targetCurrency, so this is a no-op and the
+        // portfolio-vs-inflation read remains a pure TRY real return.
+        // The TL P&L overlay (pnlTry) is a concrete money figure shown in the tooltip/info-bar with the
+        // targetCurrency symbol, so it converts whenever native != targetCurrency — INCLUDING originalView,
+        // otherwise a TRY amount renders under a $/€ symbol.
+        if (native !== targetCurrency) {
+          pts = pts.map((p) => {
+            // Prefer the backend per-currency P&L (value@point-date FX − cost@entry-date FX, closed lots at
+            // exit FX). Converting the netted TRY P&L at the point rate mis-converts the cost leg (cost should
+            // lock at each lot's entry-date FX), so convertBetween is only a fallback when the frame is absent.
+            const framePnl = p.pnlByCcy && p.pnlByCcy[targetCurrency] != null
+              ? Number(p.pnlByCcy[targetCurrency]) : null;
+            const cpPnl = framePnl != null
+              ? framePnl
+              : (p.pnlTry != null ? convertBetween(p.pnlTry, native, targetCurrency, p.date) : null);
+            const cpVal = !originalView ? convertBetween(p.value, native, targetCurrency, p.date) : null;
+            return { ...p, value: cpVal ?? p.value, pnlTry: cpPnl ?? p.pnlTry };
+          });
+        }
+      } else if (!levelMode && !isRateLike(s.indicator.type) && !originalView && native !== targetCurrency) {
+        // !levelMode guard: in LEVEL mode the plotted value is the raw annual interest-rate PERCENTAGE
+        // (compound is off), and a rate level is currency-agnostic — FX-converting it would render a 50%
+        // TRY deposit rate as ~1.5% beside an unconverted USD deposit. Cumulative mode is unaffected: there
+        // the value is the compounded growth-index (money), which is correctly FX-converted per-date.
         pts = pts.map((p) => {
           const converted = convertBetween(p.value, native, targetCurrency, p.date);
           return { ...p, value: converted ?? p.value };
         });
       }
-      // Forward-fill only makes sense for daily-frequency series with weekend/holiday
-      // gaps. Sparse macro readings (monthly CPI, weekly deposit rates) get smeared
-      // into every intervening day, making the "last published" value masquerade as
-      // fresh observations — e.g. April CPI looking like it was recorded every day
-      // through May. Step lines in the builder already carry the last value visually.
+      // Dense (asset) series fill to daily so the line stays continuous; SPARSE macro (CPI / deposit /
+      // rate) is LEFT at its published cadence — the builder renders it with step:'end' and the tooltip
+      // looks up each series' value-in-force via an as-of binary search, both of which work fine from the
+      // real points. Inflating sparse macro to daily (CPI back to 2005 × several series → thousands of
+      // redundant rows) was the main cause of the lag on the ALL range, with no visual benefit.
       const isSparse = isMacro(s.indicator.type);
       if (!isSparse) {
         pts = forwardFillDaily(pts, commonStartDate || bounds.from, fillUntil);
-        if (!useExplicitBounds) pts = forwardFillToToday(pts);
+      }
+      // Extend the last value to the right edge so the line reaches today / the window end (no-op for dense
+      // series and for compounded deposits whose daily tail already reaches fillUntil).
+      pts = forwardFillTo(pts, fillUntil);
+      // Trim to the common overlap start so the x-axis begins where ALL selected series have data (e.g. the
+      // 2012 deposit start) instead of being dragged back to one long-history series' origin (CPI 2005).
+      // A SPARSE compounded series has no point exactly at commonStartDate, so a bare trim made the builder
+      // re-base it at its NEXT published point — dropping the interest accrued over [commonStartDate, next].
+      // Plant a synthetic point AT commonStartDate carrying the value-in-force: geometrically interpolated for
+      // a compounded growth index (exact, since the rate is constant between publishes), flat-carried for a
+      // step/level series (CPI, level mode). Dense (daily-filled) series already own a point there → no-op.
+      if (commonStartDate) {
+        const idx = pts.findIndex((p) => p.date >= commonStartDate);
+        if (idx > 0 && pts[idx] && pts[idx].date !== commonStartDate) {
+          const p0 = pts[idx - 1];
+          const p1 = pts[idx];
+          const compounded = !levelMode && isMacro(s.indicator.type) && !isRateLike(s.indicator.type);
+          let baseVal = Number(p0.value);
+          const v0 = Number(p0.value);
+          const v1 = Number(p1.value);
+          if (compounded && v0 > 0 && v1 > 0) {
+            const t0 = new Date(p0.date).getTime();
+            const t1 = new Date(p1.date).getTime();
+            const tc = new Date(commonStartDate).getTime();
+            const frac = t1 > t0 ? (tc - t0) / (t1 - t0) : 0;
+            baseVal = v0 * Math.pow(v1 / v0, frac);
+          }
+          pts = [{ ...p0, date: commonStartDate, value: baseVal }, ...pts.slice(idx)];
+        } else {
+          pts = pts.filter((p) => p.date >= commonStartDate);
+        }
       }
       return { ...s, points: pts };
     });
-  }, [backfilledSeriesData, commonStartDate, originalView, targetCurrency, convertBetween, bounds.from, bounds.to, useExplicitBounds]);
+  }, [backfilledSeriesData, commonStartDate, originalView, targetCurrency, convertBetween, bounds.from, fillUntil, levelMode]);
 
   const seriesData = convertedData;
 
-  const normalize = selected.length > 1;
+  // Always normalize to % when the portfolio is in play (it's a return series, comparable to inflation),
+  // and whenever more than one series is being compared.
+  const normalize = !levelMode && (selected.length > 1 || selected.some((s) => s.type === 'PORTFOLIO'));
+
+  // Base-100 INDEX view only when comparing macro indicators among themselves (deposit-vs-deposit, rate-vs-CPI
+  // …) — those have no natural price, so a common 100-based growth index is the right shared unit. The moment a
+  // real ASSET is involved (e.g. a fund/stock arriving from the inflation-beater) keep the actual price as the
+  // anchor (% change from the real starting price), since the asset's own price IS the meaningful unit.
+  const indexMode = normalize && selected.length > 1 && selected.every((s) => isMacro(s.type));
 
   const option = useMemo(
-    () => buildOption(seriesData, normalize, isDark, targetCurrency),
-    [seriesData, normalize, isDark, targetCurrency]
+    () => buildOption(seriesData, normalize, isDark, targetCurrency, commonStartDate, levelMode, indexMode),
+    [seriesData, normalize, isDark, targetCurrency, commonStartDate, levelMode, indexMode]
   );
 
   function addAsset(asset) {
@@ -400,7 +550,7 @@ export default function ComparePage() {
                 style={{ background: `${color}14`, boxShadow: `inset 0 0 0 1px ${color}40` }}
               >
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-                <span className="text-fg font-semibold tracking-tight text-[11px]">{displayLabel(ind)}</span>
+                <span className="text-fg font-semibold tracking-tight text-[11px]">{ind.displayName}</span>
                 <span className="text-fg-subtle">·</span>
                 <span className="text-fg-muted uppercase tracking-[0.12em] text-[10px]">{t(`assets.labels.${ind.type}`, { defaultValue: ind.type })}</span>
                 <button
@@ -504,19 +654,59 @@ export default function ComparePage() {
           ))}
         </div>
 
+        {homogeneousRates && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setValueMode('level')}
+              className={`text-[11px] font-mono font-semibold rounded-md px-2.5 py-1 transition-colors border-none cursor-pointer ${
+                valueMode === 'level'
+                  ? 'bg-accent/15 text-accent shadow-[inset_0_0_0_1px_rgba(99,102,241,0.4)]'
+                  : 'text-fg-muted hover:text-fg'
+              }`}
+            >
+              {t('analytics.compareLevel', { defaultValue: 'Seviye' })}
+            </button>
+            <button
+              type="button"
+              onClick={() => setValueMode('cumulative')}
+              className={`text-[11px] font-mono font-semibold rounded-md px-2.5 py-1 transition-colors border-none cursor-pointer ${
+                valueMode === 'cumulative'
+                  ? 'bg-accent/15 text-accent shadow-[inset_0_0_0_1px_rgba(99,102,241,0.4)]'
+                  : 'text-fg-muted hover:text-fg'
+              }`}
+            >
+              {t('analytics.compareCumulative', { defaultValue: 'Kümülatif' })}
+            </button>
+          </div>
+        )}
+
+        {levelMode && (
+          <div className="flex items-center gap-2 text-[10px] font-mono text-fg-subtle italic">
+            <Info className="h-3 w-3" />
+            {t('analytics.levelHintCompare', {
+              defaultValue: 'Oran seviyesi gösteriliyor — kümülatif büyüme için "Kümülatif"e geç',
+            })}
+          </div>
+        )}
+
         {normalize && (
           <div className="flex items-center gap-2 text-[10px] font-mono text-amber-500 italic">
             <Info className="h-3 w-3" />
-            {t('analytics.normalizedHintCompare', {
-              defaultValue: 'Çoklu seri — başlangıçtan % değişim olarak normalize edildi',
-            })}
+            {indexMode
+              ? t('analytics.normalizedHintCompareIndex', {
+                defaultValue: 'Makro seriler — başlangıçta 100\'e endekslendi',
+              })
+              : t('analytics.normalizedHintCompare', {
+                defaultValue: 'Çoklu seri — başlangıçtan % değişim olarak normalize edildi',
+              })}
           </div>
         )}
         {selected.some((s) => s.type === 'PORTFOLIO') && (
           <div className="flex items-center gap-2 text-[10px] font-mono text-fg-subtle italic">
             <Info className="h-3 w-3" />
             {t('analytics.portfolioSeriesHint', {
-              defaultValue: 'Portföy serisi nakit akışlarını içerir',
+              defaultValue: 'Portföy serisi zaman-ağırlıklı getiridir (nakit giriş/çıkışlarından bağımsız)',
             })}
           </div>
         )}
@@ -546,7 +736,7 @@ export default function ComparePage() {
           )}
         </div>
 
-        {seriesData.length > 0 && <CompareInfoBar selected={seriesData} targetCurrency={targetCurrency} t={t} />}
+        {seriesData.length > 0 && <CompareInfoBar selected={seriesData} targetCurrency={targetCurrency} commonStartDate={commonStartDate} t={t} />}
       </Card>
     </motion.div>
   );

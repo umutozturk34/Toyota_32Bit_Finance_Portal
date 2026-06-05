@@ -7,6 +7,7 @@ import { extractApiError } from '../../../shared/utils/apiError';
 import BaseModal from '../../../shared/components/modal/BaseModal';
 import Button from '../../../shared/components/buttons/Button';
 import { currencySymbolOf } from '../../../shared/utils/priceCurrency';
+import { commodityLabel } from '../../../shared/utils/commodityName';
 
 const DIRECTION_DEFS = [
   { value: 'ABOVE', Icon: ArrowUp },
@@ -61,7 +62,7 @@ export default function EditPriceAlertModal({ open, onClose, alert }) {
       onClose={onClose}
       icon={Pencil}
       title={t('priceAlertEdit.title')}
-      subtitle={alert.assetName ?? alert.assetCode}
+      subtitle={commodityLabel(t, alert.marketType, alert.assetCode, alert.assetName ?? alert.assetCode)}
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">

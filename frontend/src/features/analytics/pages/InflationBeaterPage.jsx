@@ -124,11 +124,12 @@ export default function InflationBeaterPage() {
       range: period,
       from: 'beaters',
     });
-    // Intentionally omit start/end: Beater's window is CPI-publication-anchored
-    // (last release date and the 1M/3M/etc. before it), which doesn't match the
-    // rolling "today minus N days" semantics users expect in the Compare chart.
-    // Compare derives its own bounds from `range` so the line carries through to
-    // today instead of flatlining after the CPI anchor date.
+    // Pin Compare to the exact CPI-publication-anchored window Beater computed against
+    // (data.startDate..data.endDate) so the % numbers in CompareInfoBar match the Beater
+    // table row-for-row. forwardFillTo(bounds.to) keeps sparse macro lines extended to the
+    // right edge of that window — no flatline gap after the CPI anchor date.
+    if (data?.startDate) next.set('start', data.startDate);
+    if (data?.endDate) next.set('end', data.endDate);
     if (data?.comparisonCurrency) next.set('currency', data.comparisonCurrency);
     navigate({ search: `?${next.toString()}` });
   }

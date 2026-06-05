@@ -18,8 +18,14 @@ export const analyticsService = {
     return res.data.data;
   },
 
-  portfolioSeries: async (portfolioId, { from, to }) => {
-    const res = await api.get(`${BASE}/portfolio-series/${portfolioId}`, { params: { from, to } });
+  portfolioSeries: async (portfolioId, { from, to }, mode = 'pnl') => {
+    // mode 'twr' → contribution-immune time-weighted-return index (the compare % line, comparable to
+    // inflation); 'pnl' → cumulative profit/loss in TRY (the Kâr/Zarar Total amount, surfaced alongside
+    // the % so the money is still visible). Compare fetches both and zips them by date.
+    const params = { from, to };
+    if (mode === 'twr') params.twr = true;
+    else if (mode === 'pnl') params.pnl = true;
+    const res = await api.get(`${BASE}/portfolio-series/${portfolioId}`, { params });
     return res.data.data;
   },
 };

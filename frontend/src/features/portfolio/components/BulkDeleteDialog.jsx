@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { X, Trash2 } from 'lucide-react';
@@ -15,21 +15,58 @@ export default function BulkDeleteDialog({ portfolioId, positions, onClose, onCo
     const count = positions.length;
     const dismissable = phase === 'confirm';
 
+    // The dialog instance stays mounted in PositionsTable, so without this a previous partial-failure
+    // banner / "processing" state flashes on the next open. Reset when it transitions to open.
+    const isOpen = (positions?.length ?? 0) > 0;
+    useEffect(() => {
+        if (isOpen) { setError(null); setPhase('confirm'); }
+    }, [isOpen]);
+
     if (!positions || count === 0) return null;
 
     const handleConfirm = async () => {
         setError(null);
         setPhase('processing');
-        const results = await Promise.allSettled(positions.map((p) =>
-            (p.assetType === 'VIOP' ? derivativeDelete : spotDelete).mutateAsync(p.id)));
-        const failed = results.filter((r) => r.status === 'rejected').length;
-        if (failed > 0) {
-            setError(t('portfolio.bulk.partialError', { failed, total: count }));
+        try {
+            // Sequential delete with single retry per failure. Parallel Promise.allSettled
+            // produced the intermittent "1 silinemedi" error: concurrent deletes on the same
+            // portfolio race against backend striped locks + the async snapshot rebuild event,
+            // surfacing as 409/500 on whichever request commits second. Serial-with-retry
+            // eliminates the race while still handling the rare transient (e.g. snapshot row
+            // visibility lag right after a previous delete).
+            const failedItems = [];
+            for (const p of positions) {
+                const mutation = p.assetType === 'VIOP' ? derivativeDelete : spotDelete;
+                try {
+                    await mutation.mutateAsync(p.id);
+                } catch (firstError) {
+                    // A 404 means the row is already gone — an idempotent success. Without this, retrying a
+                    // partially-failed batch re-deletes ids the server already removed, they re-count as
+                    // failures, and the "X/Y silinemedi" banner can never clear.
+                    if (firstError?.response?.status === 404) continue;
+                    // One quick retry: most transients clear within a few hundred ms after the
+                    // previous request's backfill event commits.
+                    await new Promise((resolve) => setTimeout(resolve, 250));
+                    try {
+                        await mutation.mutateAsync(p.id);
+                    } catch (retryError) {
+                        if (retryError?.response?.status === 404) continue;
+                        failedItems.push({ id: p.id, error: retryError ?? firstError });
+                    }
+                }
+            }
+            if (failedItems.length > 0) {
+                setError(t('portfolio.bulk.partialError', { failed: failedItems.length, total: count }));
+                return;
+            }
+            onComplete?.(count);
+            onClose();
+        } finally {
+            // Reset 'processing' → 'confirm' so the next open of the same component instance
+            // shows the action button again. Without this, after a successful bulk delete the
+            // dialog kept its "Siliniyor…" state and the next open had to be cleared via F5.
             setPhase('confirm');
-            return;
         }
-        onComplete?.(count);
-        onClose();
     };
 
     return (

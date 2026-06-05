@@ -36,8 +36,10 @@ export function useBackfillStatus(portfolioId) {
     if (!portfolioId) return undefined;
     let cancelled = false;
     let source;
+    let retryTimer;
+    let attempt = 0;
 
-    (async () => {
+    const connect = async () => {
       const token = await getToken();
       if (cancelled || !token) return;
       source = new EventSourcePolyfill(`/api/v1/portfolios/${portfolioId}/backfill-stream`, {
@@ -45,6 +47,7 @@ export function useBackfillStatus(portfolioId) {
         heartbeatTimeout: 60_000,
       });
       source.addEventListener('backfill-status', (event) => {
+        attempt = 0;
         try {
           const payload = JSON.parse(event.data);
           const pendingKeys = new Set(
@@ -56,16 +59,35 @@ export function useBackfillStatus(portfolioId) {
               since: payload.since ?? null,
               pendingKeys,
             };
-            if (prev.running && !next.running) invalidate();
+            // Refetch when a backfill finishes: either the global running flag clears, OR an asset that
+            // was pending is no longer pending. The latter catches a fast backfill whose running:true was
+            // never observed by this client (a freshly-added asset finishing between two events), which
+            // otherwise left the performance chart / asset series stale until a manual refresh.
+            const wentIdle = prev.running && !next.running;
+            const assetFinished = prev.pendingKeys.size > 0
+              && [...prev.pendingKeys].some((k) => !pendingKeys.has(k));
+            if (wentIdle || assetFinished) invalidate();
             return next;
           });
         } catch { void 0; }
       });
-      source.onerror = () => source.close();
-    })();
+      source.onerror = () => {
+        source.close();
+        if (cancelled) return;
+        // Reconnect with capped exponential backoff: a dropped stream (idle proxy timeout, network
+        // blip) otherwise leaves the "preparing data" banner stuck because the terminal running:false
+        // event never arrives. Backoff resets to 0 on any delivered event.
+        const delay = Math.min(1000 * 2 ** attempt, 15_000);
+        attempt += 1;
+        retryTimer = setTimeout(connect, delay);
+      };
+    };
+
+    connect();
 
     return () => {
       cancelled = true;
+      clearTimeout(retryTimer);
       if (source) source.close();
     };
   }, [portfolioId, invalidate]);
@@ -102,7 +124,9 @@ export function usePortfolioAllocation(portfolioId, mode, assetType, limit) {
     queryKey: ['portfolioAllocation', portfolioId, mode, assetType, limit ?? null],
     queryFn: () => portfolioService.getAllocation(portfolioId, mode, assetType, limit),
     enabled: !!portfolioId,
-    staleTime: STALE.SHORT,
+    // Charts are switched/filtered far more often than every 30s; MEDIUM (60s) reuses cached data across a
+    // browsing window instead of re-marking it stale on each switch. Add/sell/backfill still invalidate explicitly.
+    staleTime: STALE.MEDIUM,
     refetchOnWindowFocus: false,
   });
 }
@@ -112,35 +136,50 @@ export function usePortfolioPerformance(portfolioId, range, assetType) {
     queryKey: ['portfolioPerformance', portfolioId, range, assetType],
     queryFn: () => portfolioService.getPerformance(portfolioId, range, assetType),
     enabled: !!portfolioId,
-    staleTime: STALE.SHORT,
+    staleTime: STALE.MEDIUM,   // reuse cached series across tab/range/type switches (see usePortfolioAllocation)
     refetchOnWindowFocus: false,
-    select: (data) => (data || []).map((d) => ({
-      time: new Date(d.timestamp).getTime(),
-      value: Number(d.totalValueTry),
-      cash: Number(d.cashTry ?? 0),
-      pnl: Number(d.totalPnlTry),
-      pnlPercent: Number(d.pnlPercent),
-      details: d.details || [],
-      events: d.events || [],
-    })),
+    select: (data) => (data || []).map((d) => {
+      const total = Number(d.totalPnlTry);
+      const closed = Number(d.cashTry ?? 0);
+      return {
+        time: new Date(d.timestamp).getTime(),
+        value: Number(d.totalValueTry),
+        cash: closed,
+        pnl: total,
+        open: d.openPnlTry != null ? Number(d.openPnlTry) : total - closed,
+        pnlPercent: Number(d.pnlPercent),
+        // Per-currency frame from the backend (entry-date-FX cost, point/exit-date-FX value, closed realized).
+        // In a USD/EUR frame: total PnL = valueByCcy − costBasisByCcy (closed lots locked at exit FX, no
+        // post-sale drift); closed PnL = realizedByCcy; open = total − closed. Dropping them forced the chart
+        // to net-and-divide and to re-value closed proceeds at today's rate.
+        costBasisByCcy: d.costBasisByCcy || null,
+        valueByCcy: d.valueByCcy || null,
+        realizedByCcy: d.realizedByCcy || null,
+        // Total PnL per currency (open + realized). Read directly so the headline is right whether or not the
+        // displayed value carries closed proceeds (aggregate does, the type-filtered value line does not).
+        pnlByCcy: d.pnlByCcy || null,
+        details: d.details || [],
+        events: d.events || [],
+      };
+    }),
   });
 }
 
-export function useAssetSeries(portfolioId, assetType, assetCode, range) {
+export function useAssetSeries(portfolioId, assetType, assetCode, range, direction = null, enabled = true) {
   return useQuery({
-    queryKey: ['assetSeries', portfolioId, assetType, assetCode, range],
-    queryFn: () => portfolioService.getAssetSeries(portfolioId, assetType, assetCode, range),
-    enabled: !!portfolioId && !!assetType && !!assetCode,
+    queryKey: ['assetSeries', portfolioId, assetType, assetCode, range, direction],
+    queryFn: () => portfolioService.getAssetSeries(portfolioId, assetType, assetCode, range, direction),
+    enabled: enabled && !!portfolioId && !!assetType && !!assetCode,
     staleTime: STALE.SHORT,
     refetchOnWindowFocus: false,
   });
 }
 
-export function useAssetAggregate(portfolioId, assetType, assetCode) {
+export function useAssetAggregate(portfolioId, assetType, assetCode, direction = null, enabled = true) {
   return useQuery({
-    queryKey: ['assetAggregate', portfolioId, assetType, assetCode],
-    queryFn: () => portfolioService.getAssetAggregate(portfolioId, assetType, assetCode),
-    enabled: !!portfolioId && !!assetType && !!assetCode,
+    queryKey: ['assetAggregate', portfolioId, assetType, assetCode, direction],
+    queryFn: () => portfolioService.getAssetAggregate(portfolioId, assetType, assetCode, direction),
+    enabled: enabled && !!portfolioId && !!assetType && !!assetCode,
     staleTime: STALE.SHORT,
     refetchOnWindowFocus: false,
   });
@@ -173,6 +212,16 @@ export function usePortfolioPositions(portfolioId, params) {
     refetchOnWindowFocus: false,
     retry: rateLimitAwareRetry,
     retryDelay: rateLimitAwareDelay,
+  });
+}
+
+export function useAssetLots(portfolioId, assetType, assetCode) {
+  return useQuery({
+    queryKey: ['portfolioAssetLots', portfolioId, assetType, assetCode],
+    queryFn: () => portfolioService.getPositionsByAsset(portfolioId, assetType, assetCode),
+    enabled: !!portfolioId && !!assetType && !!assetCode,
+    staleTime: STALE.SHORT,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -251,6 +300,7 @@ export function useInvalidatePortfolio() {
       queryClient.refetchQueries({ queryKey: ['portfolioAllocation'] }),
       queryClient.refetchQueries({ queryKey: ['portfolioPerformance'] }),
       queryClient.refetchQueries({ queryKey: ['portfolioPositions'] }),
+      queryClient.refetchQueries({ queryKey: ['portfolioAssetLots'] }),
       queryClient.refetchQueries({ queryKey: ['assetSeries'] }),
       queryClient.refetchQueries({ queryKey: ['assetAggregate'] }),
     ]);
@@ -261,7 +311,13 @@ function useInvalidateAfterBackfill() {
   const queryClient = useQueryClient();
   return useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['portfolioView'] });
+    // Backfill recomputes snapshots AND the realized/allocation aggregates + the filtered summary; without
+    // these two the Dağılım / Gerçekleşen K/Z donuts and per-filter cards stayed on pre-add data until a
+    // manual refresh, while the value/performance numbers had already updated — a visible mismatch.
+    queryClient.invalidateQueries({ queryKey: ['portfolioSummary'] });
+    queryClient.invalidateQueries({ queryKey: ['portfolioAllocation'] });
     queryClient.invalidateQueries({ queryKey: ['portfolioPerformance'] });
+    queryClient.invalidateQueries({ queryKey: ['portfolioAssetLots'] });
     queryClient.invalidateQueries({ queryKey: ['assetSeries'] });
     queryClient.invalidateQueries({ queryKey: ['assetAggregate'] });
   }, [queryClient]);

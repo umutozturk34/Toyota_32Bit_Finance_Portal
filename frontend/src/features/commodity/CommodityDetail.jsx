@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { commodityService } from './services/commodityService';
-import { getChangeClass, changeColors, formatPercentAbs } from '../../shared/utils/formatters';
+import { getChangeClass, changeColors, formatPercentAbs, formatPriceUSD } from '../../shared/utils/formatters';
 import { useMoney } from '../../shared/hooks/useMoney';
 import { commodityName } from '../../shared/utils/commodityName';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
@@ -38,8 +38,10 @@ function CommodityMetadata({ asset }) {
   const primaryLabel = primaryTarget === 'TRY'
     ? t('marketDetail.commodity.priceTry')
     : t('marketDetail.commodity.price', { currency: primaryTarget, defaultValue: `Price (${primaryTarget})` });
-  const usdTile = primaryTarget !== 'USD' && usd != null
-    ? { label: t('marketDetail.commodity.priceUsd'), value: money(usd, 'USD') }
+  // USD price stays a FIXED USD reference in every display currency (no direct USD<->EUR rate); it is
+  // always shown — only the TRY price (the primary tile) is converted to the chosen display currency.
+  const usdTile = usd != null
+    ? { label: t('marketDetail.commodity.priceUsd'), value: formatPriceUSD(usd) }
     : null;
   return (
     <MetadataTiles tiles={[

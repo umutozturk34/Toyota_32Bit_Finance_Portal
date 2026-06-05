@@ -53,7 +53,14 @@ function PnlCard({ label, value, percent, realValue, realPercent, hideReal, base
       </div>
       {hasReal && (
         <div className="flex items-baseline justify-between gap-2 pt-1 border-t border-border-default/40">
-          <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle">{t('portfolio.positions.realReturnAbbr', { defaultValue: 'reel' })}</span>
+          <span
+            className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle cursor-help border-b border-dotted border-fg-subtle/40"
+            title={t('portfolio.positions.realReturnTooltip', {
+              defaultValue: 'Enflasyona göre düzeltilmiş getiri (satın alma gücü). Nominal kâr enflasyonun altında kaldıysa reel negatif olabilir — para nominal büyüse de alım gücü düşmüş demektir. Yalnızca spot holding\'ler için hesaplanır; VİOP gibi kaldıraçlı türevler reel getiriye dahil değildir.',
+            })}
+          >
+            {t('portfolio.positions.realReturnAbbr', { defaultValue: 'reel' })}
+          </span>
           <div className="flex items-baseline gap-1.5">
             <span className={`text-xs font-mono tabular-nums ${changeColors[realCls]} truncate`} title={money(realValue, base)}>
               {bigMoney(realValue)}
@@ -78,12 +85,27 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
   const filterLabel = (id) => id ? t(`assets.labels.${id}`) : t('assets.labels.ALL');
 
   const isNonTryFrame = displayCurrency === 'USD' || displayCurrency === 'EUR';
-  const totalPnlPercent = summary?.pnlPercent;
-  const dailyPnlPercent = summary?.dailyPnlPercent;
-  const totalPnlAmount = { value: summary?.totalPnlTry, base: 'TRY' };
-  const dailyPnlAmount = { value: summary?.dailyPnlTry, base: 'TRY' };
-  const totalValueAmount = { value: summary?.totalValueTry, base: 'TRY' };
-  const totalEntryAmount = { value: summary?.totalEntryValueTry, base: 'TRY' };
+  // Backend per-currency frame: each lot converted at its own entry date, current value at today's FX
+  // candle, plus the currency-native return %. In a USD/EUR frame EVERY card (value, cost, P&L, daily) AND
+  // both return percentages must come from this one frame, or the four cards stop reconciling (Value −
+  // Cost ≠ P&L, because Market Value used live spot while the rest used the frame's candle) and the amount
+  // is annotated with the wrong-currency return % (a USD loss shown beside a TRY +%). Falls back to the TRY
+  // scalar / TRY % when the frame is absent — still consistent, since all four then share the TRY basis.
+  const entryFrame = isNonTryFrame ? summary?.frames?.[displayCurrency] : null;
+  const totalPnlPercent = entryFrame?.pnlPercent ?? summary?.pnlPercent;
+  const dailyPnlPercent = entryFrame?.dailyPnlPercent ?? summary?.dailyPnlPercent;
+  const totalValueAmount = entryFrame?.totalValue != null
+    ? { value: Number(entryFrame.totalValue), base: displayCurrency }
+    : { value: summary?.totalValueTry, base: 'TRY' };
+  const totalEntryAmount = entryFrame?.totalEntry != null
+    ? { value: Number(entryFrame.totalEntry), base: displayCurrency }
+    : { value: summary?.totalEntryValueTry, base: 'TRY' };
+  const totalPnlAmount = entryFrame?.totalPnl != null
+    ? { value: Number(entryFrame.totalPnl), base: displayCurrency }
+    : { value: summary?.totalPnlTry, base: 'TRY' };
+  const dailyPnlAmount = entryFrame?.dailyPnl != null
+    ? { value: Number(entryFrame.dailyPnl), base: displayCurrency }
+    : { value: summary?.dailyPnlTry, base: 'TRY' };
 
   return (
     <motion.div

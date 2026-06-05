@@ -13,9 +13,19 @@ export function formatChartMoney(value, currency) {
       notation: 'compact',
       style: 'currency',
       currency,
-      maximumFractionDigits: 1,
+      maximumFractionDigits: 2,
     }).format(value);
   }
+  const maxDecimals = abs < 10 ? 4 : abs < 1000 ? 3 : 2;
+  return formatPrice(value, { currency, minDecimals: 2, maxDecimals });
+}
+
+/** Full-precision money for the chart TOOLTIP — never compact. The axis labels stay compact (limited width),
+ *  but the hover tooltip must show the exact figure: a TRY value in the millions read "₺1,2M" (compact, 1
+ *  decimal) and looked rounded; here it reads the full "₺1.234.567,89". */
+export function formatChartMoneyFull(value, currency) {
+  if (value == null || !Number.isFinite(value)) return '—';
+  const abs = Math.abs(value);
   const maxDecimals = abs < 10 ? 4 : abs < 1000 ? 3 : 2;
   return formatPrice(value, { currency, minDecimals: 2, maxDecimals });
 }
@@ -56,12 +66,22 @@ export function buildAssetChartOption(data, isDark, t, convertAt, displayCurrenc
   const targetCurrency = displayCurrency === 'ORIGINAL' || !displayCurrency ? (nativeCurrency || 'TRY') : displayCurrency;
 
   const seriesData = data.map((d) => {
-    const dateStr = new Date(d.timestamp).toISOString().slice(0, 10);
+    const dateStr = new Date(d.timestamp).toLocaleDateString('sv-SE');
+    // Plot DIRECTION-AWARE equity (cost + signed PnL), not the raw notional marketValueTry: a SHORT's notional
+    // falls as it profits, so plotting notional renders a short — or a mixed long+short symbol — as if both legs
+    // were long. For spot holdings cost+pnl equals marketValue, so the line is unchanged there.
+    const costTry = Number(d.totalCostTry);
+    const equityTry = Number.isFinite(costTry) ? costTry + (Number(d.pnlTry) || 0) : Number(d.marketValueTry) || 0;
     return {
-      value: [new Date(d.timestamp).getTime(), Number(convertAt(d.marketValueTry, 'TRY', dateStr) ?? 0)],
-      unitPrice: Number(convertAt(d.unitPriceTry, 'TRY', dateStr) ?? 0),
+      value: [new Date(d.timestamp).getTime(), Number(convertAt(equityTry, 'TRY', dateStr, nativeCurrency) ?? 0)],
+      unitPrice: Number(convertAt(d.unitPriceTry, 'TRY', dateStr, nativeCurrency) ?? 0),
       quantity: Number(d.quantity ?? 0),
-      events: d.events || [],
+      // Convert each event's TRY value at its own date too, so the tooltip's event row matches the
+      // line/axis currency (it is formatted with targetCurrency but was previously left raw TRY).
+      events: (d.events || []).map((ev) => ({
+        ...ev,
+        valueTry: Number(convertAt(ev.valueTry, 'TRY', dateStr, nativeCurrency) ?? ev.valueTry),
+      })),
     };
   });
 
@@ -69,7 +89,12 @@ export function buildAssetChartOption(data, isDark, t, convertAt, displayCurrenc
   const dataMin = Math.min(...values);
   const dataMax = Math.max(...values);
   const span = dataMax - dataMin;
-  const padding = span > 0 ? span * 0.08 : dataMax * 0.05;
+  // A near-flat series (e.g. a USD holding whose native value barely moves) would otherwise auto-scale to a
+  // microscopic y-range, turning sub-percent FX round-trip noise into a full-height "barcode". Below a 1%
+  // move, pad to a comfortable fraction of the level so a flat line reads flat; real movement keeps the
+  // tight span-based padding untouched.
+  const level = Math.abs(dataMax) || 1;
+  const padding = span > level * 0.01 ? span * 0.08 : level * 0.025;
 
   const seriesTimes = seriesData.map((d) => d.value[0]);
   let xMin = Math.min(...seriesTimes);
@@ -133,8 +158,8 @@ export function buildAssetChartOption(data, isDark, t, convertAt, displayCurrenc
         const point = params?.[0]?.data;
         if (!point) return '';
         const date = new Date(point.value[0]).toLocaleDateString(currentLocaleTag(), { day: '2-digit', month: 'short', year: 'numeric' });
-        const market = formatChartMoney(point.value[1], targetCurrency);
-        const unit = formatChartMoney(point.unitPrice, targetCurrency);
+        const market = formatChartMoneyFull(point.value[1], targetCurrency);
+        const unit = formatChartMoneyFull(point.unitPrice, targetCurrency);
         const marketLabel = t('assetDetail.marketValue');
         const unitLabel = t('assetDetail.unitPrice');
         const events = (point.events || []).filter((e) => POSITION_EVENT_TYPES.has(e.type));
@@ -157,7 +182,7 @@ export function buildAssetChartOption(data, isDark, t, convertAt, displayCurrenc
                   <span style="font-size:10px;color:${tooltipFg};opacity:0.6">${codeLabel}</span>
                   ${qtyText}
                 </div>
-                <span style="font-size:10px;font-family:ui-monospace,monospace;color:${tooltipFg};opacity:0.85">${formatChartMoney(Number(ev.valueTry) || 0, targetCurrency)}</span>
+                <span style="font-size:10px;font-family:ui-monospace,monospace;color:${tooltipFg};opacity:0.85">${formatChartMoneyFull(Number(ev.valueTry) || 0, targetCurrency)}</span>
               </div>`;
             }).join('')}
           </div>`;

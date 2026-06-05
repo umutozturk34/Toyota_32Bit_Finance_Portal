@@ -89,7 +89,10 @@
   },
   "searchSuggestions": {
     "placeholder": "Hisse, kripto, döviz, fon ara...",
-    "noMatch": "\"{{query}}\" ile eşleşen sonuç bulunamadı"
+    "noMatch": "\"{{query}}\" ile eşleşen sonuç bulunamadı",
+    "recentSearches": "Son aramalar",
+    "clearRecent": "Temizle",
+    "removeRecent": "Kaldır"
   },
   "confirmDialog": {
     "title": "Emin misiniz?",
@@ -434,6 +437,8 @@
   },
   "home": {
     "live": "Çok varlıklı portföy",
+    "toggleThemeLight": "Açık moda geç",
+    "toggleThemeDark": "Koyu moda geç",
     "heroTitle": {
       "part1": "Türk piyasalarında portföy.",
       "part2": "Tek ekran."
@@ -929,6 +934,7 @@
   "portfolio": {
     "actions": {
       "downloadPdf": "PDF İndir",
+      "compare": "Portföyü Kıyasla",
       "downloadPdfPending": "PDF Hazırlanıyor...",
       "downloadPdfEmpty": "PDF için en az bir pozisyon gerekli",
       "downloadPdfError": "PDF indirilemedi. Lütfen tekrar deneyin.",
@@ -963,7 +969,7 @@
       "exitDateLabel": "Çıkış Tarihi",
       "statusCol": "Durum",
       "realReturnAbbr": "reel",
-      "realReturnTooltip": "Reel getiri (TÜFE etkisi düşülmüş)",
+      "realReturnTooltip": "Enflasyona göre düzeltilmiş getiri (satın alma gücü). Nominal kârın enflasyonun altında kalırsa reel negatif olabilir — paran nominal büyüse de alım gücün düşmüş demektir. Yalnızca spot holding'ler için hesaplanır; VİOP gibi kaldıraçlı türevler reel getiriye dahil değildir.",
       "viewOnMarket": "Pazar detayı"
     },
     "search": {
@@ -997,6 +1003,17 @@
       "empty": "Bu aralıkta veri bulunmuyor",
       "compareCta": "Karşılaştır"
     },
+    "pnlBreakdown": {
+      "title": "Kâr/Zarar Değişimi",
+      "total": "Toplam K/Z",
+      "open": "Açık Pozisyonlar",
+      "closed": "Kapalı Pozisyonlar",
+      "contributors": "K/Z Katkısı",
+      "return": "Getiri",
+      "modePercent": "% Getiri",
+      "modeValue": "Tutar",
+      "empty": "Bu aralıkta veri bulunmuyor"
+    },
     "summary": {
       "marketValue": "Piyasa Değeri",
       "totalCost": "Toplam Maliyet",
@@ -1009,6 +1026,7 @@
     "tabs": {
       "overview": "Genel Bakış",
       "performance": "Performans",
+      "pnl": "Kâr / Zarar",
       "viop": "VİOP"
     },
     "onboarding": {
@@ -1035,7 +1053,9 @@
       "deleting": "Siliniyor…",
       "confirmTitle": "Pozisyonları sil",
       "confirmBody": "pozisyon kalıcı silinecek. Bu işlem geri alınamaz.",
-      "partialError": "{{failed}}/{{total}} pozisyon silinemedi. Diğerleri silindi."
+      "partialError": "{{failed}}/{{total}} pozisyon silinemedi. Diğerleri silindi.",
+      "selectAcrossPages": "Tümünü seç ({{n}})",
+      "selectAcrossPagesTitle": "Tüm sayfalardaki pozisyonları seç"
     },
     "sell": {
       "title": "{{code}} pozisyonunu sat",
@@ -1750,6 +1770,10 @@
     "marketValue": "Piyasa Değeri",
     "unitPrice": "Birim Fiyat",
     "lotCount": "{{count}} lot",
+    "direction": {
+      "long": "LONG (Uzun)",
+      "short": "SHORT (Kısa)"
+    },
     "stats": {
       "quantity": "Miktar",
       "entryDate": "Giriş Tarihi",
@@ -1863,7 +1887,7 @@
     "title": "Fiyat alarmı",
     "subtitlePrompt": "Asset seç ve eşik belirle",
     "searchLabel": "Asset Ara",
-    "searchPlaceholder": "BTC, AAPL, USDTRY...",
+    "searchPlaceholder": "BTC, Altın, USDTRY...",
     "change": "Değiştir",
     "currentPrice": "Şu anki fiyat",
     "liveData": "canlı veri",
@@ -1907,7 +1931,7 @@
     "titleUpdate": "Liste girişini güncelle",
     "subtitlePrompt": "Önce asset seç, sonra listeye ekle",
     "searchLabel": "Asset Ara",
-    "searchPlaceholder": "BTC, AAPL, USDTRY...",
+    "searchPlaceholder": "BTC, Altın, USDTRY...",
     "change": "Değiştir",
     "listLabel": "Liste",
     "pickList": "Liste seç",
@@ -2192,7 +2216,7 @@
     "compareSearchAssets": "Hisse, kripto, fon, döviz, emtia, bono ara…",
     "compareSearchMixed": "Asset veya makro indikatör ara…",
     "portfolioPickerHeading": "Portföylerim",
-    "portfolioSeriesHint": "Portföy serisi nakit akışlarını içerir",
+    "portfolioSeriesHint": "Portföy çizgisi zaman-ağırlıklı getiri (%, %0'dan); ₺ kâr/zarar tooltip'te",
     "compareSubtitle": "Farklı varlıkları aynı grafikte yan yana getir. Tutar/tarih gerekmez — sadece geçmiş fiyat hareketleri.",
     "compareTitle": "Karşılaştırma",
     "cpiGrowth": "TÜFE büyümesi (dönemde)",
@@ -2212,18 +2236,24 @@
     "nominalReturn": "Nominal",
     "nominalReturnTooltip": "Mutlak yüzde değişim (enflasyon/faiz ayarsız)",
     "normalizedHintCompare": "Çoklu seri — başlangıçtan % değişim olarak normalize edildi",
+    "normalizedHintCompareIndex": "Makro seriler — başlangıçta 100'e endekslendi",
+    "compareLevel": "Seviye",
+    "compareCumulative": "Kümülatif",
+    "levelHintCompare": "Oran seviyesi gösteriliyor — kümülatif büyüme için \"Kümülatif\"e geç",
+    "partial": "kısmi",
+    "partialHint": "Veri seçili aralığı tam kapsamıyor — kısmi pencere, doğrudan kıyaslanamaz",
     "openInCompare": "Karşılaştırmada aç",
     "period": "Dönem",
     "quickPick": "Hızlı seç",
     "realLoss": "Gösterge üzeri < 0",
     "realReturn": "Reel",
-    "realReturnHint": "Reel getiri = nominal − TÜFE etkisi",
+    "realReturnHint": "Reel getiri ≈ (1+nominal)/(1+TÜFE) − 1",
     "scenarioSubtitle": "Belirli bir tarihte belirli bir miktarı farklı enstrümanlara koysaydın bugün ne kadar olurdu? Gerçek geçmiş veriyle simüle et.",
     "scenarioTitle": "Senaryo Karşılaştırması",
     "searchAsset": "Asset ara — kaçıncı sırada?",
-    "searchHint": "Hisse, fon, döviz, kripto, emtia, bono, makro ara",
+    "searchHint": "Hisse, fon, döviz, kripto, emtia, makro ara",
     "searchInstrument": "Ara",
-    "searchPlaceholder": "ASELS, altın, bitcoin, TP.TRYTAS, TRT...",
+    "searchPlaceholder": "ASELS, altın, bitcoin, TP.TRYTAS...",
     "simulate": "Simüle Et",
     "simulationError": "Simülasyon başarısız",
     "startDate": "Başlangıç",
@@ -2252,7 +2282,8 @@
     "periodFiveYears": "5Y",
     "backTo": {
       "beaters": "Yenenler'e dön",
-      "asset": "Varlığa dön"
+      "asset": "Varlığa dön",
+      "portfolio": "Portföye dön"
     },
     "compareInfo": {
       "forwardFilledTooltip": "Son veri noktasından bugüne uzatıldı",

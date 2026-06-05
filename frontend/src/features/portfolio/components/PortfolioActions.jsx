@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { Wallet, Download } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Wallet, Download, GitCompareArrows } from 'lucide-react';
 import PageHeader from '../../../shared/components/layout/PageHeader';
 import PortfolioSwitcher from './PortfolioSwitcher';
 
@@ -15,6 +16,7 @@ export default function PortfolioActions({
   hasPositions = true,
 }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const pdfDisabled = pdfPending || !hasPositions;
   const pdfTitle = !hasPositions
     ? t('portfolio.actions.downloadPdfEmpty')
@@ -31,6 +33,17 @@ export default function PortfolioActions({
         loading={loading}
       />
       <div className="flex items-center gap-2 flex-wrap">
+        {portfolio && (
+          <button
+            type="button"
+            onClick={() => navigate(`/analytics?codes=${portfolio.id}&types=PORTFOLIO&from=portfolio`)}
+            title={t('portfolio.actions.compare')}
+            className="flex items-center gap-2 rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-[12px] font-display font-semibold tracking-tight text-fg-muted hover:text-fg hover:border-border-hover transition-all duration-200 cursor-pointer"
+          >
+            <GitCompareArrows className="h-3.5 w-3.5" />
+            <span>{t('portfolio.actions.compare')}</span>
+          </button>
+        )}
         {portfolio && (
           <button
             type="button"

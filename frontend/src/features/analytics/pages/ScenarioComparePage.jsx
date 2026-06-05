@@ -200,7 +200,7 @@ export default function ScenarioComparePage() {
                 {formatPercent(cpiPct)}
               </span>
               <span className="sm:ml-auto text-xs font-mono text-fg-subtle">
-                {t('analytics.realReturnHint', { defaultValue: 'Reel getiri = nominal − TÜFE etkisi' })}
+                {t('analytics.realReturnHint', { defaultValue: 'Reel getiri ≈ (1+nominal)/(1+TÜFE) − 1' })}
               </span>
             </div>
           )}

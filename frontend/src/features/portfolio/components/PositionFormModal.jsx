@@ -12,6 +12,7 @@ import PositionFormConfirmPanel from './PositionFormConfirmPanel';
 import PositionFormSuccessPanel from './PositionFormSuccessPanel';
 import { todayInputValue, preventDecimal, describeAction } from '../lib/positionFormHelpers';
 import { currencySymbolOf } from '../../../shared/utils/priceCurrency';
+import { commodityLabel } from '../../../shared/utils/commodityName';
 
 export default function PositionFormModal({ mode, portfolioId, asset, position, onClose, onComplete }) {
   const { t } = useTranslation();
@@ -57,7 +58,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
               <h2 className="text-base font-semibold text-fg">
                 {isEdit ? t('positionForm.titleEdit') : t('positionForm.titleAdd')}
               </h2>
-              <p className="text-xs text-fg-muted">{target.assetName || displayCode}</p>
+              <p className="text-xs text-fg-muted">{commodityLabel(t, target.assetType, target.assetCode, target.assetName || displayCode)}</p>
             </div>
           </div>
           <button
@@ -231,9 +232,9 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
                 </div>
                 <span
                   className="text-lg font-bold font-mono text-accent truncate"
-                  title={money(totalCostTry)}
+                  title={money(totalCostTry, 'TRY', { natural: inputCurrency, dateAt: form.entryDate })}
                 >
-                  {formatCompact(totalCostTry, 'TRY', 1_000_000_000)}
+                  {formatCompact(totalCostTry, 'TRY', 1_000_000_000, inputCurrency, form.entryDate)}
                 </span>
               </div>
             )}

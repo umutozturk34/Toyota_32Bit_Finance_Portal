@@ -12,7 +12,7 @@ import { extractApiError } from '../../../shared/utils/apiError';
 import { ONE_HOUR_MS, toYearMonth, buildPriceIndex, resolveNativeCurrency } from '../lib/positionFormHelpers';
 import { useOpenDerivativePosition, useUpdateDerivativePosition } from '../hooks/useDerivativePositions';
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => new Date().toLocaleDateString('sv-SE');
 
 function AvailabilityHint({ loading, price, currency, t }) {
   const { format: money } = useMoney();
@@ -141,13 +141,15 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
   const eKey = entryPriceTouched ? null : `${entryDate}|${entrySuggestedDisplay ?? 'none'}`;
   if (eKey !== null && eKey !== entrySyncKey) {
     setEntrySyncKey(eKey);
-    if (entrySuggestedDisplay != null) setEntryPrice(String(entrySuggestedDisplay));
+    // Clear a stale auto-filled price when the new date has no suggested price, rather than leaving the
+    // previous date's value to be revalued at the new date's FX rate.
+    setEntryPrice(entrySuggestedDisplay != null ? String(entrySuggestedDisplay) : '');
   }
   const [closeSyncKey, setCloseSyncKey] = useState(null);
   const cKey = (!closeEnabled || closePriceTouched) ? null : `${closeDate}|${closeSuggestedDisplay ?? 'none'}`;
   if (cKey !== null && cKey !== closeSyncKey) {
     setCloseSyncKey(cKey);
-    if (closeSuggestedDisplay != null) setClosePrice(String(closeSuggestedDisplay));
+    setClosePrice(closeSuggestedDisplay != null ? String(closeSuggestedDisplay) : '');
   }
 
   const notional = useMemo(() => {

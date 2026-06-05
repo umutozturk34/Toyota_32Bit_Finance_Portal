@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
-import { LayoutDashboard, TrendingUp as TrendingUpIcon } from 'lucide-react';
+import { LayoutDashboard, TrendingUp as TrendingUpIcon, Layers } from 'lucide-react';
 import useNavigationBack from '../../shared/hooks/useNavigationBack';
 import { useUserPreferences } from '../../shared/hooks/useUserPreferences';
+import useAppStore from '../../shared/stores/useAppStore';
 import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
 import SummaryCards from './components/SummaryCards';
@@ -12,6 +13,7 @@ import PositionSearchBar from './components/PositionSearchBar';
 import AllocationChart from './components/AllocationChart';
 import RealizedPnlChart from './components/RealizedPnlChart';
 import PerformanceChart from './components/PerformanceChart';
+import PnlBreakdownChart from './components/PnlBreakdownChart';
 import AssetDetail from './components/AssetDetail';
 import PortfolioActions from './components/PortfolioActions';
 import PortfolioModalsHost from './components/PortfolioModalsHost';
@@ -29,10 +31,15 @@ export default function Portfolio() {
   const goBack = useNavigationBack('/portfolio');
   const invalidatePortfolio = useInvalidatePortfolio();
   const { preferences } = useUserPreferences();
+  const displayCurrency = useAppStore((s) => s.displayCurrency);
+  // The PDF supports TRY/USD/EUR; 'ORIGINAL' (or any unknown value) renders each lot in its own
+  // currency on screen, which the report can't mirror, so it falls back to TRY.
+  const pdfCurrency = ['TRY', 'USD', 'EUR'].includes(displayCurrency) ? displayCurrency : 'TRY';
 
   const tabs = [
     { id: 'overview', label: t('portfolio.tabs.overview'), Icon: LayoutDashboard },
     { id: 'performance', label: t('portfolio.tabs.performance'), Icon: TrendingUpIcon },
+    { id: 'pnl', label: t('portfolio.tabs.pnl'), Icon: Layers },
   ];
 
   const { data: portfolios, isLoading: listLoading, error: listError } = usePortfolioList();
@@ -67,7 +74,7 @@ export default function Portfolio() {
 
   const { download: downloadPdf, isPending: pdfPending, elapsedMs: pdfElapsedMs } = usePortfolioPdfDownload({
     portfolio,
-    currency: 'TRY',
+    currency: pdfCurrency,
     theme: preferences?.theme,
     locale: preferences?.language,
   });
@@ -130,11 +137,6 @@ export default function Portfolio() {
     if (lot.assetType === 'VIOP') reopenViop.mutate(lot.id);
     else reopenSpot.mutate(lot.id);
   };
-  const selectedLots = selectedAsset
-    ? viewPositions.filter(
-        (p) => p.assetCode === selectedAsset.assetCode && p.assetType === selectedAsset.assetType
-      )
-    : [];
 
   return (
     <>
@@ -142,7 +144,6 @@ export default function Portfolio() {
         <AssetDetail
           portfolioId={portfolio.id}
           asset={selectedAsset}
-          lots={selectedLots}
           onBack={() => selectAsset(null)}
           onEditLot={setEditTarget}
           onDeleteLot={setDeleteTarget}
@@ -209,11 +210,16 @@ export default function Portfolio() {
             </div>
           </div>
 
-          {portfolio && (
-            <div style={{ display: activeTab === 'performance' ? 'block' : 'none' }}>
-              <PerformanceChart portfolioId={portfolio.id} backfill={backfill} />
-            </div>
-          )}
+          {/* Toggle visibility (not mount) like the overview tab above, so the chart's React Query cache and
+              rendered canvas survive tab switches — conditional unmounting made the tab flash blank/empty on
+              every re-entry while its query re-validated. The chart mounts once the portfolio loads. */}
+          <div style={{ display: portfolio && activeTab === 'performance' ? 'block' : 'none' }}>
+            {portfolio && <PerformanceChart portfolioId={portfolio.id} backfill={backfill} />}
+          </div>
+
+          <div style={{ display: portfolio && activeTab === 'pnl' ? 'block' : 'none' }}>
+            {portfolio && <PnlBreakdownChart portfolioId={portfolio.id} />}
+          </div>
         </div>
       )}
 

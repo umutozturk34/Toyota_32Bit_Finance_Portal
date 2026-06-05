@@ -110,8 +110,28 @@ export function useRateHistory() {
     return dst === 'TRY' ? inTry : inTry / dstRate;
   }, [rateAt]);
 
+  // THE universal currency-aware P&L primitive: express a (costTry @ costDate, valueTry @ valueDate) pair in
+  // the display currency, each leg converted at its OWN date's FX, % computed within that single frame. So
+  // every surface (lot rows, daily card, ...) shows a holding's own-currency return — a EUR holding reads
+  // ~0% in EUR, not the lira's +2837% — instead of each surface re-deriving FX ad hoc. Mirrors the backend
+  // MultiCurrencyPnlCalculator.pointFrame for surfaces its frame map does not reach. TRY display (or missing
+  // FX) returns the supplied TRY scalars unchanged, so the four cards keep reconciling. directionSign (+1
+  // LONG / −1 SHORT) makes the frame DIRECTION-AWARE: pnl = directionSign × (value − cost). A VIOP SHORT's
+  // converted notional FALLS as it profits, so a direction-blind value − cost reads its USD/EUR K/Z backwards;
+  // the sign flips it. Non-VIOP callers leave directionSign at its +1 default → identical to before.
+  const frame = useCallback((costTry, valueTry, costDate, valueDate, fallbackPnl, fallbackPct, directionSign = 1) => {
+    const fallback = { pnl: Number(fallbackPnl) || 0, pnlPercent: fallbackPct, base: 'TRY' };
+    if (displayCurrency !== 'USD' && displayCurrency !== 'EUR') return fallback;
+    const cost = convertAt(costTry, 'TRY', costDate);
+    const value = convertAt(valueTry, 'TRY', valueDate);
+    if (cost == null || value == null) return fallback;
+    const pnl = directionSign * (Number(value) - Number(cost));
+    const pnlPercent = Math.abs(cost) > 1e-9 ? (pnl / Math.abs(cost)) * 100 : fallbackPct;
+    return { pnl, pnlPercent, base: displayCurrency };
+  }, [displayCurrency, convertAt]);
+
   return useMemo(
-    () => ({ currency: displayCurrency, convertAt, convertBetween, rateAt, resolveTarget }),
-    [displayCurrency, convertAt, convertBetween, rateAt, resolveTarget],
+    () => ({ currency: displayCurrency, convertAt, convertBetween, rateAt, resolveTarget, frame }),
+    [displayCurrency, convertAt, convertBetween, rateAt, resolveTarget, frame],
   );
 }

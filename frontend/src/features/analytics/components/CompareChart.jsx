@@ -13,6 +13,21 @@ import {
 } from '../../../shared/charts/echartsTheme';
 import { SERIES_COLORS } from '../constants';
 
+// Last data point at or before `ts` (data sorted ascending by ts); lets the tooltip show every series'
+// value-in-force at the hovered date even when series end on different dates (e.g. a deposit's last EVDS
+// observation vs a daily commodity), so no series silently drops out of the tooltip mid-hover.
+function valueAsOf(data, ts) {
+  if (!data || data.length === 0) return null;
+  let lo = 0;
+  let hi = data.length - 1;
+  let ans = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (data[mid][0] <= ts) { ans = mid; lo = mid + 1; } else { hi = mid - 1; }
+  }
+  return ans >= 0 ? data[ans] : null;
+}
+
 export default function CompareChart({ scenario }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -47,6 +62,7 @@ function buildOption(scenario, isDark, displayCurrency) {
       ...lineSeriesDefaults(color, data.length),
       name: s.instrument?.code || '',
       data,
+      _color: color,
     };
   });
 
@@ -63,14 +79,23 @@ function buildOption(scenario, isDark, displayCurrency) {
       confine: true,
       formatter: (params) => {
         if (!params?.length) return '';
-        const date = new Date(params[0].value[0]).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
-        const rows = params
-          .sort((a, b) => Number(b.value[1]) - Number(a.value[1]))
-          .map((p) => {
-            const val = Number(p.value[1]).toLocaleString('tr-TR', { style: 'currency', currency: displayCurrency, maximumFractionDigits: 0 });
+        // Look up EVERY series' value-in-force at the hovered date from its own data, instead of echarts'
+        // `params` (which only includes series with a point near the cursor) — otherwise series that end
+        // earlier or sit on a sparser grid silently vanish from the tooltip as the mouse moves.
+        const ts = params[0].value[0];
+        const date = new Date(ts).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+        const rows = series
+          .map((s) => {
+            const pt = valueAsOf(s.data, ts);
+            return pt ? { name: s.name, color: s._color, val: Number(pt[1]) } : null;
+          })
+          .filter(Boolean)
+          .sort((a, b) => b.val - a.val)
+          .map((r) => {
+            const val = r.val.toLocaleString('tr-TR', { style: 'currency', currency: displayCurrency, maximumFractionDigits: 0 });
             return `<div style="display:flex;justify-content:space-between;gap:14px;align-items:center;font-family:ui-monospace,monospace;font-size:11px">
-              <span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;background:${p.color};border-radius:50%"></span>${p.seriesName}</span>
-              <span style="font-weight:700;color:${p.color}">${val}</span>
+              <span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;background:${r.color};border-radius:50%"></span>${r.name}</span>
+              <span style="font-weight:700;color:${r.color}">${val}</span>
             </div>`;
           }).join('');
         return `<div style="padding:6px 4px;min-width:200px">

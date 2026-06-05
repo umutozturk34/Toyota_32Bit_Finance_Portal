@@ -3,15 +3,22 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { Search, X } from 'lucide-react';
+import { Search, X, Clock } from 'lucide-react';
 import { ASSET_TYPE_COLORS } from '../../constants/assetTypes';
 import { getChangeClass, changeColors } from '../../utils/formatters';
 import { useMoney } from '../../hooks/useMoney';
 import { priceCurrencyOf } from '../../utils/priceCurrency';
 import { assetCodeLabel } from '../../utils/assetCode';
 import useSearchSuggestions from '../../hooks/useSearchSuggestions';
+import { useRecentSearches, useRecordRecentSearch, useClearRecentSearches } from '../../hooks/useRecentSearches';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
+
+/** Resolves the detail route for a recent item, handling bonds (keyed by ISIN/series code) separately. */
+function recentRoute(item) {
+  if (item.type === 'BOND') return `/bonds/${encodeURIComponent(item.code)}`;
+  return `${TYPE_ROUTES[item.type] || '/market'}/${encodeURIComponent(item.code)}`;
+}
 
 export default function SearchInput({ value, onChange, placeholder, debounceMs = 400, withSuggestions = false, filterType, suggestFn, suggestLabelFn }) {
   const { t } = useTranslation();
@@ -31,6 +38,16 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
     enabled: withSuggestions,
     onClose: () => setOpen(false),
   });
+
+  const { data: recentSearches = [] } = useRecentSearches();
+  const { mutate: recordRecent } = useRecordRecentSearch();
+  const { mutate: clearRecent } = useClearRecentSearches();
+
+  // On asset-type pages only the page's own type is relevant; the dashboard hero (no filterType)
+  // shows everything. Bonds carry no `type` from the suggest result, so the page tags them 'BOND'.
+  const recentItems = filterType
+    ? recentSearches.filter((item) => item.type === filterType)
+    : recentSearches;
 
   const handleChange = (e) => {
     const val = e.target.value;
@@ -58,9 +75,21 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
     setOpen(false);
   };
 
+  // Persist the picked asset so it can resurface as a recent search. Bonds carry no `type` from the
+  // suggest result, so fall back to the page's filterType (e.g. 'BOND'); macro entries are skipped.
+  // Prefer seriesCode over isinCode: the bond detail route is /bonds/:seriesCode and resolves via
+  // getBondByCode(seriesCode), so a recent bond must be keyed by seriesCode to navigate, not ISIN.
+  const trackRecent = useCallback((asset) => {
+    const code = asset.code || asset.seriesCode || asset.isinCode || '';
+    const type = asset.type || filterType;
+    if (!code || !type || type.startsWith('MACRO')) return;
+    recordRecent({ code, type, name: asset.name });
+  }, [recordRecent, filterType]);
+
   const handleSelect = useCallback((asset) => {
     setOpen(false);
     clearTimeout(timerRef.current);
+    trackRecent(asset);
     if (suggestFn) {
       const rawLabel = asset.code || asset.seriesCode || asset.isinCode || '';
       const label = suggestLabelFn
@@ -76,7 +105,13 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
       const route = (TYPE_ROUTES[asset.type] || '/market') + '/' + asset.code;
       navigate(route);
     }
-  }, [navigate, onChange, suggestFn, suggestLabelFn]);
+  }, [navigate, onChange, suggestFn, suggestLabelFn, trackRecent]);
+
+  const handleRecentSelect = useCallback((item) => {
+    setOpen(false);
+    clearTimeout(timerRef.current);
+    navigate(recentRoute(item));
+  }, [navigate]);
 
   const handleKeyDown = useCallback(
     (e) => buildKeyDown(handleSelect)(e),
@@ -92,7 +127,7 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
         type="text"
         value={local}
         onChange={handleChange}
-        onFocus={() => { if (withSuggestions && sugQuery.length >= 2) setOpen(true); }}
+        onFocus={() => { if (withSuggestions) setOpen(true); }}
         onKeyDown={handleKeyDown}
         placeholder={placeholderText}
         className="w-full rounded-lg border border-border-default bg-bg-elevated pl-9 pr-8 py-2 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
@@ -109,6 +144,55 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
 
       {withSuggestions && (
         <AnimatePresence>
+          {open && local.trim().length < 2 && recentItems.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -4, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.98 }}
+              transition={{ duration: 0.15 }}
+              style={{ background: 'var(--color-bg-deep)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
+              className="absolute z-50 left-0 right-0 sm:w-72 sm:right-auto mt-1.5 rounded-xl border border-border-default shadow-xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-3 py-2 border-b border-border-default">
+                <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+                  <Clock className="h-3 w-3" />
+                  {t('searchSuggestions.recentSearches')}
+                </span>
+                <button
+                  onClick={() => clearRecent()}
+                  className="text-[10px] font-medium text-fg-muted hover:text-fg transition-colors cursor-pointer bg-transparent border-none p-0"
+                >
+                  {t('searchSuggestions.clearRecent')}
+                </button>
+              </div>
+              <div className="overflow-y-auto max-h-[300px]">
+                {recentItems.map((item) => {
+                  const typeColor = ASSET_TYPE_COLORS[item.type] || '#8b5cf6';
+                  const label = assetCodeLabel(item.type, item.code);
+                  return (
+                    <button
+                      key={`recent-${item.type}-${item.code}`}
+                      onClick={() => handleRecentSelect(item)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors cursor-pointer border-none bg-transparent hover:bg-surface/50"
+                    >
+                      <span
+                        className="flex items-center justify-center w-7 h-7 rounded-lg text-[9px] font-bold shrink-0"
+                        style={{ backgroundColor: typeColor + '18', color: typeColor }}
+                      >
+                        {label.replace('.IS', '').slice(0, 3).toUpperCase()}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <span className="block text-xs font-semibold text-fg truncate">{item.name || label}</span>
+                        {item.name && item.name !== label && (
+                          <span className="block text-[11px] text-fg-muted truncate">{label}</span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
           {open && sugQuery.length >= 2 && suggestions.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: -4, scale: 0.98 }}

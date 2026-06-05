@@ -4,12 +4,11 @@ import { motion } from 'framer-motion';
 import { Crown, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { SERIES_COLORS } from '../constants';
 import { formatPercent } from '../utils';
-import { useMoney } from '../../../shared/hooks/useMoney';
+import { formatPrice } from '../../../shared/utils/formatters';
 import { instrumentDisplayName } from '../../../shared/utils/instrumentLabel';
 
 export default function ScenarioRankingTable({ scenario }) {
   const { t } = useTranslation();
-  const { format: money } = useMoney();
   const rows = useMemo(() => {
     if (!scenario?.series) return [];
     const indexed = scenario.series.map((s, idx) => ({ ...s, _color: SERIES_COLORS[idx % SERIES_COLORS.length] }));
@@ -63,15 +62,25 @@ export default function ScenarioRankingTable({ scenario }) {
                       <div className="text-fg font-semibold">
                         {instrumentDisplayName(t, row.instrument.type, row.instrument.code)}
                       </div>
-                      <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle">
-                        {row.instrument.type}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle">
+                          {row.instrument.type}
+                        </span>
+                        {row.partial && (
+                          <span
+                            className="text-[9px] font-semibold rounded px-1 py-0.5 bg-amber-500/15 text-amber-500"
+                            title={t('analytics.partialHint', { defaultValue: 'Veri seçili aralığı tam kapsamıyor — kısmi pencere, doğrudan kıyaslanamaz' })}
+                          >
+                            {t('analytics.partial', { defaultValue: 'kısmi' })}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
                 </Td>
                 <Td align="right">
                   <span className="font-mono font-bold tabular-nums text-fg">
-                    {money(row.finalValue, scenario?.targetCurrency || 'TRY')}
+                    {formatPrice(Number(row.finalValue), { currency: scenario?.targetCurrency || 'TRY' })}
                   </span>
                 </Td>
                 <Td align="right">

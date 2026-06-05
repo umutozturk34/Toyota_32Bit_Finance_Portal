@@ -1,8 +1,33 @@
-function rawKind(type) {
-  // Deposits are shown as a compounded growth index (a multiplier), not a rate or a currency value.
-  if (type === 'MACRO_INFLATION' || type === 'MACRO_DEPOSIT') return 'index';
-  if (type === 'BOND' || type === 'MACRO_RATE') return 'rate';
+import { formatPrice } from '../../../shared/utils/formatters';
+
+function rawKind(type, levelMode) {
+  // Portfolio: plotted as a time-weighted-return INDEX that normalizes to a % from the window start, so it
+  // sits on the same % axis as CPI/deposit and is directly comparable to inflation. The tooltip / info-bar
+  // additionally surface its cumulative TL P&L (carried per-point as pnlTry) — "% to compare, ₺ to feel it".
+  if (type === 'PORTFOLIO') return 'portfolio';
+  // Level mode (homogeneous rate-vs-rate compare): rates are NOT compounded — they are plotted at their
+  // actual % level, so format them as a rate (%X.XX) rather than a growth-index number.
+  if (levelMode && (type === 'MACRO_RATE' || type === 'MACRO_DEPOSIT')) return 'rate';
+  // Deposits AND policy/reference rates (MACRO_RATE) are compounded into a cumulative growth index (a
+  // multiplier), not a rate or a currency value, so their plotted value formats as a plain index number.
+  if (type === 'MACRO_INFLATION' || type === 'MACRO_DEPOSIT' || type === 'MACRO_RATE') return 'index';
+  if (type === 'BOND') return 'rate';
   return 'price';
+}
+
+// Last data point at or before `ts` for a series whose `data` is sorted ascending by timestamp (data[i][0]);
+// returns null when `ts` precedes the series' first point. Lets the tooltip show every series' value-in-force
+// at the hovered date even when series sit on different grids (sparse macro vs daily asset).
+function valueAsOf(data, ts) {
+  if (!data || data.length === 0) return null;
+  let lo = 0;
+  let hi = data.length - 1;
+  let ans = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (data[mid][0] <= ts) { ans = mid; lo = mid + 1; } else { hi = mid - 1; }
+  }
+  return ans >= 0 ? data[ans] : null;
 }
 
 function formatRaw(kind, raw, currency) {
@@ -12,7 +37,43 @@ function formatRaw(kind, raw, currency) {
   return raw.toLocaleString('tr-TR', { style: 'currency', currency, maximumFractionDigits: 2 });
 }
 
-export function buildOption(seriesData, normalize, isDark, targetCurrency) {
+// Signed TL for the portfolio's cumulative P&L shown next to its return %. Uses the shared formatter so it
+// matches the info-bar exactly — 2 decimals ("−₺11,13" not the rounded "−₺11"); tiny values collapse to ₺0,00.
+function formatPnl(val, currency) {
+  if (!Number.isFinite(val)) return '';
+  return `${val > 0 ? '+' : ''}${formatPrice(val, { currency, minDecimals: 2, maxDecimals: 2 })}`;
+}
+
+// Leading-split skip — mirrors backend ScenarioService.pickBaselineIndex (SPLIT_DETECTION_LOW/HIGH +
+// BASELINE_PROBE_WINDOW, ScenarioService.java:46-48) so Compare anchors its baseline on the SAME post-cliff
+// limb the inflation-beater uses, keeping the two surfaces' trailing-return consistent. A fund whose first
+// in-window candle sits just before a launch-week crash or an unadjusted split (e.g. PKZ 1.006 → 0.16, an
+// ~84% one-day step) would otherwise be based on the pre-cliff value, so Compare reported a ~6.4x-too-small
+// return that disagreed with the beater. Scans the leading probe window from startIdx and returns the index
+// of the first point AFTER the LAST split-like step (ratio > HIGH or < LOW); only meaningful for raw price
+// series — index/rate/portfolio lines never split.
+const SPLIT_DETECTION_LOW = 0.2;
+const SPLIT_DETECTION_HIGH = 5;
+const BASELINE_PROBE_WINDOW = 10;
+
+export function skipLeadingSplit(sortedPoints, startIdx) {
+  const span = sortedPoints.length - startIdx;
+  if (span < 2) return startIdx;
+  const scanLimit = Math.min(span - 1, Math.max(BASELINE_PROBE_WINDOW, Math.floor(span / 3)));
+  let jumpIdx = startIdx;
+  for (let k = 0; k < scanLimit; k += 1) {
+    const i = startIdx + k;
+    const cur = Number(sortedPoints[i].value);
+    const next = Number(sortedPoints[i + 1].value);
+    if (cur > 0 && next > 0) {
+      const ratio = next / cur;
+      if (ratio > SPLIT_DETECTION_HIGH || ratio < SPLIT_DETECTION_LOW) jumpIdx = i + 1;
+    }
+  }
+  return jumpIdx;
+}
+
+export function buildOption(seriesData, normalize, isDark, targetCurrency, commonStartDate, levelMode, indexMode) {
   const muted = isDark ? '#6b6b7a' : '#94a3b8';
   const grid = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
   const tooltipBg = isDark ? 'rgba(12,12,20,0.96)' : 'rgba(255,255,255,0.98)';
@@ -23,16 +84,31 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency) {
     if (!points || points.length === 0) return null;
     const sortedPoints = [...points].sort((a, b) =>
       String(a.date).localeCompare(String(b.date)));
-    const basePoint = Number(sortedPoints[0]?.value);
-    const data = sortedPoints.map((p) => {
+    const kind = rawKind(ind.type, levelMode);
+    // Normalize from the COMMON start date (the shared 0% baseline) rather than each series' own first
+    // point, so a long-history series like CPI can show its pre-window data without skewing the baseline.
+    const startIdx = commonStartDate
+      ? sortedPoints.findIndex((p) => p.date >= commonStartDate)
+      : 0;
+    const safeStart = startIdx >= 0 ? startIdx : 0;
+    // For raw price series, advance the baseline past a leading split-like cliff (fund launch-week crash /
+    // unadjusted split) so Compare anchors on the same post-cliff limb the inflation-beater uses. The
+    // pre-cliff points are also dropped from the plot, so the chart starts at the stable baseline instead
+    // of rendering an ~84% nosedive that visually "broke" the series and made it disagree with the beater.
+    const baseIdx = kind === 'price' ? skipLeadingSplit(sortedPoints, safeStart) : safeStart;
+    const basePoint = Number(sortedPoints[baseIdx]?.value);
+    const visiblePoints = baseIdx > safeStart ? sortedPoints.slice(baseIdx) : sortedPoints;
+    const data = visiblePoints.map((p) => {
       const raw = Number(p.value);
-      const plotted = normalize && basePoint !== 0
-        ? ((raw - basePoint) / Math.abs(basePoint)) * 100
-        : raw;
       const pct = basePoint !== 0 ? ((raw - basePoint) / Math.abs(basePoint)) * 100 : 0;
-      return [new Date(p.date).getTime(), plotted, raw, pct];
+      // INDEX MODE (macro-vs-macro only): rebase every series to a COMMON index of 100 at the shared start, so
+      // deposits/rates read as a growth multiple (100 → 105) instead of disparate compounded-index levels
+      // (1,01 vs 2,54). ASSET MODE keeps % change from the real starting price (the asset's price is its unit).
+      // Index = % change + 100; line shape / comparison are identical either way.
+      const plotted = normalize ? (indexMode ? pct + 100 : pct) : raw;
+      // 5th slot carries the portfolio's cumulative TL P&L at this point (null for every other series).
+      return [new Date(p.date).getTime(), plotted, raw, pct, p.pnlTry != null ? Number(p.pnlTry) : null];
     });
-    const kind = rawKind(ind.type);
     // Step lines for sparse/published-snapshot data: CPI is monthly, policy rate /
     // deposit rates are weekly or monthly. The published value is the canonical
     // reading for the full period until the next reading, so render as a step
@@ -107,27 +183,50 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency) {
       textStyle: { color: tooltipFg, fontSize: 11 },
       formatter: (params) => {
         if (!params?.length) return '';
-        const date = new Date(params[0].value[0]).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
-        const rows = params.map((p) => {
-          const seriesDef = series.find((s) => s.name === p.seriesName);
-          const kind = seriesDef?._kind || 'price';
-          const raw = Number(p.value[2]);
-          const pct = Number(p.value[3]);
-          const rawFmt = formatRaw(kind, raw, targetCurrency);
+        // Take the hovered timestamp, then look up EVERY series' value-in-force at that date from its own full
+        // data (last point <= ts) instead of echarts' `params` — which on a time axis only includes the
+        // series that happen to own a point near the cursor. With sparse macro lines on a different grid than
+        // daily asset lines, that left rows missing / showing a neighbouring date's value and made the tooltip
+        // flicker on fast moves. The as-of lookup yields a complete, consistent cross-section at one date.
+        const ts = params[0].value[0];
+        const date = new Date(ts).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+        const rows = series.map((seriesDef) => {
+          const pt = valueAsOf(seriesDef.data, ts);
+          if (!pt) return '';
+          const kind = seriesDef._kind || 'price';
+          const color = seriesDef.itemStyle?.color;
+          const raw = Number(pt[2]);
+          const pct = Number(pt[3]);
           const sign = pct > 0 ? '+' : '';
           const pctColor = pct > 0 ? '#10b981' : pct < 0 ? '#ef4444' : tooltipFg;
           const pctFmt = `${sign}${pct.toFixed(2)}%`;
+          let valueSpans;
+          if (kind === 'portfolio') {
+            // Return % is the comparison primary; the cumulative TL P&L rides along as the secondary
+            // so you still feel the money even while the axis is in %.
+            const tl = formatPnl(Number(pt[4]), targetCurrency);
+            valueSpans = `<span style="font-weight:700;font-size:12px;color:${pctColor}">${pctFmt}</span>`
+              + (tl ? `<span style="font-size:10px;font-weight:600;color:${tooltipFg};opacity:0.7">${tl}</span>` : '');
+          } else {
+            // Normalized: the primary number is the common 100-based index (every series visibly starts at
+            // 100, so the growth multiplier reads directly); the native level differs per series and is
+            // dropped. Level mode / single-series still show the native level (price/rate/index).
+            const idx = Number(pt[1]);
+            const primary = (normalize && indexMode && !levelMode)
+              ? idx.toLocaleString('tr-TR', { maximumFractionDigits: idx >= 1000 ? 0 : 2 })
+              : formatRaw(kind, raw, targetCurrency);
+            // Level mode plots the actual rate, so the level IS the value — the % from baseline is noise there.
+            const pctSpan = levelMode ? '' : `<span style="font-size:10px;font-weight:600;color:${pctColor};opacity:0.9">${pctFmt}</span>`;
+            valueSpans = `<span style="font-weight:700;color:${color}">${primary}</span>${pctSpan}`;
+          }
           return `<div style="display:flex;justify-content:space-between;gap:14px;align-items:center;padding:3px 0;font-family:ui-monospace,monospace;font-size:11px">
             <span style="display:flex;align-items:center;gap:6px;min-width:0">
-              <span style="width:6px;height:6px;border-radius:50%;background:${p.color};flex-shrink:0"></span>
-              <span style="color:${tooltipFg};opacity:0.85">${p.seriesName}</span>
+              <span style="width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0"></span>
+              <span style="color:${tooltipFg};opacity:0.85">${seriesDef.name}</span>
             </span>
-            <span style="display:flex;align-items:baseline;gap:8px;flex-shrink:0">
-              <span style="font-weight:700;color:${p.color}">${rawFmt}</span>
-              <span style="font-size:10px;font-weight:600;color:${pctColor};opacity:0.9">${pctFmt}</span>
-            </span>
+            <span style="display:flex;align-items:baseline;gap:8px;flex-shrink:0">${valueSpans}</span>
           </div>`;
-        }).join('');
+        }).filter(Boolean).join('');
         return `<div style="padding:6px 4px;min-width:240px">
           <div style="font-size:10px;color:${tooltipFg};opacity:0.65;margin-bottom:6px">${date}</div>
           ${rows}
@@ -145,10 +244,22 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency) {
       axisLabel: {
         color: muted, fontSize: 10,
         formatter: (val) => {
-          if (normalize) {
-            const sign = val > 0 ? '+' : '';
-            return `${sign}${val.toFixed(0)}%`;
+          if (normalize && indexMode) {
+            // Macro-only compare: indexed to 100 at the window start. Adaptive precision so a near-flat
+            // series still shows movement instead of collapsing every tick to "100".
+            const span = Math.abs(val - 100);
+            const dec = span >= 10 ? 0 : span >= 1 ? 1 : 2;
+            return val.toLocaleString('tr-TR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
           }
+          if (normalize) {
+            // Asset compare: % change from the real starting price. Adaptive precision so a near-flat series
+            // (e.g. a USD position in a USD frame, ~0%) doesn't collapse every tick to "0%"/"-0%".
+            const mag = Math.abs(val);
+            const dec = mag >= 10 ? 0 : mag >= 1 ? 1 : 2;
+            const sign = val > 0 ? '+' : '';
+            return `${sign}${val.toFixed(dec)}%`;
+          }
+          if (levelMode) return `%${val.toFixed(0)}`;
           return val.toLocaleString('tr-TR');
         },
       },

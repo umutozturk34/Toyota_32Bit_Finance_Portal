@@ -37,8 +37,13 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
 
   const { convertAt } = useRateHistory();
   const suggestedPriceInDisplay = liveSuggested != null
-    ? Number(convertAt(liveSuggested, 'TRY', todayIso()) ?? liveSuggested)
+    ? Number(convertAt(liveSuggested, 'TRY', todayIso(), nativeCurrency) ?? liveSuggested)
     : null;
+  // entryPrice is stored in TRY; the close price is entered/shown in the display (native) currency, so
+  // the realized-P&L preview must compare like-with-like — convert the entry to display at its entry date.
+  const entryPriceInDisplay = entryPrice
+    ? Number(convertAt(entryPrice, 'TRY', entryDateIso || todayIso(), nativeCurrency) ?? entryPrice)
+    : 0;
 
   const form = usePositionCloseForm({
     availabilityAssetType: 'VIOP',
@@ -72,10 +77,12 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
   const effectiveQty = !isAlreadyClosed && validCloseQty ? parsedCloseQty : qty;
   const isPartial = !isAlreadyClosed && validCloseQty && parsedCloseQty < qty;
 
-  const priceDelta = validClosePrice && entryPrice > 0
-    ? ((parsedClosePrice - entryPrice) / entryPrice) * 100
+  const priceDelta = validClosePrice && entryPriceInDisplay > 0
+    ? ((parsedClosePrice - entryPriceInDisplay) / entryPriceInDisplay) * 100
     : null;
 
+  // sizeTimesQty is a contract-units ratio (entryValueTry / entryPrice are BOTH TRY, so they cancel);
+  // it must keep the raw TRY entryPrice — converting it would mismatch the TRY entryValueTry.
   const sizeTimesQty = useMemo(() => {
     const notional = Number(position?.entryValueTry);
     if (!Number.isFinite(notional) || !Number.isFinite(entryPrice) || entryPrice <= 0) return effectiveQty;
@@ -85,16 +92,16 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
 
   const realizedPnl = useMemo(() => {
     const exit = Number(closePrice);
-    if (!Number.isFinite(exit) || !Number.isFinite(entryPrice) || entryPrice <= 0) return null;
-    const diff = isLong ? exit - entryPrice : entryPrice - exit;
+    if (!Number.isFinite(exit) || !Number.isFinite(entryPriceInDisplay) || entryPriceInDisplay <= 0) return null;
+    const diff = isLong ? exit - entryPriceInDisplay : entryPriceInDisplay - exit;
     return diff * sizeTimesQty;
-  }, [closePrice, entryPrice, isLong, sizeTimesQty]);
+  }, [closePrice, entryPriceInDisplay, isLong, sizeTimesQty]);
 
   const realizedPnlPercent = useMemo(() => {
-    if (realizedPnl == null || entryPrice <= 0) return null;
-    const notional = entryPrice * sizeTimesQty;
+    if (realizedPnl == null || entryPriceInDisplay <= 0) return null;
+    const notional = entryPriceInDisplay * sizeTimesQty;
     return notional > 0 ? (realizedPnl / notional) * 100 : null;
-  }, [realizedPnl, entryPrice, sizeTimesQty]);
+  }, [realizedPnl, entryPriceInDisplay, sizeTimesQty]);
 
   if (!position) return null;
 
@@ -160,7 +167,7 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
                 {t('portfolio.derivatives.entryPrice', 'Giriş')}
               </div>
               <div className="text-sm font-mono font-semibold text-fg">
-                {money(entryPrice)}
+                {money(entryPriceInDisplay, inputCurrency)}
               </div>
             </div>
           </div>
@@ -327,7 +334,7 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
             </span>
             <div className="text-right min-w-0">
               <div className={`font-mono font-bold break-all ${realizedPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {realizedPnl >= 0 ? '+' : ''}{money(realizedPnl)}
+                {realizedPnl >= 0 ? '+' : ''}{money(realizedPnl, inputCurrency)}
               </div>
               {realizedPnlPercent != null && (
                 <div className={`font-mono text-[10px] ${realizedPnl >= 0 ? 'text-emerald-400/80' : 'text-rose-400/80'}`}>

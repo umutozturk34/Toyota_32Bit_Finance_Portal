@@ -7,7 +7,9 @@ export function formatPercent(value, locale = 'tr-TR') {
 
 function isoDate(date) {
   const d = date instanceof Date ? date : new Date(date);
-  return d.toISOString().slice(0, 10);
+  // Local-zone sv-SE (never UTC toISOString, which shifts the day in non-Istanbul / pre-03:00 zones),
+  // matching compareSeriesUtils.toIso so the scenario default start/end and picker maxDate stay correct.
+  return d.toLocaleDateString('sv-SE');
 }
 
 export function todayIso() {

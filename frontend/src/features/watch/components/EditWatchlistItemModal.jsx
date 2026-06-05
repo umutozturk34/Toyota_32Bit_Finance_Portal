@@ -6,6 +6,7 @@ import { toast } from '../../../shared/components/feedback/toastBus';
 import { extractApiError } from '../../../shared/utils/apiError';
 import BaseModal from '../../../shared/components/modal/BaseModal';
 import Button from '../../../shared/components/buttons/Button';
+import { commodityLabel } from '../../../shared/utils/commodityName';
 
 export default function EditWatchlistItemModal({ open, onClose, item, watchlistId }) {
   const { t } = useTranslation();
@@ -56,7 +57,7 @@ export default function EditWatchlistItemModal({ open, onClose, item, watchlistI
       onClose={onClose}
       icon={Pencil}
       title={t('watchlistItemEdit.title')}
-      subtitle={item.assetName ?? item.assetCode}
+      subtitle={commodityLabel(t, item.marketType, item.assetCode, item.assetName ?? item.assetCode)}
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">

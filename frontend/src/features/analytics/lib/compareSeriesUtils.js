@@ -3,6 +3,7 @@ import { macroIndicatorService } from '../../macro/services/macroIndicatorServic
 import { analyticsService } from '../services/analyticsService';
 import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
 import { viopQuoteCurrency } from '../../../shared/utils/priceCurrency';
+import { commodityName } from '../../../shared/utils/commodityName';
 
 const PALETTE = ['#5E6AD2', '#10b981', '#f59e0b', '#06b6d4', '#ef4444', '#8b5cf6'];
 
@@ -10,10 +11,16 @@ export function isMacro(type) {
   return type && type.startsWith('MACRO');
 }
 
-// Deposits are compounded into a growth curve (see compoundRateSeries), so they are a value
-// series — not a rate line — and must be FX-converted like any other instrument.
+// Deposits AND PERCENT-unit reference rates (raw TLREF rate, CBRT policy rate) are compounded into a
+// cumulative growth index (see compoundRateSeries); a MACRO_RATE already published as an INDEX (e.g. the
+// BIST TLREF Index, ~6022) is left as-is because it is ALREADY cumulative — ComparePage compounds only
+// when the indicator unit is PERCENT, otherwise double-compounding explodes the value. Either way these
+// are value series, not rate lines, and FX-convert like any other instrument (TRY-native, so convert to
+// USD/EUR per-date in a foreign-ccy compare). CPI/TÜFE (MACRO_INFLATION) is already a cumulative
+// price-level index used as a deflator, and BOND yields are rate levels: those stay rate-like — never
+// compounded, never FX-converted.
 export function isRateLike(type) {
-  return (isMacro(type) && type !== 'MACRO_DEPOSIT') || type === 'BOND';
+  return (isMacro(type) && type !== 'MACRO_DEPOSIT' && type !== 'MACRO_RATE') || type === 'BOND';
 }
 
 // Deposit quote currency from the EVDS code: TP.<CCY>... (mirrors DepositNativeCurrencyStrategy).
@@ -39,10 +46,20 @@ export function nativeCurrencyFor(type, code) {
   return 'TRY';
 }
 
+// Parse a YYYY-MM-DD key as a LOCAL-midnight date so a cursor advanced via local setDate and the key
+// emitted via local toLocaleDateString stay in the same zone. Building the cursor from `new Date(iso)`
+// (UTC midnight) and reading it back via toISOString in a DST-observing zone drops or duplicates the
+// spring-forward day. Istanbul is DST-free, but non-Turkey browsers corrupt the fill.
+const parseLocal = (iso) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
 // Compound an annual-rate-% series into a cumulative growth index (starts at 1.0). Mirrors backend
 // ScenarioService.applyCompound: daily compounding over a 365-day year, with the rate in effect
-// during each interval applied over that interval's day count.
-export function compoundRateSeries(points) {
+// during each interval applied over that interval's day count. When `endIso` is given, the last
+// published rate is carried forward past the final observation (see the tail block below).
+export function compoundRateSeries(points, endIso) {
   const sorted = [...(points || [])]
     .filter((p) => p && p.date && Number.isFinite(Number(p.value)))
     .sort((a, b) => String(a.date).localeCompare(String(b.date)));
@@ -58,21 +75,54 @@ export function compoundRateSeries(points) {
     }
     out.push({ ...sorted[i], value: factor });
   }
+  // Tail carry-forward: deposit/rate interest keeps accruing daily at the last published rate until a
+  // newer one is published, so the index must continue to the window edge instead of flat-lining at the
+  // final observation. Without this the post-publication days (e.g. ~13 for a weekly-published deposit)
+  // silently drop their interest and Compare understates the deposit vs the backend ScenarioService
+  // (which already carries the last rate to endDate in simulateRate). Emitted day-by-day so the tail
+  // renders as a smooth continuation rather than a flat segment with a jump at the edge.
+  const lastRate = Number(sorted[sorted.length - 1].value);
+  if (endIso && Number.isFinite(lastRate)) {
+    const dailyRate = lastRate / 100 / 365;
+    const cursor = parseLocal(sorted[sorted.length - 1].date);
+    const end = parseLocal(endIso);
+    cursor.setDate(cursor.getDate() + 1);
+    while (cursor <= end) {
+      factor *= (1 + dailyRate);
+      out.push({ date: cursor.toLocaleDateString('sv-SE'), value: factor, _filled: true });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  }
   return out;
 }
 
-export function displayLabel(indicator) {
+// Resolves the human label for a compare series across every instrument type: COMMODITY and MACRO get
+// their localized i18n name (commodity.name.* / marketOverview.macro.<label>), every other asset uses its
+// backend long name. The macro label is not on the selection object (only {type,code,name}), so it is
+// looked up from the code->label map built off the macro indicator list. Needs `t`; callers without it
+// (rare) fall back to the backend name / stripped code.
+export function displayLabel(t, indicator, macroLabelByCode) {
   if (!indicator) return '';
   const { type, code, name } = indicator;
+  // PORTFOLIO's `code` is a numeric DB id with no human meaning ("3") — it must NEVER surface. Until the
+  // backfill effect resolves the real name from `usePortfolioList`, show a plain "Portföy" placeholder.
+  if (type === 'PORTFOLIO') return (name && name !== code) ? name : (t ? t('nav.portfolio', { defaultValue: 'Portföy' }) : 'Portföy');
   if (isMacro(type)) {
+    const label = indicator.label || (macroLabelByCode && macroLabelByCode[code]);
+    const stripped = code.replace(/^TP\./i, '').replace(/\.D$/i, '');
+    if (label && t) return t(`marketOverview.macro.${label}`, { defaultValue: (name && name !== code) ? name : stripped });
     if (name && name !== code) return name;
-    return code.replace(/^TP\./i, '').replace(/\.D$/i, '');
+    return stripped;
   }
+  if (type === 'COMMODITY' && t) return commodityName(t, code, name || code);
   return name || code;
 }
 
+// Local-zone date key (sv-SE → YYYY-MM-DD) to match every other key in this file and the backend's
+// local-zone candle/observation dates. toISOString would shift the boundary a day in non-Istanbul or
+// pre-03:00 zones, filtering out a same-day edge candle or landing the window start a day off.
 export function toIso(d) {
-  return d.toISOString().slice(0, 10);
+  return d.toLocaleDateString('sv-SE');
 }
 
 export function rangeBounds(days) {
@@ -83,16 +133,27 @@ export function rangeBounds(days) {
 }
 
 function widenBounds(bounds, months) {
-  const from = new Date(bounds.from);
+  const from = parseLocal(bounds.from);
   from.setMonth(from.getMonth() - months);
-  return { from: from.toISOString().slice(0, 10), to: bounds.to };
+  return { from: toIso(from), to: bounds.to };
 }
 
 export async function fetchSeries(item, bounds) {
   if (item.type === 'PORTFOLIO') {
-    const points = await analyticsService.portfolioSeries(item.code, bounds);
-    return (points || [])
-      .map((p) => ({ date: p.date, value: Number(p.value) }))
+    // Two series: the TWR index drives the normalized % line (comparable to inflation); the cumulative TL
+    // P&L rides along per-point (pnlTry) so the tooltip / info-bar can show the money beside the return %.
+    const [twr, pnl] = await Promise.all([
+      analyticsService.portfolioSeries(item.code, bounds, 'twr'),
+      analyticsService.portfolioSeries(item.code, bounds, 'pnl'),
+    ]);
+    // Each pnl point also carries pnlByCcy (USD/EUR, entry-FX cost-based) so the money overlay shows the true
+    // foreign-currency P&L, not a single-rate conversion of the TRY P&L. TRY frame falls back to pnlTry.
+    const pnlByDate = new Map((pnl || []).map((p) => [p.date, { pnlTry: Number(p.value), pnlByCcy: p.pnlByCcy ?? null }]));
+    return (twr || [])
+      .map((p) => {
+        const m = pnlByDate.get(p.date);
+        return { date: p.date, value: Number(p.value), pnlTry: m ? m.pnlTry : null, pnlByCcy: m ? m.pnlByCcy : null };
+      })
       .filter((p) => p.date && Number.isFinite(p.value));
   }
   if (isMacro(item.type) || item.unit) {
@@ -140,18 +201,24 @@ export function parseInitialSelection(params) {
     const key = `${type}|${code}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push({ type, code, name: code });
+    // For PORTFOLIO, `code` is a numeric DB id with no human meaning. Leave `name` null so the
+    // chip falls back to displayLabel's localized "Portföy" placeholder until the backfill effect in
+    // ComparePage resolves the real name from the user's portfolio list.
+    out.push({ type, code, name: type === 'PORTFOLIO' ? null : code });
   }
   return out;
 }
 
-export function forwardFillToToday(points) {
+export function forwardFillTo(points, endIso) {
   if (!points || points.length === 0) return points;
   const sorted = [...points].sort((a, b) => String(a.date).localeCompare(String(b.date)));
   const last = sorted[sorted.length - 1];
-  const todayIso = new Date().toISOString().slice(0, 10);
-  if (last.date >= todayIso) return sorted;
-  return [...sorted, { date: todayIso, value: last.value, _filled: true }];
+  if (last.date >= endIso) return sorted;
+  return [...sorted, { ...last, date: endIso, value: last.value, _filled: true }];
+}
+
+export function forwardFillToToday(points) {
+  return forwardFillTo(points, new Date().toISOString().slice(0, 10));
 }
 
 export function backFillToWindowStart(points, windowStart) {
@@ -179,23 +246,46 @@ export function forwardFillDaily(points, fromIso, toIso) {
     if (maxGap < 4) return sorted;
   }
   const result = [];
-  let cursor = new Date(fromIso);
-  const end = new Date(toIso);
+  let cursor = parseLocal(fromIso);
+  const end = parseLocal(toIso);
   let idx = 0;
-  let currentValue = null;
+  let currentPoint = null;
   while (cursor <= end) {
-    const cursorIso = cursor.toISOString().slice(0, 10);
+    const cursorIso = cursor.toLocaleDateString('sv-SE');
     while (idx < sorted.length && sorted[idx].date <= cursorIso) {
-      currentValue = sorted[idx].value;
+      currentPoint = sorted[idx];
       idx += 1;
     }
     const exact = sorted.find((p) => p.date === cursorIso);
     if (exact) {
       result.push(exact);
-    } else if (currentValue !== null) {
-      result.push({ date: cursorIso, value: currentValue, _filled: true });
+    } else if (currentPoint !== null) {
+      // Spread the carried point so extra fields (e.g. the portfolio's pnlTry) survive the fill.
+      result.push({ ...currentPoint, date: cursorIso, value: currentPoint.value, _filled: true });
     }
     cursor.setDate(cursor.getDate() + 1);
+  }
+  return result;
+}
+
+// Carry the previous reading forward to every intervening day WITHOUT inflating the whole series to
+// daily cadence the way forwardFillDaily does. For sparse macro lines (CPI, rates) this gives every
+// in-between day the last published value, so the line and its tooltips are continuous across gaps.
+export function forwardFillGaps(points) {
+  if (!points || points.length < 2) return points;
+  const sorted = [...points].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const result = [sorted[0]];
+  for (let i = 1; i < sorted.length; i += 1) {
+    const prev = sorted[i - 1];
+    const curr = sorted[i];
+    const cursor = parseLocal(prev.date);
+    cursor.setDate(cursor.getDate() + 1);
+    const currDate = parseLocal(curr.date);
+    while (cursor < currDate) {
+      result.push({ date: cursor.toLocaleDateString('sv-SE'), value: prev.value, _filled: true });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    result.push(curr);
   }
   return result;
 }

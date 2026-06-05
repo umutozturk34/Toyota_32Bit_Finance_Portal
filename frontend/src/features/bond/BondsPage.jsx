@@ -224,6 +224,7 @@ export default function BondsPage() {
                         onChange={listParams.setSearch}
                         placeholder={t('market.bond.searchPlaceholder')}
                         withSuggestions
+                        filterType="BOND"
                         suggestFn={(q) => bondService.getAllBonds({ search: q, size: 6 }).then(r => r.content || [])}
                         suggestLabelFn={(b) => b.isinCode || b.seriesCode}
                     />

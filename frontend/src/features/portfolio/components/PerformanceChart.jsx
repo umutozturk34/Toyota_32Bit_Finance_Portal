@@ -1,8 +1,6 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { GitCompareArrows } from 'lucide-react';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import useChartRange from '../../../shared/hooks/useChartRange';
 import ReactECharts from 'echarts-for-react';
@@ -17,232 +15,33 @@ import { useTheme } from '../../../shared/context/useTheme';
 import useElapsedSeconds from '../../../shared/hooks/useElapsedSeconds';
 import RangeSelector from '../../../shared/components/form/RangeSelector';
 import i18n from '../../../shared/i18n/config';
+import ChartHoverReadout from '../../../shared/charts/ChartHoverReadout';
 import {
   ASSET_TYPE_FILTERS as ASSET_TYPES,
   ASSET_TYPE_COLORS,
 } from '../../../shared/constants/assetTypes';
 import {
-  timeAxis,
-  valueAxis,
-  dataZoomBlock,
-  lineSeriesDefaults,
-  areaGradient,
-} from '../../../shared/charts/echartsTheme';
-
-const POSITION_EVENT_META = {
-  POSITION_ADDED: { color: '#10b981', labelKey: 'portfolio.performance.lotAdded' },
-  POSITION_SOLD: { color: '#ef4444', labelKey: 'portfolio.performance.lotSold' },
-};
-
-function themePalette(isDark) {
-  return isDark
-    ? { bg: 'rgba(12,12,20,0.96)', fg: '#e2e2ea', muted: '#6b6b7a', border: 'rgba(255,255,255,0.08)', grid: 'rgba(255,255,255,0.05)' }
-    : { bg: 'rgba(255,255,255,0.98)', fg: '#1a1a2e', muted: '#94a3b8', border: 'rgba(0,0,0,0.08)', grid: 'rgba(0,0,0,0.04)' };
-}
-
-function buildTooltipHtml(point, palette, money) {
-  const { bg, fg, muted, border } = palette;
-  const totalValue = point.amount ?? (Array.isArray(point.value) ? Number(point.value[1]) : Number(point.value));
-  const localeTag = i18n.t('common.localeTag');
-  const date = new Date(point.time).toLocaleDateString(localeTag, {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
-  const pnlColor = point.pnl >= 0 ? '#10b981' : '#ef4444';
-  const pnlPrefix = point.pnl >= 0 ? '+' : '';
-
-  const detailRows = (point.details || []).map((d) => {
-    const isOther = d.label === 'OTHER';
-    const color = isOther ? '#7d8590' : (ASSET_TYPE_COLORS[d.assetType] || '#6366f1');
-    const label = isOther
-      ? i18n.t('portfolio.allocation.otherLabel')
-      : d.label !== d.assetType ? d.label : i18n.t(`assets.labels.${d.assetType}`, { defaultValue: d.assetType });
-    const dColor = d.pnlTry >= 0 ? '#10b981' : '#ef4444';
-    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0">
-      <div style="display:flex;align-items:center;gap:6px">
-        <span style="width:6px;height:6px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0"></span>
-        <span style="font-size:11px;color:${fg};opacity:0.85">${label}</span>
-      </div>
-      <div style="display:flex;gap:8px;align-items:baseline">
-        <span style="font-size:11px;font-family:ui-monospace,monospace;color:${fg}">${money(d.valueTry)}</span>
-        <span style="font-size:10px;font-family:ui-monospace,monospace;color:${dColor}">${d.pnlTry >= 0 ? '+' : ''}${money(d.pnlTry)}</span>
-      </div>
-    </div>`;
-  }).join('');
-  const cashRow = point.cash != null && point.cash !== 0
-    ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0">
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="width:6px;height:6px;border-radius:50%;background:#94a3b8;display:inline-block;flex-shrink:0"></span>
-          <span style="font-size:11px;color:${fg};opacity:0.85">${i18n.t('portfolio.performance.realizedPnlLabel', { defaultValue: 'Realized P/L' })}</span>
-        </div>
-        <span style="font-size:11px;font-family:ui-monospace,monospace;color:${point.cash < 0 ? '#ef4444' : fg}">${money(point.cash)}</span>
-      </div>`
-    : '';
-  const detailBlock = (detailRows || cashRow)
-    ? `<div style="border-top:1px solid ${border};margin-top:8px;padding-top:8px">${detailRows}${cashRow}</div>`
-    : '';
-
-  const lotEvents = (point.events || []).filter((e) => POSITION_EVENT_META[e.type]);
-  const eventRows = lotEvents.map((ev) => {
-    const meta = POSITION_EVENT_META[ev.type];
-    const codeLabel = ev.assetCode || i18n.t(`assets.labels.${ev.assetType}`, { defaultValue: ev.assetType });
-    const qty = ev.quantity != null ? Number(ev.quantity) : null;
-    const qtyText = qty != null && qty > 0
-      ? `<span style="font-size:10px;font-family:ui-monospace,monospace;color:${muted}">×${qty.toLocaleString(localeTag, { maximumFractionDigits: 8 })}</span>`
-      : '';
-    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:3px 0">
-      <div style="display:flex;align-items:center;gap:5px">
-        <span style="width:5px;height:5px;border-radius:50%;background:${meta.color};display:inline-block"></span>
-        <span style="font-size:10px;font-weight:600;color:${meta.color}">${i18n.t(meta.labelKey)}</span>
-        <span style="font-size:10px;color:${muted}">${codeLabel}</span>
-        ${qtyText}
-      </div>
-      <span style="font-size:10px;font-family:ui-monospace,monospace;color:${fg};opacity:0.8">${money(ev.valueTry)}</span>
-    </div>`;
-  }).join('');
-  const eventBlock = eventRows
-    ? `<div style="border-top:1px solid ${border};margin-top:6px;padding-top:6px">
-        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:${muted};margin-bottom:4px">${i18n.t('portfolio.performance.positionEvents')}</div>
-        ${eventRows}
-      </div>`
-    : '';
-
-  return `<div style="padding:12px 16px;min-width:260px;background:${bg};border-radius:12px;border:1px solid ${border};box-shadow:0 8px 32px rgba(0,0,0,0.25)">
-    <div style="font-size:10px;color:${muted};margin-bottom:8px;letter-spacing:0.3px">${date}</div>
-    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px">
-      <span style="font-size:16px;font-weight:700;font-family:ui-monospace,monospace;color:${fg}">${money(totalValue)}</span>
-      <span style="font-size:11px;font-family:ui-monospace,monospace;color:${pnlColor};font-weight:600">${pnlPrefix}${money(point.pnl)} (${pnlPrefix}${point.pnlPercent?.toFixed(2) ?? '0.00'}%)</span>
-    </div>
-    ${detailBlock}
-    ${eventBlock}
-  </div>`;
-}
-
-function buildEChartsOption(data, color, palette, money, forPrint = false) {
-  const seriesData = data.map((d) => ({
-    value: [d.time, d.value],
-    amount: d.value,
-    cash: d.cash,
-    pnl: d.pnl,
-    pnlPercent: d.pnlPercent,
-    details: d.details,
-    events: d.events,
-    time: d.time,
-  }));
-
-  const markPointData = data
-    .filter((d) => (d.events || []).some((e) => POSITION_EVENT_META[e.type]))
-    .map((d) => {
-      const evs = (d.events || []).filter((e) => POSITION_EVENT_META[e.type]);
-      const hasSold = evs.some((e) => e.type === 'POSITION_SOLD');
-      const hasAdded = evs.some((e) => e.type === 'POSITION_ADDED');
-      const color = hasSold && hasAdded
-        ? '#f59e0b'
-        : hasSold ? '#ef4444' : '#10b981';
-      return {
-        coord: [d.time, d.value],
-        itemStyle: {
-          color,
-          borderColor: color === '#ef4444' ? '#1f0a0a' : color === '#f59e0b' ? '#2a1a05' : '#0a1f17',
-          borderWidth: 2,
-          shadowColor: color + '99',
-          shadowBlur: 8,
-        },
-      };
-    });
-
-  const values = data.map((d) => d.value);
-  const dataMin = Math.min(...values);
-  const dataMax = Math.max(...values);
-  const span = dataMax - dataMin;
-  const padding = span > 0 ? span * 0.08 : dataMax * 0.05;
-
-  const showZoom = !forPrint && data.length >= 2;
-  const zoomBlock = dataZoomBlock(palette, { filterMode: 'none', height: 26 });
-  if (zoomBlock[0]) zoomBlock[0].filterMode = 'none';
-  return {
-    backgroundColor: 'transparent',
-    animation: !forPrint && data.length < 200,
-    grid: { left: 8, right: 12, top: 16, bottom: showZoom ? 92 : 40, containLabel: true },
-    dataZoom: showZoom ? zoomBlock : [],
-    tooltip: forPrint ? { show: false } : {
-      trigger: 'axis',
-      confine: true,
-      position: (point, _params, _dom, _rect, size) => {
-        const x = Math.max(8, Math.min(point[0] - size.contentSize[0] / 2, size.viewSize[0] - size.contentSize[0] - 8));
-        return [x, 8];
-      },
-      backgroundColor: 'transparent',
-      borderWidth: 0,
-      padding: 0,
-      extraCssText: 'box-shadow:none;',
-      formatter: (params) => {
-        const point = params?.[0]?.data;
-        return point ? buildTooltipHtml(point, palette, money) : '';
-      },
-    },
-    xAxis: timeAxis(palette, {
-      axisLabel: {
-        color: palette.muted, fontSize: 10,
-        hideOverlap: true,
-        formatter: (val) => {
-          const d = new Date(val);
-          return `${d.getDate()} ${d.toLocaleString(i18n.t('common.localeTag'), { month: 'short' })}`;
-        },
-      },
-      minInterval: 24 * 3600 * 1000,
-    }),
-    yAxis: valueAxis(palette, {
-      scale: false,
-      min: dataMin - padding,
-      max: dataMax + padding,
-      axisLabel: { color: palette.muted, fontSize: 10, formatter: (val) => money(val) },
-    }),
-    series: [{
-      ...lineSeriesDefaults(color, data.length),
-      data: seriesData,
-      areaStyle: { color: areaGradient(color) },
-      markPoint: {
-        symbol: 'circle',
-        symbolSize: 12,
-        itemStyle: {
-          color: '#10b981',
-          borderColor: '#0a1f17',
-          borderWidth: 2,
-          shadowColor: 'rgba(16, 185, 129, 0.6)',
-          shadowBlur: 8,
-        },
-        label: { show: false },
-        emphasis: {
-          scale: 1.3,
-          label: { show: false },
-        },
-        animation: false,
-        data: markPointData,
-      },
-      emphasis: { focus: 'series' },
-    }],
-    media: [{
-      query: { maxWidth: 640 },
-      option: {
-        grid: { left: 4, right: 8, top: 12, bottom: showZoom ? 80 : 32 },
-        xAxis: { axisLabel: { fontSize: 9, rotate: 35 } },
-        yAxis: { axisLabel: { fontSize: 9 } },
-      },
-    }],
-  };
-}
+  POSITION_EVENT_META,
+  themePalette,
+  capPoints,
+  nearestIndex,
+  buildEChartsOption,
+} from '../lib/performanceChartBuilder';
 
 function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = false }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const navigate = useNavigate();
   const { convertAt, currency } = useRateHistory();
   const chartRef = useRef(null);
   const [range, setRange] = useChartRange();
   const [activeType, setActiveType] = useSessionState('portfolio-perf-type', null);
+  const [hoverIdx, setHoverIdx] = useState(null);
 
-  const { data: perfData = [], isLoading, isFetching } = usePortfolioPerformance(portfolioId, range, activeType);
-  const loading = isLoading || isFetching;
+  const { data: perfData = [], isLoading } = usePortfolioPerformance(portfolioId, range, activeType);
+  // Spinner only on the FIRST load (no cached data). A background refetch (range/type switch, tab re-entry)
+  // keeps isFetching true while React Query still holds the previous data — blanking the chart to a spinner
+  // then was the switch flicker; stale-while-revalidate keeps the existing chart visible during revalidation.
+  const loading = isLoading;
   const ownBackfill = useBackfillStatus(backfillProp ? null : portfolioId);
   const backfill = backfillProp ?? ownBackfill;
   const backfillElapsed = useElapsedSeconds(backfill.since);
@@ -255,24 +54,35 @@ function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = fals
     return formatPrice(value, { currency: safeCurrency, minDecimals: 2, maxDecimals });
   }, [safeCurrency]);
 
-  const convertedPerfData = useMemo(() => perfData.map((point) => {
-    const dateStr = new Date(point.time).toISOString().slice(0, 10);
-    return {
-      ...point,
-      value: convertAt(point.value, 'TRY', dateStr),
-      pnl: convertAt(point.pnl, 'TRY', dateStr),
-      cash: convertAt(point.cash, 'TRY', dateStr),
-      details: (point.details || []).map((d) => ({
-        ...d,
-        valueTry: convertAt(d.valueTry, 'TRY', dateStr),
-        pnlTry: convertAt(d.pnlTry, 'TRY', dateStr),
-      })),
-      events: (point.events || []).map((e) => ({
-        ...e,
-        valueTry: convertAt(e.valueTry, 'TRY', dateStr),
-      })),
-    };
-  }), [perfData, convertAt]);
+  // PnL in a non-TRY frame = value − entry-date-FX cost, supplied PER POINT by the backend. value/cost now
+  // fold in closed lots locked at their exit-date FX, so value − cost is the TOTAL PnL directly — we must NOT
+  // add cash on top (that double-counted the closed lots and re-drifted them at today's rate). realizedByCcy
+  // is the closed slice. TRY frame uses the backend TRY scalars unchanged.
+  // Cap to ~1500 points so the per-date FX conversion below and the hover scan stay cheap on a long history.
+  const cappedPerf = useMemo(() => capPoints(perfData, 1500), [perfData]);
+  const convertedPerfData = useMemo(() => {
+    const ccy = safeCurrency;
+    if (ccy === 'TRY') return cappedPerf;
+    return cappedPerf.map((point) => {
+      const dateStr = new Date(point.time).toLocaleDateString('sv-SE');
+      const valueDisp = point.valueByCcy?.[ccy] ?? convertAt(point.value, 'TRY', dateStr);
+      const costDisp = point.costBasisByCcy?.[ccy];
+      const cashDisp = point.realizedByCcy?.[ccy] ?? convertAt(point.cash, 'TRY', dateStr) ?? 0;
+      // Total PnL = pnlByCcy (open + realized, closed locked at exit FX). Falls back to value − cost, then to
+      // a per-date TRY conversion. Never value − cost + cash (that double-counts realized).
+      const pnlByCcy = point.pnlByCcy?.[ccy];
+      const totalPnl = pnlByCcy ?? ((valueDisp != null && costDisp != null) ? valueDisp - costDisp : null);
+      const pnlDisp = totalPnl != null ? totalPnl : convertAt(point.pnl, 'TRY', dateStr);
+      const pnlPercent = costDisp ? (pnlDisp / Math.abs(costDisp)) * 100 : null;
+      const details = (point.details || []).map((d) => {
+        const dv = d.valueByCcy?.[ccy] ?? convertAt(d.valueTry, 'TRY', dateStr);
+        const dc = d.costBasisByCcy?.[ccy];
+        return { ...d, valueTry: dv, pnlTry: (dv != null && dc != null) ? dv - dc : convertAt(d.pnlTry, 'TRY', dateStr) };
+      });
+      const events = (point.events || []).map((e) => ({ ...e, valueTry: convertAt(e.valueTry, 'TRY', dateStr) }));
+      return { ...point, value: valueDisp, pnl: pnlDisp, pnlPercent, cash: cashDisp, details, events };
+    });
+  }, [cappedPerf, convertAt, safeCurrency]);
 
   const currentValue = convertedPerfData.length > 0 ? convertedPerfData[convertedPerfData.length - 1] : null;
   const isRealized = activeType === 'CASH';
@@ -286,11 +96,79 @@ function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = fals
     [convertedPerfData, mainColor, palette, money, forPrint]
   );
 
-  const totalPnl = currentValue?.pnl ?? null;
-  const totalPnlPercent = currentValue?.pnlPercent ?? null;
+  // Hover readout: the strip below the chart follows the cursor; with no hover it shows the latest
+  // point, so it degrades gracefully even if the axisPointer event ever misfires.
+  const activePoint = useMemo(() => {
+    if (!convertedPerfData.length) return null;
+    if (hoverIdx != null && convertedPerfData[hoverIdx]) return convertedPerfData[hoverIdx];
+    return convertedPerfData[convertedPerfData.length - 1];
+  }, [convertedPerfData, hoverIdx]);
+
+  const onEvents = useMemo(() => ({
+    updateAxisPointer: (e) => {
+      const v = e?.axesInfo?.[0]?.value;
+      if (v == null || !convertedPerfData.length) return;
+      // O(log n) binary search instead of an O(n) scan on every mouse-move; setHoverIdx no-ops (React bails)
+      // when the index is unchanged, so an unmoved hover does not re-render.
+      setHoverIdx(nearestIndex(convertedPerfData, v));
+    },
+    globalout: () => setHoverIdx(null),
+  }), [convertedPerfData]);
+
+  const readout = useMemo(() => {
+    if (!activePoint) return { date: '', fields: [] };
+    const localeTag = i18n.t('common.localeTag');
+    const date = new Date(activePoint.time).toLocaleDateString(localeTag, { day: '2-digit', month: 'short', year: 'numeric' });
+    const fields = [];
+    if (activePoint.value != null) fields.push({ key: 'val', value: money(activePoint.value), tone: 'muted' });
+    if (activePoint.pnl != null) {
+      const pct = activePoint.pnlPercent != null
+        ? ` (${activePoint.pnl >= 0 ? '+' : ''}${Number(activePoint.pnlPercent).toFixed(2)}%)`
+        : '';
+      fields.push({ key: 'pnl', value: `${activePoint.pnl >= 0 ? '+' : ''}${money(activePoint.pnl)}${pct}`, tone: activePoint.pnl >= 0 ? 'pos' : 'neg' });
+    }
+    (activePoint.details || []).forEach((d, i) => {
+      const isOther = d.label === 'OTHER';
+      const color = isOther ? '#7d8590' : (ASSET_TYPE_COLORS[d.assetType] || '#6366f1');
+      const label = isOther
+        ? t('portfolio.allocation.otherLabel')
+        : (d.label !== d.assetType ? d.label : t(`assets.labels.${d.assetType}`, { defaultValue: d.assetType }));
+      fields.push({ key: `d${i}`, label, dot: color, value: `${d.pnlTry >= 0 ? '+' : ''}${money(d.pnlTry)}`, tone: d.pnlTry >= 0 ? 'pos' : 'neg' });
+    });
+    // Aggregate same type+asset events at this point so "2 lots of XAUTRYG added" reads as one
+    // chip with the total quantity and count, instead of repeating "Lot Added XAUTRYG" twice.
+    const evGroups = new Map();
+    (activePoint.events || []).filter((e) => POSITION_EVENT_META[e.type]).forEach((e) => {
+      const gk = `${e.type}|${e.assetCode || ''}`;
+      const g = evGroups.get(gk) || { type: e.type, assetCode: e.assetCode, qty: 0, count: 0, value: 0 };
+      g.qty += e.quantity != null ? Number(e.quantity) : 0;
+      // valueTry is already FX-converted in convertedPerfData. For SOLD it's the proceeds (sold for),
+      // for ADDED the entry value (bought for) — answers "ne kadar kapandı / açıldı".
+      g.value += e.valueTry != null ? Number(e.valueTry) : 0;
+      g.count += 1;
+      evGroups.set(gk, g);
+    });
+    let ei = 0;
+    evGroups.forEach((g) => {
+      const meta = POSITION_EVENT_META[g.type];
+      const qtyText = g.qty > 0 ? ` ×${g.qty.toLocaleString(localeTag, { maximumFractionDigits: 8 })}` : '';
+      const countText = g.count > 1 ? ` (${g.count})` : '';
+      const valText = g.value ? ` · ${money(g.value)}` : '';
+      fields.push({ key: `e${ei}`, label: t(meta.labelKey), dot: meta.color, value: `${g.assetCode || ''}${qtyText}${countText}${valText}`, tone: 'muted' });
+      ei += 1;
+    });
+    return { date, fields };
+  }, [activePoint, money, t]);
+
+  // Headline tracks the HOVERED point (activePoint falls back to the latest when not hovering), so the
+  // top-left value / PnL / % always reflect exactly where the cursor sits — a static latest value while
+  // hovering an earlier point is misleading.
+  const headValue = activePoint?.value ?? null;
+  const headPnl = activePoint?.pnl ?? null;
+  const headPnlPercent = activePoint?.pnlPercent ?? null;
   const pnlPositive = isRealized
-    ? currentRealized >= 0
-    : totalPnl != null && totalPnl >= 0;
+    ? (headValue ?? 0) >= 0
+    : headPnl != null && headPnl >= 0;
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="show">
@@ -313,15 +191,20 @@ function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = fals
                     ? t('portfolio.performance.titleByType', { type: t(`assets.labels.${activeType}`, { defaultValue: activeType }) })
                     : t('portfolio.performance.title')}
               </p>
-              {currentValue && (
-                <div className="flex items-center gap-2.5 mt-0.5">
-                  <span className="text-xl font-mono font-bold text-fg tracking-tight">{money(currentValue.value)}</span>
-                  {totalPnl != null && (
-                    <span className={`inline-flex items-center gap-1 text-xs font-mono font-semibold px-2 py-0.5 rounded-md ${pnlPositive ? 'text-success bg-success/10' : 'text-danger bg-danger/10'}`}>
-                      {pnlPositive ? '+' : ''}{money(totalPnl)} ({totalPnlPercent?.toFixed(2)}%)
-                    </span>
+              {activePoint && (
+                <>
+                  {readout.date && (
+                    <p className="text-[11px] font-mono text-fg-muted mt-0.5 tabular-nums">{readout.date}</p>
                   )}
-                </div>
+                  <div className="flex items-center gap-2.5 mt-0.5">
+                    <span className="text-xl font-mono font-bold text-fg tracking-tight">{money(headValue)}</span>
+                    {headPnl != null && (
+                      <span className={`inline-flex items-center gap-1 text-xs font-mono font-semibold px-2 py-0.5 rounded-md ${pnlPositive ? 'text-success bg-success/10' : 'text-danger bg-danger/10'}`}>
+                        {pnlPositive ? '+' : ''}{money(headPnl)} ({headPnlPercent?.toFixed(2)}%)
+                      </span>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -382,22 +265,13 @@ function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = fals
             ))}
           </div>
           <div className="flex items-center gap-2 flex-wrap max-w-full">
-            <button
-              type="button"
-              onClick={() => navigate(`/analytics?codes=${portfolioId}&types=PORTFOLIO`)}
-              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-mono font-semibold text-accent hover:text-fg border border-accent/40 hover:border-accent/70 bg-accent/8 hover:bg-accent/15 transition-colors cursor-pointer shrink-0"
-              title={t('portfolio.performance.compareCta', { defaultValue: 'Karşılaştırmada aç' })}
-            >
-              <GitCompareArrows className="h-3 w-3" />
-              <span className="hidden sm:inline">{t('portfolio.performance.compareCta', { defaultValue: 'Karşılaştır' })}</span>
-            </button>
             <div className="max-w-full overflow-x-auto">
               <RangeSelector value={range} onChange={setRange} layoutId="perf-range" size="md" />
             </div>
           </div>
         </div>
 
-        <div className="relative min-h-[260px] sm:min-h-[420px] px-2">
+        <div className="relative min-h-[240px] sm:min-h-[360px] px-2">
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <Spinner size="md" tone="accent" />
@@ -405,22 +279,24 @@ function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = fals
           ) : option ? (
             <ReactECharts
               ref={chartRef}
-              key={`${activeType}-${range}-${isDark}-${currency}-${forPrint}`}
+              key={`${isDark}-${currency}-${forPrint}`}
               option={option}
               notMerge
               lazyUpdate
+              onEvents={onEvents}
               style={forPrint
                 ? { height: 360, width: '100%', minHeight: 320, pointerEvents: 'none' }
-                : { height: 'min(60vh, 420px)', minHeight: 260, width: '100%' }}
+                : { height: 'min(52vh, 360px)', minHeight: 240, width: '100%' }}
               opts={{ renderer: forPrint ? 'svg' : 'canvas' }}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center h-[260px] sm:h-[420px] gap-3">
+            <div className="flex flex-col items-center justify-center h-[240px] sm:h-[360px] gap-3">
               <TrendingUp className="h-8 w-8 text-fg-subtle" />
               <p className="text-sm text-fg-muted">{t('portfolio.performance.empty')}</p>
             </div>
           )}
         </div>
+        {!forPrint && option && <ChartHoverReadout date={readout.date} fields={readout.fields} />}
       </Card>
     </motion.div>
   );

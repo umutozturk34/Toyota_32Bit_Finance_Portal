@@ -5,6 +5,7 @@ import AssetBadge from '../../../shared/components/asset/AssetBadge';
 import { useAssetDetailPrefetch } from '../../../shared/hooks/useAssetDetailPrefetch';
 import { assetRoute, DIRECTION_META } from '../lib/watchConstants';
 import { currencySymbolOf } from '../../../shared/utils/priceCurrency';
+import { commodityLabel } from '../../../shared/utils/commodityName';
 
 export default function AlertRow({ alert, onDelete, onReactivate, onEdit }) {
   const { t } = useTranslation();
@@ -37,7 +38,7 @@ export default function AlertRow({ alert, onDelete, onReactivate, onEdit }) {
       />
       <div className="min-w-0">
         <div className="text-sm font-semibold text-fg truncate group-hover:text-accent transition-colors">
-          {alert.assetName || alert.assetCode}
+          {commodityLabel(t, alert.marketType, alert.assetCode, alert.assetName || alert.assetCode)}
         </div>
         <div className="text-[11px] text-fg-muted font-mono">{alert.assetCode}</div>
       </div>

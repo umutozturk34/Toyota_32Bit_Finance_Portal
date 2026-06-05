@@ -8,6 +8,7 @@ import { useSellPosition } from '../hooks/usePortfolioData';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { usePositionCloseForm, todayIso, formatDateLabel } from '../hooks/usePositionCloseForm';
 import { resolveNativeCurrency } from '../lib/positionFormHelpers';
+import { commodityLabel } from '../../../shared/utils/commodityName';
 
 const QTY_PRESETS = [
   { id: '25', factor: 0.25 },
@@ -22,17 +23,19 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
   const entryPriceTry = Number(position?.entryPrice || 0);
   const suggestedPriceTry = position?.currentPriceTry != null ? Number(position.currentPriceTry) : null;
   const entryDateIso = position?.entryDate ? String(position.entryDate).slice(0, 10) : null;
-  const suggestedPriceInDisplay = suggestedPriceTry != null
-    ? Number(convertAt(suggestedPriceTry, 'TRY', todayIso()) ?? suggestedPriceTry)
-    : null;
-
-  const sell = useSellPosition(portfolioId);
-
+  // Native currency must be resolved before the suggested-price conversion below: in ORIGINAL display
+  // mode convertAt only converts TRY → the asset's native currency when given `natural`; without it a
+  // USD-native asset's TRY price would be shown (and submitted) verbatim under a "$" label.
   const nativeCurrency = resolveNativeCurrency({
     assetType: position?.assetType,
     assetCode: position?.assetCode,
     metadata: position?.metadata,
   }, position);
+  const suggestedPriceInDisplay = suggestedPriceTry != null
+    ? Number(convertAt(suggestedPriceTry, 'TRY', todayIso(), nativeCurrency) ?? suggestedPriceTry)
+    : null;
+
+  const sell = useSellPosition(portfolioId);
 
   const form = usePositionCloseForm({
     availabilityAssetType: position?.assetType,
@@ -64,8 +67,8 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
 
   const entryPriceInDisplay = useMemo(() => {
     if (!entryPriceTry) return 0;
-    return Number(convertAt(entryPriceTry, 'TRY', entryDateIso || todayIso()) ?? entryPriceTry);
-  }, [entryPriceTry, entryDateIso, convertAt]);
+    return Number(convertAt(entryPriceTry, 'TRY', entryDateIso || todayIso(), nativeCurrency) ?? entryPriceTry);
+  }, [entryPriceTry, entryDateIso, convertAt, nativeCurrency]);
 
   const proceeds = useMemo(
     () => (validQty && validPrice ? parsedQty * parsedPrice : null),
@@ -139,7 +142,7 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
               <p className="text-sm font-semibold text-fg truncate">
                 {position?.assetCode}
                 {position?.assetName && (
-                  <span className="text-xs text-fg-muted font-normal ml-1.5">· {position.assetName}</span>
+                  <span className="text-xs text-fg-muted font-normal ml-1.5">· {commodityLabel(t, position.assetType, position.assetCode, position.assetName)}</span>
                 )}
               </p>
             </div>

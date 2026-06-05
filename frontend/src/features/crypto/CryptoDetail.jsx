@@ -28,12 +28,23 @@ function CryptoHeader({ asset }) {
 
 function CryptoMetadata({ asset }) {
   const { t } = useTranslation();
-  const { formatCompact } = useMoney();
+  const { format: money, currency: displayCurrency } = useMoney();
   const meta = asset.metadata || {};
   const cls = getChangeClass(asset.changePercent);
+  const usd = meta.currentPriceUsd;
+  // Crypto is globally USD-priced: the TRY price stays a FIXED local reference, while the USD price is
+  // shown in the user's selected display currency (USD->display via TRY; there is no direct USD<->EUR rate).
+  const convertTarget = displayCurrency === 'ORIGINAL' || !displayCurrency ? 'USD' : displayCurrency;
+  const convertLabel = convertTarget === 'USD'
+    ? t('marketDetail.crypto.priceUsd')
+    : t('marketDetail.commodity.price', { currency: convertTarget, defaultValue: `Price (${convertTarget})` });
+  // Suppressed in TRY display — it would just duplicate the fixed TRY price tile.
+  const convertedTile = convertTarget !== 'TRY' && usd != null
+    ? { label: convertLabel, value: money(usd, 'USD') }
+    : null;
   return (
     <MetadataTiles tiles={[
-      { label: t('marketDetail.crypto.priceUsd'), value: formatPriceUSD(meta.currentPriceUsd) },
+      convertedTile,
       { label: t('marketDetail.crypto.priceTry'), value: formatPriceTRY(asset.price) },
       {
         label: t('marketDetail.crypto.change24h'),
@@ -46,7 +57,7 @@ function CryptoMetadata({ asset }) {
         ),
       },
       { label: t('marketDetail.crypto.changeAmountUsd'), value: formatPriceUSD(asset.changeAmount), color: changeColors[cls] },
-      { label: t('market.crypto.marketCapLabel'), value: formatCompact(meta.marketCap, 'USD') },
+      { label: t('market.crypto.marketCapLabel'), value: formatCompactNumber(meta.marketCap, 'USD') },
       { label: t('marketDetail.crypto.volume24h'), value: formatCompactNumber(meta.totalVolume) },
     ]} />
   );

@@ -5,7 +5,7 @@ import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/A
 import { forexService } from './services/forexService';
 import { adminService } from '../admin/services/adminService';
 import { getBaseCurrency } from '../../shared/constants/forex';
-import { changeColors, changeBg, formatChange, formatPercent } from '../../shared/utils/formatters';
+import { changeColors, changeBg, formatPercent } from '../../shared/utils/formatters';
 import MarketListPage from '../../shared/components/market/MarketListPage';
 import AssetCard from '../../shared/components/asset/AssetCard';
 import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
@@ -73,7 +73,7 @@ function ForexPage() {
                 {(forex.changeAmount != null && forex.changePercent != null) && (
                     <div className={`mt-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
                         {forex.changeAmount > 0 ? <ArrowUpRight className="h-3.5 w-3.5" /> : forex.changeAmount < 0 ? <ArrowDownRight className="h-3.5 w-3.5" /> : null}
-                        <span>{formatChange(forex.changeAmount)}</span>
+                        <span>{formatForexPrice(forex.changeAmount)}</span>
                         <span className="opacity-75">({formatPercent(forex.changePercent)})</span>
                     </div>
                 )}

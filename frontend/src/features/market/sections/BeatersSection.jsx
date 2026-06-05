@@ -5,6 +5,7 @@ import { Trophy, ChevronRight } from 'lucide-react';
 import { getChangeClass, changeColors, formatPercent } from '../../../shared/utils/formatters';
 import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
 import Card from '../../../shared/components/card';
+import { useMacroIndicators } from '../../macro/hooks/useMacroIndicators';
 
 const ANALYTICS_TYPE_TO_MARKET = {
   SPOT: 'STOCK',
@@ -16,13 +17,24 @@ const ANALYTICS_TYPE_TO_MARKET = {
   VIOP: 'VIOP',
 };
 
-const TYPE_DETAIL_ROUTES = {
-  STOCK: '/stocks',
-  CRYPTO: '/crypto',
-  FOREX: '/forex',
-  FUND: '/funds',
-  COMMODITY: '/commodities',
-  VIOP: '/viop',
+// Compare expects fully-qualified market types; the analytics-side codes the beater widget
+// serialises (SPOT/DEPOSIT/...) must be remapped before they ride along as Compare series.
+const ANALYTICS_TO_MARKET_TYPE = {
+  SPOT: 'STOCK',
+  CRYPTO: 'CRYPTO',
+  FOREX: 'FOREX',
+  FUND: 'FUND',
+  COMMODITY: 'COMMODITY',
+  VIOP: 'VIOP',
+  BOND: 'BOND',
+  DEPOSIT: 'MACRO_DEPOSIT',
+};
+
+// A benchmark's macro category decides which MACRO_* series Compare must draw it as.
+const MACRO_CATEGORY_TO_MARKET_TYPE = {
+  DEPOSIT: 'MACRO_DEPOSIT',
+  INFLATION: 'MACRO_INFLATION',
+  RATES: 'MACRO_RATE',
 };
 
 function shortLabel(code) {
@@ -96,30 +108,49 @@ function BeaterRow({ entry, rank, t, onNavigate }) {
 
 /**
  * @typedef {Object} BeatersSectionProps
- * @property {{benchmarkCode: string, benchmarkReturnPct: number|string|null, period: string, entries: Array<Object>}|null} data
+ * @property {{benchmarkCode: string, benchmarkLabel: string, benchmarkReturnPct: number|string|null, period: string, comparisonCurrency: string|null, entries: Array<Object>}|null} data
  */
 
 /** @param {BeatersSectionProps} props */
 function BeatersSectionImpl({ data }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { data: macroList = [] } = useMacroIndicators();
   const entries = useMemo(() => data?.entries ?? [], [data]);
 
-  const handleEntryClick = (entry) => {
-    const marketKey = ANALYTICS_TYPE_TO_MARKET[entry.type];
-    const route = TYPE_DETAIL_ROUTES[marketKey];
-    if (route && entry.code) {
-      navigate(`${route}/${encodeURIComponent(entry.code)}`);
-    } else {
-      const params = new URLSearchParams({ codes: entry.code || '', types: entry.type || '' });
-      navigate(`/analytics?${params.toString()}`);
-    }
-  };
   const benchmarkCode = data?.benchmarkCode ?? '';
   const benchmarkLabel = data?.benchmarkLabel || benchmarkCode || t('beatersSection.benchmarkFallback', { defaultValue: 'gösterge' });
   const benchmarkReturn = data?.benchmarkReturnPct;
   const period = data?.period ?? '1Y';
+  const comparisonCurrency = data?.comparisonCurrency;
   const benchmarkCls = getChangeClass(benchmarkReturn);
+
+  // Open the clicked beater in Compare framed in the BEATER's comparison currency: the entry is the
+  // first series, the benchmark (drawn as its derived MACRO_* type) the second, period -> range, and
+  // comparisonCurrency rides along so a USD/EUR-deposit beater opens USD/EUR-basis (not the TRY fallback).
+  const handleEntryClick = (entry) => {
+    const benchmarkInd = benchmarkCode
+      ? macroList.find((m) => m.code === benchmarkCode)
+      : null;
+    const benchmarkType = benchmarkInd
+      ? MACRO_CATEGORY_TO_MARKET_TYPE[benchmarkInd.category] || 'MACRO_RATE'
+      : 'MACRO_INFLATION';
+    const codes = [entry.code];
+    const types = [ANALYTICS_TO_MARKET_TYPE[entry.type] || entry.type];
+    if (benchmarkCode) {
+      codes.push(benchmarkCode);
+      types.push(benchmarkType);
+    }
+    const params = new URLSearchParams({
+      tab: 'compare',
+      codes: codes.join(','),
+      types: types.join(','),
+      range: period,
+      from: 'beaters',
+    });
+    if (comparisonCurrency) params.set('currency', comparisonCurrency);
+    navigate(`/analytics?${params.toString()}`);
+  };
 
   return (
     <Card as="section" accentBar="#facc15" radius="xl" padding="none" className="group h-full flex flex-col">
@@ -141,6 +172,12 @@ function BeatersSectionImpl({ data }) {
             <span className={changeColors[benchmarkCls]}>{formatPercent(benchmarkReturn)}</span>
             <span className="mx-1 text-fg-faint">·</span>
             {period}
+            {comparisonCurrency && (
+              <>
+                <span className="mx-1 text-fg-faint">·</span>
+                {comparisonCurrency}
+              </>
+            )}
           </span>
         </div>
         <ChevronRight className="h-3.5 w-3.5 text-fg-subtle ml-auto opacity-0 group-hover/title:opacity-100 group-hover/title:translate-x-0.5 transition-all" />

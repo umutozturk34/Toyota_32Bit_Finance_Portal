@@ -89,7 +89,10 @@
   },
   "searchSuggestions": {
     "placeholder": "Search stocks, crypto, FX, funds...",
-    "noMatch": "No results match \"{{query}}\""
+    "noMatch": "No results match \"{{query}}\"",
+    "recentSearches": "Recent searches",
+    "clearRecent": "Clear",
+    "removeRecent": "Remove"
   },
   "confirmDialog": {
     "title": "Are you sure?",
@@ -434,6 +437,8 @@
   },
   "home": {
     "live": "Multi-asset portfolio",
+    "toggleThemeLight": "Switch to light mode",
+    "toggleThemeDark": "Switch to dark mode",
     "heroTitle": {
       "part1": "A portfolio across Turkish markets.",
       "part2": "On one screen."
@@ -929,6 +934,7 @@
   "portfolio": {
     "actions": {
       "downloadPdf": "Download PDF",
+      "compare": "Compare Portfolio",
       "downloadPdfPending": "Preparing PDF...",
       "downloadPdfEmpty": "Need at least one position to export PDF",
       "downloadPdfError": "PDF download failed. Please try again.",
@@ -963,7 +969,7 @@
       "exitDateLabel": "Exit Date",
       "statusCol": "Status",
       "realReturnAbbr": "real",
-      "realReturnTooltip": "Real return (CPI effect removed)",
+      "realReturnTooltip": "Inflation-adjusted return (purchasing power). A positive nominal gain can still be a negative real return when it trails inflation — your money grew but its buying power fell. Computed for spot holdings only; leveraged derivatives (VİOP) are excluded from the real return.",
       "viewOnMarket": "Market detail"
     },
     "search": {
@@ -997,6 +1003,17 @@
       "empty": "No data in this range",
       "compareCta": "Compare"
     },
+    "pnlBreakdown": {
+      "title": "Profit/Loss Over Time",
+      "total": "Total P/L",
+      "open": "Open Positions",
+      "closed": "Closed Positions",
+      "contributors": "P&L Contribution",
+      "return": "Return",
+      "modePercent": "% Return",
+      "modeValue": "Amount",
+      "empty": "No data in this range"
+    },
     "summary": {
       "marketValue": "Market Value",
       "totalCost": "Total Cost",
@@ -1009,6 +1026,7 @@
     "tabs": {
       "overview": "Overview",
       "performance": "Performance",
+      "pnl": "Profit / Loss",
       "viop": "VIOP"
     },
     "onboarding": {
@@ -1035,7 +1053,9 @@
       "deleting": "Deleting…",
       "confirmTitle": "Delete positions",
       "confirmBody": "positions will be permanently deleted. This cannot be undone.",
-      "partialError": "{{failed}}/{{total}} positions failed. Others deleted."
+      "partialError": "{{failed}}/{{total}} positions failed. Others deleted.",
+      "selectAcrossPages": "Select all ({{n}})",
+      "selectAcrossPagesTitle": "Select positions on all pages"
     },
     "sell": {
       "title": "Sell {{code}}",
@@ -1750,6 +1770,10 @@
     "marketValue": "Market value",
     "unitPrice": "Unit price",
     "lotCount": "{{count}} lots",
+    "direction": {
+      "long": "LONG",
+      "short": "SHORT"
+    },
     "stats": {
       "quantity": "Quantity",
       "entryDate": "Entry date",
@@ -1863,7 +1887,7 @@
     "title": "Price alert",
     "subtitlePrompt": "Pick an asset and set a threshold",
     "searchLabel": "Search asset",
-    "searchPlaceholder": "BTC, AAPL, USDTRY...",
+    "searchPlaceholder": "BTC, Gold, USDTRY...",
     "change": "Change",
     "currentPrice": "Current price",
     "liveData": "live data",
@@ -1907,7 +1931,7 @@
     "titleUpdate": "Update list entry",
     "subtitlePrompt": "Pick an asset, then add it to a list",
     "searchLabel": "Search asset",
-    "searchPlaceholder": "BTC, AAPL, USDTRY...",
+    "searchPlaceholder": "BTC, Gold, USDTRY...",
     "change": "Change",
     "listLabel": "List",
     "pickList": "Pick a list",
@@ -2192,7 +2216,7 @@
     "compareSearchAssets": "Search stocks, crypto, funds, FX, commodities, bonds…",
     "compareSearchMixed": "Search assets or macro indicators…",
     "portfolioPickerHeading": "My portfolios",
-    "portfolioSeriesHint": "Portfolio series reflects cash flows over time",
+    "portfolioSeriesHint": "Portfolio line is time-weighted return (%, from 0%); ₺ P&L in tooltip",
     "compareSubtitle": "Place different assets side-by-side on the same chart. No amount or date — just historical price movements.",
     "compareTitle": "Comparison",
     "cpiGrowth": "CPI growth (period)",
@@ -2212,18 +2236,24 @@
     "nominalReturn": "Nominal",
     "nominalReturnTooltip": "Absolute percentage change (not inflation-adjusted)",
     "normalizedHintCompare": "Multiple series — normalized as % change from start",
+    "normalizedHintCompareIndex": "Macro series — indexed to 100 at start",
+    "compareLevel": "Level",
+    "compareCumulative": "Cumulative",
+    "levelHintCompare": "Showing rate level — switch to \"Cumulative\" for cumulative growth",
+    "partial": "partial",
+    "partialHint": "Data does not fully span the selected window — partial, not directly comparable",
     "openInCompare": "Open in Compare",
     "period": "Period",
     "quickPick": "Quick pick",
     "realLoss": "Excess return < 0",
     "realReturn": "Real",
-    "realReturnHint": "Real return = nominal − CPI effect",
+    "realReturnHint": "Real return ≈ (1+nominal)/(1+CPI) − 1",
     "scenarioSubtitle": "If you had placed a given amount on a given date into different instruments, how much would it be today? Simulated against real historical data.",
     "scenarioTitle": "Scenario Comparison",
     "searchAsset": "Search asset — what's the rank?",
-    "searchHint": "Search stocks, funds, FX, crypto, commodities, bonds, macro",
+    "searchHint": "Search stocks, funds, FX, crypto, commodities, macro",
     "searchInstrument": "Search",
-    "searchPlaceholder": "ASELS, gold, bitcoin, TP.TRYTAS, TRT...",
+    "searchPlaceholder": "ASELS, gold, bitcoin, TP.TRYTAS...",
     "simulate": "Simulate",
     "simulationError": "Simulation failed",
     "startDate": "Start",
@@ -2252,7 +2282,8 @@
     "periodFiveYears": "5Y",
     "backTo": {
       "beaters": "Back to Beaters",
-      "asset": "Back to asset"
+      "asset": "Back to asset",
+      "portfolio": "Back to portfolio"
     },
     "compareInfo": {
       "forwardFilledTooltip": "Extended to today from the last data point",

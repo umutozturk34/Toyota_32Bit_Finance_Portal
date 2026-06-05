@@ -8,6 +8,7 @@ import { useAssetDetailPrefetch } from '../../../shared/hooks/useAssetDetailPref
 import { formatPercent, getChangeClass, changeColors, changeBg } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { priceCurrencyOf } from '../../../shared/utils/priceCurrency';
+import { commodityLabel } from '../../../shared/utils/commodityName';
 import { assetRoute } from '../lib/watchConstants';
 
 export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
@@ -68,7 +69,7 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
       <div className="flex flex-col justify-center min-w-0 leading-tight">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm font-semibold text-fg truncate group-hover:text-accent transition-colors leading-tight">
-            {item.assetName || item.assetCode}
+            {commodityLabel(t, item.marketType, item.assetCode, item.assetName || item.assetCode)}
           </span>
           {item.deltaThreshold != null && (
             <span className="text-[10px] font-mono text-accent shrink-0 leading-none">
@@ -101,7 +102,7 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
               <span>{formatPercent(item.changePercent)}</span>
               {item.changeAmount != null && (
                 <span className="font-normal opacity-70">
-                  ({isUp ? '+' : ''}{Number(item.changeAmount).toLocaleString(localeTag, { maximumFractionDigits: 2 })})
+                  ({isUp ? '+' : isDown ? '-' : ''}{money(Math.abs(Number(item.changeAmount)), priceCurrencyOf(item), { maxDecimals: 2 })})
                 </span>
               )}
             </div>

@@ -17,9 +17,12 @@ export function viopQuoteCurrency(code) {
 
 export function priceCurrencyOf(asset) {
   if (!asset) return 'TRY';
+  // Watchlist DTOs key the asset as assetCode/marketType; search/market DTOs use code/type.
   const type = asset.type ?? asset.marketType;
-  if (type === 'VIOP') return viopQuoteCurrency(asset.code);
+  const code = asset.code ?? asset.assetCode;
+  // An explicit backend-resolved quote currency wins over symbol-derived inference.
   if (asset.currency) return asset.currency;
+  if (type === 'VIOP') return viopQuoteCurrency(code);
   return 'TRY';
 }
 

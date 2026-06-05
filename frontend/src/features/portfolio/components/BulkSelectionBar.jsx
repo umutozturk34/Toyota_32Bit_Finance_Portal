@@ -1,9 +1,36 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Trash2, X, CheckSquare, Square } from 'lucide-react';
+import { Trash2, X, CheckSquare, Square, Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-export default function BulkSelectionBar({ count, total, allSelected, onClear, onToggleAll, onDeleteClick, isDeleting }) {
+/**
+ * Selection chrome above the positions table.
+ * - {@code count}: positions selected in the current Set
+ * - {@code total}: positions on the current page
+ * - {@code totalAcrossPages}: total positions in the entire portfolio (server-reported)
+ * - {@code onSelectAcrossPages}: optional handler that fetches every page's ids and selects them
+ * - {@code isSelectingAll}: true while the cross-page fetch is in flight (spinner state)
+ */
+export default function BulkSelectionBar({
+    count,
+    total,
+    totalAcrossPages,
+    allSelected,
+    onClear,
+    onToggleAll,
+    onSelectAcrossPages,
+    onDeleteClick,
+    isDeleting,
+    isSelectingAll,
+}) {
     const { t } = useTranslation();
+    // Show the cross-page affordance only when (a) caller wired up the handler, (b) the current
+    // page is fully selected, and (c) there ARE more rows on other pages. Otherwise the regular
+    // page-level toggle covers it.
+    const showCrossPage =
+        typeof onSelectAcrossPages === 'function'
+        && allSelected
+        && totalAcrossPages > total
+        && count < totalAcrossPages;
     return (
         <AnimatePresence>
             {count > 0 && (
@@ -38,12 +65,24 @@ export default function BulkSelectionBar({ count, total, allSelected, onClear, o
                             <button
                                 type="button"
                                 onClick={onToggleAll}
-                                disabled={isDeleting}
+                                disabled={isDeleting || isSelectingAll}
                                 title={allSelected ? t('portfolio.bulk.clearAll') : t('portfolio.bulk.selectAll')}
                                 className="inline-flex h-6 w-6 items-center justify-center rounded text-fg-muted hover:text-fg hover:bg-bg-base/40 transition-colors cursor-pointer disabled:opacity-40"
                             >
                                 {allSelected ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
                             </button>
+                            {showCrossPage && (
+                                <button
+                                    type="button"
+                                    onClick={onSelectAcrossPages}
+                                    disabled={isDeleting || isSelectingAll}
+                                    title={t('portfolio.bulk.selectAcrossPagesTitle')}
+                                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold text-accent hover:bg-accent/10 transition-colors cursor-pointer disabled:opacity-50"
+                                >
+                                    <Layers className="h-3 w-3" />
+                                    {t('portfolio.bulk.selectAcrossPages', { n: totalAcrossPages })}
+                                </button>
+                            )}
                         </div>
                         <div className="flex items-center gap-1">
                             <button

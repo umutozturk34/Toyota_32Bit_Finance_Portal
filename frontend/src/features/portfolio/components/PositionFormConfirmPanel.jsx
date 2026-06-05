@@ -56,8 +56,8 @@ export default function PositionFormConfirmPanel({ isEdit, displayCode, form, is
         )}
         <div className="border-t border-border-default pt-2">
           <Row label={<span className="font-semibold">{t('positionForm.totalCost')}</span>} value={
-            <span className="font-bold text-accent truncate" title={money(totalCostTry)}>
-              {formatCompact(totalCostTry, 'TRY', 1_000_000_000)}
+            <span className="font-bold text-accent truncate" title={money(totalCostTry, 'TRY', { natural: inputCurrency, dateAt: form.entryDate })}>
+              {formatCompact(totalCostTry, 'TRY', 1_000_000_000, inputCurrency, form.entryDate)}
             </span>
           } />
         </div>

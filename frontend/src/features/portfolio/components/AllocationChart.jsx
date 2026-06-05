@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
@@ -26,8 +26,37 @@ const COLORS = [
 function AllocationChart({ allocation, portfolioId, forPrint = false }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const { format: money, formatCompact: moneyCompact, currency: displayCurrency } = useMoney();
+  const { format: money, formatCompact: moneyCompact, currency: displayCurrency, convert } = useMoney();
   const [activeTab, setActiveTab] = useSessionState('portfolio-alloc-tab', 'ALL');
+  // The CASH (closed-proceeds) slice carries per-entry/exit-date FX frames (costByCurrency /
+  // realizedPnlByCurrency); in USD/EUR display use them so the cost+realized breakdown sits on matching
+  // FX dates instead of today's spot. TRY/ORIGINAL display and non-cash slices are a no-op.
+  const frameBase = displayCurrency === 'USD' || displayCurrency === 'EUR' ? displayCurrency : 'TRY';
+  const frameOf = useCallback((item, tryVal, mapKey) => {
+    if (frameBase === 'TRY' || tryVal == null) return tryVal;
+    const frame = (item[mapKey] || {})[frameBase];
+    // Per-date frame missing (FX history empty): convert the TRY value at spot so the slice stays in
+    // frameBase rather than a TRY magnitude carrying the USD/EUR symbol.
+    return frame != null ? Number(frame) : Number(convert(Number(tryVal), 'TRY'));
+  }, [frameBase, convert]);
+  // Slice magnitude in the DISPLAY currency so the pie proportions, the centre Total and the legend amounts
+  // all sit on the same basis as the summary card. The CASH (closed) slice's display value is its proceeds at
+  // the exit-date FX = cost@entry-FX + realized (both per-date frames); open slices convert at today's spot.
+  // TRY display is a no-op. Without this the pie was sized in TRY while the labels showed USD/EUR, so the
+  // proportions (and the centre total vs the Market Value card) diverged.
+  const displayValueOf = useCallback((item) => {
+    const vTry = Number(item.valueTry);
+    if (frameBase === 'TRY') return vTry;
+    // Any bucket carrying per-date frames (CASH proceeds, or an open VIOP's equity) is shown as cost@entry-FX +
+    // PnL@per-date, matching the K/Z card. The backend already signs realizedPnlByCurrency for a VIOP SHORT
+    // (directionalRealizedFrames), so cost + realized is the DIRECTION-AWARE equity — a profiting SHORT (whose
+    // converted notional falls) reads above its cost, not below. Only fall back to a today's-spot conversion of
+    // the (already direction-aware) TRY equity when no per-date frames exist for this slice/currency.
+    const cost = (item.costByCurrency || {})[frameBase];
+    const realized = (item.realizedPnlByCurrency || {})[frameBase];
+    if (cost != null && realized != null) return Number(cost) + Number(realized);
+    return Number(convert(vTry, 'TRY'));
+  }, [frameBase, convert]);
   const assetLabel = useCallback((id) => {
     if (id === 'CASH') return t('portfolio.allocation.closedLabel');
     if (id === 'OTHER') return t('portfolio.allocation.otherLabel');
@@ -36,17 +65,20 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
   const chartRef = useRef(null);
   const [hoveredSliceName, setHoveredSliceName] = useState(null);
 
-  const highlightSlice = useCallback((name) => {
+  // SINGLE source of truth for emphasis: `hoveredSliceName`, set by BOTH the chart slices (mouseover) and the
+  // legend rows (onMouseEnter) — like the fund-detail pie. applyEmphasis syncs ECharts to it (downplay all,
+  // then highlight the hovered slice). One state + one applier avoids the imperative-vs-native desync that
+  // stuck the donut, and re-asserts the right state after a notMerge data refetch. null → downplay → neutral.
+  const applyEmphasis = useCallback(() => {
     const inst = chartRef.current?.getEchartsInstance?.();
-    if (inst) inst.dispatchAction({ type: 'highlight', seriesIndex: 0, name });
-  }, []);
-  const downplaySlice = useCallback((name) => {
-    const inst = chartRef.current?.getEchartsInstance?.();
-    if (inst) inst.dispatchAction({ type: 'downplay', seriesIndex: 0, name });
-  }, []);
+    if (!inst) return;
+    inst.dispatchAction({ type: 'downplay', seriesIndex: 0 });
+    if (hoveredSliceName != null) inst.dispatchAction({ type: 'highlight', seriesIndex: 0, name: hoveredSliceName });
+  }, [hoveredSliceName]);
   const chartEvents = useMemo(() => (forPrint ? {} : {
     mouseover: (params) => setHoveredSliceName(params?.name ?? null),
     mouseout: () => setHoveredSliceName(null),
+    globalout: () => setHoveredSliceName(null),
   }), [forPrint]);
 
   const { data: assetData, isFetching: assetLoading } = usePortfolioAllocation(
@@ -73,15 +105,14 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
   }, [activeTab, allocation, assetData]);
 
   const totalValue = useMemo(
-    () => finalData.reduce((sum, item) => sum + Math.abs(Number(item.valueTry)), 0),
-    [finalData]
+    () => finalData.reduce((sum, item) => sum + Math.abs(displayValueOf(item)), 0),
+    [finalData, displayValueOf]
   );
 
   const seriesData = useMemo(() => finalData.map((item, idx) => {
     const label = activeTab === 'ALL'
       ? assetLabel(item.label)
       : item.label;
-    const value = Number(item.valueTry);
     const isCash = item.label === 'CASH';
     const realized = item.realizedPnlTry != null ? Number(item.realizedPnlTry) : null;
     const color = isCash
@@ -91,13 +122,13 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
         : (COLORS[idx % COLORS.length]);
     return {
       name: label,
-      value: Math.abs(value),
+      value: Math.abs(displayValueOf(item)),
       itemStyle: { color },
-      _cost: item.costTry != null ? Number(item.costTry) : null,
-      _realized: realized,
+      _cost: frameOf(item, item.costTry != null ? Number(item.costTry) : null, 'costByCurrency'),
+      _realized: frameOf(item, realized, 'realizedPnlByCurrency'),
       _isCash: isCash,
     };
-  }), [finalData, activeTab, assetLabel]);
+  }), [finalData, activeTab, assetLabel, frameOf, displayValueOf]);
 
   const totalLabel = activeTab === 'ALL' ? t('portfolio.allocation.total') : assetLabel(activeTab);
   const palette = chartPalette(isDark);
@@ -128,12 +159,12 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
           const sign = realized >= 0 ? '+' : '−';
           const realizedColor = realized >= 0 ? '#10b981' : '#ef4444';
           breakdown = `<div style="margin-top:6px;padding-top:6px;border-top:1px solid ${tooltipBorder};font-size:11px;font-family:ui-monospace,monospace;color:${tooltipFg}">
-              ${money(data._cost)} <span style="color:${realizedColor}">${sign} ${money(Math.abs(realized))}</span>
+              ${money(data._cost, frameBase)} <span style="color:${realizedColor}">${sign} ${money(Math.abs(realized), frameBase)}</span>
             </div>`;
         }
         return `<div style="padding:4px 0">
           <div style="font-size:11px;color:${tooltipFg};opacity:0.85;margin-bottom:2px">${params.name}</div>
-          <div style="font-size:13px;font-family:ui-monospace,monospace;font-weight:700;color:${tooltipFg}">${money(params.value)}</div>
+          <div style="font-size:13px;font-family:ui-monospace,monospace;font-weight:700;color:${tooltipFg}">${money(params.value, frameBase)}</div>
           <div style="font-size:10px;color:${labelMuted}">%${pct}</div>
           ${breakdown}
         </div>`;
@@ -147,7 +178,7 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
       label: {
         show: true,
         position: 'center',
-        formatter: () => `{label|${totalLabel}}\n{value|${moneyCompact(totalValue, 'TRY')}}`,
+        formatter: () => `{label|${totalLabel}}\n{value|${moneyCompact(totalValue, frameBase)}}`,
         rich: {
           label: { fontSize: 11, color: labelMuted, fontWeight: 500, padding: [0, 0, 4, 0] },
           value: { fontSize: 14, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: labelFg },
@@ -176,7 +207,11 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
         }],
       },
     }],
-  }), [seriesData, totalValue, totalLabel, tooltipBg, tooltipBorder, tooltipFg, labelFg, labelMuted, ringStroke, money, moneyCompact, forPrint]);
+  }), [seriesData, totalValue, totalLabel, tooltipBg, tooltipBorder, tooltipFg, labelFg, labelMuted, ringStroke, money, moneyCompact, frameBase, forPrint]);
+
+  // Sync ECharts' emphasis to `hoveredSliceName` on hover change AND after each data refetch (notMerge would
+  // otherwise preserve a stale highlight). One state, one applier — legend-hover and slice-hover never desync.
+  useEffect(() => { applyEmphasis(); }, [applyEmphasis, seriesData]);
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="show" className="space-y-4 min-w-0">
@@ -206,24 +241,26 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
           </div>
         ) : (
           <div className="space-y-4">
-            <ReactECharts
-              ref={chartRef}
-              key={`${isDark}-${activeTab}-${displayCurrency}-${forPrint}`}
-              option={option}
-              notMerge
-              style={forPrint ? { height: 260, width: '100%', pointerEvents: 'none' } : { height: 'min(40vh, 260px)', minHeight: 200, width: '100%' }}
-              opts={{ renderer: forPrint ? 'svg' : 'canvas' }}
-              onEvents={chartEvents}
-            />
+            <div onMouseLeave={() => setHoveredSliceName(null)}>
+              <ReactECharts
+                ref={chartRef}
+                key={`${isDark}-${displayCurrency}-${forPrint}`}
+                option={option}
+                notMerge
+                style={forPrint ? { height: 260, width: '100%', pointerEvents: 'none' } : { height: 'min(40vh, 260px)', minHeight: 200, width: '100%' }}
+                opts={{ renderer: forPrint ? 'svg' : 'canvas' }}
+                onEvents={chartEvents}
+              />
+            </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 max-h-[260px] sm:max-h-[300px] overflow-y-auto" onMouseLeave={() => setHoveredSliceName(null)}>
               {finalData.map((item, idx) => {
-                const value = Number(item.valueTry);
+                const value = displayValueOf(item);
                 const absValue = Math.abs(value);
                 const pct = totalValue > 0 ? (absValue / totalValue) * 100 : 0;
                 const isCash = item.label === 'CASH';
-                const cost = item.costTry != null ? Number(item.costTry) : null;
-                const realized = item.realizedPnlTry != null ? Number(item.realizedPnlTry) : null;
+                const cost = frameOf(item, item.costTry != null ? Number(item.costTry) : null, 'costByCurrency');
+                const realized = frameOf(item, item.realizedPnlTry != null ? Number(item.realizedPnlTry) : null, 'realizedPnlByCurrency');
                 const color = isCash
                   ? (realized != null && realized < 0 ? '#ef4444' : '#10b981')
                   : activeTab === 'ALL'
@@ -238,8 +275,7 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
                 return (
                   <div
                     key={label}
-                    onMouseEnter={() => highlightSlice(label)}
-                    onMouseLeave={() => downplaySlice(label)}
+                    onMouseEnter={() => setHoveredSliceName(label)}
                     className={`flex items-center gap-3 rounded-lg px-3 py-2 cursor-default transition-colors ${
                       isHovered ? 'bg-surface/70 ring-1 ring-accent/30' : 'hover:bg-surface/50'
                     }`}
@@ -252,16 +288,16 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
                       <p className="text-xs font-medium text-fg truncate">{label}</p>
                       {showBreakdown && (
                         <p className="text-[10px] font-mono mt-0.5">
-                          <span className="text-fg-muted">{money(cost)}</span>
+                          <span className="text-fg-muted">{money(cost, frameBase)}</span>
                           <span className={realized >= 0 ? 'text-success' : 'text-danger'}>
-                            {' '}{realized >= 0 ? '+' : '−'} {money(Math.abs(realized))}
+                            {' '}{realized >= 0 ? '+' : '−'} {money(Math.abs(realized), frameBase)}
                           </span>
                         </p>
                       )}
                     </div>
                     <span className="text-xs font-mono text-fg-muted shrink-0 tabular-nums">{pct.toFixed(1)}%</span>
                     {!showBreakdown && (
-                      <span className={`text-xs font-mono font-semibold shrink-0 ${isCash ? (realized != null && realized < 0 ? 'text-danger' : 'text-success') : 'text-fg'}`}>{money(value)}</span>
+                      <span className={`text-xs font-mono font-semibold shrink-0 ${isCash ? (realized != null && realized < 0 ? 'text-danger' : 'text-success') : 'text-fg'}`}>{money(value, frameBase)}</span>
                     )}
                   </div>
                 );

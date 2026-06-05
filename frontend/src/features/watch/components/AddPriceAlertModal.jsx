@@ -11,6 +11,7 @@ import { toast } from '../../../shared/components/feedback/toastBus';
 import { extractApiError } from '../../../shared/utils/apiError';
 import { currentLocaleTag } from '../../../shared/utils/formatters';
 import { priceCurrencyOf, currencySymbolOf } from '../../../shared/utils/priceCurrency';
+import { commodityLabel } from '../../../shared/utils/commodityName';
 
 const DIRECTION_DEFS = [
   { value: 'ABOVE', Icon: ArrowUp, tone: 'success' },
@@ -183,7 +184,7 @@ export default function AddPriceAlertModal({
                     : <span className="w-6 h-6 rounded shrink-0 flex items-center justify-center text-base leading-none">{selectedAsset.image}</span>)}
                   <span className="text-sm font-mono font-semibold text-fg truncate">{selectedAsset.code}</span>
                   {selectedAsset.name && (
-                    <span className="text-xs text-fg-muted truncate">· {selectedAsset.name}</span>
+                    <span className="text-xs text-fg-muted truncate">· {commodityLabel(t, selectedAsset.type, selectedAsset.code, selectedAsset.name)}</span>
                   )}
                 </div>
                 <button

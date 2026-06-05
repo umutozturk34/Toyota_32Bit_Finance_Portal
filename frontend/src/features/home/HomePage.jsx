@@ -68,7 +68,7 @@ const HomePage = () => {
         <motion.button
           onClick={toggleTheme}
           whileTap={{ scale: 0.9 }}
-          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          aria-label={isDark ? t('home.toggleThemeLight', { defaultValue: 'Switch to light mode' }) : t('home.toggleThemeDark', { defaultValue: 'Switch to dark mode' })}
           className="relative overflow-hidden flex items-center justify-center w-9 h-9 rounded-lg border border-border-default bg-bg-elevated backdrop-blur-md text-fg-muted hover:text-fg hover:bg-surface transition-colors cursor-pointer"
         >
           <span

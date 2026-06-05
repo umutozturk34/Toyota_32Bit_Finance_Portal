@@ -4,6 +4,8 @@ import ReactECharts from 'echarts-for-react';
 import useDeferredVisibility from '../../../shared/hooks/useDeferredVisibility';
 import { areaGradient, CHART_ACCENT } from '../../../shared/charts/echartsTheme';
 import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
+import { useRateHistory } from '../../../shared/hooks/useRateHistory';
+import { nativeCurrencyFor } from '../../analytics/lib/compareSeriesUtils';
 
 function lineColor(changePercent) {
   const normalized = Number(changePercent);
@@ -20,20 +22,25 @@ function pickClose(point) {
   return null;
 }
 
+function pickDate(point) {
+  const raw = point?.candleDate || point?.date || point?.observedAt || '';
+  return String(raw).slice(0, 10);
+}
+
+// Returns sorted { date, close } points (close in the asset's native currency) so each can be
+// FX-converted at its OWN date by the caller; the date is the local candle day, not a UTC stamp.
 function toSparkSeries(history, maxPoints = 60) {
   if (!Array.isArray(history) || history.length === 0) return [];
-  const sorted = [...history].sort((a, b) => {
-    const da = a?.candleDate || a?.date || a?.observedAt || '';
-    const db = b?.candleDate || b?.date || b?.observedAt || '';
-    return String(da).localeCompare(String(db));
-  });
-  const values = sorted.map(pickClose).filter((v) => Number.isFinite(v));
-  if (values.length === 0) return [];
-  if (values.length <= maxPoints) return values;
-  const step = values.length / maxPoints;
+  const sorted = [...history].sort((a, b) => pickDate(a).localeCompare(pickDate(b)));
+  const points = sorted
+    .map((p) => ({ date: pickDate(p), close: pickClose(p) }))
+    .filter((p) => Number.isFinite(p.close));
+  if (points.length === 0) return [];
+  if (points.length <= maxPoints) return points;
+  const step = points.length / maxPoints;
   const out = [];
   for (let i = 0; i < maxPoints; i += 1) {
-    out.push(values[Math.floor(i * step)]);
+    out.push(points[Math.floor(i * step)]);
   }
   return out;
 }
@@ -83,6 +90,7 @@ export default function AssetCardChart({ assetType, assetCode, changePercent, de
   const color = useMemo(() => lineColor(normalizedChangePercent), [normalizedChangePercent]);
   const [ref, ready] = useDeferredVisibility(delayMs);
   const instanceRef = useRef(null);
+  const { convertAt } = useRateHistory();
 
   const { data: history } = useQuery({
     queryKey: ['assetCardChart', assetType, assetCode, '1Y'],
@@ -93,7 +101,17 @@ export default function AssetCardChart({ assetType, assetCode, changePercent, de
     retry: 1,
   });
 
-  const data = useMemo(() => toSparkSeries(history), [history]);
+  // The history closes are in the asset's native currency. Convert every point at its OWN candle date
+  // so the sparkline shape tracks the same currency the card's price/change shows — a no-op for
+  // TRY-native assets in TRY/ORIGINAL, but per-date FX for USD-native crypto, FX-quoted VIOP, and any
+  // asset under a USD/EUR display. natural = native makes ORIGINAL resolve back to the native currency.
+  const native = useMemo(() => nativeCurrencyFor(assetType, assetCode), [assetType, assetCode]);
+  const data = useMemo(() => {
+    const points = toSparkSeries(history);
+    return points
+      .map((p) => Number(convertAt(p.close, native, p.date, native) ?? p.close))
+      .filter((v) => Number.isFinite(v));
+  }, [history, convertAt, native]);
   const option = useMemo(() => (data.length > 0 ? buildOption(data, color) : null), [data, color]);
 
   useEffect(() => {

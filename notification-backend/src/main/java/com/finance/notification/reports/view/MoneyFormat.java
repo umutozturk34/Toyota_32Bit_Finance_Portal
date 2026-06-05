@@ -27,16 +27,30 @@ public final class MoneyFormat {
     }
 
     public String of(BigDecimal value) {
+        return format(value, 2);
+    }
+
+    /**
+     * Higher-precision variant of {@link #of}: the abbreviated K/M/B form keeps three decimals
+     * (e.g. {@code ₺ 117,463K} instead of {@code ₺ 117,46K}) so headline figures don't shed
+     * thousands to rounding. Sub-thousand values still show two decimals. Used for the hero/summary
+     * numbers where the extra digit fits; table cells stay on {@link #of} to protect column widths.
+     */
+    public String ofPrecise(BigDecimal value) {
+        return format(value, 3);
+    }
+
+    private String format(BigDecimal value, int compactDecimals) {
         if (value == null) return "—";
         BigDecimal abs = value.abs();
         String sign = value.signum() < 0 ? "−" : "";
         String body;
         if (abs.compareTo(BILLION) >= 0) {
-            body = compact(abs, BILLION, "B");
+            body = compact(abs, BILLION, "B", compactDecimals);
         } else if (abs.compareTo(MILLION) >= 0) {
-            body = compact(abs, MILLION, "M");
+            body = compact(abs, MILLION, "M", compactDecimals);
         } else if (abs.compareTo(THOUSAND) >= 0) {
-            body = compact(abs, THOUSAND, "K");
+            body = compact(abs, THOUSAND, "K", compactDecimals);
         } else {
             body = fullDecimal(abs, 2);
         }
@@ -50,8 +64,15 @@ public final class MoneyFormat {
         return prefix + of(value);
     }
 
-    private String compact(BigDecimal absValue, BigDecimal divisor, String suffix) {
-        BigDecimal scaled = absValue.divide(divisor, 2, RoundingMode.HALF_UP).stripTrailingZeros();
+    /** Higher-precision {@link #signed} for headline P/L figures; see {@link #ofPrecise}. */
+    public String signedPrecise(BigDecimal value) {
+        if (value == null) return "—";
+        String prefix = value.signum() >= 0 ? "+" : "";
+        return prefix + ofPrecise(value);
+    }
+
+    private String compact(BigDecimal absValue, BigDecimal divisor, String suffix, int decimals) {
+        BigDecimal scaled = absValue.divide(divisor, decimals, RoundingMode.HALF_UP).stripTrailingZeros();
         if (scaled.scale() < 0) scaled = scaled.setScale(0, RoundingMode.HALF_UP);
         return formatPlain(scaled) + suffix;
     }

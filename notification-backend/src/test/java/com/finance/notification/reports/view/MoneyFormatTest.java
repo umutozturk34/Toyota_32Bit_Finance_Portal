@@ -179,4 +179,67 @@ class MoneyFormatTest {
 
         assertThat(result).isEqualTo("₺ 1,23M");
     }
+
+    @Test
+    void should_keepThreeCompactDecimals_when_usingOfPrecise() {
+        MoneyFormat format = new MoneyFormat("$", Locale.ENGLISH);
+
+        String result = format.ofPrecise(new BigDecimal("117463"));
+
+        assertThat(result).isEqualTo("$ 117.463K");
+    }
+
+    @Test
+    void should_stripTrailingZeros_when_ofPreciseRoundsClean() {
+        MoneyFormat format = new MoneyFormat("$", Locale.ENGLISH);
+
+        String result = format.ofPrecise(new BigDecimal("117400"));
+
+        assertThat(result).isEqualTo("$ 117.4K");
+    }
+
+    @Test
+    void should_keepTwoDecimals_when_ofPreciseValueBelowThousand() {
+        MoneyFormat format = new MoneyFormat("$", Locale.ENGLISH);
+
+        String result = format.ofPrecise(new BigDecimal("123.45"));
+
+        assertThat(result).isEqualTo("$ 123.45");
+    }
+
+    @Test
+    void should_useTurkishSeparators_when_ofPreciseLocaleIsTr() {
+        MoneyFormat format = new MoneyFormat("₺", Locale.forLanguageTag("tr"));
+
+        String result = format.ofPrecise(new BigDecimal("117463"));
+
+        assertThat(result).isEqualTo("₺ 117,463K");
+    }
+
+    @Test
+    void should_returnDash_when_ofPreciseValueIsNull() {
+        MoneyFormat format = new MoneyFormat("₺", Locale.forLanguageTag("tr"));
+
+        String result = format.ofPrecise(null);
+
+        assertThat(result).isEqualTo("—");
+    }
+
+    @Test
+    void should_prefixPlusWithThreeDecimals_when_usingSignedPrecise() {
+        MoneyFormat format = new MoneyFormat("$", Locale.ENGLISH);
+
+        String result = format.signedPrecise(new BigDecimal("117463"));
+
+        assertThat(result).isEqualTo("+$ 117.463K");
+    }
+
+    @Test
+    void should_returnDash_when_signedPreciseValueIsNull() {
+        MoneyFormat format = new MoneyFormat("$", Locale.ENGLISH);
+
+        String result = format.signedPrecise(null);
+
+        assertThat(result).isEqualTo("—");
+    }
 }

@@ -9,12 +9,12 @@
             margin: 0; padding: 0;
             background: [[${palette.bg}]];
             color: [[${palette.fg}]];
-            font-family: 'Noto Sans', 'DejaVu Sans', 'Liberation Sans', 'Segoe UI', Helvetica, Arial, sans-serif;
+            font-family: 'IBM Plex Sans', 'Noto Sans', 'DejaVu Sans', 'Liberation Sans', Helvetica, Arial, sans-serif;
             font-size: 11px;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
-        .num { font-family: 'DejaVu Sans Mono', 'Liberation Mono', monospace; }
+        .num { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', 'Liberation Mono', monospace; }
         .page {
             box-sizing: border-box;
             width: 210mm;
@@ -185,7 +185,7 @@
             <div>
                 <div class="hero-label" th:text="#{pdf.summary.marketValue}">MARKET VALUE</div>
                 <div class="hero-value num"
-                     th:text="${summary != null ? money.of(summary.totalValueTry()) : '—'}">—</div>
+                     th:text="${summary != null ? money.ofPrecise(summary.totalValueTry()) : '—'}">—</div>
                 <div style="margin-top:8px;font-size:11.5px;color:[[${palette.muted}]];font-weight:500;"
                      th:text="${portfolioName}">Portfolio</div>
             </div>
@@ -193,13 +193,13 @@
                 <span class="hero-pill num"
                       th:classappend="${summary.totalPnlTry().signum() >= 0} ? 'pill-gain' : 'pill-loss'">
                     <span style="font-size:9px;" th:text="${summary.totalPnlTry().signum() >= 0} ? '▲' : '▼'">▲</span>
-                    <span th:text="${money.signed(summary.totalPnlTry())}">+₺ 0,00</span>
+                    <span th:text="${money.signedPrecise(summary.totalPnlTry())}">+₺ 0,00</span>
                     <span th:if="${summary.pnlPercent() != null}" style="opacity:0.85;font-weight:600;"
                           th:text="'(' + (${summary.totalPnlTry().signum() >= 0} ? '+' : '') + ${#numbers.formatDecimal(summary.pnlPercent(), 1, decimalGroupSep, 2, decimalSep)} + '%)'">(0,00%)</span>
                 </span>
                 <div class="hero-daily num" th:if="${summary.dailyPnlTry() != null}">
                     <span th:text="${summary.dailyPnlTry().signum() >= 0} ? '▲' : '▼'">▲</span>
-                    <span th:text="${money.signed(summary.dailyPnlTry())}">+₺ 0,00</span>
+                    <span th:text="${money.signedPrecise(summary.dailyPnlTry())}">+₺ 0,00</span>
                     <span th:if="${summary.dailyPnlPercent() != null}"
                           th:text="'(' + (${summary.dailyPnlTry().signum() >= 0} ? '+' : '') + ${#numbers.formatDecimal(summary.dailyPnlPercent(), 1, decimalGroupSep, 2, decimalSep)} + '%)'">(0,00%)</span>
                     <span style="opacity:0.8;" th:text="#{pdf.summary.deltaToday}">today</span>
@@ -212,25 +212,25 @@
                 <tbody>
                     <tr>
                         <td class="label" th:text="#{pdf.summary.totalCost}">TOTAL COST</td>
-                        <td class="value num" th:text="${summary != null ? money.of(summary.totalEntryValueTry()) : '—'}">—</td>
+                        <td class="value num" th:text="${summary != null ? money.ofPrecise(summary.totalEntryValueTry()) : '—'}">—</td>
                     </tr>
                     <tr th:if="${summary != null and summary.totalPnlTry() != null}">
                         <td class="label" th:text="#{pdf.summary.profitLoss}">TOTAL P&L</td>
                         <td class="value num"
                             th:classappend="${summary.totalPnlTry().signum() >= 0} ? 'gain' : 'loss'"
-                            th:text="${money.signed(summary.totalPnlTry())}">—</td>
+                            th:text="${money.signedPrecise(summary.totalPnlTry())}">—</td>
                     </tr>
                     <tr th:if="${summary != null and summary.dailyPnlTry() != null}">
                         <td class="label" th:text="#{pdf.summary.dailyPnl}">DAILY P&L</td>
                         <td class="value num"
                             th:classappend="${summary.dailyPnlTry().signum() >= 0} ? 'gain' : 'loss'"
-                            th:text="${money.signed(summary.dailyPnlTry())}">—</td>
+                            th:text="${money.signedPrecise(summary.dailyPnlTry())}">—</td>
                     </tr>
                     <tr th:if="${summary != null and summary.realPnlTry() != null}">
                         <td class="label" th:text="#{pdf.summary.realPnl}">REAL P&L</td>
                         <td class="value num"
                             th:classappend="${summary.realPnlTry().signum() >= 0} ? 'gain' : 'loss'"
-                            th:text="${money.signed(summary.realPnlTry())}">—</td>
+                            th:text="${money.signedPrecise(summary.realPnlTry())}">—</td>
                     </tr>
                     <tr th:if="${summary != null and summary.cpiGrowthPercent() != null}">
                         <td class="label" th:text="#{pdf.summary.cpiGrowth}">CPI GROWTH</td>
@@ -289,7 +289,7 @@
         <p class="eyebrow" th:text="#{pdf.section.performance}">PERFORMANCE</p>
         <h2 class="card-title" th:text="#{pdf.section.performance}">Portfolio Performance</h2>
         <div th:if="${summary != null and summary.totalPnlTry() != null}" style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <span class="num" style="font-size:16px;font-weight:700;color:[[${palette.fg}]];" th:text="${money.of(summary.totalValueTry())}">₺ 0</span>
+            <span class="num" style="font-size:16px;font-weight:700;color:[[${palette.fg}]];" th:text="${money.ofPrecise(summary.totalValueTry())}">₺ 0</span>
             <span class="hero-pill num" th:classappend="${summary.totalPnlTry().signum() >= 0} ? 'pill-gain' : 'pill-loss'">
                 <span style="font-size:9px;" th:text="${summary.totalPnlTry().signum() >= 0} ? '▲' : '▼'">▲</span>
                 <span th:if="${summary.pnlPercent() != null}" th:text="'(' + (${summary.totalPnlTry().signum() >= 0} ? '+' : '') + ${#numbers.formatDecimal(summary.pnlPercent(), 1, decimalGroupSep, 2, decimalSep)} + '%)'">(0,00%)</span>

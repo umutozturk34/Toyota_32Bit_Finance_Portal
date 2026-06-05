@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       fonts-noto-core \
       fonts-noto-color-emoji \
       fonts-dejavu \
+      fonts-ibm-plex \
       libasound2 \
       libatk-bridge2.0-0 \
       libatk1.0-0 \

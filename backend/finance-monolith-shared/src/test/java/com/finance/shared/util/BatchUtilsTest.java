@@ -68,13 +68,6 @@ class BatchUtilsTest {
     }
 
     @Test
-    void batchLogHelper_logSummaryWithTotal_doesNotThrow() {
-        BatchUpdateRunner.Result result = new BatchUpdateRunner.Result(5, 0, List.of());
-
-        BatchLogHelper.logSummaryWithTotal(log, "demo", result, 10);
-    }
-
-    @Test
     void batchLogHelper_logSummaryWithMetric_doesNotThrow_withFailures() {
         BatchUpdateRunner.Result result = new BatchUpdateRunner.Result(2, 1, List.of("x"));
 

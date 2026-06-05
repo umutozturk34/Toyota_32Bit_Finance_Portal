@@ -24,13 +24,6 @@ public class ErrorResponse {
     @Builder.Default
     private String data = "null";
     private Map<String, String> validationErrors;
-    public static ErrorResponse of(String message, String errorCode) {
-        return ErrorResponse.builder()
-                .success(false)
-                .message(message)
-                .errorCode(errorCode)
-                .build();
-    }
     public static ErrorResponse of(String message, String errorCode, String path) {
         return ErrorResponse.builder()
                 .success(false)

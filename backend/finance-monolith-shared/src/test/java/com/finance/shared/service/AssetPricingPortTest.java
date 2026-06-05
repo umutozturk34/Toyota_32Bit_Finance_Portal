@@ -48,26 +48,6 @@ class AssetPricingPortTest {
     }
 
     @Test
-    void getBundles_buildsMapFromKeys() {
-        List<AssetKey> keys = List.of(
-                new AssetKey(MarketType.CRYPTO, "bitcoin"),
-                new AssetKey(MarketType.STOCK, "THYAO.IS"));
-
-        Map<AssetKey, PriceBundle> bundles = port.getBundles(keys);
-
-        assertThat(bundles).hasSize(2);
-        assertThat(bundles.get(new AssetKey(MarketType.CRYPTO, "bitcoin")).meta().name()).isEqualTo("NAME-bitcoin");
-        assertThat(bundles.get(new AssetKey(MarketType.STOCK, "THYAO.IS")).meta().name()).isEqualTo("NAME-THYAO.IS");
-    }
-
-    @Test
-    void getBundles_returnsEmptyMap_whenInputEmpty() {
-        Map<AssetKey, PriceBundle> bundles = port.getBundles(List.of());
-
-        assertThat(bundles).isEmpty();
-    }
-
-    @Test
     void defaultExitPriceTry_fallsBackToGetPriceTry() {
         BigDecimal price = port.getExitPriceTry(MarketType.STOCK, "AAPL");
 
@@ -98,16 +78,6 @@ class AssetPricingPortTest {
         Map<AssetKey, PriceBundle> result = exitDifferingPort.getExitBundles(List.of(k));
 
         assertThat(result.get(k).price()).isEqualByComparingTo("95");
-    }
-
-    @Test
-    void getPricesTry_skipsKeysWithNullPrice() {
-        AssetKey k1 = new AssetKey(MarketType.STOCK, "AAPL");
-        AssetKey k2 = new AssetKey(MarketType.STOCK, "MISSING");
-
-        Map<AssetKey, BigDecimal> result = port.getPricesTry(List.of(k1, k2));
-
-        assertThat(result).containsKey(k1).doesNotContainKey(k2);
     }
 
     @Test

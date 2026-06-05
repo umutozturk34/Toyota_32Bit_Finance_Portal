@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
 /**
  * Persistent registry of a tradable/observable asset, uniquely identified by its
  * ({@link MarketType}, asset code) pair. Instances are created active and may be soft-disabled via
- * {@link #deactivate()} rather than deleted, preserving referential history.
+ * the {@code active} flag rather than deleted, preserving referential history.
  */
 @Getter
 @Setter
@@ -81,13 +81,5 @@ public class Instrument {
 
     public boolean matches(MarketType type, String code) {
         return this.marketType == type && this.assetCode.equalsIgnoreCase(code);
-    }
-
-    public void deactivate() {
-        this.active = false;
-    }
-
-    public void reactivate() {
-        this.active = true;
     }
 }

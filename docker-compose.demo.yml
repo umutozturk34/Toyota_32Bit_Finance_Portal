@@ -1,11 +1,14 @@
 # Demo / full-data mode (recommended) — layer this on top of the base file:
 #   docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d --build
 #
-# It adds a "demouser" account (realm-demo.json) and seeds ~4 years of market data
-# plus a sample Turkish-investor portfolio. The base file alone is "empty mode":
+# It adds a "demouser" account (realm-demo.json) and seeds ~4 years of market data.
+# The sample Turkish-investor portfolio is provisioned by DemoSeeder on backend startup
+# (APP_DEMO_ENABLED=true) via the same service-layer commands a real user would issue —
+# no raw SQL inserts, so tracked-asset linkage and snapshot history wire up correctly.
+# The base file alone is "empty mode":
 #   docker compose up -d --build
 #
-# The seed only adds DATA tables; the schema and config rows (instruments,
+# This file only loads the market_data dump; the schema and config rows (instruments,
 # tracked_assets, ...) stay owned by Flyway, so nothing here fights the migrator.
 services:
   keycloak:
@@ -39,9 +42,12 @@ services:
           echo "[db-seed] market data already present ($$SEEDED stock candles), skipping."
           exit 0
         fi
-        echo "[db-seed] loading market data + demo portfolio (~1 minute)..."
-        { echo 'SET session_replication_role = replica;'; gunzip -c /seed/market_data.sql.gz; cat /seed/demo_portfolio.sql; } | psql -v ON_ERROR_STOP=1 -q
-        echo "[db-seed] done — log in as demouser to see the sample portfolio."
+        echo "[db-seed] loading market data (~1 minute)..."
+        # session_replication_role=replica defers FK checks during bulk load — the dump's
+        # per-asset tables (bonds, stocks, ...) carry asset_id refs into the instruments table,
+        # which is created by Flyway but populated lazily at runtime by the scrapers.
+        { echo 'SET session_replication_role = replica;'; gunzip -c /seed/market_data.sql.gz; } | psql -v ON_ERROR_STOP=1 -q
+        echo "[db-seed] done — backend's DemoSeeder will provision the demo portfolio on startup."
     depends_on:
       db:
         condition: service_healthy
@@ -54,6 +60,8 @@ services:
     depends_on:
       db-seed:
         condition: service_completed_successfully
+    environment:
+      APP_DEMO_ENABLED: "true"
 
   notification-backend:
     depends_on:

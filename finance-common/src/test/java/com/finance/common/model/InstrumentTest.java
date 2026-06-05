@@ -32,17 +32,6 @@ class InstrumentTest {
     }
 
     @Test
-    void deactivate_andReactivate_togglesActiveFlag() {
-        Instrument asset = Instrument.create(MarketType.STOCK, "THYAO");
-
-        asset.deactivate();
-        assertThat(asset.isActive()).isFalse();
-
-        asset.reactivate();
-        assertThat(asset.isActive()).isTrue();
-    }
-
-    @Test
     void prePersist_assignsTimestamps_whenNull() throws Exception {
         Instrument asset = Instrument.create(MarketType.STOCK, "THYAO");
         invokePackagePrivate(asset, "prePersist");

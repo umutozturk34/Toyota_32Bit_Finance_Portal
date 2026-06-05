@@ -18,14 +18,6 @@ public final class BatchLogHelper {
         }
     }
 
-    public static void logSummaryWithTotal(Logger log, String label, BatchUpdateRunner.Result result, int total) {
-        log.info("{}: {} success, {} failed out of {} total",
-                label, result.successCount(), result.failCount(), total);
-        if (!result.failedItems().isEmpty()) {
-            log.warn("{} failed items: {}", label, result.failedItems());
-        }
-    }
-
     public static void logSummaryWithMetric(
             Logger log,
             String label,

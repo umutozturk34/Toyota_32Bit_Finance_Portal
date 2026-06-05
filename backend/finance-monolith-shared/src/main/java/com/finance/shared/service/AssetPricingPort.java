@@ -49,17 +49,6 @@ public interface AssetPricingPort {
                 getAssetMeta(type, assetCode));
     }
 
-    /** Batch spot bundles keyed by asset; entries with no resolvable price are omitted. */
-    default Map<AssetKey, PriceBundle> getBundles(Collection<AssetKey> keys) {
-        return keys.stream()
-                .map(key -> Map.entry(key, java.util.Optional.ofNullable(getBundle(key.type(), key.assetCode()))))
-                .filter(e -> e.getValue().isPresent())
-                .collect(Collectors.toUnmodifiableMap(
-                        Map.Entry::getKey,
-                        e -> e.getValue().get(),
-                        (a, b) -> a));
-    }
-
     /** Batch exit-price bundles keyed by asset; entries with no resolvable price are omitted. */
     default Map<AssetKey, PriceBundle> getExitBundles(Collection<AssetKey> keys) {
         return keys.stream()
@@ -71,10 +60,10 @@ public interface AssetPricingPort {
                         (a, b) -> a));
     }
 
-    /** Batch spot TRY prices keyed by asset; entries with no resolvable price are omitted. */
-    default Map<AssetKey, BigDecimal> getPricesTry(Collection<AssetKey> keys) {
+    /** Batch CURRENT bundles (mark-to-market price + meta, forex SELLING rate) for valuing OPEN positions. */
+    default Map<AssetKey, PriceBundle> getBundles(Collection<AssetKey> keys) {
         return keys.stream()
-                .map(key -> Map.entry(key, java.util.Optional.ofNullable(getPriceTry(key.type(), key.assetCode()))))
+                .map(key -> Map.entry(key, java.util.Optional.ofNullable(getBundle(key.type(), key.assetCode()))))
                 .filter(e -> e.getValue().isPresent())
                 .collect(Collectors.toUnmodifiableMap(
                         Map.Entry::getKey,
@@ -86,6 +75,21 @@ public interface AssetPricingPort {
     default Map<AssetKey, BigDecimal> getExitPricesTry(Collection<AssetKey> keys) {
         return keys.stream()
                 .map(key -> Map.entry(key, java.util.Optional.ofNullable(getExitPriceTry(key.type(), key.assetCode()))))
+                .filter(e -> e.getValue().isPresent())
+                .collect(Collectors.toUnmodifiableMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().get(),
+                        (a, b) -> a));
+    }
+
+    /**
+     * Batch CURRENT/spot TRY prices keyed by asset (forex SELLING rate) — the mark-to-market price for an
+     * OPEN position, matching the daily snapshot. Use this for held value; {@link #getExitPricesTry} (forex
+     * BUYING rate) is only for a realised close, so the bid/ask spread is borne once on entry + once on exit.
+     */
+    default Map<AssetKey, BigDecimal> getPricesTry(Collection<AssetKey> keys) {
+        return keys.stream()
+                .map(key -> Map.entry(key, java.util.Optional.ofNullable(getPriceTry(key.type(), key.assetCode()))))
                 .filter(e -> e.getValue().isPresent())
                 .collect(Collectors.toUnmodifiableMap(
                         Map.Entry::getKey,

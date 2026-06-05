@@ -390,7 +390,10 @@ services:
 
 # --- OpenTelemetry Collector ---
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    # PINNED (was :latest — the floating tag is the root cause; it silently drifted to 0.152.0 whose ES
+    # exporter emits dynamic_templates OpenSearch 2.19.1 rejects with 400). Pin to a pre-break version that
+    # still speaks OpenSearch's bulk dialect, so metrics flow again with the unchanged ecs config.
+    image: otel/opentelemetry-collector-contrib:0.145.0
     container_name: otel-collector
     volumes:
       - ./otel-config.yaml:/etc/otel-config.yaml

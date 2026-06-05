@@ -31,11 +31,17 @@ public class ReportSvgService {
     private static final DateTimeFormatter X_LABEL_FMT = DateTimeFormatter.ofPattern("dd MMM");
     private static final DateTimeFormatter X_LABEL_MULTI_YEAR_FMT = DateTimeFormatter.ofPattern("MMM yy");
 
-    /** Renders the value-over-time line chart; returns an empty placeholder when fewer than two points exist. */
-    public String performanceLineChart(List<PerformanceSeriesPoint> points, ReportPalette palette, Locale locale) {
+    /**
+     * Renders the value-over-time line chart; returns an empty placeholder when fewer than two points
+     * exist. The y-axis value tick labels are prefixed with {@code currencySymbol} (e.g. "$1.2M");
+     * pass an empty string for percentage axes (e.g. the cumulative-return chart) so no symbol shows.
+     */
+    public String performanceLineChart(List<PerformanceSeriesPoint> points, ReportPalette palette,
+                                        Locale locale, String currencySymbol) {
         if (points == null || points.size() < 2) {
             return emptyPlaceholder(palette);
         }
+        String symbol = currencySymbol == null ? "" : currencySymbol;
 
         double minV = Double.POSITIVE_INFINITY;
         double maxV = Double.NEGATIVE_INFINITY;
@@ -100,7 +106,7 @@ public class ReportSvgService {
             svg.append("<text x=\"").append(PAD_LEFT - 8).append("\" y=\"").append(fmt(y + 3))
                     .append("\" text-anchor=\"end\" fill=\"").append(palette.subtle())
                     .append("\" font-size=\"9\" font-family=\"-apple-system,monospace\">")
-                    .append(formatTickValue(tickV)).append("</text>");
+                    .append(formatTickValue(tickV, symbol)).append("</text>");
         }
 
         long tRange = maxT - minT;
@@ -108,11 +114,16 @@ public class ReportSvgService {
         LocalDateTime last = LocalDateTime.ofEpochSecond(maxT, 0, ZoneOffset.UTC);
         boolean multiYear = first.getYear() != last.getYear();
         DateTimeFormatter xFmt = (multiYear ? X_LABEL_MULTI_YEAR_FMT : X_LABEL_FMT).withLocale(locale);
+        String prevXLabel = null;
         for (int i = 0; i < X_TICKS; i++) {
             double tT = minT + (tRange) * (i / (double) (X_TICKS - 1));
             double x = PAD_LEFT + ((tT - minT) / (double) tRange) * plotW;
             LocalDateTime dt = LocalDateTime.ofEpochSecond((long) tT, 0, ZoneOffset.UTC);
             String label = xFmt.format(dt);
+            // Short windows make adjacent ticks resolve to the same label (e.g. 6 ticks all "Jun 26");
+            // skip the duplicate so the axis doesn't repeat the same month/day across the row.
+            if (label.equals(prevXLabel)) continue;
+            prevXLabel = label;
             svg.append("<text x=\"").append(fmt(x)).append("\" y=\"").append(H - PAD_BOTTOM + 18)
                     .append("\" text-anchor=\"middle\" fill=\"").append(palette.subtle())
                     .append("\" font-size=\"9\" font-family=\"-apple-system,monospace\">")
@@ -263,12 +274,16 @@ public class ReportSvgService {
         return String.format(Locale.ROOT, "%.2f", d);
     }
 
-    private static String formatTickValue(double v) {
+    private static String formatTickValue(double v, String prefix) {
         double abs = Math.abs(v);
-        if (abs >= 1_000_000_000d) return String.format(Locale.ROOT, "%.1fB", v / 1_000_000_000d);
-        if (abs >= 1_000_000d) return String.format(Locale.ROOT, "%.1fM", v / 1_000_000d);
-        if (abs >= 1_000d) return String.format(Locale.ROOT, "%.1fK", v / 1_000d);
-        return String.format(Locale.ROOT, "%.0f", v);
+        String body;
+        if (abs >= 1_000_000_000d) body = String.format(Locale.ROOT, "%.1fB", v / 1_000_000_000d);
+        else if (abs >= 1_000_000d) body = String.format(Locale.ROOT, "%.1fM", v / 1_000_000d);
+        else if (abs >= 1_000d) body = String.format(Locale.ROOT, "%.1fK", v / 1_000d);
+        else body = String.format(Locale.ROOT, "%.0f", v);
+        // A leading minus must precede the currency symbol (e.g. "-$1.2M"), not sit between them.
+        if (!prefix.isEmpty() && body.startsWith("-")) return "-" + prefix + body.substring(1);
+        return prefix + body;
     }
 
     private static long epoch(LocalDateTime dt) {

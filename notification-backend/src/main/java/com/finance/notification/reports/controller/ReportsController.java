@@ -43,12 +43,30 @@ public class ReportsController {
         }
 
         byte[] pdf = service.generate(request, userSub, jwt.getTokenValue());
-        String filename = "portfolio-" + request.portfolioId() + "-"
+        // Filename uses the portfolio NAME (slugified), never the numeric DB id — the id must not leak.
+        String slug = slugify(request.portfolioName());
+        String filename = (slug.isEmpty() ? "portfolio" : slug) + "-"
                 + LocalDate.now().format(FILENAME_DATE) + ".pdf";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDisposition(ContentDisposition.attachment().filename(filename).build());
         headers.setContentLength(pdf.length);
         return new ResponseEntity<>(pdf, headers, 200);
+    }
+
+    /** ASCII filename slug from a (possibly Turkish) portfolio name; empty if nothing usable remains. */
+    private static String slugify(String name) {
+        if (name == null) return "";
+        String t = name.trim()
+                .replace("ı", "i").replace("İ", "i")
+                .replace("ş", "s").replace("Ş", "s")
+                .replace("ç", "c").replace("Ç", "c")
+                .replace("ö", "o").replace("Ö", "o")
+                .replace("ü", "u").replace("Ü", "u")
+                .replace("ğ", "g").replace("Ğ", "g")
+                .toLowerCase(java.util.Locale.ENGLISH)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
+        return t.length() > 40 ? t.substring(0, 40) : t;
     }
 }

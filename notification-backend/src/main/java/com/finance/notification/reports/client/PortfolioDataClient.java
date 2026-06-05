@@ -18,6 +18,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +33,17 @@ import java.util.Optional;
 public class PortfolioDataClient {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(15);
+    /**
+     * Maximum positions per HTTP page when paginating through {@code /positions}. The portfolio
+     * backend caps {@code max-size} at 100 (see {@code portfolio.yaml}); we request the cap so the
+     * loop typically completes in 1–2 round-trips even for power users with many closed lots.
+     */
+    private static final int POSITIONS_PAGE_SIZE = 100;
+    /**
+     * Safety brake. If the backend ever advertises an unbounded {@code totalPages}, stop after
+     * 50 iterations (≈5,000 positions) to keep the PDF render bounded.
+     */
+    private static final int POSITIONS_MAX_PAGES = 50;
     private final WebClient client;
 
     public PortfolioDataClient(WebClient.Builder builder,
@@ -43,27 +55,67 @@ public class PortfolioDataClient {
     }
 
     public PortfolioReportBundle fetch(Long portfolioId, String range, String accessToken) {
+        // /view is the single-shot read for the headline figures (summary) and the regular
+        // allocation pie (Dağılım). Its positions slice is paginated and capped — the PDF must
+        // show every lot, so we don't trust it here and rebuild positions via the paginated
+        // endpoint below.
         ViewEnvelope view = getJson(
-                "/api/v1/portfolios/" + portfolioId + "/view?include=summary,positions,allocation",
+                "/api/v1/portfolios/" + portfolioId + "/view?include=summary,allocation",
                 accessToken,
                 new ParameterizedTypeReference<ApiEnvelope<ViewEnvelope>>() {});
+        List<ReportAllocation> realizedAllocation = Optional.ofNullable(getJson(
+                "/api/v1/portfolios/" + portfolioId + "/allocation?mode=realizedPnl",
+                accessToken,
+                new ParameterizedTypeReference<ApiEnvelope<List<ReportAllocation>>>() {}))
+                .orElse(List.of());
+        List<ReportPosition> positions = fetchAllPositions(portfolioId, accessToken);
         List<PerformanceRecord> perf = getJson(
                 "/api/v1/portfolios/" + portfolioId + "/chart?type=performance&range=" + range,
                 accessToken,
                 new ParameterizedTypeReference<ApiEnvelope<List<PerformanceRecord>>>() {});
 
-        List<PerformanceSeriesPoint> series = (perf == null ? Collections.<PerformanceRecord>emptyList() : perf).stream()
+        List<PerformanceRecord> safePerf = perf == null ? Collections.emptyList() : perf;
+        List<PerformanceSeriesPoint> series = safePerf.stream()
                 .map(p -> new PerformanceSeriesPoint(
                         p.timestamp(),
                         p.totalValueTry() != null ? p.totalValueTry().doubleValue() : 0d))
                 .toList();
+        // Cost-based cumulative return % straight from the portfolio's pnlPercent — NOT a value index
+        // (value/first − 1), which lot additions over time would distort.
+        List<PerformanceSeriesPoint> returnSeries = safePerf.stream()
+                .map(p -> new PerformanceSeriesPoint(
+                        p.timestamp(),
+                        p.pnlPercent() != null ? p.pnlPercent().doubleValue() : 0d))
+                .toList();
 
         ReportSummary summary = view != null ? view.summary() : null;
         List<ReportAllocation> allocation = view != null && view.allocation() != null ? view.allocation() : List.of();
-        List<ReportPosition> positions = view != null && view.positions() != null && view.positions().content() != null
-                ? view.positions().content() : List.of();
 
-        return new PortfolioReportBundle(portfolioId, summary, allocation, positions, series);
+        return new PortfolioReportBundle(portfolioId, summary, allocation, realizedAllocation, positions, series, returnSeries);
+    }
+
+    /**
+     * Walks {@code /positions} page by page and concatenates the rows. The portfolio backend
+     * paginates at the API boundary (default page size 10, max 100); the PDF must cover EVERY lot
+     * regardless of count, so we iterate until {@code totalPages} is exhausted instead of trusting
+     * a single oversized request (the backend clamps {@code size} to {@code max-size}).
+     */
+    private List<ReportPosition> fetchAllPositions(Long portfolioId, String accessToken) {
+        List<ReportPosition> all = new ArrayList<>();
+        int page = 0;
+        while (page < POSITIONS_MAX_PAGES) {
+            PagedResponse<ReportPosition> response = getJson(
+                    "/api/v1/portfolios/" + portfolioId + "/positions?page=" + page
+                            + "&size=" + POSITIONS_PAGE_SIZE,
+                    accessToken,
+                    new ParameterizedTypeReference<ApiEnvelope<PagedResponse<ReportPosition>>>() {});
+            if (response == null || response.content() == null || response.content().isEmpty()) break;
+            all.addAll(response.content());
+            page++;
+            if (page >= response.totalPages()) break;
+        }
+        log.debug("Fetched {} positions across {} page(s) for portfolio {}", all.size(), page, portfolioId);
+        return all;
     }
 
     private <T> T getJson(String path, String accessToken, ParameterizedTypeReference<ApiEnvelope<T>> type) {
@@ -90,16 +142,21 @@ public class PortfolioDataClient {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ApiEnvelope<T>(boolean success, String message, T data) {}
 
+    /**
+     * Slim envelope: the view endpoint is invoked with {@code include=summary,allocation} now —
+     * positions come from the dedicated paginated endpoint so the PDF can include every lot,
+     * not just the first page the view defaulted to (10 rows).
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ViewEnvelope(
             ReportSummary summary,
-            PagedResponse<ReportPosition> positions,
             List<ReportAllocation> allocation
     ) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record PerformanceRecord(
             LocalDateTime timestamp,
-            BigDecimal totalValueTry
+            BigDecimal totalValueTry,
+            BigDecimal pnlPercent
     ) {}
 }

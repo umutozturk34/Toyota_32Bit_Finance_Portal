@@ -81,8 +81,9 @@ class ReportsControllerTest {
                         .content(body))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_PDF))
+                // Filename is the slugified portfolio NAME (Turkish folded to ASCII), never the numeric id "1".
                 .andExpect(header().string("Content-Disposition",
-                        org.hamcrest.Matchers.startsWith("attachment; filename=\"portfolio-1-")));
+                        org.hamcrest.Matchers.startsWith("attachment; filename=\"demo-portfoy-")));
     }
 
     @Test
@@ -132,7 +133,7 @@ class ReportsControllerTest {
     }
 
     private PortfolioPdfRequest valid() {
-        return new PortfolioPdfRequest(1L, null, "LIGHT", "tr", "TRY");
+        return new PortfolioPdfRequest(1L, "Demo Portföy", "LIGHT", "tr", "TRY");
     }
 
 }

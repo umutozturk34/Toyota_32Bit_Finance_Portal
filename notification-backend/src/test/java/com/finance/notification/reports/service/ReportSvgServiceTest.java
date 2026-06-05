@@ -24,7 +24,7 @@ class ReportSvgServiceTest {
 
     @Test
     void should_returnPlaceholderDiv_when_performancePointsAreNull() {
-        String result = service.performanceLineChart(null, ReportPalette.DARK, Locale.ENGLISH);
+        String result = service.performanceLineChart(null, ReportPalette.DARK, Locale.ENGLISH, "");
 
         assertThat(result).startsWith("<div");
         assertThat(result).contains("—");
@@ -35,7 +35,7 @@ class ReportSvgServiceTest {
         List<PerformanceSeriesPoint> points = List.of(
                 new PerformanceSeriesPoint(LocalDateTime.of(2026, 1, 1, 0, 0), 100d));
 
-        String result = service.performanceLineChart(points, ReportPalette.DARK, Locale.ENGLISH);
+        String result = service.performanceLineChart(points, ReportPalette.DARK, Locale.ENGLISH, "");
 
         assertThat(result).startsWith("<div");
     }
@@ -47,7 +47,7 @@ class ReportSvgServiceTest {
                 new PerformanceSeriesPoint(LocalDateTime.of(2026, 1, 2, 0, 0), 110d),
                 new PerformanceSeriesPoint(LocalDateTime.of(2026, 1, 3, 0, 0), 105d));
 
-        String result = service.performanceLineChart(points, ReportPalette.DARK, Locale.ENGLISH);
+        String result = service.performanceLineChart(points, ReportPalette.DARK, Locale.ENGLISH, "");
 
         assertThat(result).startsWith("<svg");
         assertThat(result).endsWith("</svg>");
@@ -62,7 +62,7 @@ class ReportSvgServiceTest {
                 new PerformanceSeriesPoint(LocalDateTime.of(2026, 1, 1, 0, 0), 100d),
                 new PerformanceSeriesPoint(LocalDateTime.of(2026, 1, 2, 0, 0), 200d));
 
-        String result = service.performanceLineChart(points, ReportPalette.DARK, Locale.ENGLISH);
+        String result = service.performanceLineChart(points, ReportPalette.DARK, Locale.ENGLISH, "");
 
         assertThat(result).contains(ReportPalette.DARK.successFg());
     }
@@ -73,9 +73,24 @@ class ReportSvgServiceTest {
                 new PerformanceSeriesPoint(LocalDateTime.of(2026, 1, 1, 0, 0), 200d),
                 new PerformanceSeriesPoint(LocalDateTime.of(2026, 1, 2, 0, 0), 100d));
 
-        String result = service.performanceLineChart(points, ReportPalette.DARK, Locale.ENGLISH);
+        String result = service.performanceLineChart(points, ReportPalette.DARK, Locale.ENGLISH, "");
 
         assertThat(result).contains(ReportPalette.DARK.dangerFg());
+    }
+
+    @Test
+    void should_prefixCurrencySymbolOnValueTicks_when_symbolProvided() {
+        // Arrange
+        List<PerformanceSeriesPoint> points = List.of(
+                new PerformanceSeriesPoint(LocalDateTime.of(2026, 1, 1, 0, 0), 1_200_000d),
+                new PerformanceSeriesPoint(LocalDateTime.of(2026, 1, 2, 0, 0), 1_500_000d));
+
+        // Act
+        String result = service.performanceLineChart(points, ReportPalette.DARK, Locale.ENGLISH, "$");
+
+        // Assert
+        assertThat(result).contains("$1.");
+        assertThat(result).contains("M</text>");
     }
 
     @Test
@@ -84,10 +99,24 @@ class ReportSvgServiceTest {
                 new PerformanceSeriesPoint(LocalDateTime.of(2025, 6, 1, 0, 0), 100d),
                 new PerformanceSeriesPoint(LocalDateTime.of(2026, 6, 1, 0, 0), 200d));
 
-        String result = service.performanceLineChart(points, ReportPalette.LIGHT, Locale.ENGLISH);
+        String result = service.performanceLineChart(points, ReportPalette.LIGHT, Locale.ENGLISH, "");
 
         assertThat(result).contains("<text");
         assertThat(result).contains("25");
+    }
+
+    @Test
+    void should_notRepeatXLabel_when_allTicksResolveToSameDay() {
+        // A span confined to a single calendar day makes all 6 evenly-spaced ticks format to the same
+        // "dd MMM" label; the axis must render it once, not six times.
+        List<PerformanceSeriesPoint> points = List.of(
+                new PerformanceSeriesPoint(LocalDateTime.of(2026, 1, 1, 0, 0), 100d),
+                new PerformanceSeriesPoint(LocalDateTime.of(2026, 1, 1, 23, 0), 110d));
+
+        String result = service.performanceLineChart(points, ReportPalette.DARK, Locale.ENGLISH, "");
+
+        int occurrences = result.split("01 Jan", -1).length - 1;
+        assertThat(occurrences).isEqualTo(1);
     }
 
     @Test
@@ -96,7 +125,7 @@ class ReportSvgServiceTest {
                 new PerformanceSeriesPoint(LocalDateTime.of(2026, 1, 1, 0, 0), 50d),
                 new PerformanceSeriesPoint(LocalDateTime.of(2026, 1, 2, 0, 0), 50d));
 
-        String result = service.performanceLineChart(points, ReportPalette.DARK, Locale.ENGLISH);
+        String result = service.performanceLineChart(points, ReportPalette.DARK, Locale.ENGLISH, "");
 
         assertThat(result).startsWith("<svg");
         assertThat(result).contains("<path");

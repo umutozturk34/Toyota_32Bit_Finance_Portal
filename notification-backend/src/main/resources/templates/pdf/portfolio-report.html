@@ -118,6 +118,12 @@
         .realized-bar-fill { height: 100%; opacity: 0.85; }
         .realized-cost { margin-top: 4px; font-size: 9.5px; color: [[${palette.subtle}]]; }
 
+        /* Positions section: the parent card uses overflow:hidden for the rounded-corner
+           effect, but when the positions list grows beyond one page Chrome's print engine
+           can clip the table at the card boundary. Letting the table escape the card lets
+           page-break-inside on each row do its job and keeps every lot visible. */
+        .pos-card { overflow: visible; }
+        .pos-card .card-body { overflow: visible; }
         .pos-table { width: 100%; border-collapse: collapse; }
         .pos-table th {
             font-size: 8.5px; font-weight: 700; letter-spacing: 0.6px;
@@ -143,7 +149,7 @@
             padding: 2px 8px; border-radius: 4px; display: inline-block;
         }
         .pos-status.open { background: [[${palette.successBg}]]; color: [[${palette.successFg}]]; }
-        .pos-status.closed { background: [[${palette.infoBg}]]; color: [[${palette.subtle}]]; }
+        .pos-status.closed { background: [[${palette.closedBg}]]; color: [[${palette.closedFg}]]; }
 
         footer.report-footer {
             margin-top: 18px;
@@ -282,9 +288,40 @@
     <div class="card-head">
         <p class="eyebrow" th:text="#{pdf.section.performance}">PERFORMANCE</p>
         <h2 class="card-title" th:text="#{pdf.section.performance}">Portfolio Performance</h2>
+        <div th:if="${summary != null and summary.totalPnlTry() != null}" style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span class="num" style="font-size:16px;font-weight:700;color:[[${palette.fg}]];" th:text="${money.of(summary.totalValueTry())}">₺ 0</span>
+            <span class="hero-pill num" th:classappend="${summary.totalPnlTry().signum() >= 0} ? 'pill-gain' : 'pill-loss'">
+                <span style="font-size:9px;" th:text="${summary.totalPnlTry().signum() >= 0} ? '▲' : '▼'">▲</span>
+                <span th:if="${summary.pnlPercent() != null}" th:text="'(' + (${summary.totalPnlTry().signum() >= 0} ? '+' : '') + ${#numbers.formatDecimal(summary.pnlPercent(), 1, decimalGroupSep, 2, decimalSep)} + '%)'">(0,00%)</span>
+            </span>
+        </div>
     </div>
     <div class="card-body" style="padding-top:8px;">
         <div th:utext="${performanceSvg}">SVG</div>
+    </div>
+</section>
+
+</div>
+
+<!-- Return + Realized P&L share their own page so they start with the standard top margin, instead of
+     spilling off page 1 onto an overflow page that has no .page padding (the "starts at the very top" bug). -->
+<div class="page">
+
+<section class="card keep">
+    <div class="card-bar"></div>
+    <div class="card-head">
+        <p class="eyebrow" th:text="#{pdf.section.return}">RETURN</p>
+        <h2 class="card-title" th:text="#{pdf.section.return}">Return (%)</h2>
+        <div th:if="${summary != null and summary.pnlPercent() != null}" style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span class="num" style="font-size:16px;font-weight:700;color:[[${palette.fg}]];" th:text="${#numbers.formatDecimal(summary.pnlPercent(), 1, decimalGroupSep, 2, decimalSep)} + '%'">0%</span>
+            <span class="hero-pill num" th:if="${summary.realPnlPercent() != null}" th:classappend="${summary.realPnlPercent().signum() >= 0} ? 'pill-gain' : 'pill-loss'">
+                <span style="font-size:8px;letter-spacing:0.5px;" th:text="#{pdf.summary.realPnl}">REAL</span>
+                <span th:text="${#numbers.formatDecimal(summary.realPnlPercent(), 1, decimalGroupSep, 2, decimalSep)} + '%'">0%</span>
+            </span>
+        </div>
+    </div>
+    <div class="card-body" style="padding-top:8px;">
+        <div th:utext="${returnPercentSvg}">SVG</div>
     </div>
 </section>
 
@@ -306,13 +343,13 @@
                 <div class="realized-row" th:each="w : ${winners}">
                     <div class="realized-line">
                         <span class="realized-name" th:text="${w.label}">Label</span>
-                        <span class="num gain" th:text="'+ ' + ${moneyTry.of(w.realized)}">+₺ 0</span>
+                        <span class="num gain" th:text="'+ ' + ${money.of(w.realized)}">+₺ 0</span>
                     </div>
                     <div class="realized-bar-bg">
                         <div class="realized-bar-fill" th:style="'width:' + ${w.barPct} + '%;background:' + ${palette.successFg}"></div>
                     </div>
                     <div class="realized-cost num"
-                         th:text="#{pdf.realized.cost} + ': ' + ${moneyTry.of(w.cost)}">cost</div>
+                         th:text="#{pdf.realized.cost} + ': ' + ${money.of(w.cost)}">cost</div>
                 </div>
             </div>
             <div class="realized-col">
@@ -321,13 +358,13 @@
                 <div class="realized-row" th:each="l : ${losers}">
                     <div class="realized-line">
                         <span class="realized-name" th:text="${l.label}">Label</span>
-                        <span class="num loss" th:text="'− ' + ${moneyTry.of(l.realized)}">−₺ 0</span>
+                        <span class="num loss" th:text="'− ' + ${money.of(l.realized)}">−₺ 0</span>
                     </div>
                     <div class="realized-bar-bg">
                         <div class="realized-bar-fill" th:style="'width:' + ${l.barPct} + '%;background:' + ${palette.dangerFg}"></div>
                     </div>
                     <div class="realized-cost num"
-                         th:text="#{pdf.realized.cost} + ': ' + ${moneyTry.of(l.cost)}">cost</div>
+                         th:text="#{pdf.realized.cost} + ': ' + ${money.of(l.cost)}">cost</div>
                 </div>
             </div>
         </div>
@@ -338,7 +375,7 @@
 
 <div class="page">
 
-<section class="card">
+<section class="card pos-card">
     <div class="card-bar"></div>
     <div class="card-head">
         <p class="eyebrow" th:text="#{pdf.section.positions}">POSITIONS</p>

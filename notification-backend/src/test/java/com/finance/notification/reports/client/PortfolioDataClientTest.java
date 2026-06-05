@@ -31,7 +31,15 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * The client fetches data via four HTTP calls in order: /view → /allocation?mode=realizedPnl →
+ * /positions (paginated) → /chart. Each test queues responses in that exact order. An empty
+ * positions page short-circuits the pagination loop so most tests need exactly 4 responses.
+ */
 class PortfolioDataClientTest {
+
+    private static final String EMPTY_POSITIONS_PAGE =
+            "{\"success\":true,\"data\":{\"content\":[],\"page\":0,\"size\":100,\"totalElements\":0,\"totalPages\":0}}";
 
     private final AtomicReference<ClientRequest> lastRequest = new AtomicReference<>();
     private final List<ClientRequest> capturedRequests = new ArrayList<>();
@@ -50,6 +58,14 @@ class PortfolioDataClientTest {
         return new PortfolioDataClient(builder, "http://backend:8080");
     }
 
+    /** Queue the standard 4 responses: view (nullable JSON), realized allocation, positions page, chart. */
+    private void queueStandardResponses(String viewJson, String realizedJson, String positionsJson, String chartJson) {
+        queuedResponses.add(jsonResponse(viewJson));
+        queuedResponses.add(jsonResponse(realizedJson));
+        queuedResponses.add(jsonResponse(positionsJson));
+        queuedResponses.add(jsonResponse(chartJson));
+    }
+
     @BeforeEach
     void setUp() {
         lastRequest.set(null);
@@ -58,29 +74,39 @@ class PortfolioDataClientTest {
     }
 
     @Test
-    void should_returnBundleWithSummaryAndSeries_when_bothEndpointsRespond() {
+    void should_returnBundleWithSummaryAllocationPositionsAndSeries_when_allEndpointsRespond() {
         PortfolioDataClient client = buildClient();
-        queuedResponses.add(jsonResponse("""
+        queueStandardResponses(
+                """
                 {"success":true,"data":{
                   "summary":{"totalValueTry":1000,"pnlPercent":12.5},
-                  "positions":{"content":[{"id":1,"assetCode":"ASELS","assetName":"Aselsan"}],"page":0,"size":10,"totalElements":1,"totalPages":1},
                   "allocation":[{"label":"Stocks","assetType":"STOCK","valueTry":1000,"percent":100}]
                 }}
-                """));
-        queuedResponses.add(jsonResponse("""
+                """,
+                """
+                {"success":true,"data":[
+                  {"label":"STOCK","assetType":"STOCK","valueTry":50,"percent":100,"realizedPnlTry":50}
+                ]}
+                """,
+                """
+                {"success":true,"data":{"content":[{"id":1,"assetCode":"ASELS","assetName":"Aselsan"}],"page":0,"size":100,"totalElements":1,"totalPages":1}}
+                """,
+                """
                 {"success":true,"data":[
                   {"timestamp":"2026-01-01T00:00:00","totalValueTry":1000},
                   {"timestamp":"2026-01-02T00:00:00","totalValueTry":1100}
                 ]}
-                """));
+                """);
 
         PortfolioReportBundle bundle = client.fetch(42L, "1m", "jwt.token");
 
         assertThat(bundle.portfolioId()).isEqualTo(42L);
         assertThat(bundle.summary()).isNotNull();
         assertThat(bundle.summary().totalValueTry()).isEqualByComparingTo("1000");
-        assertThat(bundle.positions()).hasSize(1);
         assertThat(bundle.allocation()).hasSize(1);
+        assertThat(bundle.realizedAllocation()).hasSize(1);
+        assertThat(bundle.realizedAllocation().get(0).realizedPnlTry()).isEqualByComparingTo("50");
+        assertThat(bundle.positions()).hasSize(1);
         assertThat(bundle.performanceSeries()).hasSize(2);
         assertThat(bundle.performanceSeries().get(1).value()).isEqualTo(1100d);
     }
@@ -88,8 +114,7 @@ class PortfolioDataClientTest {
     @Test
     void should_attachBearerAuthHeader_when_accessTokenProvided() {
         PortfolioDataClient client = buildClient();
-        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":null}"));
-        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":[]}"));
+        queueStandardResponses("{\"success\":true,\"data\":null}", "{\"success\":true,\"data\":[]}", EMPTY_POSITIONS_PAGE, "{\"success\":true,\"data\":[]}");
 
         client.fetch(1L, "1m", "abc.token");
 
@@ -100,8 +125,7 @@ class PortfolioDataClientTest {
     @Test
     void should_omitAuthHeader_when_accessTokenIsBlank() {
         PortfolioDataClient client = buildClient();
-        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":null}"));
-        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":[]}"));
+        queueStandardResponses("{\"success\":true,\"data\":null}", "{\"success\":true,\"data\":[]}", EMPTY_POSITIONS_PAGE, "{\"success\":true,\"data\":[]}");
 
         client.fetch(1L, "1m", "   ");
 
@@ -112,8 +136,7 @@ class PortfolioDataClientTest {
     @Test
     void should_omitAuthHeader_when_accessTokenIsNull() {
         PortfolioDataClient client = buildClient();
-        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":null}"));
-        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":[]}"));
+        queueStandardResponses("{\"success\":true,\"data\":null}", "{\"success\":true,\"data\":[]}", EMPTY_POSITIONS_PAGE, "{\"success\":true,\"data\":[]}");
 
         client.fetch(1L, "1m", null);
 
@@ -122,29 +145,33 @@ class PortfolioDataClientTest {
     }
 
     @Test
-    void should_buildExpectedViewAndChartUrls_when_invoked() {
+    void should_buildExpectedUrls_when_invoked() {
         PortfolioDataClient client = buildClient();
-        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":null}"));
-        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":[]}"));
+        queueStandardResponses("{\"success\":true,\"data\":null}", "{\"success\":true,\"data\":[]}", EMPTY_POSITIONS_PAGE, "{\"success\":true,\"data\":[]}");
 
         client.fetch(99L, "6m", "tok");
 
+        assertThat(capturedRequests).hasSize(4);
         assertThat(capturedRequests.get(0).url().toString())
-                .isEqualTo("http://backend:8080/api/v1/portfolios/99/view?include=summary,positions,allocation");
+                .isEqualTo("http://backend:8080/api/v1/portfolios/99/view?include=summary,allocation");
         assertThat(capturedRequests.get(1).url().toString())
+                .isEqualTo("http://backend:8080/api/v1/portfolios/99/allocation?mode=realizedPnl");
+        assertThat(capturedRequests.get(2).url().toString())
+                .isEqualTo("http://backend:8080/api/v1/portfolios/99/positions?page=0&size=100");
+        assertThat(capturedRequests.get(3).url().toString())
                 .isEqualTo("http://backend:8080/api/v1/portfolios/99/chart?type=performance&range=6m");
     }
 
     @Test
-    void should_returnBundleWithEmptyCollections_when_viewEnvelopeIsNull() {
+    void should_returnBundleWithEmptyCollections_when_allDataNull() {
         PortfolioDataClient client = buildClient();
-        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":null}"));
-        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":[]}"));
+        queueStandardResponses("{\"success\":true,\"data\":null}", "{\"success\":true,\"data\":null}", EMPTY_POSITIONS_PAGE, "{\"success\":true,\"data\":null}");
 
         PortfolioReportBundle bundle = client.fetch(1L, "1m", "tok");
 
         assertThat(bundle.summary()).isNull();
         assertThat(bundle.allocation()).isEmpty();
+        assertThat(bundle.realizedAllocation()).isEmpty();
         assertThat(bundle.positions()).isEmpty();
         assertThat(bundle.performanceSeries()).isEmpty();
     }
@@ -152,14 +179,16 @@ class PortfolioDataClientTest {
     @Test
     void should_returnEmptyPerformanceSeries_when_perfDataIsNull() {
         PortfolioDataClient client = buildClient();
-        queuedResponses.add(jsonResponse("""
+        queueStandardResponses(
+                """
                 {"success":true,"data":{
                   "summary":{"totalValueTry":1000},
-                  "positions":{"content":[],"page":0,"size":0,"totalElements":0,"totalPages":0},
                   "allocation":[]
                 }}
-                """));
-        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":null}"));
+                """,
+                "{\"success\":true,\"data\":[]}",
+                EMPTY_POSITIONS_PAGE,
+                "{\"success\":true,\"data\":null}");
 
         PortfolioReportBundle bundle = client.fetch(1L, "1m", "tok");
 
@@ -169,17 +198,40 @@ class PortfolioDataClientTest {
     @Test
     void should_mapNullTotalValueToZero_when_performanceRecordHasNullValue() {
         PortfolioDataClient client = buildClient();
-        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":null}"));
-        queuedResponses.add(jsonResponse("""
+        queueStandardResponses(
+                "{\"success\":true,\"data\":null}",
+                "{\"success\":true,\"data\":[]}",
+                EMPTY_POSITIONS_PAGE,
+                """
                 {"success":true,"data":[
                   {"timestamp":"2026-01-01T00:00:00","totalValueTry":null}
                 ]}
-                """));
+                """);
 
         PortfolioReportBundle bundle = client.fetch(1L, "1m", "tok");
 
         assertThat(bundle.performanceSeries()).hasSize(1);
         assertThat(bundle.performanceSeries().get(0).value()).isEqualTo(0d);
+    }
+
+    @Test
+    void should_iterateAllPositionPages_when_multiplePages() {
+        PortfolioDataClient client = buildClient();
+        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":null}"));
+        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":[]}"));
+        // page 0: 2 rows, totalPages=2
+        queuedResponses.add(jsonResponse(
+                "{\"success\":true,\"data\":{\"content\":[{\"id\":1,\"assetCode\":\"A\"},{\"id\":2,\"assetCode\":\"B\"}],\"page\":0,\"size\":100,\"totalElements\":3,\"totalPages\":2}}"));
+        // page 1: 1 row, end of pagination
+        queuedResponses.add(jsonResponse(
+                "{\"success\":true,\"data\":{\"content\":[{\"id\":3,\"assetCode\":\"C\"}],\"page\":1,\"size\":100,\"totalElements\":3,\"totalPages\":2}}"));
+        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":[]}"));
+
+        PortfolioReportBundle bundle = client.fetch(1L, "1m", "tok");
+
+        assertThat(bundle.positions()).hasSize(3);
+        assertThat(capturedRequests.get(2).url().toString()).endsWith("page=0&size=100");
+        assertThat(capturedRequests.get(3).url().toString()).endsWith("page=1&size=100");
     }
 
     @Test
@@ -198,15 +250,15 @@ class PortfolioDataClientTest {
     void should_constructEnvelopeRecords_when_invokedDirectly() {
         PortfolioDataClient.ApiEnvelope<String> env = new PortfolioDataClient.ApiEnvelope<>(true, "ok", "payload");
         PortfolioDataClient.PerformanceRecord rec = new PortfolioDataClient.PerformanceRecord(
-                LocalDateTime.of(2026, 1, 1, 0, 0), new BigDecimal("1.23"));
+                LocalDateTime.of(2026, 1, 1, 0, 0), new BigDecimal("1.23"), new BigDecimal("4.56"));
         PortfolioDataClient.ViewEnvelope view = new PortfolioDataClient.ViewEnvelope(
                 new ReportSummary(BigDecimal.ONE, null, null, null, null, null, null, null, null),
-                PagedResponse.of(List.<ReportPosition>of(), 0, 0, 0L),
                 List.<ReportAllocation>of());
 
         assertThat(env.success()).isTrue();
         assertThat(env.data()).isEqualTo("payload");
         assertThat(rec.totalValueTry()).isEqualByComparingTo("1.23");
+        assertThat(rec.pnlPercent()).isEqualByComparingTo("4.56");
         assertThat(view.allocation()).isEmpty();
     }
 

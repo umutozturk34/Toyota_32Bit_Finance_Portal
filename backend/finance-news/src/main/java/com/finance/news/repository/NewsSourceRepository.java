@@ -16,6 +16,4 @@ public interface NewsSourceRepository extends JpaRepository<NewsSource, Long> {
     List<NewsSource> findAllByOrderBySortOrderAsc();
 
     Optional<NewsSource> findByNameIgnoreCase(String name);
-
-    boolean existsByNameIgnoreCase(String name);
 }

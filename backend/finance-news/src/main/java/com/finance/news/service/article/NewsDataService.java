@@ -3,9 +3,6 @@ package com.finance.news.service.article;
 import com.finance.news.service.source.NewsSourceProcessingService;
 import com.finance.news.service.source.NewsSourceService;
 
-import com.finance.news.service.article.NewsDataService;
-
-
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ExternalApiException;
 import com.finance.news.model.NewsSource;

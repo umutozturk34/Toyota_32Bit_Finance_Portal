@@ -1,8 +1,6 @@
 package com.finance.news.service.article;
 
 import com.finance.news.service.article.NewsCacheService;
-import com.finance.news.service.article.NewsQueryService;
-
 
 import com.finance.shared.dto.response.GroupCount;
 import com.finance.news.dto.response.NewsArticleDetailResponse;

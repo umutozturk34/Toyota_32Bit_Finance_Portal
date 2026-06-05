@@ -1,14 +1,12 @@
 package com.finance.news.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.finance.news.util.NewsCategoryResolver;
 import jakarta.persistence.*;
 import lombok.*;
 
 import com.finance.news.model.NewsSource;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 
 /**
  * An ingested news article. The {@code link} is unique and acts as the natural dedup key alongside
@@ -55,11 +53,6 @@ public class NewsArticle {
         return source != null ? source.getName() : null;
     }
 
-    @JsonIgnore
-    public String getSourceUrl() {
-        return source != null ? source.getUrl() : null;
-    }
-
     @Enumerated(EnumType.STRING)
     @Column(name = "category", length = 30, nullable = false)
     private NewsCategory category;
@@ -78,27 +71,4 @@ public class NewsArticle {
 
     @Column(name = "guid", length = 1024)
     private String guid;
-
-    /** Classifies and sets this article's category from its title/description, falling back to the source default. */
-    public void resolveCategory(String defaultCategory) {
-        this.category = NewsCategoryResolver.resolve(defaultCategory, this.title, this.description);
-    }
-
-    /** True when missing a publish date or older than the given age in hours. */
-    @JsonIgnore
-    public boolean isStale(int maxAgeHours) {
-        if (publishedAt == null) {
-            return true;
-        }
-        return ChronoUnit.HOURS.between(publishedAt, LocalDateTime.now()) > maxAgeHours;
-    }
-
-    /** Hours since publication, or {@code -1} when the publish date is unknown. */
-    @JsonIgnore
-    public long ageInHours() {
-        if (publishedAt == null) {
-            return -1;
-        }
-        return ChronoUnit.HOURS.between(publishedAt, LocalDateTime.now());
-    }
 }

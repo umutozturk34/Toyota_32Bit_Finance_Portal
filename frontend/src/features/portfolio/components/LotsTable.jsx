@@ -26,14 +26,20 @@ const lotDisplayValueTry = (lot) => {
   return Number.isFinite(entry) && Number.isFinite(pnl) ? entry + pnl : market;
 };
 
-export function LotsTable({ lots, t, money, bigMoney, nativeCurrency, frame, onEditLot, onSellLot, onReopenLot, onDeleteLot }) {
+// Entry notional in TRY: the backend's entryValueTry (NOT entryPrice × quantity, which is wrong for a VIOP
+// whose notional carries contract size/direction). Falls back to price × qty only when the backend omits it.
+const lotEntryValueTry = (lot) => (lot.entryValueTry != null
+  ? Number(lot.entryValueTry)
+  : Number(lot.entryPrice) * Number(lot.quantity));
+
+export function LotsTable({ lots, t, money, bigMoney, nativeCurrency, frame, convertAt, onEditLot, onSellLot, onReopenLot, onDeleteLot }) {
   const today = new Date().toLocaleDateString('sv-SE');
   // Per-lot K/Z in the display-currency frame (entry cost @ entry-date FX, value @ today/exit FX) via the
   // universal frame() — so a EUR lot reads ~0% in EUR, not the lira's +2837%. Closed lots value at exit date.
   // Cost basis uses the backend entryValueTry directly (entryPrice × quantity is WRONG for a VIOP, whose
   // entry notional ≠ price × qty once contractSize/direction apply); directionSign keeps a SHORT's K/Z right.
   const lotFrameFor = (lot) => frame(
-    lot.entryValueTry != null ? Number(lot.entryValueTry) : Number(lot.entryPrice) * Number(lot.quantity),
+    lotEntryValueTry(lot),
     Number(lot.marketValueTry),
     lot.entryDate,
     lot.exitDate || today,
@@ -41,6 +47,24 @@ export function LotsTable({ lots, t, money, bigMoney, nativeCurrency, frame, onE
     lot.pnlPercent,
     lotDirectionSign(lot),
   );
+  // Value-cell text + hover title for a lot, direction-aware AND currency-aware. For a USD/EUR frame, the
+  // equity is the per-leg frame value (entry cost @ entry-date FX + the frame's K/Z) — the SAME convention as
+  // PositionsTable and the K/Z column — NOT the TRY equity scalar converted at a single rate, which would
+  // FX the entry leg at today's rate. TRY/ORIGINAL display keeps the money() scalar path (money converts the
+  // TRY equity to the display/native currency itself).
+  const lotValueParts = (lot, lotFrame, isLotClosed) => {
+    if (lotFrame.base !== 'TRY' && convertAt) {
+      const cost = convertAt(lotEntryValueTry(lot), 'TRY', String(lot.entryDate).slice(0, 10), nativeCurrency);
+      if (cost != null) {
+        const value = money(cost + lotFrame.pnl, lotFrame.base);
+        return { text: value, title: value };
+      }
+    }
+    const title = money(lotDisplayValueTry(lot), 'TRY',
+      isLotClosed ? { dateAt: lot.exitDate, natural: nativeCurrency } : { natural: nativeCurrency });
+    const text = isLotClosed ? title : bigMoney(lotDisplayValueTry(lot));
+    return { text, title };
+  };
   return (
     <>
       <div className="flex items-center justify-between">
@@ -74,6 +98,7 @@ export function LotsTable({ lots, t, money, bigMoney, nativeCurrency, frame, onE
           const lotPnlText = lotFrame.base !== 'TRY'
             ? money(lotFrame.pnl, lotFrame.base)
             : (isLotClosed ? money(lotFrame.pnl, 'TRY', { dateAt: lot.exitDate, natural: nativeCurrency }) : bigMoney(lotFrame.pnl));
+          const lotValue = lotValueParts(lot, lotFrame, isLotClosed);
           const actions = (
             <div className="flex items-center justify-start gap-1">
               {!isLotClosed && onEditLot && (
@@ -143,8 +168,8 @@ export function LotsTable({ lots, t, money, bigMoney, nativeCurrency, frame, onE
               <span className="text-[11px] font-mono text-fg text-left truncate">
                 {money(lot.entryPrice, 'TRY', { dateAt: lot.entryDate, natural: nativeCurrency })}
               </span>
-              <span className="text-[11px] font-mono text-fg text-left truncate" title={money(lotDisplayValueTry(lot), 'TRY', isLotClosed ? { dateAt: lot.exitDate, natural: nativeCurrency } : { natural: nativeCurrency })}>
-                {isLotClosed ? money(lotDisplayValueTry(lot), 'TRY', { dateAt: lot.exitDate, natural: nativeCurrency }) : bigMoney(lotDisplayValueTry(lot))}
+              <span className="text-[11px] font-mono text-fg text-left truncate" title={lotValue.title}>
+                {lotValue.text}
               </span>
               <div className="text-left min-w-0">
                 <p className={`text-[11px] font-mono font-semibold ${changeColors[lotPnlClass]} truncate`} title={lotPnlText}>
@@ -165,6 +190,7 @@ export function LotsTable({ lots, t, money, bigMoney, nativeCurrency, frame, onE
           const lotPnlText = lotFrame.base !== 'TRY'
             ? money(lotFrame.pnl, lotFrame.base)
             : (isLotClosed ? money(lotFrame.pnl, 'TRY', { dateAt: lot.exitDate, natural: nativeCurrency }) : bigMoney(lotFrame.pnl));
+          const lotValue = lotValueParts(lot, lotFrame, isLotClosed);
           return (
             <motion.div
               key={`m-${lot.id}`}
@@ -237,7 +263,7 @@ export function LotsTable({ lots, t, money, bigMoney, nativeCurrency, frame, onE
                 </div>
                 <div className="rounded-md bg-bg-base/60 px-2 py-1.5">
                   <p className="text-fg-muted text-[10px]">{t('portfolio.positions.marketValueCol')}</p>
-                  <p className="font-mono text-fg truncate" title={money(lotDisplayValueTry(lot), 'TRY', isLotClosed ? { dateAt: lot.exitDate, natural: nativeCurrency } : { natural: nativeCurrency })}>{isLotClosed ? money(lotDisplayValueTry(lot), 'TRY', { dateAt: lot.exitDate, natural: nativeCurrency }) : bigMoney(lotDisplayValueTry(lot))}</p>
+                  <p className="font-mono text-fg truncate" title={lotValue.title}>{lotValue.text}</p>
                 </div>
                 <div className="rounded-md bg-bg-base/60 px-2 py-1.5">
                   <p className="text-fg-muted text-[10px]">{t('portfolio.positions.pnlCol')}</p>

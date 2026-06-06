@@ -397,6 +397,7 @@ function DirectionPanel({
             bigMoney={bigMoney}
             nativeCurrency={nativeCurrency}
             frame={frame}
+            convertAt={convertAt}
             onEditLot={onEditLot}
             onSellLot={onSellLot}
             onReopenLot={onReopenLot}

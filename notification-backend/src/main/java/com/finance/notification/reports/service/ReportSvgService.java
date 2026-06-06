@@ -105,7 +105,7 @@ public class ReportSvgService {
                     .append("\" stroke-dasharray=\"2,4\" stroke-width=\"0.6\"/>");
             svg.append("<text x=\"").append(PAD_LEFT - 8).append("\" y=\"").append(fmt(y + 3))
                     .append("\" text-anchor=\"end\" fill=\"").append(palette.subtle())
-                    .append("\" font-size=\"9\" font-family=\"'IBM Plex Mono', monospace\">")
+                    .append("\" font-size=\"9\" font-family=\"'Fira Code', monospace\">")
                     .append(formatTickValue(tickV, symbol)).append("</text>");
         }
 
@@ -126,7 +126,7 @@ public class ReportSvgService {
             prevXLabel = label;
             svg.append("<text x=\"").append(fmt(x)).append("\" y=\"").append(H - PAD_BOTTOM + 18)
                     .append("\" text-anchor=\"middle\" fill=\"").append(palette.subtle())
-                    .append("\" font-size=\"9\" font-family=\"'IBM Plex Mono', monospace\">")
+                    .append("\" font-size=\"9\" font-family=\"'Fira Code', monospace\">")
                     .append(label).append("</text>");
         }
 
@@ -225,7 +225,7 @@ public class ReportSvgService {
         if (nonZeroCount == 1) {
             svg.append("<text x=\"").append(fmt(cx)).append("\" y=\"").append(fmt(cy + 5))
                     .append("\" text-anchor=\"middle\" fill=\"").append(palette.fg())
-                    .append("\" font-size=\"18\" font-weight=\"700\" font-family=\"'IBM Plex Sans', sans-serif\">100%</text>");
+                    .append("\" font-size=\"18\" font-weight=\"700\" font-family=\"'Lato', sans-serif\">100%</text>");
         } else {
             angle = -Math.PI / 2.0;
             for (int i = 0; i < items.size(); i++) {
@@ -239,7 +239,7 @@ public class ReportSvgService {
                     double ty = cy + labelRadius * Math.sin(mid);
                     svg.append("<text x=\"").append(fmt(tx)).append("\" y=\"").append(fmt(ty + 3))
                             .append("\" text-anchor=\"middle\" fill=\"#ffffff\"")
-                            .append(" font-size=\"9\" font-weight=\"700\" font-family=\"'IBM Plex Sans', sans-serif\">")
+                            .append(" font-size=\"9\" font-weight=\"700\" font-family=\"'Lato', sans-serif\">")
                             .append(pct).append("</text>");
                 } else if (realFracs[i] > 0) {
                     double leaderInnerX = cx + (rOuter - 1) * Math.cos(mid);
@@ -255,7 +255,7 @@ public class ReportSvgService {
                             .append("\" stroke=\"").append(palette.muted()).append("\" stroke-width=\"0.6\"/>");
                     svg.append("<text x=\"").append(fmt(textX)).append("\" y=\"").append(fmt(textY))
                             .append("\" text-anchor=\"").append(anchor).append("\" fill=\"").append(palette.fg())
-                            .append("\" font-size=\"8\" font-weight=\"600\" font-family=\"'IBM Plex Sans', sans-serif\">")
+                            .append("\" font-size=\"8\" font-weight=\"600\" font-family=\"'Lato', sans-serif\">")
                             .append(pct).append("</text>");
                 }
                 angle = next;

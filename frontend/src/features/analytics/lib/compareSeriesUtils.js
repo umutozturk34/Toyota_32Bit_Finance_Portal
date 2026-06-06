@@ -256,9 +256,12 @@ export function forwardFillDaily(points, fromIso, toIso) {
       currentPoint = sorted[idx];
       idx += 1;
     }
-    const exact = sorted.find((p) => p.date === cursorIso);
-    if (exact) {
-      result.push(exact);
+    // currentPoint is the latest real point with date <= cursorIso (the idx-walk above advances it),
+    // so when its date equals the cursor it IS that day's real point — no need to rescan `sorted` for
+    // an exact match. The old per-day .find() made this O(days × points): on the ALL range a 1995→now
+    // series ran ~11k days × ~11k points ≈ 120M scans PER series, the multi-second freeze.
+    if (currentPoint !== null && currentPoint.date === cursorIso) {
+      result.push(currentPoint);
     } else if (currentPoint !== null) {
       // Spread the carried point so extra fields (e.g. the portfolio's pnlTry) survive the fill.
       result.push({ ...currentPoint, date: cursorIso, value: currentPoint.value, _filled: true });

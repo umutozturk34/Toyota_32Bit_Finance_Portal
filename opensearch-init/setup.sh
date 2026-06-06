@@ -144,7 +144,7 @@ os_api -X PUT "$OS_URL/_index_template/finance-logs-template" \
         "severity":        { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
         "body":            { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
         "serviceName":     { "type": "keyword" },
-        "logger":          { "type": "keyword" },
+        "logger":          { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
         "thread":          { "type": "keyword" },
         "exception":       { "type": "text" }
       }
@@ -334,7 +334,7 @@ os_api -X PUT "$OS_URL/_index_template/notification-logs-template" \
         "severity":        { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
         "body":            { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
         "serviceName":     { "type": "keyword" },
-        "logger":          { "type": "keyword" },
+        "logger":          { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
         "thread":          { "type": "keyword" },
         "exception":       { "type": "text" }
       }
@@ -669,7 +669,7 @@ dash_line() {
 
   # N5.1 Notification Domain - by Logger (PriceAlertEvaluator/WatchlistEvaluator/NotificationDispatcher)
   viz_legacy_horizontal_bar "viz-notif-domain-types" "Notification Domain - By Logger" \
-    "notification-logs" "logger" "count" "" 15 "Events"
+    "notification-logs" "logger.keyword" "count" "" 15 "Events"
 
   # N5.2 Notification Domain - Top Events from Logs
   viz_legacy_horizontal_bar "viz-notif-domain-events" "Notification Domain - Top Events" \

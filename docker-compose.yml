@@ -385,6 +385,8 @@ services:
         condition: service_healthy
       opensearch:
         condition: service_started
+      opensearch-init:
+        condition: service_completed_successfully
     networks:
       - finance-network
 
@@ -406,7 +408,10 @@ services:
     networks:
       - finance-network
     depends_on:
-      - opensearch
+      opensearch:
+        condition: service_started
+      opensearch-init:
+        condition: service_completed_successfully
 
   # --- OpenSearch Init (ISM + Dashboards) ---
   opensearch-init:

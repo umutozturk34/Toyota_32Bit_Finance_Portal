@@ -141,15 +141,24 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency, commo
 
   const totalPoints = series.reduce((acc, s) => acc + (s.data?.length || 0), 0);
   const showZoom = totalPoints >= 2;
+  // Entry animation is the dominant jank on heavy compares: 6 assets × ~30y ≈ tens of thousands of
+  // points animated over 1.1s with a staggered delay froze the chart. lttb sampling already trims what
+  // is DRAWN, but ECharts still animates the sampled set per frame. So animate only light compares (the
+  // "few assets / short range" case stays smooth and pretty); render heavy ones instantly.
+  const animate = totalPoints <= 3000;
   series.forEach((s, idx) => {
-    s.animationDuration = 1100;
-    s.animationEasing = 'cubicOut';
-    s.animationDelay = idx * 180;
+    if (animate) {
+      s.animationDuration = 1100;
+      s.animationEasing = 'cubicOut';
+      s.animationDelay = idx * 180;
+    } else {
+      s.animationDuration = 0;
+    }
   });
 
   return {
     backgroundColor: 'transparent',
-    animation: true,
+    animation: animate,
     animationThreshold: 100000,
     grid: { left: 8, right: 12, top: single ? 16 : 32, bottom: showZoom ? 64 : 32, containLabel: true },
     legend: !single ? {

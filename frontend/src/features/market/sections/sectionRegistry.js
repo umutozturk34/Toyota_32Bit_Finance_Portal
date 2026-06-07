@@ -1,15 +1,16 @@
-import { Layers, TrendingUp, Newspaper, Bookmark, Trophy } from 'lucide-react';
+import { LayoutGrid, TrendingUp, Newspaper, Bookmark, Trophy, Coins } from 'lucide-react';
 import AssetCardsSection from './AssetCardsSection';
 import MoversSection from './MoversSection';
 import NewsSection from './NewsSection';
 import WatchlistSection from './WatchlistSection';
 import BeatersSection from './BeatersSection';
+import ReturnsSection from './ReturnsSection';
 
 export const SECTION_DEFINITIONS = Object.freeze({
   ASSET_CARDS: {
     labelKey: 'sectionRegistry.ASSET_CARDS.label',
     descriptionKey: 'sectionRegistry.ASSET_CARDS.description',
-    Icon: Layers,
+    Icon: LayoutGrid,
     Component: AssetCardsSection,
     configurable: true,
     multiInstance: true,
@@ -43,6 +44,14 @@ export const SECTION_DEFINITIONS = Object.freeze({
     descriptionKey: 'sectionRegistry.BENCHMARK_BEATERS.description',
     Icon: Trophy,
     Component: BeatersSection,
+    configurable: true,
+    multiInstance: true,
+  },
+  ASSET_RETURNS: {
+    labelKey: 'sectionRegistry.ASSET_RETURNS.label',
+    descriptionKey: 'sectionRegistry.ASSET_RETURNS.description',
+    Icon: Coins,
+    Component: ReturnsSection,
     configurable: true,
     multiInstance: true,
   },

@@ -43,3 +43,9 @@ export const PERIODS = [
   { id: '3Y', labelKey: 'periodThreeYears' },
   { id: '5Y', labelKey: 'periodFiveYears' },
 ];
+
+// Asset-returns windows — same as PERIODS plus a 1-week bucket (the returns view reports a short window too).
+export const RETURN_PERIODS = [
+  { id: '1W', labelKey: 'periodOneWeek' },
+  ...PERIODS,
+];

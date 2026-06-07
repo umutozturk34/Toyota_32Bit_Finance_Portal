@@ -270,6 +270,10 @@
     "BENCHMARK_BEATERS": {
       "label": "Benchmark Beaters",
       "description": "Instruments ranked by how well they beat your chosen benchmark"
+    },
+    "ASSET_RETURNS": {
+      "label": "Returns",
+      "description": "Spot assets ranked by their TRY return"
     }
   },
   "widgetSettings": {
@@ -323,7 +327,34 @@
     "beatersSortDir": "Sort",
     "beatersSortDesc": "Best → worst",
     "beatersSortAsc": "Worst → best",
-    "beatersLimit": "List length"
+    "beatersLimit": "List length",
+    "returnsHeader": "Returns ranking",
+    "returnsPeriod": "Period",
+    "returnsCurrency": "Currency",
+    "returnsSortBy": "Sort by",
+    "returnsSortValues": {
+      "RETURN": "Return",
+      "RISK_ADJ": "Risk-adjusted",
+      "VOLATILITY": "Volatility"
+    },
+    "returnsSortDir": "Direction",
+    "returnsSortDesc": "High → low",
+    "returnsSortAsc": "Low → high",
+    "returnsAssetType": "Asset type",
+    "returnsTypeValues": {
+      "SPOT": "Stock",
+      "CRYPTO": "Crypto",
+      "FOREX": "Forex",
+      "FUND": "Fund",
+      "COMMODITY": "Commodity"
+    },
+    "returnsRisk": "Risk",
+    "returnsRiskValues": {
+      "LOW": "Low",
+      "MEDIUM": "Medium",
+      "HIGH": "High"
+    },
+    "returnsLimit": "List length"
   },
   "overviewPages": {
     "addPage": "New page",
@@ -338,6 +369,7 @@
     "watchlistTab": "Watchlist",
     "newsTile": "News",
     "beatersTile": "Benchmark Beaters",
+    "returnsTile": "Returns",
     "newAssetCard": "New asset card",
     "addNewCard": "+ New asset card",
     "queueLabel": "next: {{label}}",
@@ -373,6 +405,14 @@
     "empty": "No data yet",
     "viewAll": "View all",
     "excessTooltip": "Excess over benchmark"
+  },
+  "returnsSection": {
+    "title": "Returns",
+    "tryOnly": "TRY return",
+    "currencyReturn": "{{ccy}} return",
+    "empty": "Preparing…",
+    "viewAll": "View all",
+    "volatilityTooltip": "Annualized volatility (σ)"
   },
   "datePicker": {
     "placeholder": "Pick a date",
@@ -854,6 +894,8 @@
       },
       "dayBadge": "today",
       "return1yLabel": "1Y",
+      "returnLabel": "Return",
+      "ytdShort": "YTD",
       "rankLabel": "Category rank",
       "filterCategoryLabel": "Category",
       "filterRiskLabel": "Risk",
@@ -1274,6 +1316,7 @@
     "tabOverview": "Overview",
     "tabRates": "Bank Rates",
     "tabMacro": "Indicators",
+    "tabReturns": "Returns",
     "macro": {
       "loading": "Loading indicators...",
       "error": "Failed to load indicators",
@@ -2265,12 +2308,12 @@
     "noMatch": "No match",
     "nominalReturn": "Nominal",
     "nominalReturnTooltip": "Absolute percentage change (not inflation-adjusted)",
-    "normalizedHintCompare": "Multiple series — normalized as % change from start",
+    "normalizedHintCompare": "Each series indexed to 100,000 at the start (what 100,000 invested would be worth today)",
     "normalizedHintCompareIndex": "Macro series — indexed to 100 at start",
     "compareLevel": "Level",
     "compareCumulative": "Cumulative",
     "levelHintCompare": "Showing rate level — switch to \"Cumulative\" for cumulative growth",
-    "partial": "partial",
+    "partial": "Partial",
     "partialHint": "Data does not fully span the selected window — partial, not directly comparable",
     "openInCompare": "Open in Compare",
     "period": "Period",
@@ -2288,6 +2331,9 @@
     "simulationError": "Simulation failed",
     "startDate": "Start",
     "typeFilter": "Type",
+    "sortBy": "Sort by",
+    "rankOrder": "Rank",
+    "reset": "Reset",
     "verdict": "Verdict",
     "verdictFilter": "Status",
     "verdict_all": "All",
@@ -2304,6 +2350,7 @@
     "instrumentBond": "Bond",
     "instrumentMacro": "Macro",
     "instrumentDeposit": "Deposit",
+    "periodOneWeek": "1W",
     "periodOneMonth": "1M",
     "periodThreeMonths": "3M",
     "periodSixMonths": "6M",
@@ -2329,6 +2376,39 @@
       "eurTry": "EUR/TRY",
       "gold": "Gold",
       "silver": "Silver"
+    },
+    "returns": {
+      "title": "Asset Returns",
+      "subtitle": "Return ranking of spot assets over the selected window — bonds and VIOP excluded.",
+      "tryOnly": "All returns are TRY-based — the display currency doesn't affect them",
+      "currencyLabel": "Currency",
+      "currencyHint": "Returns are shown in your chosen currency; each date is converted at its own day's FX rate. It starts from your global currency preference and you can change it freely here.",
+      "preparing": "Returns are being prepared — market data is loading, ready shortly.",
+      "price": "Price",
+      "return": "Return",
+      "deltaTry": "₺ Change",
+      "risk": "Risk",
+      "volatility": "Volatility",
+      "riskLow": "Low",
+      "riskMedium": "Medium",
+      "riskHigh": "High",
+      "riskInfo": "Annualized volatility — std. dev. of daily returns in the selected window × √252. Low <25% · Medium 25–55% · High >55%.",
+      "usageHint": "Click a metric chip to sort, click it again to flip direction (↑/↓). Narrow with the Type and Risk chips. Risk = how much the price swings — annualized volatility (σ): low < 25%, medium 25–55%, high > 55%.",
+      "partialHint": "The asset's history doesn't reach the start of this window — shorter span",
+      "topGainer": "Top Gainer",
+      "topLoser": "Top Loser",
+      "assetCount": "Assets",
+      "gainers": "Positive",
+      "losers": "Negative",
+      "profitLoss": "Profit / Loss",
+      "openDetail": "Open detail",
+      "sortBy": "Sort by",
+      "sortDir": "Sort direction",
+      "highToLow": "High → Low",
+      "lowToHigh": "Low → High",
+      "riskAdjusted": "Risk-adjusted",
+      "riskAdjustedInfo": "Return ÷ volatility — high return for low risk rises to the top.",
+      "reset": "Reset"
     }
   },
   "pdf": {

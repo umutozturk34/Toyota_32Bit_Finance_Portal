@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, LayoutGrid, Save, RotateCcw, ToggleRight, ToggleLeft, ChevronUp, ChevronDown, Banknote, BarChart3 } from 'lucide-react';
+import { Activity, Gauge, LayoutGrid, Save, RotateCcw, ToggleRight, ToggleLeft, ChevronUp, ChevronDown, Banknote, BarChart3, Coins } from 'lucide-react';
 import BankRatesPanel from '../bankRates/BankRatesPanel';
 import MacroIndicatorsPanel from '../macro/MacroIndicatorsPanel';
+import ReturnsPage from '../analytics/pages/ReturnsPage';
 import { RefreshCw } from '../../shared/components/feedback/AnimatedIcons';
 import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
@@ -37,6 +38,18 @@ export default function MarketDataPage() {
   const { isLoading: dataLoading, error, refetch, isFetching, widgets } = useMarketOverview(activePageId);
   const { data: watchlists = [] } = useWatchlists({ enabled: editMode });
 
+  // Widget edit only applies to the Overview canvas. Switching to a panel tab (Kurlar / Göstergeler /
+  // Getiriler) exits edit mode so its toolbar/tray don't linger over a non-canvas tab — but unsaved
+  // arrangement changes are persisted on the way out (not discarded), so widgets keep their positions
+  // instead of snapping back to the last saved layout.
+  const selectTab = (id) => {
+    if (id !== 'overview' && editMode) {
+      if (isDirty) saveAndExit();
+      else discardAndExit();
+    }
+    setActiveTab(id);
+  };
+
   if (layoutLoading || defsLoading) return <LoadingState message={t('marketOverview.loading')} />;
   if (defsError || layoutError || !layout || widgetDefsByKind.size === 0) {
     return <ErrorState message={t('marketOverview.error')} onRetry={() => { refetch(); refetchDefs(); refetchLayout(); }} />;
@@ -50,7 +63,11 @@ export default function MarketDataPage() {
     : null;
 
   const header = (
-    <div className="flex items-center justify-between gap-3 flex-wrap">
+    <div className="space-y-3">
+      {/* Row 1 (title + edit controls + search) reflows freely; the tab bar lives on its OWN row below so
+          it stays in a FIXED position whether or not the overview-only edit controls are present — removing
+          them used to change this row's flex-wrap and make the tab bar jump. */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
       <div className="flex items-center gap-2.5 min-w-0">
         <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-accent text-white shadow-lg shadow-accent/25 shrink-0">
           <Activity className="h-4 w-4" />
@@ -95,6 +112,7 @@ export default function MarketDataPage() {
           </div>
         </div>
       </div>
+      {activeTab === 'overview' && (
       <div className="flex items-center gap-1.5 flex-wrap">
         {updateLayout.isPending && (
           <span className="flex items-center gap-1 font-mono text-[10px] tracking-wider uppercase text-accent/80">
@@ -202,20 +220,22 @@ export default function MarketDataPage() {
           {t('marketOverview.gallery')}
         </button>
       </div>
+      )}
       <div data-tour="market-search" className="w-full max-w-md"><SearchSuggestions variant="hero" placeholder={t('marketOverview.searchPlaceholder')} /></div>
+      </div>
       <div data-tour="market-tabs" className="inline-flex items-center gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 self-start max-w-full overflow-x-auto" style={{ willChange: 'backdrop-filter', transform: 'translate3d(0,0,0)' }}>
         <button
-          onClick={() => setActiveTab('overview')}
+          onClick={() => selectTab('overview')}
           data-tour="market-overview-tab"
           className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'overview' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
           }`}
         >
-          <Activity className="h-3.5 w-3.5" />
+          <Gauge className="h-3.5 w-3.5" />
           {t('marketOverview.tabOverview', 'Genel Bakış')}
         </button>
         <button
-          onClick={() => setActiveTab('rates')}
+          onClick={() => selectTab('rates')}
           data-tour="market-rates-tab"
           className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'rates' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
@@ -225,7 +245,7 @@ export default function MarketDataPage() {
           {t('marketOverview.tabRates', 'Kurlar')}
         </button>
         <button
-          onClick={() => setActiveTab('macro')}
+          onClick={() => selectTab('macro')}
           data-tour="market-macro-tab"
           className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'macro' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
@@ -233,6 +253,16 @@ export default function MarketDataPage() {
         >
           <BarChart3 className="h-3.5 w-3.5" />
           {t('marketOverview.tabMacro', 'Göstergeler')}
+        </button>
+        <button
+          onClick={() => selectTab('returns')}
+          data-tour="market-returns-tab"
+          className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer shrink-0 whitespace-nowrap ${
+            activeTab === 'returns' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
+          }`}
+        >
+          <Coins className="h-3.5 w-3.5" />
+          {t('marketOverview.tabReturns', 'Getiriler')}
         </button>
       </div>
     </div>
@@ -268,6 +298,8 @@ export default function MarketDataPage() {
     ? <div data-tour="market-rates-content"><BankRatesPanel /></div>
     : activeTab === 'macro'
     ? <div data-tour="market-macro-content"><MacroIndicatorsPanel /></div>
+    : activeTab === 'returns'
+    ? <div data-tour="market-returns-content"><ReturnsPage /></div>
     : (
       <MarketCanvas
         sections={sections}

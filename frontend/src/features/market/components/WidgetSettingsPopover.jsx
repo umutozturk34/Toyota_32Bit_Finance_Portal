@@ -7,6 +7,7 @@ import NewsConfigSection from './widget-config/NewsConfigSection';
 import WatchlistConfigSection from './widget-config/WatchlistConfigSection';
 import AssetCardsConfigSection from './widget-config/AssetCardsConfigSection';
 import BenchmarkBeatersConfigSection from './widget-config/BenchmarkBeatersConfigSection';
+import ReturnsConfigSection from './widget-config/ReturnsConfigSection';
 
 const POPOVER_WIDTH = 400;
 const POPOVER_MAX_HEIGHT = 460;
@@ -113,6 +114,7 @@ export default function WidgetSettingsPopover({ anchorEl, kind, config, autoFocu
         {kind === 'WATCHLIST' && <WatchlistConfigSection config={config} onChange={onChange} />}
         {kind === 'ASSET_CARDS' && <AssetCardsConfigSection config={config} onChange={onChange} autoFocusName={autoFocusName} defaultItems={defaultItems} />}
         {kind === 'BENCHMARK_BEATERS' && <BenchmarkBeatersConfigSection config={config} onChange={onChange} />}
+        {kind === 'ASSET_RETURNS' && <ReturnsConfigSection config={config} onChange={onChange} />}
       </div>
       <div className="shrink-0 flex items-center justify-end gap-2 px-3 py-2 border-t border-border-default/60 bg-bg-deep/30 rounded-b-xl">
         <button

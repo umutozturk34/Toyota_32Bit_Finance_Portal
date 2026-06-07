@@ -18,6 +18,13 @@ export const analyticsService = {
     return res.data.data;
   },
 
+  // Realized TRY returns for every spot asset across all windows — TRY-only (the display currency is
+  // irrelevant), computed and cached server-side. No params: one dataset, the client filters/ranks it.
+  assetReturns: async () => {
+    const res = await api.get(`${BASE}/returns`);
+    return res.data.data;
+  },
+
   portfolioSeries: async (portfolioId, { from, to }, mode = 'pnl') => {
     // mode 'twr' → capital-weighted cumulative-return index (the compare % line; matches the portfolio's
     // headline return, comparable to inflation); 'pnl' → cumulative profit/loss in TRY (the Kâr/Zarar Total

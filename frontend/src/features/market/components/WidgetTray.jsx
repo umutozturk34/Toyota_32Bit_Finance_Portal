@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
-import { Layers, TrendingUp, Bookmark, Newspaper, Check, Plus, ChevronRight, Bitcoin, Banknote, Wheat, Trophy } from 'lucide-react';
+import { Layers, LayoutGrid, TrendingUp, Bookmark, Newspaper, Check, Plus, ChevronRight, Bitcoin, Banknote, Briefcase, Trophy, Coins } from 'lucide-react';
 import { GiGoldBar } from 'react-icons/gi';
 import { useWidgetDefinitions } from '../../../shared/hooks/useWidgetDefinitions';
 import { localizeWatchlistName } from '../../../shared/utils/watchlistName';
@@ -34,10 +34,11 @@ const SINGLETON_TILE_BASES = [
   { id: 'tile-movers-stock', kind: 'MOVERS', labelKey: 'widgetTray.movers.STOCK', config: { market: 'STOCK' }, accent: '#10b981', Icon: TrendingUp },
   { id: 'tile-movers-crypto', kind: 'MOVERS', labelKey: 'widgetTray.movers.CRYPTO', config: { market: 'CRYPTO' }, accent: '#f59e0b', Icon: Bitcoin },
   { id: 'tile-movers-forex', kind: 'MOVERS', labelKey: 'widgetTray.movers.FOREX', config: { market: 'FOREX' }, accent: '#3b82f6', Icon: Banknote },
-  { id: 'tile-movers-fund', kind: 'MOVERS', labelKey: 'widgetTray.movers.FUND', config: { market: 'FUND' }, accent: '#8b5cf6', Icon: Wheat },
+  { id: 'tile-movers-fund', kind: 'MOVERS', labelKey: 'widgetTray.movers.FUND', config: { market: 'FUND' }, accent: '#8b5cf6', Icon: Briefcase },
   { id: 'tile-movers-commodity', kind: 'MOVERS', labelKey: 'widgetTray.movers.COMMODITY', config: { market: 'COMMODITY' }, accent: '#f97316', Icon: GiGoldBar },
   { id: 'tile-news', kind: 'NEWS', labelKey: 'widgetTray.newsTile', config: {}, accent: '#06b6d4', Icon: Newspaper },
   { id: 'tile-benchmark-beaters', kind: 'BENCHMARK_BEATERS', labelKey: 'widgetTray.beatersTile', config: {}, accent: '#facc15', Icon: Trophy },
+  { id: 'tile-asset-returns', kind: 'ASSET_RETURNS', labelKey: 'widgetTray.returnsTile', config: {}, accent: '#14b8a6', Icon: Coins },
 ];
 
 const ASSET_CARDS_TILE_BASE = {
@@ -46,7 +47,7 @@ const ASSET_CARDS_TILE_BASE = {
   labelKey: 'widgetTray.newAssetCard',
   config: {},
   accent: '#6366f1',
-  Icon: Layers,
+  Icon: LayoutGrid,
 };
 
 function withSize(base, byKind) {

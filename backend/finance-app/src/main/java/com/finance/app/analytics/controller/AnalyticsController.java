@@ -2,8 +2,10 @@ package com.finance.app.analytics.controller;
 
 import com.finance.app.analytics.dto.HistoryPoint;
 import com.finance.app.analytics.dto.request.ScenarioRequest;
+import com.finance.app.analytics.dto.response.AssetReturnsResponse;
 import com.finance.app.analytics.dto.response.InflationBeaterResponse;
 import com.finance.app.analytics.dto.response.ScenarioResponse;
+import com.finance.app.analytics.service.AssetReturnsService;
 import com.finance.app.analytics.service.InflationBeaterService;
 import com.finance.app.analytics.service.PortfolioSeriesProvider;
 import com.finance.app.analytics.service.ScenarioService;
@@ -39,6 +41,7 @@ public class AnalyticsController {
 
     private final ScenarioService scenarioService;
     private final InflationBeaterService inflationBeaterService;
+    private final AssetReturnsService assetReturnsService;
     private final PortfolioSeriesProvider portfolioSeriesProvider;
     private final Translator translator;
 
@@ -60,6 +63,13 @@ public class AnalyticsController {
             @RequestParam(required = false) String targetCurrency) {
         return ApiResponse.success(translator.translate("api.analytics.inflationBeatersComputed"),
                 inflationBeaterService.rank(period, benchmark, targetCurrency));
+    }
+
+    @GetMapping("/returns")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<AssetReturnsResponse> assetReturns() {
+        return ApiResponse.success(translator.translate("api.analytics.assetReturnsRetrieved"),
+                assetReturnsService.getReturns());
     }
 
     @GetMapping("/portfolio-series/{portfolioId}")

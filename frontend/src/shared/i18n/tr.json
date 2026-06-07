@@ -270,6 +270,10 @@
     "BENCHMARK_BEATERS": {
       "label": "Gösterge Sıralaması",
       "description": "Seçilen göstergeyi yenen enstrümanlar"
+    },
+    "ASSET_RETURNS": {
+      "label": "Getiriler",
+      "description": "Spot varlıkların TRY getiri sıralaması"
     }
   },
   "widgetSettings": {
@@ -323,7 +327,34 @@
     "beatersSortDir": "Sıralama",
     "beatersSortDesc": "En iyi → en kötü",
     "beatersSortAsc": "En kötü → en iyi",
-    "beatersLimit": "Liste uzunluğu"
+    "beatersLimit": "Liste uzunluğu",
+    "returnsHeader": "Getiri Sıralaması",
+    "returnsPeriod": "Dönem",
+    "returnsCurrency": "Para birimi",
+    "returnsSortBy": "Sırala",
+    "returnsSortValues": {
+      "RETURN": "Getiri",
+      "RISK_ADJ": "Riske göre",
+      "VOLATILITY": "Volatilite"
+    },
+    "returnsSortDir": "Yön",
+    "returnsSortDesc": "Yüksekten",
+    "returnsSortAsc": "Düşükten",
+    "returnsAssetType": "Varlık tipi",
+    "returnsTypeValues": {
+      "SPOT": "Hisse",
+      "CRYPTO": "Kripto",
+      "FOREX": "Döviz",
+      "FUND": "Fon",
+      "COMMODITY": "Emtia"
+    },
+    "returnsRisk": "Risk",
+    "returnsRiskValues": {
+      "LOW": "Düşük",
+      "MEDIUM": "Orta",
+      "HIGH": "Yüksek"
+    },
+    "returnsLimit": "Liste uzunluğu"
   },
   "overviewPages": {
     "addPage": "Yeni sayfa",
@@ -338,6 +369,7 @@
     "watchlistTab": "Takip Listesi",
     "newsTile": "Haberler",
     "beatersTile": "Gösterge Sıralaması",
+    "returnsTile": "Getiriler",
     "newAssetCard": "Yeni Asset Kartı",
     "addNewCard": "+ Yeni Asset Kartı",
     "queueLabel": "sırada: {{label}}",
@@ -373,6 +405,14 @@
     "empty": "Henüz veri yok",
     "viewAll": "Tümünü gör",
     "excessTooltip": "Gösterge üzeri getiri (nominal − gösterge)"
+  },
+  "returnsSection": {
+    "title": "Getiriler",
+    "tryOnly": "TRY getiri",
+    "currencyReturn": "{{ccy}} getiri",
+    "empty": "Hazırlanıyor…",
+    "viewAll": "Tümünü gör",
+    "volatilityTooltip": "Yıllık volatilite (σ)"
   },
   "datePicker": {
     "placeholder": "Tarih seçin",
@@ -854,6 +894,8 @@
       },
       "dayBadge": "bugün",
       "return1yLabel": "1 yıl",
+      "returnLabel": "Getiri",
+      "ytdShort": "YBB",
       "rankLabel": "Kategori sırası",
       "filterCategoryLabel": "Kategori",
       "filterRiskLabel": "Risk",
@@ -1274,6 +1316,7 @@
     "tabOverview": "Genel Bakış",
     "tabRates": "Kurlar",
     "tabMacro": "Göstergeler",
+    "tabReturns": "Getiriler",
     "macro": {
       "loading": "Göstergeler yükleniyor...",
       "error": "Göstergeler alınamadı",
@@ -2265,12 +2308,12 @@
     "noMatch": "Eşleşme yok",
     "nominalReturn": "Nominal",
     "nominalReturnTooltip": "Mutlak yüzde değişim (enflasyon/faiz ayarsız)",
-    "normalizedHintCompare": "Çoklu seri — başlangıçtan % değişim olarak normalize edildi",
+    "normalizedHintCompare": "Her seri başlangıçta 100.000'e endekslendi (100.000 yatırılsaydı bugün ne olurdu)",
     "normalizedHintCompareIndex": "Makro seriler — başlangıçta 100'e endekslendi",
     "compareLevel": "Seviye",
     "compareCumulative": "Kümülatif",
     "levelHintCompare": "Oran seviyesi gösteriliyor — kümülatif büyüme için \"Kümülatif\"e geç",
-    "partial": "kısmi",
+    "partial": "Kısmi",
     "partialHint": "Veri seçili aralığı tam kapsamıyor — kısmi pencere, doğrudan kıyaslanamaz",
     "openInCompare": "Karşılaştırmada aç",
     "period": "Dönem",
@@ -2288,6 +2331,9 @@
     "simulationError": "Simülasyon başarısız",
     "startDate": "Başlangıç",
     "typeFilter": "Tip",
+    "sortBy": "Sırala",
+    "rankOrder": "Sıra",
+    "reset": "Sıfırla",
     "verdict": "Sonuç",
     "verdictFilter": "Durum",
     "verdict_all": "Tümü",
@@ -2304,6 +2350,7 @@
     "instrumentBond": "Bono",
     "instrumentMacro": "Makro",
     "instrumentDeposit": "Mevduat",
+    "periodOneWeek": "1H",
     "periodOneMonth": "1A",
     "periodThreeMonths": "3A",
     "periodSixMonths": "6A",
@@ -2329,6 +2376,39 @@
       "eurTry": "EUR/TRY",
       "gold": "Altın",
       "silver": "Gümüş"
+    },
+    "returns": {
+      "title": "Varlık Getirileri",
+      "subtitle": "Spot varlıkların seçili dönemdeki getiri sıralaması — tahvil ve VİOP hariç.",
+      "tryOnly": "Tüm getiriler TRY bazlı — para birimi seçimi etkilemez",
+      "currencyLabel": "Para birimi",
+      "currencyHint": "Getiriler seçtiğin para biriminde; her tarih kendi günündeki kurla çevrilir. Varsayılan genel para birimi tercihinden gelir, burada serbestçe değiştirebilirsin.",
+      "preparing": "Getiriler hazırlanıyor — piyasa verisi yükleniyor, birazdan hazır.",
+      "price": "Fiyat",
+      "return": "Getiri",
+      "deltaTry": "₺ Değişim",
+      "risk": "Risk",
+      "volatility": "Volatilite",
+      "riskLow": "Düşük",
+      "riskMedium": "Orta",
+      "riskHigh": "Yüksek",
+      "riskInfo": "Yıllık volatilite — seçili penceredeki günlük getirilerin standart sapması × √252. Düşük <%25 · Orta %25–55 · Yüksek >%55.",
+      "usageHint": "Bir ölçüt çipine tıkla sırala, aynı çipe tekrar tıkla yönü çevir (↑/↓). Tip ve Risk çipleriyle süz. Risk = fiyatın ne kadar oynadığı — yıllık volatilite (σ): düşük < %25, orta %25–55, yüksek > %55.",
+      "partialHint": "Varlığın geçmişi bu dönemin başına ulaşmıyor — daha kısa pencere",
+      "topGainer": "En Çok Kazandıran",
+      "topLoser": "En Çok Kaybettiren",
+      "assetCount": "Varlık",
+      "gainers": "Pozitif",
+      "losers": "Negatif",
+      "profitLoss": "Kâr / Zarar",
+      "openDetail": "Detayı aç",
+      "sortBy": "Sırala",
+      "sortDir": "Sıralama yönü",
+      "highToLow": "Yüksek → Düşük",
+      "lowToHigh": "Düşük → Yüksek",
+      "riskAdjusted": "Risk-ayarlı",
+      "riskAdjustedInfo": "Getiri ÷ volatilite — düşük riskle yüksek getiri sağlayanlar üste çıkar.",
+      "reset": "Sıfırla"
     }
   },
   "pdf": {

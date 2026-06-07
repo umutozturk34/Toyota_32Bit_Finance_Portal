@@ -4,7 +4,10 @@ import { useSearchParams } from 'react-router-dom';
 export function useMarketTabs() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const activeTab = tabParam === 'rates' ? 'rates' : tabParam === 'macro' ? 'macro' : 'overview';
+  const activeTab = tabParam === 'rates' ? 'rates'
+    : tabParam === 'macro' ? 'macro'
+    : tabParam === 'returns' ? 'returns'
+    : 'overview';
 
   const setActiveTab = useCallback((next) => {
     const params = new URLSearchParams(searchParams);

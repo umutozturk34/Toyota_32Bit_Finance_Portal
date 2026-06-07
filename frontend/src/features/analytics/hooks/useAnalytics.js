@@ -15,3 +15,12 @@ export function useInflationBeaters(period, benchmark, targetCurrency) {
     retry: 1,
   });
 }
+
+export function useAssetReturns() {
+  return useQuery({
+    queryKey: ['analytics', 'asset-returns'],
+    queryFn: analyticsService.assetReturns,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+}

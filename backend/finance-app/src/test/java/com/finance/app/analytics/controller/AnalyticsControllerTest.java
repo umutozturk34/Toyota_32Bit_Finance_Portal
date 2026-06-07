@@ -4,8 +4,10 @@ import com.finance.app.analytics.dto.AnalyticsInstrument;
 import com.finance.app.analytics.dto.AnalyticsInstrumentType;
 import com.finance.app.analytics.dto.HistoryPoint;
 import com.finance.app.analytics.dto.request.ScenarioRequest;
+import com.finance.app.analytics.dto.response.AssetReturnsResponse;
 import com.finance.app.analytics.dto.response.InflationBeaterResponse;
 import com.finance.app.analytics.dto.response.ScenarioResponse;
+import com.finance.app.analytics.service.AssetReturnsService;
 import com.finance.app.analytics.service.InflationBeaterService;
 import com.finance.app.analytics.service.PortfolioSeriesProvider;
 import com.finance.app.analytics.service.ScenarioService;
@@ -38,6 +40,7 @@ class AnalyticsControllerTest {
 
     @Mock private ScenarioService scenarioService;
     @Mock private InflationBeaterService inflationBeaterService;
+    @Mock private AssetReturnsService assetReturnsService;
     @Mock private PortfolioSeriesProvider portfolioSeriesProvider;
     @Mock private Translator translator;
 
@@ -82,6 +85,19 @@ class AnalyticsControllerTest {
         assertThat(response.getData()).isSameAs(expected);
         assertThat(response.getMessage()).isEqualTo("tr:api.analytics.inflationBeatersComputed");
         verify(inflationBeaterService).rank("1Y", "TP.TUFE1YI.T1", null);
+    }
+
+    @Test
+    void shouldDelegateToAssetReturnsService_whenReturnsInvoked() {
+        AssetReturnsResponse expected = new AssetReturnsResponse(LocalDate.now(), List.of());
+        when(assetReturnsService.getReturns()).thenReturn(expected);
+
+        ApiResponse<AssetReturnsResponse> response = controller.assetReturns();
+
+        assertThat(response.getData()).isSameAs(expected);
+        assertThat(response.getMessage()).isEqualTo("tr:api.analytics.assetReturnsRetrieved");
+        assertThat(response.isSuccess()).isTrue();
+        verify(assetReturnsService).getReturns();
     }
 
     @Test

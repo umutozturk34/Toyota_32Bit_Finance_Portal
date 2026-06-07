@@ -33,6 +33,10 @@ app:
       # benchmark indicator — is enumerated dynamically from the catalog in code, so no period/benchmark
       # lists are configured here (a newly published indicator/period warms automatically).
       daily-cron: "0 30 23 * * *"
+    returns:
+      # Asset-returns dataset (all spot assets × all windows, in TRY), recomputed after the evening
+      # market-data refresh — staggered 5 min after the beater so they don't rebuild at the same instant.
+      daily-cron: "0 35 23 * * *"
 
   task:
     max-history: 50

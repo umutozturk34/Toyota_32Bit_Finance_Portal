@@ -13,6 +13,11 @@ import {
   legendBase,
 } from '../../../shared/charts/echartsTheme';
 import { SERIES_COLORS } from '../constants';
+import { moneyDigits } from '../utils';
+
+// 0 decimals at normal magnitude (>=1) keeps the axis/tooltip byte-identical to before; only a sub-1
+// value borrows moneyDigits' extra precision so a real small price never renders as a flat "0".
+const chartDigits = (val) => (Math.abs(val) >= 1 ? 0 : moneyDigits(val));
 
 // Last data point at or before `ts` (data sorted ascending by ts); lets the tooltip show every series'
 // value-in-force at the hovered date even when series end on different dates (e.g. a deposit's last EVDS
@@ -102,7 +107,7 @@ function buildOption(scenario, isDark, displayCurrency, isMobile) {
           .filter(Boolean)
           .sort((a, b) => b.val - a.val)
           .map((r) => {
-            const val = r.val.toLocaleString('tr-TR', { style: 'currency', currency: displayCurrency, maximumFractionDigits: 0 });
+            const val = r.val.toLocaleString('tr-TR', { style: 'currency', currency: displayCurrency, maximumFractionDigits: chartDigits(r.val) });
             return `<div style="display:flex;justify-content:space-between;gap:14px;align-items:center;font-family:ui-monospace,monospace;font-size:11px">
               <span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;background:${r.color};border-radius:50%"></span>${r.name}</span>
               <span style="font-weight:700;color:${r.color}">${val}</span>
@@ -118,7 +123,7 @@ function buildOption(scenario, isDark, displayCurrency, isMobile) {
     yAxis: valueAxis(palette, {
       axisLabel: {
         color: palette.muted, fontSize: 10,
-        formatter: (val) => Number(val).toLocaleString('tr-TR', { maximumFractionDigits: 0 }),
+        formatter: (val) => Number(val).toLocaleString('tr-TR', { maximumFractionDigits: chartDigits(Number(val)) }),
       },
     }),
     series,

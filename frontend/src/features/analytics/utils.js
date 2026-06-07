@@ -7,8 +7,9 @@ export function formatPercent(value, locale = 'tr-TR') {
 
 // Decimals scaled to magnitude: big figures (crypto can be millions per unit) drop decimals for
 // readability, while sub-cent unit prices (small funds, minor currencies) keep enough digits not to
-// collapse to "0 ₺".
-function moneyDigits(n) {
+// collapse to "0 ₺". Exported as the analytics layer's single adaptive-decimals source so every Compare
+// surface shares one threshold ladder instead of hard-coding maximumFractionDigits.
+export function moneyDigits(n) {
   const a = Math.abs(n);
   if (a >= 1000) return 0;
   if (a >= 1) return 2;

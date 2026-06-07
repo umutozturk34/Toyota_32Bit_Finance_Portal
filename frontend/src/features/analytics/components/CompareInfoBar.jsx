@@ -2,6 +2,7 @@ import { Info } from 'lucide-react';
 import { isMacro, isRateLike } from '../lib/compareSeriesUtils';
 import { skipLeadingSplit } from '../lib/compareChartBuilder';
 import { formatPrice } from '../../../shared/utils/formatters';
+import { moneyDigits } from '../utils';
 
 export default function CompareInfoBar({ selected, targetCurrency, commonStartDate, authoritativeReturns, t }) {
   return (
@@ -47,8 +48,10 @@ export default function CompareInfoBar({ selected, targetCurrency, commonStartDa
         // trailing pctText span must be suppressed to avoid rendering the same % twice.
         let headlineIsPct = false;
         if (isPortfolio) {
+          // Adaptive maxDecimals mirrors compareChartBuilder.formatPnl so the chart tooltip and this info-bar
+          // print the same P&L to the digit, including sub-cent values that would otherwise show as ₺0,00.
           formattedLast = lastPnl != null
-            ? `${lastPnl > 0 ? '+' : ''}${formatPrice(lastPnl, { currency: targetCurrency })}`
+            ? `${lastPnl > 0 ? '+' : ''}${formatPrice(lastPnl, { currency: targetCurrency, maxDecimals: Math.max(2, moneyDigits(lastPnl)) })}`
             : '—';
         } else if (lastValue != null) {
           if (ind.type === 'MACRO_DEPOSIT' || ind.type === 'MACRO_RATE') {
@@ -57,13 +60,16 @@ export default function CompareInfoBar({ selected, targetCurrency, commonStartDa
             formattedLast = pct != null ? `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%` : '—';
             headlineIsPct = true;
           } else if (isRateLike(ind.type)) {
+            // Math.max(2, …) keeps the usual 2 decimals at normal magnitude while a sub-cent rate-like
+            // level borrows extra precision so it never collapses to a flat "0".
             formattedLast = ind.type === 'BOND' || isMacro(ind.type)
               ? `%${Number(lastValue).toFixed(2)}`
-              : Number(lastValue).toLocaleString('tr-TR', { maximumFractionDigits: 2 });
+              : Number(lastValue).toLocaleString('tr-TR', { maximumFractionDigits: Math.max(2, moneyDigits(Number(lastValue))) });
           } else {
             // lastValue is already in targetCurrency (converted by ComparePage); format it directly
-            // without re-converting through displayCurrency.
-            formattedLast = formatPrice(lastValue, { currency: targetCurrency });
+            // without re-converting through displayCurrency. Adaptive maxDecimals keeps normal output
+            // identical yet stops a tiny-but-nonzero value from showing as "0 €" / "₺0,00".
+            formattedLast = formatPrice(lastValue, { currency: targetCurrency, maxDecimals: Math.max(2, moneyDigits(Number(lastValue))) });
           }
         }
 

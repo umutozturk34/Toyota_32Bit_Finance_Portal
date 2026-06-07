@@ -1,4 +1,5 @@
 import { formatPrice } from '../../../shared/utils/formatters';
+import { moneyDigits } from '../utils';
 
 function rawKind(type, levelMode) {
   // Portfolio: plotted as a time-weighted-return INDEX that normalizes to a % from the window start, so it
@@ -33,15 +34,19 @@ function valueAsOf(data, ts) {
 function formatRaw(kind, raw, currency) {
   if (!Number.isFinite(raw)) return '—';
   if (kind === 'rate') return `%${raw.toFixed(2)}`;
-  if (kind === 'index') return raw.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
-  return raw.toLocaleString('tr-TR', { style: 'currency', currency, maximumFractionDigits: 2 });
+  // Math.max(2, …) keeps normal-magnitude output byte-identical (>=1 yields 2) while only sub-1 values gain
+  // the extra digits that stop a real increase from rounding to "0" / "0,00".
+  const digits = Math.max(2, moneyDigits(raw));
+  if (kind === 'index') return raw.toLocaleString('tr-TR', { maximumFractionDigits: digits });
+  return raw.toLocaleString('tr-TR', { style: 'currency', currency, maximumFractionDigits: digits });
 }
 
 // Signed TL for the portfolio's cumulative P&L shown next to its return %. Uses the shared formatter so it
-// matches the info-bar exactly — 2 decimals ("−₺11,13" not the rounded "−₺11"); tiny values collapse to ₺0,00.
+// matches the info-bar exactly — 2 decimals ("−₺11,13" not the rounded "−₺11"); Math.max(2, …) keeps that
+// for normal magnitudes while letting sub-cent P&L keep enough digits not to collapse to ₺0,00.
 function formatPnl(val, currency) {
   if (!Number.isFinite(val)) return '';
-  return `${val > 0 ? '+' : ''}${formatPrice(val, { currency, minDecimals: 2, maxDecimals: 2 })}`;
+  return `${val > 0 ? '+' : ''}${formatPrice(val, { currency, minDecimals: 2, maxDecimals: Math.max(2, moneyDigits(val)) })}`;
 }
 
 // Leading-split skip — mirrors backend ScenarioService.pickBaselineIndex (SPLIT_DETECTION_LOW/HIGH +
@@ -49,9 +54,12 @@ function formatPnl(val, currency) {
 // limb the inflation-beater uses, keeping the two surfaces' trailing-return consistent. A fund whose first
 // in-window candle sits just before a launch-week crash or an unadjusted split (e.g. PKZ 1.006 → 0.16, an
 // ~84% one-day step) would otherwise be based on the pre-cliff value, so Compare reported a ~6.4x-too-small
-// return that disagreed with the beater. Scans the leading probe window from startIdx and returns the index
-// of the first point AFTER the LAST split-like step (ratio > HIGH or < LOW); only meaningful for raw price
-// series — index/rate/portfolio lines never split.
+// return that disagreed with the beater. The probe is a FIXED leading window — the first BASELINE_PROBE_WINDOW
+// points, exactly like the backend — NOT a fraction of the series length: a large jump DEEPER in than that is a
+// REAL move (e.g. NMG re-rating ~97x mid-window, ISATR ~88x) and must be KEPT, never anchored past, or the
+// baseline slides months in and the asset's true return is silently dropped. Returns the index of the first
+// point AFTER the LAST leading split-like step (ratio > HIGH or < LOW); only meaningful for raw price series —
+// index/rate/portfolio lines never split.
 const SPLIT_DETECTION_LOW = 0.2;
 const SPLIT_DETECTION_HIGH = 5;
 const BASELINE_PROBE_WINDOW = 10;
@@ -59,7 +67,7 @@ const BASELINE_PROBE_WINDOW = 10;
 export function skipLeadingSplit(sortedPoints, startIdx) {
   const span = sortedPoints.length - startIdx;
   if (span < 2) return startIdx;
-  const scanLimit = Math.min(span - 1, Math.max(BASELINE_PROBE_WINDOW, Math.floor(span / 3)));
+  const scanLimit = Math.min(span - 1, BASELINE_PROBE_WINDOW);
   let jumpIdx = startIdx;
   for (let k = 0; k < scanLimit; k += 1) {
     const i = startIdx + k;

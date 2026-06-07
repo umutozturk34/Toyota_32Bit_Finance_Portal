@@ -109,6 +109,16 @@ class MarketDataUpdateListenerTest {
     }
 
     @Test
+    void should_acknowledgeWithoutDispatch_when_marketTypeHasNoSessionMapping() {
+        listener().onMarketUpdated(MarketUpdatedEvent.of(MarketType.MACRO_RATE, "macro-scheduler"), ack);
+
+        verify(preferences, never()).findMarketDataSubscribed(any(), any(Pageable.class));
+        verify(dispatcher, never()).prepare(any(), any(), any(), org.mockito.ArgumentMatchers.anyBoolean());
+        verify(persister, never()).persistBatch(any());
+        verify(ack).acknowledge();
+    }
+
+    @Test
     void should_dispatchOnce_when_sameEventIdRedeliveredTwice() {
         when(preferences.findMarketDataSubscribed(eq("STOCK"), any(Pageable.class)))
                 .thenReturn(pageOf(subscriber("user-1")));

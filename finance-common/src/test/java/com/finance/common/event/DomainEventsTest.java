@@ -76,4 +76,44 @@ class DomainEventsTest {
 
         assertThat(event.changedCodes()).isEmpty();
     }
+
+    @Test
+    void userRegisteredEvent_partitionsByUserSub_andTargetsUserRegisteredTopic() {
+        UserRegisteredEvent event = new UserRegisteredEvent(
+                "evt-9", "user-sub-9", OffsetDateTime.now());
+
+        assertThat(event.partitionKey()).isEqualTo("user-sub-9");
+        assertThat(event.topic()).isEqualTo(EventTopic.USER_REGISTERED);
+    }
+
+    @Test
+    void marketUpdatedEvent_topic_isMarketUpdated() {
+        assertThat(MarketUpdatedEvent.of(MarketType.STOCK, "s").topic())
+                .isEqualTo(EventTopic.MARKET_UPDATED);
+    }
+
+    @Test
+    void newsPublishedEvent_topic_isNewsPublished() {
+        assertThat(NewsPublishedEvent.of("s").topic()).isEqualTo(EventTopic.NEWS_PUBLISHED);
+    }
+
+    @Test
+    void portfolioUpdatedEvent_topic_isPortfolioUpdated() {
+        assertThat(PortfolioUpdatedEvent.of("s").topic()).isEqualTo(EventTopic.PORTFOLIO_UPDATED);
+    }
+
+    @Test
+    void macroIndicatorsUpdatedEvent_topic_isMacroIndicatorsUpdated() {
+        assertThat(MacroIndicatorsUpdatedEvent.of("s", java.util.List.of()).topic())
+                .isEqualTo(EventTopic.MACRO_INDICATORS_UPDATED);
+    }
+
+    @Test
+    void emailChangeCodeRequestedEvent_topic_isUserEmailChangeCode() {
+        EmailChangeCodeRequestedEvent event = new EmailChangeCodeRequestedEvent(
+                "evt-2", "user-sub-2", "old@example.com", "new@example.com",
+                "XYZ789", "light", OffsetDateTime.now().plusMinutes(15), OffsetDateTime.now());
+
+        assertThat(event.topic()).isEqualTo(EventTopic.USER_EMAIL_CHANGE_CODE);
+    }
 }

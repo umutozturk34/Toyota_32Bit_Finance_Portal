@@ -141,6 +141,34 @@ class WatchlistEvaluatorTest {
     }
 
     @Test
+    void should_skipItemWithoutDispatch_when_noSnapshotForCode() {
+        WatchlistItem orphan = item(1L, 10L, "user-1", "GHOST", BigDecimal.valueOf(100), null);
+        when(watchlistService.itemsForMarket(MarketType.CRYPTO)).thenReturn(List.of(orphan));
+        when(assetSnapshotCache.findByCodes(eq(MarketType.CRYPTO), eq(Set.of("GHOST"))))
+                .thenReturn(Map.of());
+
+        int notified = evaluator.evaluate(MarketType.CRYPTO);
+
+        assertThat(notified).isEqualTo(0);
+        verify(dispatcher, never()).dispatchBatched(any());
+        verify(watchlistService, never()).persist(any());
+    }
+
+    @Test
+    void should_skipItemWithoutDispatch_when_snapshotHasNullPrice() {
+        WatchlistItem item = item(1L, 10L, "user-1", "BTC", BigDecimal.valueOf(100), null);
+        when(watchlistService.itemsForMarket(MarketType.CRYPTO)).thenReturn(List.of(item));
+        when(assetSnapshotCache.findByCodes(eq(MarketType.CRYPTO), eq(Set.of("BTC"))))
+                .thenReturn(Map.of("BTC", snapshot("BTC", null)));
+
+        int notified = evaluator.evaluate(MarketType.CRYPTO);
+
+        assertThat(notified).isEqualTo(0);
+        verify(dispatcher, never()).dispatchBatched(any());
+        verify(watchlistService, never()).persist(any());
+    }
+
+    @Test
     void should_notDispatch_when_allItemsUnderThreshold() {
         WatchlistItem btc = item(1L, 10L, "user-1", "BTC", BigDecimal.valueOf(100), BigDecimal.valueOf(20));
         when(watchlistService.itemsForMarket(MarketType.CRYPTO)).thenReturn(List.of(btc));

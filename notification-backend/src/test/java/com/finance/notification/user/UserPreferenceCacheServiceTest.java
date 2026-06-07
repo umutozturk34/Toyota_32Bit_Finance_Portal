@@ -117,6 +117,64 @@ class UserPreferenceCacheServiceTest {
     }
 
     @Test
+    void loadAll_bindsSubjectArrayToBulkQueryParameter_whenSetterExecutes() throws Exception {
+        org.mockito.ArgumentCaptor<org.springframework.jdbc.core.PreparedStatementSetter> setterCaptor =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.jdbc.core.PreparedStatementSetter.class);
+        org.mockito.Mockito.doReturn(null).when(jdbcTemplate).query(anyString(),
+                setterCaptor.capture(), any(RowMapper.class));
+        java.sql.PreparedStatement ps = org.mockito.Mockito.mock(java.sql.PreparedStatement.class);
+        java.sql.Connection connection = org.mockito.Mockito.mock(java.sql.Connection.class);
+        java.sql.Array array = org.mockito.Mockito.mock(java.sql.Array.class);
+        when(ps.getConnection()).thenReturn(connection);
+        when(connection.createArrayOf(eq("text"), any(Object[].class))).thenReturn(array);
+
+        service.loadAll(List.of("user-1"));
+        setterCaptor.getValue().setValues(ps);
+
+        org.mockito.Mockito.verify(ps).setArray(eq(1), eq(array));
+    }
+
+    @Test
+    void loadAll_fallsBackToIstanbulZone_whenTimezoneBlank() throws Exception {
+        ResultSet rs = org.mockito.Mockito.mock(ResultSet.class);
+        when(rs.getString(1)).thenReturn("user-1");
+        when(rs.getString(2)).thenReturn("en");
+        when(rs.getString(3)).thenReturn("DARK");
+        when(rs.getString(4)).thenReturn("   ");
+        stubBulkQueryWithRow(rs);
+
+        Map<String, UserPreferenceCacheService.UserPreferenceSnapshot> result =
+                service.loadAll(List.of("user-1"));
+
+        assertThat(result.get("user-1").zone()).isEqualTo(ZoneId.of("Europe/Istanbul"));
+    }
+
+    @Test
+    void loadAll_fallsBackToIstanbulZone_whenTimezoneInvalid() throws Exception {
+        ResultSet rs = org.mockito.Mockito.mock(ResultSet.class);
+        when(rs.getString(1)).thenReturn("user-1");
+        when(rs.getString(2)).thenReturn("en");
+        when(rs.getString(3)).thenReturn("DARK");
+        when(rs.getString(4)).thenReturn("Not/AZone");
+        stubBulkQueryWithRow(rs);
+
+        Map<String, UserPreferenceCacheService.UserPreferenceSnapshot> result =
+                service.loadAll(List.of("user-1"));
+
+        assertThat(result.get("user-1").zone()).isEqualTo(ZoneId.of("Europe/Istanbul"));
+    }
+
+    private void stubBulkQueryWithRow(ResultSet rs) {
+        org.mockito.Mockito.doAnswer(inv -> {
+            RowMapper<?> mapper = inv.getArgument(2);
+            mapper.mapRow(rs, 0);
+            return null;
+        }).when(jdbcTemplate).query(anyString(),
+                any(org.springframework.jdbc.core.PreparedStatementSetter.class),
+                any(RowMapper.class));
+    }
+
+    @Test
     void loadAll_populatesResultMap_andFillsDefaultsForMissingSubs() throws Exception {
         ResultSet rs = org.mockito.Mockito.mock(ResultSet.class);
         when(rs.getString(1)).thenReturn("user-1");

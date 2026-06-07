@@ -47,6 +47,8 @@ class CurrencyTest {
             "F_GBPUSD0626, USD",
             "F_XAUUSD0626, USD",
             "F_XAGUSD0626, USD",
+            "F_USDEUR0626, EUR",
+            "F_GBPEUR0626, EUR",
             "F_XAUTRYM0626, TRY",
             "F_XU0300626, TRY",
             "F_AKBNK0626, TRY",

@@ -1,6 +1,7 @@
 package com.finance.notification.alert.service;
 
 import com.finance.common.cache.AssetSnapshotCache;
+import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -79,6 +81,10 @@ class PriceAlertServiceUnitTest {
                 .build();
     }
 
+    private AssetSnapshot snapshot(String code, BigDecimal priceTry, String currency) {
+        return new AssetSnapshot(code, code, null, priceTry, null, null, currency);
+    }
+
     @Test
     void create_raises_whenUserReachedMaxAlerts() {
         when(repository.countByUserSub("user-1")).thenReturn(50L);
@@ -111,6 +117,47 @@ class PriceAlertServiceUnitTest {
         service.create("user-1", createRequest());
 
         verify(repository).save(saved);
+    }
+
+    @Test
+    void create_convertsThresholdToNativeCurrency_whenRequestCurrencyDiffersFromAssetCurrency() {
+        TrackedAsset trackedAsset = tracked();
+        when(repository.countByUserSub("user-1")).thenReturn(0L);
+        when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(eq(TrackedAssetType.STOCK), anyString()))
+                .thenReturn(Optional.of(trackedAsset));
+        when(assetSnapshotCache.findByCode(MarketType.STOCK, "THYAO"))
+                .thenReturn(Optional.of(snapshot("THYAO", new BigDecimal("10"), "USD")));
+        when(assetSnapshotCache.findByCodes(eq(MarketType.FOREX), eq(java.util.Set.of("USD"))))
+                .thenReturn(Map.of("USD", snapshot("USD", new BigDecimal("40"), "TRY")));
+        PriceAlertCreateRequest request = new PriceAlertCreateRequest(MarketType.STOCK, "THYAO",
+                AlertDirection.ABOVE, new BigDecimal("80"), "TRY", null);
+        PriceAlert saved = alert("user-1");
+        when(mapper.toEntity(any(), eq("user-1"))).thenReturn(saved);
+        when(repository.save(saved)).thenReturn(saved);
+        when(mapper.toResponse(saved)).thenReturn(stubResponse());
+
+        service.create("user-1", request);
+
+        assertThat(saved.getCurrency()).isEqualTo("USD");
+        assertThat(saved.getThreshold()).isEqualByComparingTo("2.0000");
+    }
+
+    @Test
+    void create_raises_whenForexRateMissingForNonTryCurrency() {
+        TrackedAsset trackedAsset = tracked();
+        when(repository.countByUserSub("user-1")).thenReturn(0L);
+        when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(eq(TrackedAssetType.STOCK), anyString()))
+                .thenReturn(Optional.of(trackedAsset));
+        when(assetSnapshotCache.findByCode(MarketType.STOCK, "THYAO"))
+                .thenReturn(Optional.of(snapshot("THYAO", new BigDecimal("10"), "USD")));
+        when(assetSnapshotCache.findByCodes(eq(MarketType.FOREX), eq(java.util.Set.of("USD"))))
+                .thenReturn(Map.of());
+        PriceAlertCreateRequest request = new PriceAlertCreateRequest(MarketType.STOCK, "THYAO",
+                AlertDirection.ABOVE, new BigDecimal("80"), "TRY", null);
+
+        assertThatThrownBy(() -> service.create("user-1", request))
+                .isInstanceOf(BadRequestException.class);
+        verify(repository, never()).save(any());
     }
 
     @Test

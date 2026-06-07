@@ -3,6 +3,7 @@ package com.finance.notification.macro;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -10,6 +11,8 @@ import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.math.BigDecimal;
+import java.sql.Array;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.LocalDate;
@@ -18,7 +21,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -88,6 +93,26 @@ class MacroIndicatorChangeReaderTest {
         List<MacroIndicatorChangeReader.IndicatorChange> result = reader.findChanges(List.of("TP.NEW"));
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void should_bindCodesArrayToBothQueryParameters_when_queryExecutes() throws Exception {
+        ArgumentCaptor<PreparedStatementSetter> setterCaptor =
+                ArgumentCaptor.forClass(PreparedStatementSetter.class);
+        when(jdbcTemplate.query(anyString(), setterCaptor.capture(), any(RowMapper.class)))
+                .thenReturn(List.of());
+        PreparedStatement ps = mock(PreparedStatement.class);
+        Connection connection = mock(Connection.class);
+        Array array = mock(Array.class);
+        when(ps.getConnection()).thenReturn(connection);
+        when(connection.createArrayOf(eq("text"), any(Object[].class))).thenReturn(array);
+
+        reader.findChanges(List.of("TP.RATE"));
+        setterCaptor.getValue().setValues(ps);
+
+        verify(connection).createArrayOf(eq("text"), any(Object[].class));
+        verify(ps).setArray(1, array);
+        verify(ps).setArray(2, array);
     }
 
     private static ResultSet mockRow(String code, String label, String category, String unit,

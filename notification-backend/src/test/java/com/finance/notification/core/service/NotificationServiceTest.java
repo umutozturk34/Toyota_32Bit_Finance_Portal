@@ -148,6 +148,54 @@ class NotificationServiceTest {
         verify(repository, never()).delete(any(Notification.class));
     }
 
+    @Test
+    void list_searchesUnreadOnly_whenSearchTermAndUnreadFlagBothSet() {
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Notification> page = new PageImpl<>(List.of(owned), pageable, 1L);
+        when(repository.searchUnreadByUserSub("user-1", "btc", pageable)).thenReturn(page);
+        when(mapper.toResponse(owned)).thenReturn(stubResponse());
+
+        Page<NotificationResponse> result = service.list("user-1", 0, 20, true, "  btc  ");
+
+        assertThat(result.getContent()).hasSize(1);
+        verify(repository, never()).searchByUserSub(anyString(), anyString(), any());
+    }
+
+    @Test
+    void list_searchesAcrossAll_whenSearchTermSetAndUnreadFlagFalse() {
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Notification> page = new PageImpl<>(List.of(owned), pageable, 1L);
+        when(repository.searchByUserSub("user-1", "eth", pageable)).thenReturn(page);
+        when(mapper.toResponse(owned)).thenReturn(stubResponse());
+
+        Page<NotificationResponse> result = service.list("user-1", 0, 20, false, " eth ");
+
+        assertThat(result.getContent()).hasSize(1);
+        verify(repository, never()).searchUnreadByUserSub(anyString(), anyString(), any());
+    }
+
+    @Test
+    void markRead_persistsWithoutNoOpLog_whenAlreadyRead() {
+        owned.markRead();
+        when(repository.findById(1L)).thenReturn(Optional.of(owned));
+        when(repository.save(owned)).thenReturn(owned);
+        when(mapper.toResponse(owned)).thenReturn(stubResponse());
+
+        service.markRead(1L, "user-1");
+
+        verify(repository).save(owned);
+    }
+
+    @Test
+    void deleteAll_removesAllForUser_andReturnsRemovedCount() {
+        when(repository.deleteAllByUserSub("user-1")).thenReturn(7);
+
+        int removed = service.deleteAll("user-1");
+
+        assertThat(removed).isEqualTo(7);
+        verify(repository).deleteAllByUserSub("user-1");
+    }
+
     private NotificationResponse stubResponse() {
         return new NotificationResponse(1L, NotificationType.SYSTEM, "t", "b",
                 Map.of(), null, null, LocalDateTime.now());

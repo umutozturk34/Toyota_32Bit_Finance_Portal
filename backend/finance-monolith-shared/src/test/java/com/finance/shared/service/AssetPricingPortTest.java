@@ -89,4 +89,44 @@ class AssetPricingPortTest {
 
         assertThat(result).containsKey(k1).doesNotContainKey(k2);
     }
+
+    @Test
+    void getExitBundle_fallsBackToSpotPrice_whenExitNotOverridden() {
+        PriceBundle bundle = port.getExitBundle(MarketType.STOCK, "AAPL");
+
+        assertThat(bundle.price()).isEqualByComparingTo("100");
+        assertThat(bundle.meta().name()).isEqualTo("NAME-AAPL");
+    }
+
+    @Test
+    void getBundles_buildsCurrentBundleForEachKey() {
+        AssetKey present = new AssetKey(MarketType.CRYPTO, "bitcoin");
+
+        Map<AssetKey, PriceBundle> result = port.getBundles(List.of(present));
+
+        assertThat(result).containsKey(present);
+        assertThat(result.get(present).price()).isEqualByComparingTo("100");
+        assertThat(result.get(present).meta().name()).isEqualTo("NAME-bitcoin");
+    }
+
+    @Test
+    void getPricesTry_skipsKeysWithNullPrice() {
+        AssetKey k1 = new AssetKey(MarketType.STOCK, "AAPL");
+        AssetKey k2 = new AssetKey(MarketType.STOCK, "MISSING");
+
+        Map<AssetKey, BigDecimal> result = port.getPricesTry(List.of(k1, k2));
+
+        assertThat(result).containsKey(k1).doesNotContainKey(k2);
+    }
+
+    @Test
+    void getExitBundles_keepsKeysAsBundleNeverIsNullEvenWithNullInnerPrice() {
+        AssetKey present = new AssetKey(MarketType.STOCK, "AAPL");
+        AssetKey missing = new AssetKey(MarketType.STOCK, "MISSING");
+
+        Map<AssetKey, PriceBundle> result = port.getExitBundles(List.of(present, missing));
+
+        assertThat(result).containsKeys(present, missing);
+        assertThat(result.get(missing).price()).isNull();
+    }
 }

@@ -76,6 +76,29 @@ class NotificationPreferenceServiceTest {
         assertThat(captor.getValue().isEmailWatchlist()).isTrue();
     }
 
+    @Test
+    void ensureDefaultsExist_seedsAndReturnsTrue_whenNoRowExists() {
+        when(repository.existsById("new-user")).thenReturn(false);
+        when(repository.save(any(NotificationPreference.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        boolean created = service.ensureDefaultsExist("new-user");
+
+        assertThat(created).isTrue();
+        ArgumentCaptor<NotificationPreference> captor = ArgumentCaptor.forClass(NotificationPreference.class);
+        verify(repository).save(captor.capture());
+        assertThat(captor.getValue().getUserSub()).isEqualTo("new-user");
+    }
+
+    @Test
+    void ensureDefaultsExist_returnsFalseWithoutSaving_whenRowAlreadyExists() {
+        when(repository.existsById("existing-user")).thenReturn(true);
+
+        boolean created = service.ensureDefaultsExist("existing-user");
+
+        assertThat(created).isFalse();
+        verify(repository, never()).save(any());
+    }
+
     private NotificationPreferenceResponse stubResponseFrom(NotificationPreference p) {
         return new NotificationPreferenceResponse(
                 p.isEmailEnabled(),

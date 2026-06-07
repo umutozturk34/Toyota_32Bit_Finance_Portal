@@ -6,6 +6,7 @@ import com.finance.common.exception.TaskAlreadyRunningException;
 import com.finance.shared.service.TaskTrackingService.TaskInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -221,5 +222,37 @@ class TaskTrackingServiceTest {
         TaskStatusResponse status = service.getTypedStatus();
         assertThat(status.history()).hasSize(1);
         assertThat(status.history().get(0).message()).isEqualTo("second");
+    }
+
+    @Test
+    void subscribeToStatusReturnsNonTimingOutEmitter() {
+        SseEmitter emitter = service.subscribeToStatus();
+
+        assertThat(emitter).isNotNull();
+        assertThat(emitter.getTimeout()).isZero();
+    }
+
+    @Test
+    void broadcastReachesActiveSubscriberAndStillUpdatesStatusOnStart() {
+        service.subscribeToStatus();
+
+        service.startTask("BROADCASTED", "running");
+
+        TaskStatusResponse status = service.getTypedStatus();
+        assertThat(status.runningCount()).isEqualTo(1);
+        assertThat(service.isRunning("BROADCASTED")).isTrue();
+    }
+
+    @Test
+    void broadcastReachesActiveSubscriberAndRecordsHistoryOnComplete() {
+        service.subscribeToStatus();
+        TaskInfo started = service.startTask("BROADCAST_DONE", "running");
+
+        service.completeTask("BROADCAST_DONE", started);
+
+        TaskStatusResponse status = service.getTypedStatus();
+        assertThat(status.running()).isEmpty();
+        assertThat(status.history()).hasSize(1);
+        assertThat(status.history().get(0).status()).isEqualTo("COMPLETED");
     }
 }

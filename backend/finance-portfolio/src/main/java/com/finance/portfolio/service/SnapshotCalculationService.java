@@ -89,6 +89,7 @@ public class SnapshotCalculationService {
         this.derivativeCalculator = derivativeCalculator;
     }
 
+    /** Builds the per-asset snapshot row for a derivative (VIOP) position at the live mark, delegating to the derivative calculator. */
     public PortfolioAssetDailySnapshot buildDerivativeAssetSnapshot(Long portfolioId,
                                                                       com.finance.portfolio.derivative.model.DerivativePosition position,
                                                                       LocalDateTime batchTimestamp) {
@@ -102,6 +103,12 @@ public class SnapshotCalculationService {
         return derivativeCalculator.buildClosedViopDailyRow(portfolioId, position, batchTimestamp);
     }
 
+    /**
+     * Builds a derivative snapshot row valued at an explicit price rather than the live mark, used to
+     * book a historical or close-day point.
+     *
+     * @param exitPrice the price at which the position is valued for this row
+     */
     public PortfolioAssetDailySnapshot buildDerivativeAssetSnapshotAt(Long portfolioId,
                                                                        com.finance.portfolio.derivative.model.DerivativePosition position,
                                                                        LocalDateTime batchTimestamp,
@@ -109,6 +116,13 @@ public class SnapshotCalculationService {
         return derivativeCalculator.buildDerivativeAssetSnapshotAt(portfolioId, position, batchTimestamp, exitPrice);
     }
 
+    /**
+     * As {@link #buildDerivativeAssetSnapshotAt(Long, DerivativePosition, LocalDateTime, BigDecimal)} but with an
+     * explicit TRY conversion rate, so a USD-settled contract can be valued against a specific historical FX rate
+     * instead of the live one.
+     *
+     * @param fxRateOverride the FX rate to use for TRY conversion for this row
+     */
     public PortfolioAssetDailySnapshot buildDerivativeAssetSnapshotAt(Long portfolioId,
                                                                        com.finance.portfolio.derivative.model.DerivativePosition position,
                                                                        LocalDateTime batchTimestamp,
@@ -118,6 +132,12 @@ public class SnapshotCalculationService {
                 exitPrice, fxRateOverride);
     }
 
+    /**
+     * As the FX-override variant but with the prior snapshot supplied directly instead of being looked up, so
+     * batched backfill can chain consecutive days and compute the day-over-day delta against the row it just built.
+     *
+     * @param priorOverride the previous day's snapshot to diff against, bypassing the repository lookup
+     */
     public PortfolioAssetDailySnapshot buildDerivativeAssetSnapshotAt(Long portfolioId,
                                                                        com.finance.portfolio.derivative.model.DerivativePosition position,
                                                                        LocalDateTime batchTimestamp,

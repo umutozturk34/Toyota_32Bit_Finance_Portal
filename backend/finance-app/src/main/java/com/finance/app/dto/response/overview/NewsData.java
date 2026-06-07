@@ -14,6 +14,7 @@ public record NewsData(
         return WidgetKind.NEWS;
     }
 
+    /** One news article: its id, title, category, optional image, source name, and publish timestamp. */
     public record NewsRow(
             Long id,
             String title,

@@ -118,6 +118,7 @@ public class PortfolioPosition {
         if (newQuantity != null) this.quantity = newQuantity;
     }
 
+    /** True once the lot has been exited, i.e. an {@code exitDate} has been recorded. */
     public boolean isClosed() {
         return exitDate != null;
     }

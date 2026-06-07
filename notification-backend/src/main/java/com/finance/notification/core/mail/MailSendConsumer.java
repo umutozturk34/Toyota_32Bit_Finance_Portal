@@ -41,6 +41,11 @@ public class MailSendConsumer {
     private final Counter retriedCounter;
     private final Counter failedCounter;
 
+    /**
+     * Wires collaborators and prepares dispatch state: a REQUIRES_NEW transaction template for the
+     * atomic row-claim step (so the claim commits independently of the send) and the sent/retried/
+     * failed Micrometer counters.
+     */
     public MailSendConsumer(EmailOutboxRepository repository,
                             MailSender mailSender,
                             ObjectMapper objectMapper,
@@ -58,6 +63,12 @@ public class MailSendConsumer {
         this.failedCounter = Counter.builder("mail.outbox.failed").register(meterRegistry);
     }
 
+    /**
+     * Handles one mail-dispatch event: atomically claims the outbox row (RELAYED to PROCESSING) and,
+     * if the claim fails because another worker or a prior delivery already took it, acknowledges and
+     * exits — providing idempotency under redelivery. On a successful claim it reloads the row and
+     * processes the send. The offset is always acknowledged so a stuck row is not retried via Kafka.
+     */
     @KafkaListener(
             topics = "${app.kafka.topics.mail-dispatch}",
             groupId = GROUP_ID,

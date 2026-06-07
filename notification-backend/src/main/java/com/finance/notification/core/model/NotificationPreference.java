@@ -154,6 +154,7 @@ public class NotificationPreference {
         if (request.marketSessionMarkets() != null) setMarketSessionMarkets(request.marketSessionMarkets());
     }
 
+    /** Whether the in-app channel is enabled for the given type; in-app has no master switch. */
     public boolean wantsInApp(NotificationType type) {
         return type.isInAppWantedBy(this);
     }

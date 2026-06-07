@@ -22,6 +22,7 @@ public class TwoFactorService {
 
     private final KeycloakAdminClient client;
 
+    /** Reports whether two-factor is enabled, i.e. the user has at least one OTP credential. */
     public TwoFactorStatus status(String userSub) {
         return new TwoFactorStatus(countOtpCredentials(userSub) > 0);
     }
@@ -41,6 +42,7 @@ public class TwoFactorService {
         return removed;
     }
 
+    /** Lists the user's registered OTP devices (id, label, creation time), filtering out non-OTP credentials. */
     public List<TwoFactorDevice> devices(String userSub) {
         return client.listCredentials(userSub).stream()
                 .filter(c -> OTP_CREDENTIAL_TYPE.equals(c.get("type")))
@@ -51,6 +53,7 @@ public class TwoFactorService {
                 .toList();
     }
 
+    /** Removes a single OTP device by its Keycloak credential id (leaves any other devices intact). */
     public void removeDevice(String userSub, String credentialId) {
         client.deleteCredential(userSub, credentialId);
         log.info("2FA device removed user={} credentialId={}", userSub, credentialId);

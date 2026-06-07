@@ -99,6 +99,10 @@ public class InflationBeaterService {
     @Autowired(required = false)
     private com.finance.app.config.MarketDataInitializer marketDataInitializer;
 
+    /**
+     * Ranks the universe for the period against the benchmark in the benchmark-derived comparison currency
+     * (no override). Convenience overload of {@link #rank(String, String, String)}.
+     */
     public InflationBeaterResponse rank(String period, String benchmarkCode) {
         return rank(period, benchmarkCode, null);
     }
@@ -146,6 +150,10 @@ public class InflationBeaterService {
         return cacheManager.peek(cacheManager.buildKey(period, code, null));
     }
 
+    /**
+     * Fire-and-forget warm of the cache entry for the period/benchmark (TRY framing). No-op while market
+     * data is still cold-loading or the period token is unknown; the cache manager dedupes concurrent warms.
+     */
     public void warmAsync(String period, String benchmarkCode) {
         if (!dataReady()) return;
         Integer months = PERIOD_MONTHS.get(period);
@@ -155,6 +163,10 @@ public class InflationBeaterService {
         cacheManager.warmAsync(key, period, code, () -> compute(period, code, months, null));
     }
 
+    /**
+     * Recomputes and replaces the cache entry for the period/benchmark (TRY framing), even if already
+     * present. No-op for an unknown period token. Used by the scheduled refresh to keep rankings current.
+     */
     public void refresh(String period, String benchmarkCode) {
         Integer months = PERIOD_MONTHS.get(period);
         if (months == null) return;
@@ -163,6 +175,7 @@ public class InflationBeaterService {
         cacheManager.refresh(key, period, code, () -> compute(period, code, months, null));
     }
 
+    /** Drops all cached rankings, forcing the next request to recompute. */
     public void clearCache() {
         cacheManager.clear();
     }

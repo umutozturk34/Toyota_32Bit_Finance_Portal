@@ -29,6 +29,10 @@ public class AssetCardsWidgetProvider implements OverviewWidgetProvider {
     private final Map<MarketType, MarketAssetProvider> providersByType;
     private final OverviewDefaults defaults;
 
+    /**
+     * Indexes the available market providers by their {@link MarketType} so a reference can be resolved
+     * in constant time, and keeps the overview defaults used when a section has no explicit config.
+     */
     public AssetCardsWidgetProvider(List<MarketAssetProvider> providers, OverviewDefaults defaults) {
         this.providersByType = EnumDispatcher.from(MarketType.class, providers, MarketAssetProvider::getType);
         this.defaults = defaults;
@@ -39,6 +43,12 @@ public class AssetCardsWidgetProvider implements OverviewWidgetProvider {
         return WidgetKind.ASSET_CARDS;
     }
 
+    /**
+     * Resolves the section's configured asset references — falling back to the defaults when none are
+     * configured — to live market snapshots, stopping once the configured max-items cap is reached.
+     * References that cannot be resolved (no provider for the type, or code not found) are silently
+     * skipped so a partially valid config still produces a widget.
+     */
     @Override
     public AssetCardsData fetch(String userSub, WidgetSection section) {
         List<AssetReference> requested = readReferences(section);

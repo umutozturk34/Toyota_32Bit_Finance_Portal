@@ -44,6 +44,10 @@ public class UnifiedMarketService implements MarketUpdatePort {
     private final TopMoversRedisService topMoversRedisService;
     private final HistoricalPricingPort historicalPricingPort;
 
+    /**
+     * Indexes the injected asset and history providers by their {@link MarketType} (via
+     * {@link EnumDispatcher}) so requests can be routed to the right per-type provider in O(1).
+     */
     public UnifiedMarketService(List<MarketAssetProvider> providerList,
                                 List<MarketHistoryProvider> historyProviderList,
                                 TopMoversRedisService topMoversRedisService,
@@ -85,12 +89,22 @@ public class UnifiedMarketService implements MarketUpdatePort {
         return PagedResponse.of(applySort(filtered, sort, direction), page, size, total);
     }
 
+    /**
+     * Group/segment breakdown counts for the market type (e.g. counts per stock segment), or an empty
+     * list when the type has no registered provider.
+     */
     public List<GroupCount> getGroupCounts(MarketType type) {
         MarketAssetProvider provider = providers.get(type);
         if (provider == null) return List.of();
         return provider.getGroupCounts();
     }
 
+    /**
+     * Price history for the asset over the candle period, delegated to the type's history provider.
+     * The element type is provider-specific (hence {@code List<?>}).
+     *
+     * @throws ResourceNotFoundException if no history provider is registered for the market type
+     */
     public List<?> getHistory(MarketType type, String code, CandlePeriod period) {
         MarketHistoryProvider provider = historyProviders.get(type);
         if (provider == null) {
@@ -99,12 +113,23 @@ public class UnifiedMarketService implements MarketUpdatePort {
         return provider.getHistory(code, period);
     }
 
+    /**
+     * Per-day price availability for the asset across the given calendar month (used to mark which days
+     * are selectable in date pickers).
+     *
+     * @param yearMonth ISO year-month token ({@code yyyy-MM}); parsed to bound the lookup to that month
+     */
     public MarketAvailabilityResponse getMonthlyAvailability(MarketType type, String code, String yearMonth) {
         YearMonth ym = YearMonth.parse(yearMonth);
         return new MarketAvailabilityResponse(
                 historicalPricingPort.getPriceSeries(type, code, ym.atDay(1), ym.atEndOfMonth()));
     }
 
+    /**
+     * Write-through cache hook invoked after a market type's data is refreshed: recomputes that type's
+     * top gainers/losers (and the main-index movers for {@link MarketType#STOCK}) in Redis. Failures are
+     * logged and swallowed so a cache update cannot fail the refresh.
+     */
     @Override
     public void onMarketDataUpdated(MarketType type) {
         MarketAssetProvider provider = providers.get(type);

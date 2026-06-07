@@ -36,6 +36,7 @@ public class TaskTrackingService {
     private final Deque<TaskInfo> taskHistory = new ConcurrentLinkedDeque<>();
     private final CopyOnWriteArrayList<SseEmitter> statusEmitters = new CopyOnWriteArrayList<>();
 
+    /** Whether a task of the given type is currently registered as running. */
     public boolean isRunning(String taskType) {
         return runningTasks.containsKey(taskType);
     }
@@ -55,11 +56,24 @@ public class TaskTrackingService {
         return info;
     }
 
+    /**
+     * Removes the running entry and records a COMPLETED history item, preserving the original start
+     * time so duration can be derived; broadcasts the change to SSE subscribers.
+     *
+     * @param started the TaskInfo returned by {@link #startTask}
+     */
     public void completeTask(String taskType, TaskInfo started) {
         finishTask(taskType, new TaskInfo(taskType, "COMPLETED", started.message(),
                 started.startedAt(), Instant.now(), null));
     }
 
+    /**
+     * Removes the running entry and records a FAILED history item carrying the error message,
+     * preserving the original start time; broadcasts the change to SSE subscribers.
+     *
+     * @param started  the TaskInfo returned by {@link #startTask}
+     * @param errorMsg human-readable failure cause stored on the history entry
+     */
     public void failTask(String taskType, TaskInfo started, String errorMsg) {
         finishTask(taskType, new TaskInfo(taskType, "FAILED", started.message(),
                 started.startedAt(), Instant.now(), errorMsg));
@@ -120,6 +134,10 @@ public class TaskTrackingService {
         }
     }
 
+    /**
+     * Builds the current status snapshot: the running tasks, the bounded recent history, and the
+     * running count. Durations are computed live for still-running tasks (now − startedAt).
+     */
     public TaskStatusResponse getTypedStatus() {
         List<TaskInfoResponse> running = runningTasks.values().stream()
                 .map(this::toInfoResponse)

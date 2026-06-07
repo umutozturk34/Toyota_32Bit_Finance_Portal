@@ -101,10 +101,12 @@ public class PriceAlert {
         if (currency == null || currency.isBlank()) currency = "TRY";
     }
 
+    /** Ownership guard used to authorize per-user access before exposing or mutating the alert. */
     public boolean belongsTo(String candidateUserSub) {
         return userSub.equals(candidateUserSub);
     }
 
+    /** True only while the alert is eligible to fire, i.e. still active and not yet triggered. */
     public boolean shouldEvaluate() {
         return active && triggeredAt == null;
     }
@@ -117,11 +119,13 @@ public class PriceAlert {
         return direction.isFired(currentPrice, referencePrice, threshold);
     }
 
+    /** Records the firing instant and deactivates the alert so it cannot fire again. */
     public void markFired() {
         this.triggeredAt = LocalDateTime.now();
         this.active = false;
     }
 
+    /** Clears the triggered state and re-arms the alert so it can fire on a future crossing. */
     public void reactivate() {
         this.triggeredAt = null;
         this.active = true;

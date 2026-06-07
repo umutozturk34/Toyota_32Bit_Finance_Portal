@@ -17,6 +17,7 @@ public class UserProfileService {
 
     private final KeycloakAdminClient client;
 
+    /** Reads the user's profile (username, first/last name, email) straight from Keycloak. */
     public ProfileResponse get(String userSub) {
         Map<String, Object> user = client.getUser(userSub);
         return new ProfileResponse(
@@ -27,6 +28,7 @@ public class UserProfileService {
         );
     }
 
+    /** Updates username and first/last name in Keycloak (email is not changed), then returns the refreshed profile. */
     public ProfileResponse update(String userSub, ProfileUpdateRequest request) {
         client.updateBasics(userSub, request.username(), request.firstName(), request.lastName());
         log.info("Profile updated user={}", userSub);

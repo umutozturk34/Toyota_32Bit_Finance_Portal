@@ -48,6 +48,10 @@ public class NewsArticle {
     @JsonIgnore
     private NewsSource source;
 
+    /**
+     * Convenience accessor exposing the owning source's name without serializing the lazy
+     * {@code source} association; returns {@code null} when no source is attached.
+     */
     @JsonIgnore
     public String getSourceName() {
         return source != null ? source.getName() : null;

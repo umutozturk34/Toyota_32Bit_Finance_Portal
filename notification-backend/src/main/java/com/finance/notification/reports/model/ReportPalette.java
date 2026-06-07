@@ -41,6 +41,10 @@ public record ReportPalette(
             "#475569", "#e2e8f0"
     );
 
+    /**
+     * Resolves a palette from a theme name. Returns {@link #LIGHT} when the name is "light"
+     * (case-insensitive); any other value, including {@code null}, falls back to {@link #DARK}.
+     */
     public static ReportPalette of(String theme) {
         return "LIGHT".equalsIgnoreCase(theme) || "light".equalsIgnoreCase(theme) ? LIGHT : DARK;
     }

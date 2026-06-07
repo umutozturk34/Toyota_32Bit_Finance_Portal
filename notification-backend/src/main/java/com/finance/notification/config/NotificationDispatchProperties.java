@@ -18,20 +18,30 @@ public record NotificationDispatchProperties(
         if (newsDigest == null) newsDigest = new NewsDigest(null, null);
     }
 
+    /**
+     * Number-formatting precision: fraction digits for large vs. small magnitudes and the rounding
+     * scale applied to change-percent figures rendered in notification text.
+     */
     public record Formatting(
             int fractionDigitsLarge,
             int fractionDigitsSmall,
             int changePercentScale
     ) {}
 
+    /** Watchlist-delta tuning: how many changed items to inline as a preview in the notification body. */
     public record WatchlistDelta(
             int bodyPreviewItems
     ) {}
 
+    /** Fan-out tuning: page size for batching recipients when broadcasting a notification to many users. */
     public record Fanout(
             int pageSize
     ) {}
 
+    /**
+     * News-digest windowing: the look-back window for "recent" items and the cap on sample titles in
+     * the digest body. The compact constructor substitutes 60 minutes and 3 titles for null values.
+     */
     public record NewsDigest(
             Integer recentWindowMinutes,
             Integer sampleTitleLimit

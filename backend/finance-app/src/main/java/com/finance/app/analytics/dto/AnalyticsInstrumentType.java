@@ -19,6 +19,10 @@ public enum AnalyticsInstrumentType {
     DEPOSIT(null, Kind.RATE),
     PORTFOLIO(null, Kind.PRICE);
 
+    /**
+     * Whether an instrument's value evolves along a market PRICE path or compounds from a RATE/yield.
+     * Selects which valuation branch the scenario engine applies.
+     */
     public enum Kind {
         PRICE,
         RATE

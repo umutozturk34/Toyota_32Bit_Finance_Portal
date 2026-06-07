@@ -73,14 +73,17 @@ public class Watchlist {
         updatedAt = LocalDateTime.now();
     }
 
+    /** Ownership check used to authorize access: true when this list belongs to the given user. */
     public boolean belongsTo(String candidateUserSub) {
         return userSub.equals(candidateUserSub);
     }
 
+    /** Changes the list's display name; uniqueness per user is enforced by the DB constraint. */
     public void rename(String newName) {
         this.name = newName;
     }
 
+    /** Builds the user's default list (the one auto-created on first use), marked {@code isDefault}. */
     public static Watchlist createDefault(String userSub, String name) {
         return Watchlist.builder()
                 .userSub(userSub)
@@ -89,6 +92,7 @@ public class Watchlist {
                 .build();
     }
 
+    /** Builds an additional, non-default list for the user. */
     public static Watchlist create(String userSub, String name) {
         return Watchlist.builder()
                 .userSub(userSub)

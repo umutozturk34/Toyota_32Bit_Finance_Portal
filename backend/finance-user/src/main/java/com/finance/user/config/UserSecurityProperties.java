@@ -31,6 +31,10 @@ public record UserSecurityProperties(
             String themeAttribute,
             String localeAttribute
     ) {
+        /**
+         * Canonicalizes the bound values, falling back to {@code "locale"} when the locale attribute
+         * name is left unconfigured so the Keycloak sync logic always has a usable attribute key.
+         */
         public Keycloak {
             localeAttribute = localeAttribute == null ? "locale" : localeAttribute;
         }

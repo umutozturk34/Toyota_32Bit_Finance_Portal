@@ -49,10 +49,12 @@ public enum AlertDirection {
         this.upward = upward;
     }
 
+    /** True for directions that fire on an upward move ({@code ABOVE}, {@code CHANGE_PCT_UP}). */
     public boolean isUpward() {
         return upward;
     }
 
+    /** True when the threshold is a percentage move from the reference price rather than an absolute price. */
     public boolean isPercentBased() {
         return this == CHANGE_PCT_UP || this == CHANGE_PCT_DOWN;
     }

@@ -17,8 +17,15 @@ import java.math.BigDecimal;
 @Mapper(componentModel = "spring")
 public abstract class PortfolioResponseMapper {
 
+    /** Maps a portfolio entity to its response DTO (metadata only; positions/valuation added separately). */
     public abstract PortfolioResponse toPortfolioResponse(Portfolio portfolio);
 
+    /**
+     * Assembles a full position response by combining the persisted lot ({@code pos}) with
+     * service-computed TRY valuation figures (current price, entry/market value, P&amp;L absolute and
+     * percent, real/inflation-adjusted percent) and resolved display data (asset name and image).
+     * Realized P&amp;L is populated only for closed positions; the trailing currency-frame field is left null.
+     */
     public PositionResponse toPositionResponse(PortfolioPosition pos,
                                                 BigDecimal currentPriceTry,
                                                 BigDecimal entryValueTry,
@@ -58,6 +65,11 @@ public abstract class PortfolioResponseMapper {
                 null, null, null);
     }
 
+    /**
+     * Assembles the portfolio summary response from pre-aggregated TRY totals: overall value/cost
+     * and P&amp;L, the daily delta, realized P&amp;L, inflation (CPI) growth, realized cash, and the
+     * per-currency K/Z frames keyed by currency code. Performs no computation, only field assembly.
+     */
     public PortfolioSummaryResponse toSummaryResponse(BigDecimal totalValueTry,
                                                       BigDecimal totalEntryValueTry,
                                                       BigDecimal totalPnlTry,
@@ -78,6 +90,7 @@ public abstract class PortfolioResponseMapper {
         );
     }
 
+    /** Builds an allocation slice (label, asset type, TRY value/percent, cost and realized P&amp;L) without per-currency breakdowns. */
     public AllocationItem toAllocationItem(String label,
                                            String assetType,
                                            BigDecimal valueTry,
@@ -87,6 +100,10 @@ public abstract class PortfolioResponseMapper {
         return new AllocationItem(label, assetType, valueTry, percent, costTry, realizedPnlTry);
     }
 
+    /**
+     * Builds an allocation slice with the additional per-currency realized-P&amp;L and cost maps;
+     * null maps are normalized to empty so the response never carries null collections.
+     */
     public AllocationItem toAllocationItem(String label,
                                            String assetType,
                                            BigDecimal valueTry,

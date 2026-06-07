@@ -19,6 +19,7 @@ public enum AssetType {
         this.marketType = marketType;
     }
 
+    /** The market-data {@link MarketType} this asset class maps to, used to route pricing lookups. */
     public MarketType marketType() {
         return marketType;
     }

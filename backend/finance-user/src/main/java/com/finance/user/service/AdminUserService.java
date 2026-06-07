@@ -26,12 +26,25 @@ public class AdminUserService {
     private final KeycloakUserMapper mapper;
     private final UserStatusRepository userStatusRepository;
 
+    /**
+     * Returns a page of users from Keycloak mapped to the admin response DTO; an empty list when
+     * Keycloak yields none.
+     *
+     * @param first  zero-based offset of the first result
+     * @param max    maximum number of users to return
+     * @param search optional username/email filter, null for all
+     */
     public List<AdminUserResponse> listUsers(int first, int max, String search) {
         List<KeycloakUser> users = client.listUsers(first, max, search);
         if (users == null) return List.of();
         return users.stream().map(mapper::toResponse).toList();
     }
 
+    /**
+     * Total number of users matching the optional search filter, for paging the admin list.
+     *
+     * @param search optional username/email filter, null to count all users
+     */
     public long countUsers(String search) {
         return client.countUsers(search);
     }
@@ -44,6 +57,7 @@ public class AdminUserService {
         applyStatusChange(userId, false);
     }
 
+    /** Re-enables a previously banned account in both Keycloak and the local user-status table. */
     public void unbanUser(String userId) {
         applyStatusChange(userId, true);
     }

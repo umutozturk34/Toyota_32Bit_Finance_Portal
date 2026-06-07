@@ -132,6 +132,11 @@ public class PerformanceAggregationHelper {
         return x.add(y);
     }
 
+    /**
+     * Carrier for one performance point's by-code aggregation: the portfolio totals (value, cost,
+     * PnL and the cost-derived PnL percent) alongside the capped top-N detail rows with their OTHER
+     * bucket, bundled so the caller gets every figure for a single timestamp in one return value.
+     */
     public record AssetCodeAgg(BigDecimal totalValue, BigDecimal totalCost, BigDecimal totalPnl,
                                 BigDecimal pnlPercent, List<PerformanceAssetDetail> details) {
     }

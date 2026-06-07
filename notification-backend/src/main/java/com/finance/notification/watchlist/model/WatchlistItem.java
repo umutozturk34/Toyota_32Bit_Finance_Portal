@@ -106,6 +106,7 @@ public class WatchlistItem {
         if (createdAt == null) createdAt = LocalDateTime.now();
     }
 
+    /** Ownership check used to authorize access: true when this item belongs to the given user. */
     public boolean belongsTo(String candidateUserSub) {
         return userSub.equals(candidateUserSub);
     }

@@ -35,6 +35,11 @@ public class EmailChangeCodeListener {
     private final UserPreferenceCacheService userPreferenceCacheService;
     private final Translator translator;
 
+    /**
+     * Wires the outbox repository, JSON mapper, the shared processed-event-id cache (for idempotent
+     * consumption), the user-status port (to suppress inactive users), the preference cache (to
+     * resolve the recipient's locale), and the i18n translator (for the localized subject line).
+     */
     public EmailChangeCodeListener(EmailOutboxRepository emailOutboxRepository,
                                    ObjectMapper objectMapper,
                                    @Qualifier("processedEventIds") Cache<String, Boolean> processedEventIds,
@@ -53,6 +58,16 @@ public class EmailChangeCodeListener {
             topics = "${app.kafka.topics.user-email-change-code}",
             groupId = "${spring.kafka.consumer.group-id}-email-change"
     )
+    /**
+     * Handles one email-change-code event: skips duplicates (by event id) and inactive users,
+     * otherwise builds the localized template model (code, old/new email, minutes until expiry,
+     * floored to at least one) and persists a PENDING outbox row addressed to the OLD email. The
+     * event id is recorded as processed and the offset is acknowledged in every terminal path, so
+     * a handled message is never reprocessed.
+     *
+     * @param event the email-change-code request carrying the user, addresses, code and expiry
+     * @param ack   the manual-ack handle committed once the message is fully handled or skipped
+     */
     public void onEmailChangeCode(EmailChangeCodeRequestedEvent event, Acknowledgment ack) {
         if (processedEventIds.getIfPresent(event.eventId()) != null) {
             log.debug("Duplicate email change event {} for {}, skip", event.eventId(), event.userSub());

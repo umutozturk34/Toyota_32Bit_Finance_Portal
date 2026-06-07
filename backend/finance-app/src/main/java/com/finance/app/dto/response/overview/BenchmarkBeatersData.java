@@ -18,6 +18,10 @@ public record BenchmarkBeatersData(
         return WidgetKind.BENCHMARK_BEATERS;
     }
 
+    /**
+     * One candidate measured against the benchmark: its type/code/name, its own nominal return, the
+     * excess over the benchmark (nominal minus benchmark return), and whether that excess is positive.
+     */
     public record BeaterRow(
             String type,
             String code,

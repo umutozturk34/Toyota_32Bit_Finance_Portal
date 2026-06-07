@@ -46,6 +46,12 @@ public class PortfolioDataClient {
     private static final int POSITIONS_MAX_PAGES = 50;
     private final WebClient client;
 
+    /**
+     * Builds the backing {@link WebClient} pinned to the portfolio backend base URL, raising the
+     * in-memory buffer to 16 MiB so large position/performance payloads decode without truncation.
+     *
+     * @param baseUrl portfolio API base URL (defaults to the in-cluster {@code backend:8080})
+     */
     public PortfolioDataClient(WebClient.Builder builder,
                                @Value("${app.portfolioApi.baseUrl:http://backend:8080}") String baseUrl) {
         this.client = builder
@@ -54,6 +60,19 @@ public class PortfolioDataClient {
                 .build();
     }
 
+    /**
+     * Fetches everything the PDF report needs for one portfolio and assembles it into a single bundle:
+     * headline summary and regular allocation (from {@code /view}), realized-PnL allocation, the full
+     * paginated position list, and the performance value/return series. The return series is taken from
+     * the backend's cost-based {@code pnlPercent} (not a value index) with leading synthetic-zero points
+     * trimmed; the value series is left intact. Each backend call forwards the caller's bearer token.
+     *
+     * @param portfolioId the portfolio to report on
+     * @param range       chart range passed through to the performance endpoint
+     * @param accessToken bearer token forwarded on every downstream call; may be null/blank to call unauthenticated
+     * @return the assembled report bundle; individual sections may be empty when a downstream call returns no data
+     * @throws RuntimeException if any downstream call fails or times out
+     */
     public PortfolioReportBundle fetch(Long portfolioId, String range, String accessToken) {
         // /view is the single-shot read for the headline figures (summary) and the regular
         // allocation pie (Dağılım). Its positions slice is paginated and capped — the PDF must
@@ -177,6 +196,11 @@ public class PortfolioDataClient {
             List<ReportAllocation> allocation
     ) {}
 
+    /**
+     * One point of the performance chart as returned by the backend: portfolio value in TRY and the
+     * cost-based cumulative return percent at that timestamp. Mapped into the report's value and
+     * return series respectively.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record PerformanceRecord(
             LocalDateTime timestamp,

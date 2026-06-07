@@ -36,6 +36,11 @@ public class PortfolioUpdatedListener {
     private final PortfolioSnapshotReader snapshotReader;
     private final Cache<String, Boolean> processedEventIds;
 
+    /**
+     * @param processedEventIds dedicated per-listener cache of handled event ids for idempotency
+     *                          against Kafka redelivery (qualified to keep it independent of other
+     *                          listeners' dedup caches)
+     */
     public PortfolioUpdatedListener(NotificationFanoutService fanoutService,
                                     NotificationPreferenceRepository preferences,
                                     PortfolioSnapshotReader snapshotReader,
@@ -46,6 +51,14 @@ public class PortfolioUpdatedListener {
         this.processedEventIds = processedEventIds;
     }
 
+    /**
+     * Handles one portfolio-updated event: drops duplicates, then fans out in bulk per page of
+     * portfolio-subscribed users, building each user's payload from their aggregated daily snapshot.
+     * The event is acknowledged and its id recorded in every branch so it is processed at most once.
+     *
+     * @param event the consumed event carrying the source of the update
+     * @param ack   manual offset acknowledgment, committed once handling completes
+     */
     @KafkaListener(
             topics = "${app.kafka.topics.portfolio-updated}",
             groupId = GROUP_ID,

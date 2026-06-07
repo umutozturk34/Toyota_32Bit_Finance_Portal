@@ -23,6 +23,10 @@ public class MarketUpdateEventListener {
     private final PriceAlertEvaluator priceAlertEvaluator;
     private final WatchlistEvaluator watchlistEvaluator;
 
+    /**
+     * @param processedEventIds shared dedup cache of handled event ids for idempotency against Kafka
+     *                          redelivery (qualified to this evaluation listener's consumer group)
+     */
     public MarketUpdateEventListener(@Qualifier("processedEventIds") Cache<String, Boolean> processedEventIds,
                                      PriceAlertEvaluator priceAlertEvaluator,
                                      WatchlistEvaluator watchlistEvaluator) {
@@ -31,6 +35,14 @@ public class MarketUpdateEventListener {
         this.watchlistEvaluator = watchlistEvaluator;
     }
 
+    /**
+     * Handles one market-data-updated event by running price-alert and watchlist evaluation for the
+     * affected market type. Duplicates are dropped; the event is acknowledged and its id recorded so it
+     * is processed at most once.
+     *
+     * @param event the consumed event carrying the updated market type and source
+     * @param ack   manual offset acknowledgment, committed once evaluation completes
+     */
     @KafkaListener(
             topics = "${app.kafka.topics.market-updated}",
             groupId = "${spring.kafka.consumer.group-id}-market"

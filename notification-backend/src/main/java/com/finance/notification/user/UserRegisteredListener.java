@@ -25,6 +25,13 @@ public class UserRegisteredListener {
             topics = "${app.kafka.topics.user-registered}",
             groupId = GROUP_ID,
             containerFactory = "kafkaListenerContainerFactory")
+    /**
+     * Handles one user-registered event by ensuring the user's default notification preferences
+     * exist (idempotent: a no-op if already seeded), then acknowledges the offset.
+     *
+     * @param event the registration event carrying the new user's subject identifier
+     * @param ack   the manual-ack handle committed after preferences are ensured
+     */
     public void onUserRegistered(UserRegisteredEvent event, Acknowledgment ack) {
         boolean created = preferenceService.ensureDefaultsExist(event.userSub());
         log.info("user.registered userSub={} preferencesCreated={}", event.userSub(), created);

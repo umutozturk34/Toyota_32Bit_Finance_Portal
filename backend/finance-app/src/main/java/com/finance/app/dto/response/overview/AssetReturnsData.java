@@ -23,6 +23,11 @@ public record AssetReturnsData(
         return WidgetKind.ASSET_RETURNS;
     }
 
+    /**
+     * One ranked spot asset: its type/code/name, the period return as a percentage and as a TRY figure,
+     * the current price, and the computed volatility with its derived risk-level bucket. All monetary
+     * figures are stated in the enclosing payload's {@code currency}.
+     */
     public record ReturnRow(
             String type,
             String code,

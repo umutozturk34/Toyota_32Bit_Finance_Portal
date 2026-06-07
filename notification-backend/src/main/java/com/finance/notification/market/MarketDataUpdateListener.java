@@ -31,6 +31,11 @@ public class MarketDataUpdateListener {
     private final NotificationPreferenceRepository preferences;
     private final Cache<String, Boolean> processedEventIds;
 
+    /**
+     * @param processedEventIds dedicated per-listener cache of handled event ids for idempotency
+     *                          against Kafka redelivery (qualified so it stays independent of the
+     *                          alert/watchlist listener's dedup cache on the same topic)
+     */
     public MarketDataUpdateListener(NotificationFanoutService fanoutService,
                                     NotificationPreferenceRepository preferences,
                                     @Qualifier("dataUpdatedProcessedEventIds") Cache<String, Boolean> processedEventIds) {
@@ -39,6 +44,15 @@ public class MarketDataUpdateListener {
         this.processedEventIds = processedEventIds;
     }
 
+    /**
+     * Handles one market-data-updated event: drops duplicates, maps the raw market type to a
+     * {@link SessionMarket} (skipping unmapped types), then fans a data-updated payload out to users
+     * subscribed to that market. The event is acknowledged and its id recorded in every branch so it
+     * is processed at most once.
+     *
+     * @param event the consumed event carrying the updated market type and source
+     * @param ack   manual offset acknowledgment, committed once handling completes
+     */
     @KafkaListener(
             topics = "${app.kafka.topics.market-updated}",
             groupId = GROUP_ID,

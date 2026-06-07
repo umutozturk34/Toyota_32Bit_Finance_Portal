@@ -19,6 +19,14 @@ public final class MoneyFormat {
     private final char groupSep;
     private final char decimalSep;
 
+    /**
+     * Creates a formatter bound to a currency symbol and a locale. The locale only selects the
+     * separator convention: Turkish ({@code tr}) uses {@code .} for grouping and {@code ,} for
+     * decimals, everything else uses the inverse. A {@code null} locale is treated as non-Turkish.
+     *
+     * @param symbol the currency symbol prefixed to every formatted value (e.g. {@code ₺})
+     * @param locale the locale that selects grouping/decimal separators; {@code null} is allowed
+     */
     public MoneyFormat(String symbol, Locale locale) {
         this.symbol = symbol;
         boolean tr = locale != null && "tr".equalsIgnoreCase(locale.getLanguage());
@@ -26,6 +34,10 @@ public final class MoneyFormat {
         this.decimalSep = tr ? ',' : '.';
     }
 
+    /**
+     * Formats a value for general display: K/M/B-abbreviated above one thousand, otherwise shown
+     * in full, both with two decimals. A {@code null} value renders as an em dash placeholder.
+     */
     public String of(BigDecimal value) {
         return format(value, 2);
     }

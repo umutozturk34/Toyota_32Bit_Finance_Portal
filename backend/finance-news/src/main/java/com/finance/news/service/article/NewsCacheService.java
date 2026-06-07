@@ -51,6 +51,7 @@ public class NewsCacheService {
         return article;
     }
 
+    /** Writes (or overwrites) the article in Redis under its id key with the configured TTL. */
     public void cacheArticle(NewsArticle article) {
         redisTemplate.opsForValue().set(CACHE_ARTICLE + article.getId(), article, cacheTtl);
     }

@@ -113,6 +113,7 @@ public class DerivativePosition {
         updatedAt = LocalDateTime.now();
     }
 
+    /** True while the position has not been closed, i.e. no {@code closeDate} has been recorded. */
     public boolean isOpen() {
         return closeDate == null;
     }

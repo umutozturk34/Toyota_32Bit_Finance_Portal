@@ -73,11 +73,20 @@ import java.util.TimeZone;
 @EnableScheduling
 public class NotificationApplication {
 
+    /**
+     * Boots the microservice. Sets the JVM-wide default time zone to Europe/Istanbul before the
+     * Spring context starts so all date/time handling (market sessions, outbox cadences) runs in
+     * exchange-local time regardless of host configuration.
+     */
     public static void main(String[] args) {
         TimeZone.setDefault(TimeZone.getTimeZone("Europe/Istanbul"));
         SpringApplication.run(NotificationApplication.class, args);
     }
 
+    /**
+     * System clock bound to the default zone (pinned to Europe/Istanbul in {@link #main}). Injected
+     * wherever "now" is needed so time-dependent logic can be substituted with a fixed clock in tests.
+     */
     @Bean
     public Clock systemClock() {
         return Clock.systemDefaultZone();

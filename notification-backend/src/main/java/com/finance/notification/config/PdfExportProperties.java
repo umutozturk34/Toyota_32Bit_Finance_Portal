@@ -19,6 +19,11 @@ public record PdfExportProperties(
         }
     }
 
+    /**
+     * Upstream PDF rendering service settings: its base URL and the per-request timeout in
+     * milliseconds. The compact constructor falls back to the in-cluster service URL and a 30s
+     * timeout when values are blank, absent, or non-positive.
+     */
     public record Pdf(
             String serviceUrl,
             Integer requestTimeoutMs

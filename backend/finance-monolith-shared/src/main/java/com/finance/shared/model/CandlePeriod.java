@@ -35,6 +35,14 @@ public enum CandlePeriod {
         this.startResolver = startResolver;
     }
 
+    /**
+     * Range start derived from an explicit {@code end} instant via this period's resolver
+     * (e.g. {@code end.minusMonths(1)} for {@code ONE_MONTH}); {@code ALL} ignores {@code end} and
+     * returns the Unix epoch.
+     *
+     * @param end the end instant of the range
+     * @return the start instant for this period relative to {@code end}
+     */
     public LocalDateTime toStartDateTime(LocalDateTime end) {
         return startResolver.apply(end);
     }
@@ -44,6 +52,10 @@ public enum CandlePeriod {
         return toStartDateTime(LocalDateTime.now()).toLocalDate().atStartOfDay();
     }
 
+    /**
+     * Date-only range start measured back from today. {@code ALL} returns the Unix epoch date and
+     * {@code ONE_WEEK} subtracts a week; all other periods subtract {@code months} months.
+     */
     public LocalDate toStartDate() {
         if (this == ALL) return EPOCH_DATE;
         if (this == ONE_WEEK) return LocalDate.now().minusWeeks(1);

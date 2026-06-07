@@ -20,6 +20,10 @@ public class MarketSessionTracker {
 
     private final Cache<SessionMarket, MarketSession> previous;
 
+    /**
+     * Builds the backing cache sized and expired from notification cache properties (TTL in hours,
+     * max tracked markets), so stale session state ages out rather than pinning memory.
+     */
     public MarketSessionTracker(NotificationCacheProperties cacheProperties) {
         this.previous = Caffeine.newBuilder()
                 .expireAfterWrite(Duration.ofHours(cacheProperties.sessionTrackerTtlHours()))
@@ -27,10 +31,16 @@ public class MarketSessionTracker {
                 .build();
     }
 
+    /**
+     * Returns the last recorded session for the market, or empty when none has been observed yet
+     * (or the entry has expired). An empty result lets callers suppress a spurious open/close
+     * transition on the first scan after startup.
+     */
     public Optional<MarketSession> previous(SessionMarket market) {
         return Optional.ofNullable(previous.getIfPresent(market));
     }
 
+    /** Records the market's current session as the new baseline for the next scan's edge detection. */
     public void update(SessionMarket market, MarketSession session) {
         previous.put(market, session);
         log.debug("Session tracker updated market={} session={}", market, session);

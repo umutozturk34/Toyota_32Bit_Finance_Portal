@@ -27,10 +27,15 @@ public enum NotificationType {
         this.inappAccessor = inappAccessor;
     }
 
+    /**
+     * Whether email is wanted for this type, evaluated against the type's bound per-type email flag.
+     * This ignores the master email switch, which {@link NotificationPreference#wantsEmail} applies.
+     */
     public boolean isEmailWantedBy(NotificationPreference preference) {
         return emailAccessor.test(preference);
     }
 
+    /** Whether the in-app channel is wanted for this type, via the type's bound per-type in-app flag. */
     public boolean isInAppWantedBy(NotificationPreference preference) {
         return inappAccessor.test(preference);
     }

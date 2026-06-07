@@ -17,6 +17,10 @@ public record WatchlistData(
         return WidgetKind.WATCHLIST;
     }
 
+    /**
+     * One watched instrument enriched with a live snapshot: its code and market type, an optional image,
+     * the current price and percent change, and the currency the price is quoted in.
+     */
     public record WatchlistRow(
             String assetCode,
             MarketType marketType,

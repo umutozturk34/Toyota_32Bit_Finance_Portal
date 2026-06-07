@@ -63,9 +63,18 @@ public class MacroIndicatorChangeReader {
             BigDecimal deltaPercent,
             Direction direction
     ) {
+        /** Sign of the move from the previous to the current value; FLAT covers both no-change and a missing previous value. */
         public enum Direction { UP, DOWN, FLAT }
     }
 
+    /**
+     * Returns the latest move for each of the given indicator codes, excluding FLAT (no-change or
+     * no-prior-value) indicators so callers only receive material deltas. Null/blank codes are
+     * ignored and duplicates are collapsed; an empty input yields an empty list.
+     *
+     * @param codes indicator codes to inspect (nulls/blanks tolerated and skipped)
+     * @return non-FLAT changes, one per code that both exists and actually moved
+     */
     @Transactional(readOnly = true)
     public List<IndicatorChange> findChanges(Collection<String> codes) {
         Set<String> unique = new HashSet<>();

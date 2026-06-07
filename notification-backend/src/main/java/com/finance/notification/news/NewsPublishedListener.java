@@ -29,6 +29,11 @@ public class NewsPublishedListener {
     private final NewsReader newsReader;
     private final Cache<String, Boolean> processedEventIds;
 
+    /**
+     * @param processedEventIds dedicated per-listener cache of handled event ids for idempotency
+     *                          against Kafka redelivery (qualified to keep it independent of other
+     *                          listeners' dedup caches)
+     */
     public NewsPublishedListener(NotificationFanoutService fanoutService,
                                  NotificationPreferenceRepository preferences,
                                  NewsReader newsReader,
@@ -39,6 +44,15 @@ public class NewsPublishedListener {
         this.processedEventIds = processedEventIds;
     }
 
+    /**
+     * Handles one news-published event: drops duplicates, reads a fresh digest of recent articles,
+     * skips fanout when none qualify, otherwise dispatches the digest (count, categories, sample
+     * titles) to all news-subscribed users. The event is acknowledged and its id recorded in every
+     * branch so it is processed at most once.
+     *
+     * @param event the consumed event carrying the source of the publish trigger
+     * @param ack   manual offset acknowledgment, committed once handling completes
+     */
     @KafkaListener(
             topics = "${app.kafka.topics.news-published}",
             groupId = GROUP_ID,

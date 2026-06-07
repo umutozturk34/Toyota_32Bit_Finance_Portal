@@ -32,6 +32,11 @@ public class MacroIndicatorsUpdatedListener {
     private final MacroIndicatorChangeReader changeReader;
     private final Cache<String, Boolean> processedEventIds;
 
+    /**
+     * @param processedEventIds dedicated per-listener cache of already-handled event ids, providing
+     *                          idempotency against Kafka redelivery (qualified to avoid colliding
+     *                          with other listeners' dedup caches)
+     */
     public MacroIndicatorsUpdatedListener(NotificationFanoutService fanoutService,
                                           NotificationPreferenceRepository preferences,
                                           MacroIndicatorChangeReader changeReader,
@@ -43,6 +48,15 @@ public class MacroIndicatorsUpdatedListener {
         this.processedEventIds = processedEventIds;
     }
 
+    /**
+     * Handles one macro-indicators-updated event: drops duplicates, re-reads the actual deltas for the
+     * event's changed codes, skips fanout when nothing materially changed, otherwise dispatches a
+     * digest payload to all macro-subscribed users. The event is acknowledged in every branch so it is
+     * never redelivered, and its id is recorded so a later redelivery is treated as a duplicate.
+     *
+     * @param event the consumed event carrying the changed indicator codes and source
+     * @param ack   manual offset acknowledgment, committed once handling completes
+     */
     @KafkaListener(
             topics = "${app.kafka.topics.macro-indicators-updated}",
             groupId = GROUP_ID,

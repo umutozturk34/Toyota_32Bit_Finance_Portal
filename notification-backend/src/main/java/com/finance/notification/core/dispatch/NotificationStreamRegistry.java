@@ -26,6 +26,11 @@ public class NotificationStreamRegistry {
 
     private final Cache<String, CopyOnWriteArrayList<SseEmitter>> emitters;
 
+    /**
+     * Builds the per-user emitter cache from configured limits: idle TTL evicts stale connections and
+     * a maximum-user bound caps memory; evicted entries have their emitters completed so server-side
+     * SSE resources are released.
+     */
     public NotificationStreamRegistry(NotificationStreamProperties streamProperties) {
         this.streamProperties = streamProperties;
         this.emitters = Caffeine.newBuilder()
@@ -54,6 +59,11 @@ public class NotificationStreamRegistry {
         return emitter;
     }
 
+    /**
+     * Pushes a persisted notification to every live connection the user holds; no-op when none are
+     * open. Connections that fail to receive are completed with the error and dropped from the
+     * registry.
+     */
     public void publish(String userSub, NotificationResponse event) {
         CopyOnWriteArrayList<SseEmitter> list = emitters.getIfPresent(userSub);
         if (list == null || list.isEmpty()) return;

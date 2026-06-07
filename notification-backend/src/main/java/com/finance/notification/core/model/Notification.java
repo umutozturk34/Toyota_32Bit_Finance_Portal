@@ -75,14 +75,17 @@ public class Notification {
         if (createdAt == null) createdAt = LocalDateTime.now();
     }
 
+    /** Unread state is modeled as the absence of a read timestamp rather than a separate flag. */
     public boolean isUnread() {
         return readAt == null;
     }
 
+    /** True when an expiry was set and has already passed; notifications without one never expire. */
     public boolean isExpired() {
         return expiresAt != null && expiresAt.isBefore(LocalDateTime.now());
     }
 
+    /** Ownership guard used to authorize per-user access before exposing or mutating the notification. */
     public boolean belongsTo(String candidateUserSub) {
         return userSub.equals(candidateUserSub);
     }
@@ -94,6 +97,11 @@ public class Notification {
         }
     }
 
+    /**
+     * Factory for a new, unread notification. The created instance has no read timestamp and its
+     * {@code createdAt} is assigned on persist; pass {@code expiresAt} as null for one that never
+     * expires.
+     */
     public static Notification create(String userSub,
                                       NotificationType type,
                                       String title,

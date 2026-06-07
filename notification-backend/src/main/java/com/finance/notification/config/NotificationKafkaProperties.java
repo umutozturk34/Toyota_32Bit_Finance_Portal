@@ -8,6 +8,7 @@ public record NotificationKafkaProperties(
         Consumer consumer
 ) {
 
+    /** Listener retry policy: the back-off interval between redeliveries and the attempt count after which a record is sent to the DLQ. */
     public record Consumer(
             long retryIntervalMs,
             long retryMaxAttempts

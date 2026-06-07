@@ -35,10 +35,18 @@ public enum WatchlistSortBy {
         this.postEnrichComparator = postEnrichComparator;
     }
 
+    /** True for sorts backed by an entity field (pushed into the query), false for post-enrich sorts. */
     public boolean isDbSortable() {
         return dbField != null;
     }
 
+    /**
+     * Builds the {@link Sort.Order} to push into the query for a DB-backed sort.
+     *
+     * @param direction the requested sort direction
+     * @return an order on this sort's entity field
+     * @throws IllegalStateException if this constant is not DB-sortable (a post-enrich sort)
+     */
     public Sort.Order toDbOrder(Sort.Direction direction) {
         if (dbField == null) {
             throw new IllegalStateException(name() + " is not DB-sortable");
@@ -46,6 +54,14 @@ public enum WatchlistSortBy {
         return new Sort.Order(direction, dbField);
     }
 
+    /**
+     * Returns the comparator applied to enriched (live-snapshot) responses for a non-DB sort,
+     * reversed when the direction is descending.
+     *
+     * @param direction the requested sort direction
+     * @return the direction-aware comparator over {@link WatchlistItemResponse}
+     * @throws IllegalStateException if this constant has no post-enrich comparator (a DB-backed sort)
+     */
     public Comparator<WatchlistItemResponse> postEnrichComparator(Sort.Direction direction) {
         return Optional.ofNullable(postEnrichComparator)
                 .map(c -> direction == Sort.Direction.DESC ? c.reversed() : c)

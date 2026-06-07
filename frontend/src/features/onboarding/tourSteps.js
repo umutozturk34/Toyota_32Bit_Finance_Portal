@@ -41,6 +41,18 @@ const tourSteps = [
     slowLoad: true,
   },
   {
+    id: 'market-returns',
+    path: '/market',
+    clickSelector: '[data-tour="market-returns-tab"]',
+    closeSelector: '[data-tour="market-overview-tab"]',
+    selector: '[data-tour="market-returns-content"]',
+    titleKey: 'onboarding.tour.marketReturns.title',
+    descKey: 'onboarding.tour.marketReturns.desc',
+    placement: 'top',
+    padding: 10,
+    slowLoad: true,
+  },
+  {
     id: 'market-search',
     path: '/market',
     selector: '[data-tour="market-search"]',

@@ -1287,6 +1287,7 @@
       "aed": "UAE Dirham",
       "aud": "Australian Dollar",
       "azn": "Azerbaijani Manat",
+      "bgn": "Bulgarian Lev",
       "cad": "Canadian Dollar",
       "chf": "Swiss Franc",
       "cny": "Chinese Yuan",
@@ -1394,7 +1395,10 @@
       "lastUpdated": "Last updated",
       "sparkline90d": "Last 90 days",
       "historyTitle": "{{label}} History",
+      "rangeOneWeek": "1W",
+      "rangeOneMonth": "1M",
       "rangeThreeMonths": "3M",
+      "rangeSixMonths": "6M",
       "rangeOneYear": "1Y",
       "rangeThreeYears": "3Y",
       "rangeFiveYears": "5Y",
@@ -1744,6 +1748,10 @@
       "marketMacro": {
         "title": "Indicators",
         "desc": "CPI, PPI, policy rate, TLREF, average deposit rates together with BIST 100 and BIST 30 index levels and yearly changes — every macro figure at a single glance."
+      },
+      "marketReturns": {
+        "title": "Returns",
+        "desc": "Ranks the realized returns of stocks, crypto, forex, funds and commodities over a chosen period — compare the best-performing assets in TRY, USD and EUR on a single screen."
       }
     },
     "highlights": {
@@ -2360,7 +2368,8 @@
     "backTo": {
       "beaters": "Back to Beaters",
       "asset": "Back to asset",
-      "portfolio": "Back to portfolio"
+      "portfolio": "Back to portfolio",
+      "overview": "Back to overview"
     },
     "compareInfo": {
       "forwardFilledTooltip": "Extended to today from the last data point",

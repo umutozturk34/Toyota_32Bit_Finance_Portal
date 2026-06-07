@@ -124,10 +124,10 @@
       "1M": "1A",
       "3M": "3A",
       "6M": "6A",
-      "1Y": "1Y",
-      "3Y": "3Y",
-      "5Y": "5Y",
-      "ALL": "Maks"
+      "1Y": "1S",
+      "3Y": "3S",
+      "5Y": "5S",
+      "ALL": "Tümü"
     },
     "waitingForData": "Grafik verisi bekleniyor...",
     "indicators": {
@@ -583,10 +583,10 @@
     "1M": "1A",
     "3M": "3A",
     "6M": "6A",
-    "1Y": "1Y",
-    "3Y": "3Y",
-    "5Y": "5Y",
-    "ALL": "Maks"
+    "1Y": "1S",
+    "3Y": "3S",
+    "5Y": "5S",
+    "ALL": "Tümü"
   },
   "assetClass": {
     "hs": "Hisse Senedi",
@@ -1287,6 +1287,7 @@
       "aed": "Birleşik Arap Emirlikleri Dirhemi",
       "aud": "Avustralya Doları",
       "azn": "Azerbaycan Yeni Manatı",
+      "bgn": "Bulgar Levası",
       "cad": "Kanada Doları",
       "chf": "İsviçre Frangı",
       "cny": "Çin Yuanı",
@@ -1394,10 +1395,13 @@
       "lastUpdated": "Son güncelleme",
       "sparkline90d": "Son 90 gün",
       "historyTitle": "{{label}} Geçmişi",
+      "rangeOneWeek": "1H",
+      "rangeOneMonth": "1A",
       "rangeThreeMonths": "3A",
-      "rangeOneYear": "1Y",
-      "rangeThreeYears": "3Y",
-      "rangeFiveYears": "5Y",
+      "rangeSixMonths": "6A",
+      "rangeOneYear": "1S",
+      "rangeThreeYears": "3S",
+      "rangeFiveYears": "5S",
       "rangeAll": "Tümü",
       "heading": "Makro Göstergeler",
       "subheading": "TCMB EVDS · haftalık + aylık + günlük",
@@ -1744,6 +1748,10 @@
       "marketMacro": {
         "title": "Göstergeler",
         "desc": "TÜFE, ÜFE, politika faizi, TLREF, mevduat ortalama faizleri ve BIST 100, BIST 30 endekslerinin son değerleri ile yıllık değişimlerini tek bakışta görebilirsin."
+      },
+      "marketReturns": {
+        "title": "Getiriler",
+        "desc": "Hisse, kripto, döviz, fon ve emtia türlerinin seçtiğin dönemdeki gerçekleşen getirilerini sıralar; TRY, USD ve EUR bazında en çok kazandıran varlıkları tek ekranda karşılaştırabilirsin."
       }
     },
     "highlights": {
@@ -2360,7 +2368,8 @@
     "backTo": {
       "beaters": "Yenenler'e dön",
       "asset": "Varlığa dön",
-      "portfolio": "Portföye dön"
+      "portfolio": "Portföye dön",
+      "overview": "Genel bakışa dön"
     },
     "compareInfo": {
       "forwardFilledTooltip": "Son veri noktasından bugüne uzatıldı",

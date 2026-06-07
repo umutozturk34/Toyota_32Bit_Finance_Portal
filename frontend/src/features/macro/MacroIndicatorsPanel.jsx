@@ -175,7 +175,7 @@ export default function MacroIndicatorsPanel() {
                 currencyFilter === c ? 'bg-bg-elevated text-fg' : 'text-fg-muted hover:text-fg'
               }`}
             >
-              {c}
+              {c === 'ALL' ? t('marketOverview.macro.tabAll', { defaultValue: 'All' }) : c}
             </button>
           ))}
         </div>

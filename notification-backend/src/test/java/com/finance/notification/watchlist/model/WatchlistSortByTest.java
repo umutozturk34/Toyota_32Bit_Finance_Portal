@@ -20,18 +20,37 @@ class WatchlistSortByTest {
                 currentPrice, null, changePercent, "TRY", null, null, null, null, null);
     }
 
+    private WatchlistItemResponse itemWithCode(String assetCode) {
+        return new WatchlistItemResponse(1L, MarketType.STOCK, assetCode, assetCode, null,
+                null, null, null, "TRY", null, null, null, null, null);
+    }
+
     @Test
     void isDbSortable_returnsTrue_forDbBackedConstants() {
         assertThat(WatchlistSortBy.CUSTOM.isDbSortable()).isTrue();
-        assertThat(WatchlistSortBy.NAME.isDbSortable()).isTrue();
         assertThat(WatchlistSortBy.LAST_SEEN_PRICE.isDbSortable()).isTrue();
         assertThat(WatchlistSortBy.ADDED_AT.isDbSortable()).isTrue();
     }
 
     @Test
     void isDbSortable_returnsFalse_forPostEnrichOnlyConstants() {
+        // NAME sorts on the @Transient assetCode (no DB column), so it is post-enrich, not DB-sortable.
+        assertThat(WatchlistSortBy.NAME.isDbSortable()).isFalse();
         assertThat(WatchlistSortBy.CURRENT_PRICE.isDbSortable()).isFalse();
         assertThat(WatchlistSortBy.CHANGE_PERCENT.isDbSortable()).isFalse();
+    }
+
+    @Test
+    void postEnrichComparator_sortsAlphabeticallyByAssetCode_caseInsensitive() {
+        Comparator<WatchlistItemResponse> comparator =
+                WatchlistSortBy.NAME.postEnrichComparator(Sort.Direction.ASC);
+        List<WatchlistItemResponse> sorted = Stream.of(
+                itemWithCode("THYAO"),
+                itemWithCode("akbnk"),
+                itemWithCode("ASELS")).sorted(comparator).toList();
+
+        assertThat(sorted).extracting(WatchlistItemResponse::assetCode)
+                .containsExactly("akbnk", "ASELS", "THYAO");
     }
 
     @Test

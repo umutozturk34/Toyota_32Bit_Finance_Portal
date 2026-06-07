@@ -241,23 +241,10 @@ public class ReportSvgService {
                             .append("\" text-anchor=\"middle\" fill=\"#ffffff\"")
                             .append(" font-size=\"9\" font-weight=\"700\" font-family=\"'Lato', sans-serif\">")
                             .append(pct).append("</text>");
-                } else if (realFracs[i] > 0) {
-                    double leaderInnerX = cx + (rOuter - 1) * Math.cos(mid);
-                    double leaderInnerY = cy + (rOuter - 1) * Math.sin(mid);
-                    double leaderOuterX = cx + (rOuter + 10) * Math.cos(mid);
-                    double leaderOuterY = cy + (rOuter + 10) * Math.sin(mid);
-                    boolean rightSide = Math.cos(mid) >= 0;
-                    double textX = leaderOuterX + (rightSide ? 2 : -2);
-                    double textY = leaderOuterY + 3;
-                    String anchor = rightSide ? "start" : "end";
-                    svg.append("<line x1=\"").append(fmt(leaderInnerX)).append("\" y1=\"").append(fmt(leaderInnerY))
-                            .append("\" x2=\"").append(fmt(leaderOuterX)).append("\" y2=\"").append(fmt(leaderOuterY))
-                            .append("\" stroke=\"").append(palette.muted()).append("\" stroke-width=\"0.6\"/>");
-                    svg.append("<text x=\"").append(fmt(textX)).append("\" y=\"").append(fmt(textY))
-                            .append("\" text-anchor=\"").append(anchor).append("\" fill=\"").append(palette.fg())
-                            .append("\" font-size=\"8\" font-weight=\"600\" font-family=\"'Lato', sans-serif\">")
-                            .append(pct).append("</text>");
                 }
+                // Sub-6% slices get NO on-donut label: several adjacent tiny slices (e.g. <1% each) placed
+                // their leader labels at nearly the same angle and collided into an unreadable cluster. The
+                // legend table beside the donut already lists every slice's exact percentage and value.
                 angle = next;
             }
         }

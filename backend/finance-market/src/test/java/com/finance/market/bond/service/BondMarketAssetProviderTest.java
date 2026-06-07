@@ -127,6 +127,20 @@ class BondMarketAssetProviderTest {
     }
 
     @Test
+    void should_useBaseIndexAsPrice_when_present() {
+        // Arrange
+        Bond b = bond("TR2", "ISIN2", BondType.FIXED_COUPON, new BigDecimal("45.50"), new BigDecimal("10"));
+        b.setBaseIndex(new BigDecimal("98.40"));
+        when(bondRepository.findById("TR2")).thenReturn(Optional.of(b));
+
+        // Act
+        MarketAssetResponse response = provider.getByCode("TR2");
+
+        // Assert — the clean price (baseIndex) wins over the yield/coupon fallback
+        assertThat(response.price()).isEqualByComparingTo("98.40");
+    }
+
+    @Test
     void should_useSeriesCodeAsName_when_bondTypeIsNull() {
         // Arrange
         Bond b = bond("TR2", null, null, new BigDecimal("20"), null);

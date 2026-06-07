@@ -107,7 +107,11 @@ public class BondMarketAssetProvider implements MarketAssetProvider {
     }
 
     private MarketAssetResponse toResponse(Bond bond) {
-        BigDecimal price = bond.getSimpleYield() != null ? bond.getSimpleYield() : bond.getCouponRate();
+        // The displayed price is the bond's clean TRY price (baseIndex); fall back to simple yield then coupon
+        // rate only for bonds whose EVDS feed carried no clean price, so the field is never null when any figure
+        // exists. Bonds always stay TRY (no FX) — no currency is attached.
+        BigDecimal price = bond.getBaseIndex() != null ? bond.getBaseIndex()
+                : (bond.getSimpleYield() != null ? bond.getSimpleYield() : bond.getCouponRate());
         String name = bond.getBondType() != null
                 ? bond.getBondType().name() + " · " + bond.getSeriesCode()
                 : bond.getSeriesCode();

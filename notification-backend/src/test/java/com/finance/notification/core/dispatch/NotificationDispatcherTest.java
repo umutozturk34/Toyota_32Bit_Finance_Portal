@@ -61,7 +61,7 @@ class NotificationDispatcherTest {
 
     private static PriceAlertPayload priceAlertPayload() {
         return new PriceAlertPayload(1L, MarketType.CRYPTO, "btc", AlertDirection.ABOVE,
-                BigDecimal.ONE, BigDecimal.TEN, null, null);
+                BigDecimal.ONE, BigDecimal.TEN, null, null, "TRY");
     }
 
     @BeforeEach

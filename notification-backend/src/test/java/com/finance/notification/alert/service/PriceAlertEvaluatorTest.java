@@ -68,7 +68,7 @@ class PriceAlertEvaluatorTest {
         AssetSnapshot snap = snapshot("BTC", BigDecimal.valueOf(105));
         PriceAlertPayload mapped = new PriceAlertPayload(
                 1L, MarketType.CRYPTO, "BTC", AlertDirection.ABOVE,
-                BigDecimal.valueOf(100), BigDecimal.valueOf(105), "image", "BTC name");
+                BigDecimal.valueOf(100), BigDecimal.valueOf(105), "image", "BTC name", "TRY");
         when(alertService.activeAlerts(MarketType.CRYPTO)).thenReturn(List.of(alert));
         when(assetSnapshotCache.findByCodes(eq(MarketType.CRYPTO), eq(Set.of("BTC"))))
                 .thenReturn(Map.of("BTC", snap));

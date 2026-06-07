@@ -17,7 +17,7 @@ class PayloadMetadataTest {
     void priceAlertPayload_toMetadata_includesAllRequiredFields() {
         PriceAlertPayload payload = new PriceAlertPayload(1L, MarketType.STOCK, "AAPL",
                 AlertDirection.ABOVE, new BigDecimal("110"), new BigDecimal("105"),
-                "img", "Apple");
+                "img", "Apple", "USD");
 
         Map<String, Object> meta = payload.toMetadata();
 
@@ -26,7 +26,8 @@ class PayloadMetadataTest {
                 .containsEntry("assetCode", "AAPL")
                 .containsEntry("direction", "ABOVE")
                 .containsEntry("image", "img")
-                .containsEntry("assetName", "Apple");
+                .containsEntry("assetName", "Apple")
+                .containsEntry("currency", "USD");
         assertThat(payload.type()).isEqualTo(NotificationType.PRICE_ALERT_FIRED);
     }
 
@@ -34,11 +35,11 @@ class PayloadMetadataTest {
     void priceAlertPayload_omitsOptionals_whenNull() {
         PriceAlertPayload payload = new PriceAlertPayload(1L, MarketType.STOCK, "AAPL",
                 AlertDirection.BELOW, new BigDecimal("110"), new BigDecimal("105"),
-                null, null);
+                null, null, null);
 
         Map<String, Object> meta = payload.toMetadata();
 
-        assertThat(meta).doesNotContainKeys("image", "assetName");
+        assertThat(meta).doesNotContainKeys("image", "assetName", "currency");
     }
 
     @Test

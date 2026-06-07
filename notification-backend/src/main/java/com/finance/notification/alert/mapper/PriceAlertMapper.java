@@ -56,5 +56,6 @@ public interface PriceAlertMapper {
     @Mapping(target = "currentPrice", source = "snapshot.priceTry")
     @Mapping(target = "image", source = "snapshot.image")
     @Mapping(target = "assetName", source = "snapshot.name")
+    @Mapping(target = "currency", source = "alert.currency")
     PriceAlertPayload toFiredPayload(PriceAlert alert, AssetSnapshot snapshot, MarketType marketType);
 }

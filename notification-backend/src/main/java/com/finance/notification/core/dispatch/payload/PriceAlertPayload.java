@@ -17,7 +17,8 @@ public record PriceAlertPayload(
         BigDecimal threshold,
         BigDecimal currentPrice,
         String image,
-        String assetName
+        String assetName,
+        String currency
 ) implements NotificationPayload {
 
     @Override
@@ -36,6 +37,7 @@ public record PriceAlertPayload(
         metadata.put("currentPrice", currentPrice);
         if (image != null) metadata.put("image", image);
         if (assetName != null) metadata.put("assetName", assetName);
+        if (currency != null) metadata.put("currency", currency);
         return metadata;
     }
 }

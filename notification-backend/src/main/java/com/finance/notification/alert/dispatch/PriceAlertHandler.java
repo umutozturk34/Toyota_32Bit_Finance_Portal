@@ -57,20 +57,20 @@ public class PriceAlertHandler implements NotificationHandler {
         String title = translator.translate("notif.priceAlert.title", locale, displayName);
         return new RenderedNotification(
                 title,
-                buildBody(locale, marketLabel, direction, p.threshold(), p.currentPrice()),
+                buildBody(locale, marketLabel, direction, p.threshold(), p.currentPrice(), p.currency()),
                 translator.translate("notif.email.subject", locale, title),
                 "price-alert",
                 buildModel(p, direction, marketLabel, assetCode, displayName, locale));
     }
 
     private String buildBody(Locale locale, String marketLabel, AlertDirection direction,
-                                    BigDecimal threshold, BigDecimal currentPrice) {
+                                    BigDecimal threshold, BigDecimal currentPrice, String currency) {
         return translator.translate("notif.priceAlert.body",
                 locale,
                 marketLabel,
                 translator.translate("alertDirection." + direction.name(), locale),
-                formatPrice(threshold, direction.isPercentBased(), locale),
-                formatPrice(currentPrice, false, locale));
+                formatPrice(threshold, direction.isPercentBased(), locale, currency),
+                formatPrice(currentPrice, false, locale, currency));
     }
 
     private Map<String, Object> buildModel(PriceAlertPayload p, AlertDirection direction,
@@ -83,8 +83,8 @@ public class PriceAlertHandler implements NotificationHandler {
         model.put("marketLabel", marketLabel);
         model.put("direction", direction.name());
         model.put("directionLabel", translator.translate("alertDirection." + direction.name(), locale));
-        model.put("thresholdFormatted", formatPrice(p.threshold(), direction.isPercentBased(), locale));
-        model.put("priceFormatted", formatPrice(p.currentPrice(), false, locale));
+        model.put("thresholdFormatted", formatPrice(p.threshold(), direction.isPercentBased(), locale, p.currency()));
+        model.put("priceFormatted", formatPrice(p.currentPrice(), false, locale, p.currency()));
         model.put("changePercent", computeChangePercent(p.currentPrice(), p.threshold(), direction, locale));
         model.put("isUp", direction.isUpward());
         model.put("isPercent", direction.isPercentBased());
@@ -96,7 +96,7 @@ public class PriceAlertHandler implements NotificationHandler {
         return assetCode.toUpperCase();
     }
 
-    private String formatPrice(BigDecimal value, boolean asPercent, Locale locale) {
+    private String formatPrice(BigDecimal value, boolean asPercent, Locale locale, String currency) {
         if (value == null) return "—";
         NumberFormat fmt = NumberFormat.getNumberInstance(locale);
         if (asPercent) {
@@ -106,7 +106,18 @@ public class PriceAlertHandler implements NotificationHandler {
         }
         fmt.setMaximumFractionDigits(value.compareTo(BigDecimal.ONE) < 0 ? properties.formatting().fractionDigitsSmall() : properties.formatting().fractionDigitsLarge());
         fmt.setMinimumFractionDigits(properties.formatting().fractionDigitsLarge());
-        return "₺" + fmt.format(value);
+        return currencySymbol(currency) + fmt.format(value);
+    }
+
+    // The alert value is in the asset's quote currency (VIOP contracts quote in USD/EUR/TRY), so render the
+    // matching symbol instead of hardcoding ₺ — otherwise a USD-quoted contract's price shows under a ₺ sign.
+    private static String currencySymbol(String currency) {
+        if (currency == null) return "₺";
+        return switch (currency.toUpperCase(Locale.ROOT)) {
+            case "USD" -> "$";
+            case "EUR" -> "€";
+            default -> "₺";
+        };
     }
 
     private String computeChangePercent(BigDecimal current, BigDecimal threshold, AlertDirection direction, Locale locale) {

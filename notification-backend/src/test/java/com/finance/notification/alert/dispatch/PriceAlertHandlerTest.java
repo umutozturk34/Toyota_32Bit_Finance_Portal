@@ -49,7 +49,7 @@ class PriceAlertHandlerTest {
     void render_buildsTitleBodyAndEmailModelFromPayload() {
         PriceAlertPayload payload = new PriceAlertPayload(
                 7L, MarketType.CRYPTO, "BTC", AlertDirection.ABOVE,
-                BigDecimal.valueOf(100), BigDecimal.valueOf(105), null, null);
+                BigDecimal.valueOf(100), BigDecimal.valueOf(105), null, null, "TRY");
 
         RenderedNotification result = handler.render(NotificationRequest.of("u", payload));
 
@@ -67,7 +67,7 @@ class PriceAlertHandlerTest {
         PriceAlertPayload payload = new PriceAlertPayload(
                 7L, MarketType.CRYPTO, "btc", AlertDirection.BELOW,
                 BigDecimal.valueOf(50), BigDecimal.valueOf(40),
-                "https://x/y.png", "Bitcoin");
+                "https://x/y.png", "Bitcoin", "TRY");
 
         RenderedNotification result = handler.render(NotificationRequest.of("u", payload));
 
@@ -75,5 +75,19 @@ class PriceAlertHandlerTest {
         assertThat(result.emailModel()).containsEntry("assetName", "Bitcoin");
         assertThat(result.emailModel()).containsEntry("image", "https://x/y.png");
         assertThat(result.emailModel()).containsEntry("isUp", false);
+    }
+
+    @Test
+    void render_usesQuoteCurrencySymbol_forUsdNativeViop() {
+        PriceAlertPayload payload = new PriceAlertPayload(
+                7L, MarketType.VIOP, "F_XU0300625", AlertDirection.ABOVE,
+                BigDecimal.valueOf(12.5), BigDecimal.valueOf(13.0), null, null, "USD");
+
+        RenderedNotification result = handler.render(NotificationRequest.of("u", payload));
+
+        // A USD-quoted VIOP contract's price/threshold must render with "$", not the hardcoded "₺".
+        assertThat((String) result.emailModel().get("priceFormatted")).startsWith("$");
+        assertThat((String) result.emailModel().get("thresholdFormatted")).startsWith("$");
+        assertThat(result.body()).contains("$");
     }
 }

@@ -14,7 +14,12 @@ import java.util.Optional;
  */
 public enum WatchlistSortBy {
     CUSTOM("displayOrder", null),
-    NAME("assetCode", null),
+    // assetCode is a @Transient projection of the tracked asset (filled in @PostLoad), NOT a persistent
+    // column — declaring it DB-sortable made Sort.by("assetCode") throw PropertyReferenceException at query
+    // time ("unexpected error" on alphabetical sort). It only exists after enrichment, so sort there instead,
+    // case-insensitively (asset codes are ASCII tickers) with nulls last.
+    NAME(null, Comparator.comparing(WatchlistItemResponse::assetCode,
+            Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))),
     LAST_SEEN_PRICE("lastSeenPrice", null),
     ADDED_AT("createdAt", null),
     CURRENT_PRICE(null, Comparator.comparing(WatchlistItemResponse::currentPrice,

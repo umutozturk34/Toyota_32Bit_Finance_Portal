@@ -1,0 +1,2 @@
+CREATE DATABASE sonar_db;
+GRANT ALL PRIVILEGES ON DATABASE sonar_db TO finance_user;

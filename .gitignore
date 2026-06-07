@@ -100,6 +100,9 @@ ios/**/*.xccheckout
 !db/migration/*.sql
 # Seed data for clone-and-run demo mode (real seed, not a migration)
 !seed/*.sql
+# Postgres bootstrap scripts (create keycloak_db / sonar_db / extensions on first init) —
+# required for clone-and-run; without these a fresh DB has no keycloak_db and Keycloak crashes.
+!postgres-init/*.sql
 /data/
 /postgres-data/
 /pgdata/

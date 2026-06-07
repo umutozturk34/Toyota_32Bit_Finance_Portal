@@ -218,4 +218,36 @@ class ReportSvgServiceTest {
         assertThat(result).contains("#5e6ad2");
         assertThat(result).contains("100%");
     }
+
+    @Test
+    void should_renderTinySliceAsVisibleArc_withoutOnDonutLabel_andKeepLabelsInsideViewBox() {
+        // Arrange: the real 5-bucket allocation from the report, including a 0.7% "Fon" slice — the case
+        // where one worries a tiny slice or its label gets crushed/hidden behind the donut in the PDF.
+        List<AllocationViewItem> items = List.of(
+                new AllocationViewItem("Kripto", new BigDecimal("4690"), new BigDecimal("46.9"), "#5e6ad2"),
+                new AllocationViewItem("Nakit",  new BigDecimal("2900"), new BigDecimal("29.0"), "#7c5cfc"),
+                new AllocationViewItem("Hisse",  new BigDecimal("1430"), new BigDecimal("14.3"), "#c084fc"),
+                new AllocationViewItem("Doviz",  new BigDecimal("920"),  new BigDecimal("9.2"),  "#22d3ee"),
+                new AllocationViewItem("Fon",    new BigDecimal("70"),   new BigDecimal("0.7"),  "#10b981"));
+
+        // Act
+        String svg = service.allocationDonut(items, ReportPalette.DARK);
+
+        // Assert: the tiny 0.7% slice IS drawn (its fill color appears) — it is floored to a min-visible
+        // arc, never hidden — and it carries NO on-donut label (sub-6% rule), so it cannot collide with a
+        // neighbour; its exact share is shown in the legend table instead. The >=6% slices keep their labels.
+        assertThat(svg).contains("#10b981");
+        assertThat(svg).doesNotContain("0,7%");
+        assertThat(svg).contains("46,9%").contains("9,2%");
+
+        // And every on-donut label sits inside the 0..180 viewBox — no off-canvas / clipped text.
+        var matcher = java.util.regex.Pattern.compile("<text x=\"([0-9.]+)\" y=\"([0-9.]+)\"").matcher(svg);
+        int labels = 0;
+        while (matcher.find()) {
+            labels++;
+            assertThat(Double.parseDouble(matcher.group(1))).isBetween(0.0, 180.0);
+            assertThat(Double.parseDouble(matcher.group(2))).isBetween(0.0, 180.0);
+        }
+        assertThat(labels).isEqualTo(4);
+    }
 }

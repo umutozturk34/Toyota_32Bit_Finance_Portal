@@ -281,6 +281,36 @@ class PortfolioPdfServiceTest {
         assertThat(positions.get(0).pnlTry()).isEqualByComparingTo("20");
     }
 
+    @Test
+    void largestRemainderPercents_sumsToExactly100_atOneDecimal() {
+        // Arrange: shares that, rounded independently to 1 decimal, would read 46,9+29,0+14,3+9,2+0,7 = 100,1
+        List<BigDecimal> values = List.of(
+                new BigDecimal("46.92"), new BigDecimal("29.01"), new BigDecimal("14.34"),
+                new BigDecimal("9.21"), new BigDecimal("0.69"));
+        BigDecimal total = values.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Act
+        List<BigDecimal> shares = PortfolioPdfService.largestRemainderPercents(values, total, 1);
+
+        // Assert: the displayed shares sum to EXACTLY 100,0 and each is at 1-decimal scale
+        BigDecimal sum = shares.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        assertThat(sum).isEqualByComparingTo("100.0");
+        assertThat(shares).allSatisfy(s -> assertThat(s.scale()).isEqualTo(1));
+    }
+
+    @Test
+    void largestRemainderPercents_handlesEmptySingleAndZeroTotal() {
+        // Arrange / Act / Assert
+        assertThat(PortfolioPdfService.largestRemainderPercents(List.of(), BigDecimal.ZERO, 1)).isEmpty();
+        List<BigDecimal> single = PortfolioPdfService.largestRemainderPercents(
+                List.of(new BigDecimal("5")), new BigDecimal("5"), 1);
+        assertThat(single).hasSize(1);
+        assertThat(single.get(0)).isEqualByComparingTo("100.0");
+        assertThat(PortfolioPdfService.largestRemainderPercents(
+                List.of(new BigDecimal("0"), new BigDecimal("0")), BigDecimal.ZERO, 1))
+                .hasSize(2).allSatisfy(s -> assertThat(s).isEqualByComparingTo("0.0"));
+    }
+
     private static ReportPosition stubPosition(long id) {
         return new ReportPosition(id, "STOCK", "X", "X", null, null, null, null, null, null, null, null, null, null);
     }

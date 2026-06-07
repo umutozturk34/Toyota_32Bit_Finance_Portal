@@ -235,19 +235,53 @@ public class PortfolioPdfService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         if (total.signum() == 0) return List.of();
 
+        List<BigDecimal> values = filtered.stream().map(a -> a.valueTry().abs()).toList();
+        // Largest-remainder (Hamilton) at 1 decimal so the displayed shares sum to EXACTLY 100,0 instead of
+        // drifting (e.g. 46,9+29,0+14,3+9,2+0,7 = 100,1) from independently-rounded slices. Mirrors the web
+        // AllocationChart (shared/utils/percent.js) so the PDF legend and the app agree.
+        List<BigDecimal> shares = largestRemainderPercents(values, total, 1);
         List<AllocationViewItem> out = new java.util.ArrayList<>(filtered.size());
         for (int i = 0; i < filtered.size(); i++) {
-            ReportAllocation a = filtered.get(i);
-            BigDecimal value = a.valueTry().abs();
-            BigDecimal sharePct = value.multiply(BigDecimal.valueOf(100))
-                    .divide(total, 2, RoundingMode.HALF_UP);
             out.add(new AllocationViewItem(
-                    translateAssetLabel(a, locale),
-                    value,
-                    sharePct,
+                    translateAssetLabel(filtered.get(i), locale),
+                    values.get(i),
+                    shares.get(i),
                     ALLOCATION_COLORS[i % ALLOCATION_COLORS.length]
             ));
         }
+        return out;
+    }
+
+    /**
+     * Largest-remainder (Hamilton) percentages at {@code scale} decimals whose sum is EXACTLY 100. Rounding
+     * each share independently makes a legend read e.g. 100,1; this floors every share to the target precision
+     * then hands the leftover last-digit units to the largest fractional remainders so the slices add to 100,0.
+     */
+    static List<BigDecimal> largestRemainderPercents(List<BigDecimal> values, BigDecimal total, int scale) {
+        int n = values.size();
+        if (n == 0 || total == null || total.signum() == 0) {
+            return values.stream().map(v -> BigDecimal.ZERO.setScale(scale)).toList();
+        }
+        long targetUnits = 100L * BigDecimal.TEN.pow(scale).longValueExact();
+        long[] units = new long[n];
+        double[] remainder = new double[n];
+        long assigned = 0;
+        for (int i = 0; i < n; i++) {
+            BigDecimal exact = values.get(i).multiply(BigDecimal.valueOf(targetUnits))
+                    .divide(total, 10, RoundingMode.HALF_UP);
+            long floor = exact.setScale(0, RoundingMode.FLOOR).longValueExact();
+            units[i] = floor;
+            remainder[i] = exact.subtract(BigDecimal.valueOf(floor)).doubleValue();
+            assigned += floor;
+        }
+        Integer[] order = new Integer[n];
+        for (int i = 0; i < n; i++) order[i] = i;
+        java.util.Arrays.sort(order, (x, y) -> Double.compare(remainder[y], remainder[x]));
+        for (int k = 0, left = (int) (targetUnits - assigned); k < n && left > 0; k++, left--) {
+            units[order[k]]++;
+        }
+        List<BigDecimal> out = new java.util.ArrayList<>(n);
+        for (int i = 0; i < n; i++) out.add(BigDecimal.valueOf(units[i], scale));
         return out;
     }
 

@@ -154,7 +154,7 @@ public class ReportSvgService {
 
         StringBuilder svg = new StringBuilder(2048);
         svg.append("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 ").append(size).append(" ").append(size)
-                .append("\" preserveAspectRatio=\"xMidYMid meet\" style=\"display:block;width:100%;max-width:180px;height:auto\">");
+                .append("\" preserveAspectRatio=\"xMidYMid meet\" style=\"display:block;width:100%;max-width:260px;height:auto\">");
 
         final double MIN_VISIBLE_FRAC = 0.012;
         long nonZeroCount = items.stream().filter(i -> i.value() != null && i.value().doubleValue() > 0).count();
@@ -232,7 +232,7 @@ public class ReportSvgService {
                 double displayFrac = displayFracs[i];
                 if (displayFrac <= 0) { continue; }
                 double next = angle + displayFrac * 2 * Math.PI;
-                String pct = String.format(Locale.ROOT, "%.1f%%", realFracs[i] * 100).replace('.', ',');
+                String pct = String.format(Locale.ROOT, "%.1f%%", items.get(i).sharePct().doubleValue()).replace('.', ',');
                 double mid = (angle + next) / 2.0;
                 if (realFracs[i] >= 0.06) {
                     double tx = cx + labelRadius * Math.cos(mid);

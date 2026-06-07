@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
+import { largestRemainderPercents } from '../../../shared/utils/percent';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import { PieChart } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
@@ -114,6 +115,13 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
     [finalData, displayValueOf]
   );
 
+  // Largest-remainder percentages (sum to exactly 100,0) so the legend doesn't read e.g. 100,1 from
+  // independently-rounded shares. Indexed parallel to finalData; reused by both the slices and the legend.
+  const displayPercents = useMemo(
+    () => largestRemainderPercents(finalData.map((item) => Math.abs(displayValueOf(item))), 1),
+    [finalData, displayValueOf]
+  );
+
   const seriesData = useMemo(() => finalData.map((item, idx) => {
     const label = activeTab === 'ALL'
       ? assetLabel(item.label)
@@ -131,9 +139,10 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
       itemStyle: { color },
       _cost: frameOf(item, item.costTry != null ? Number(item.costTry) : null, 'costByCurrency'),
       _realized: frameOf(item, realized, 'realizedPnlByCurrency'),
+      _pct: displayPercents[idx],
       _isCash: isCash,
     };
-  }), [finalData, activeTab, assetLabel, frameOf, displayValueOf]);
+  }), [finalData, activeTab, assetLabel, frameOf, displayValueOf, displayPercents]);
 
   const totalLabel = activeTab === 'ALL' ? t('portfolio.allocation.total') : assetLabel(activeTab);
   const palette = chartPalette(isDark);
@@ -156,7 +165,7 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
       textStyle: { color: tooltipFg, fontSize: 11 },
       extraCssText: 'z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.25);',
       formatter: (params) => {
-        const pct = totalValue > 0 ? ((params.value / totalValue) * 100).toFixed(1) : '0.0';
+        const pct = Number(params.data?._pct ?? (totalValue > 0 ? (params.value / totalValue) * 100 : 0)).toFixed(1);
         const data = params.data || {};
         let breakdown = '';
         if (data._isCash && data._cost != null && data._realized != null) {
@@ -262,8 +271,7 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
             <div className="space-y-1.5 max-h-[260px] sm:max-h-[300px] overflow-y-auto" onMouseLeave={() => setHoveredSliceName(null)}>
               {finalData.map((item, idx) => {
                 const value = displayValueOf(item);
-                const absValue = Math.abs(value);
-                const pct = totalValue > 0 ? (absValue / totalValue) * 100 : 0;
+                const pct = displayPercents[idx] ?? 0;
                 const isCash = item.label === 'CASH';
                 const cost = frameOf(item, item.costTry != null ? Number(item.costTry) : null, 'costByCurrency');
                 const realized = frameOf(item, item.realizedPnlTry != null ? Number(item.realizedPnlTry) : null, 'realizedPnlByCurrency');

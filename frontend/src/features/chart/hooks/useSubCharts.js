@@ -2,15 +2,19 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createChart, LineSeries, HistogramSeries } from 'lightweight-charts';
 import { calculateRSI, calculateMACD } from '../lib/indicators';
 import { getChartOptions } from '../lib/chartOptions';
+import { chartTimeKey } from '../lib/chartCoreHelpers';
 
 // Pad indicator data to the FULL candle set with whitespace ({time} only) for leading/missing bars, so every
 // sub-chart shares the price chart's exact bar indices. The pane sync is index-based (visible LOGICAL range);
 // without this, RSI/MACD (which start `period` bars in) and the volume histogram (which drops empty bars) have
 // fewer/shifted bars, so the same x-position shows a different date than the price chart above.
+// Match on chartTimeKey, NOT the raw `time`: daily times are {year,month,day} OBJECTS, and a Map keyed by them
+// uses reference equality — RSI/MACD happen to reuse candleData's exact time objects so they matched, but the
+// volume series builds its own toChartTime() objects, so every lookup missed and the histogram rendered empty.
 const padToCandles = (data, candles) => {
     if (!Array.isArray(candles) || !candles.length) return data;
-    const byTime = new Map(data.map((d) => [d.time, d]));
-    return candles.map((c) => byTime.get(c.time) ?? { time: c.time });
+    const byTime = new Map(data.map((d) => [chartTimeKey(d.time), d]));
+    return candles.map((c) => byTime.get(chartTimeKey(c.time)) ?? { time: c.time });
 };
 
 const createSubChart = (container, isDark, height) => {

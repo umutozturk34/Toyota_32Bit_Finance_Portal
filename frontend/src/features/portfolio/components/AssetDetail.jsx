@@ -428,7 +428,7 @@ export default function AssetDetail({ portfolioId, asset, onBack, onEditLot, onD
   const rawAssetName = commodityLabel(t, asset.assetType, asset.assetCode,
     asset.assetName || t(`assets.labels.${asset.assetType}`, { defaultValue: asset.assetType }));
   const displaySub = anyLotOpen
-    ? rawAssetName.replace(/\s*·\s*KAPALI\s*$/i, '')
+    ? rawAssetName.replace(/\s·\sKAPALI$/, '')
     : rawAssetName;
 
   const panelProps = {

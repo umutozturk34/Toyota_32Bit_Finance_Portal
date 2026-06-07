@@ -26,7 +26,7 @@ public class EvdsForexCurrencyResolver {
 
     private static final DateTimeFormatter EVDS_DATE_FMT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
     private static final Pattern NAME_PATTERN = Pattern
-            .compile("^\\(([A-Z]+)\\)\\s*(?:(\\d+)\\s+)?(.+?)\\s*\\(.*$");
+            .compile("^\\(([A-Z]+)\\)\\s*(?:(\\d+)\\s+)?([^(]+?)\\s*\\(.*$");
     private static final String DOVIZ_BUYING_SUFFIX = ".A.YTL";
     private static final String EFEKTIF_BUYING_SUFFIX = ".A.EF.YTL";
 

@@ -4,6 +4,21 @@ import { initKeycloak, getUserInfo, doLogin, doLogout, hasRole, forceRefreshToke
 import { AuthContext } from './useAuth';
 import { AUTH_REFRESH_INTERVAL_MS } from '../../shared/constants/timings';
 
+// Per-user UI state (useSessionState → sessionStorage 'ss:*': compare selections, portfolio tabs, beater
+// filters, …) is NOT user-scoped, and sessionStorage outlives a logout→login in the SAME tab — so without
+// this one account's selections (e.g. a portfolio + CPI in Compare) leak into the next account's session.
+// Cleared on logout and whenever a different user authenticates in this tab.
+function clearUiSessionState() {
+  try {
+    const keys = [];
+    for (let i = 0; i < sessionStorage.length; i += 1) {
+      const key = sessionStorage.key(i);
+      if (key && key.startsWith('ss:')) keys.push(key);
+    }
+    keys.forEach((key) => sessionStorage.removeItem(key));
+  } catch { /* sessionStorage unavailable */ }
+}
+
 export const AuthProvider = ({ children }) => {
   const queryClient = useQueryClient();
   const [authenticated, setAuthenticated] = useState(false);
@@ -17,7 +32,13 @@ export const AuthProvider = ({ children }) => {
       clearTimeout(timeoutId);
       setAuthenticated(auth);
       if (auth) {
-        setUser(getUserInfo());
+        const info = getUserInfo();
+        // A different user than the one whose UI state is cached in this tab → wipe it so the previous
+        // account's compare/portfolio selections don't carry over (logout→login or SSO account switch).
+        const prevSub = localStorage.getItem('last-auth-sub');
+        if (info?.id && prevSub && prevSub !== info.id) clearUiSessionState();
+        if (info?.id) localStorage.setItem('last-auth-sub', info.id);
+        setUser(info);
       }
       setLoading(false);
     });
@@ -28,6 +49,7 @@ export const AuthProvider = ({ children }) => {
   };
   const logout = () => {
     queryClient.clear();
+    clearUiSessionState();
     doLogout();
     setAuthenticated(false);
     setUser(null);

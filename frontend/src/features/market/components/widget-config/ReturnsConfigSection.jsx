@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Coins, ArrowDownAZ, ArrowUpAZ } from 'lucide-react';
+import { Medal, ArrowDownAZ, ArrowUpAZ } from 'lucide-react';
 import PopoverHeader from './PopoverHeader';
 
 const PERIOD_OPTIONS = [
@@ -53,7 +53,7 @@ export default function ReturnsConfigSection({ config, onChange }) {
 
   return (
     <>
-      <PopoverHeader Icon={Coins} title={t('widgetSettings.returnsHeader', { defaultValue: 'Getiri Sıralaması' })} />
+      <PopoverHeader Icon={Medal} title={t('widgetSettings.returnsHeader', { defaultValue: 'Getiri Sıralaması' })} />
 
       <label className="block font-mono text-[9px] tracking-[0.18em] uppercase text-fg-subtle mb-1.5">
         {t('widgetSettings.returnsPeriod', { defaultValue: 'Dönem' })}

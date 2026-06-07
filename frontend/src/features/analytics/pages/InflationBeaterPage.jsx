@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import useSessionState from '../../../shared/hooks/useSessionState';
-import { TrendingUp, TrendingDown, Trophy, Search, ChevronLeft, ChevronRight, GitCompare, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
+import { TrendingUp, TrendingDown, Trophy, Search, ChevronLeft, ChevronRight, GitCompare, ArrowUp, ArrowDown, RotateCcw, ArrowLeft } from 'lucide-react';
 import Card from '../../../shared/components/card';
 import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
@@ -15,6 +15,7 @@ import HeroStat from '../components/BeaterHeroStat';
 import Th from '../components/BeaterTh';
 import { PERIODS } from '../constants';
 import { formatPercent } from '../utils';
+import { buildBackTarget } from '../lib/compareNav';
 import {
   PAGE_SIZE,
   FIXED_TYPE_ORDER,
@@ -29,6 +30,10 @@ export default function InflationBeaterPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
+  // When reached from a widget/page (e.g. the overview Beaters widget passes ?from=overview), offer a
+  // one-click way back to where the user came from — mirrors ComparePage. Absent otherwise (tab/deep-link).
+  const cameFrom = params.get('from');
+  const backTarget = buildBackTarget(cameFrom, params.get('fromType'), params.get('fromCode'));
   const [period, setPeriod] = useSessionState('beater:period', params.get('bp') || '1Y');
   const [benchmark, setBenchmark] = useSessionState('beater:benchmark', params.get('bb') || '');
   const [search, setSearch] = useSessionState('beater:search', params.get('bs') || '');
@@ -133,9 +138,32 @@ export default function InflationBeaterPage() {
       className="space-y-6"
     >
       <header className="pb-3 border-b border-border-default/40">
-        <h1 className="font-display text-2xl sm:text-3xl font-bold text-fg tracking-tight leading-none">
-          {t('analytics.beaterTitle', { defaultValue: 'Benchmark Yenenler' })}
-        </h1>
+        {backTarget && (
+          <motion.button
+            type="button"
+            onClick={() => navigate(backTarget)}
+            whileHover={{ x: -2 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="group inline-flex items-center gap-2 mb-4 rounded-full border border-border-default/80 bg-bg-elevated/80 backdrop-blur-md pl-1.5 pr-4 py-1.5 text-fg-muted hover:text-accent hover:border-accent/50 hover:bg-accent/10 transition-colors cursor-pointer"
+            style={{ boxShadow: '0 2px 12px -4px rgba(0,0,0,0.3)' }}
+          >
+            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-bg-base/70 border border-border-default/60 group-hover:bg-accent/15 group-hover:border-accent/50 group-hover:shadow-[0_0_10px_-2px_rgba(99,102,241,0.5)] transition-all">
+              <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+            </span>
+            <span className="font-display text-sm font-semibold tracking-tight">
+              {t(`analytics.backTo.${cameFrom}`, { defaultValue: 'Geri dön' })}
+            </span>
+          </motion.button>
+        )}
+        <div className="flex items-center gap-2.5">
+          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/12 text-accent shrink-0">
+            <Trophy className="h-5 w-5" />
+          </span>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-fg tracking-tight leading-none">
+            {t('analytics.beaterTitle', { defaultValue: 'Benchmark Yenenler' })}
+          </h1>
+        </div>
         <p className="mt-2 text-sm text-fg-muted max-w-2xl">
           {t('analytics.beaterSubtitle', {
             defaultValue: 'Bir indikatör seç ve hangi enstrümanların onu geçtiğini gör — TÜFE, politika faizi, mevduat veya başka bir gösterge.',
@@ -449,24 +477,36 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
                     </span>
                   </td>
                   <td className="py-3 px-2 sm:px-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-fg font-semibold">{instrumentDisplayName(t, entry.type, entry.code, entry.name)}</span>
-                      {(() => {
-                        const badge = TYPE_BADGE[entry.type] || { label: entry.type, color: '#6366f1' };
-                        return (
-                          <span
-                            className="inline-flex items-center text-[10px] font-mono font-semibold tracking-[0.04em] rounded px-1.5 py-0.5"
-                            style={{ background: `${badge.color}1f`, color: badge.color, boxShadow: `inset 0 0 0 1px ${badge.color}40` }}
-                          >
-                            {t(`assets.labels.${entry.type}`, { defaultValue: badge.label })}
-                          </span>
-                        );
-                      })()}
-                      <GitCompare className="h-3 w-3 text-fg-subtle opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                    <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle mt-0.5">
-                      {entry.code}
-                    </div>
+                    {(() => {
+                      const badge = TYPE_BADGE[entry.type] || { label: entry.type, color: '#6366f1' };
+                      // Colored initials avatar, matching the overview Beaters widget rows (which had it while
+                      // this page didn't) — gives each asset the same at-a-glance visual identity in both places.
+                      const initials = (entry.code || '').replace('.IS', '').slice(0, 2).toUpperCase();
+                      return (
+                        <>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span
+                              className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold text-white shadow-sm"
+                              style={{ backgroundColor: badge.color }}
+                              aria-hidden
+                            >
+                              {initials}
+                            </span>
+                            <span className="text-fg font-semibold">{instrumentDisplayName(t, entry.type, entry.code, entry.name)}</span>
+                            <span
+                              className="inline-flex items-center text-[10px] font-mono font-semibold tracking-[0.04em] rounded px-1.5 py-0.5"
+                              style={{ background: `${badge.color}1f`, color: badge.color, boxShadow: `inset 0 0 0 1px ${badge.color}40` }}
+                            >
+                              {t(`assets.labels.${entry.type}`, { defaultValue: badge.label })}
+                            </span>
+                            <GitCompare className="h-3 w-3 text-fg-subtle opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                          <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle mt-0.5">
+                            {entry.code}
+                          </div>
+                        </>
+                      );
+                    })()}
                   </td>
                   <td className="py-3 px-2 sm:px-3 text-right font-mono tabular-nums">
                     <span className={Number(entry.nominalReturnPct) >= 0 ? 'text-success' : 'text-danger'}>

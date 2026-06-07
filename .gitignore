@@ -1,0 +1,331 @@
+# ===================================
+# Java & Spring Boot
+# ===================================
+
+# Compiled class files
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+# Environment variables (API keys)
+.env
+
+# Gateway TLS material — generated on each host by gateway/finport-init.sh
+gateway/certs/
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Spring Boot
+spring-boot-*.log
+*.log
+logs/
+application-local.yml
+application-dev.yml
+application-secrets.yml
+
+# ===================================
+# Node.js & React & React Native
+# ===================================
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Production builds
+/build
+/dist
+/.next/
+/out/
+
+# Testing
+coverage/
+*.lcov
+.nyc_output
+
+# React Native
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+.expo/
+.expo-shared/
+expo-*.json
+android/app/debug
+android/app/release
+ios/Pods/
+ios/**/*.pbxuser
+ios/**/*.mode1v3
+ios/**/*.mode2v3
+ios/**/*.perspectivev3
+ios/**/*.xcuserstate
+ios/**/*.xcscmblueprint
+ios/**/*.xccheckout
+
+# Metro
+.metro-health-check*
+
+# ===================================
+# Database
+# ===================================
+
+# PostgreSQL
+*.sql
+*.dump
+*.backup
+!db/migration/*.sql
+# Seed data for clone-and-run demo mode (real seed, not a migration)
+!seed/*.sql
+/data/
+/postgres-data/
+/pgdata/
+
+# H2 Database
+*.db
+*.trace.db
+*.lock.db
+
+# ===================================
+# Docker
+# ===================================
+
+# Docker volumes
+docker-compose.override.yml
+.docker/
+docker-data/
+volumes/
+
+# ===================================
+# Keycloak
+# ===================================
+
+keycloak-data/
+realm-export.json
+keycloak/data/
+
+# ===================================
+# Kafka & Observability
+# ===================================
+
+# Kafka
+kafka-data/
+kafka-logs/
+zookeeper-data/
+
+# OpenSearch / Elasticsearch
+opensearch-data/
+elasticsearch-data/
+/es-data/
+
+# Log files
+*.log
+logs/
+log/
+kafka.log
+kafka-*.log
+
+# Prometheus & Grafana
+prometheus-data/
+grafana-data/
+
+# ===================================
+# IDE & Editors
+# ===================================
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+.idea_modules/
+
+# Eclipse
+.classpath
+.project
+.settings/
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+
+# VS Code
+.vscode/
+*.code-workspace
+.history/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# ===================================
+# OS Files
+# ===================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===================================
+# Environment & Secrets
+# ===================================
+
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+*.env
+secrets/
+credentials/
+
+# API Keys & Tokens
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*-key.json
+service-account.json
+
+# ===================================
+# Certificates & SSL
+# ===================================
+
+*.crt
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+*.truststore
+
+# ===================================
+# Testing & Coverage
+# ===================================
+
+# Test results
+test-results/
+junit/
+test-output/
+*.test
+
+# Coverage reports
+coverage/
+*.coveragerc
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# ===================================
+# Temporary & Cache Files
+# ===================================
+
+*.tmp
+*.temp
+*.cache
+.cache/
+tmp/
+temp/
+.temp/
+
+
+# ===================================
+# CI/CD
+# ===================================
+
+.gitlab-ci-local/
+.github/workflows/*.log
+
+# ===================================
+# Miscellaneous
+# ===================================
+
+*.pid
+*.seed
+*.pid.lock
+.sass-cache/
+connect.lock
+typings/
+.npm
+.eslintcache
+.node_repl_history
+.yarn-integrity
+.common-deployed-hash
+

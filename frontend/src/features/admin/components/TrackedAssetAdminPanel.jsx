@@ -3,14 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Reorder, useDragControls } from 'framer-motion';
-import { GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
+import { GripVertical, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { RefreshCw } from '../../../shared/components/feedback/AnimatedIcons';
 import { adminService, trackedAssetService } from '../services/adminService';
 import { toast } from '../../../shared/components/feedback/toastBus';
 import SearchInput from '../../../shared/components/form/SearchInput';
 import Card from '../../../shared/components/card';
 
-function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, highlighted }) {
+const PAGE_SIZE = 100;
+
+function ReorderItem({ item, rank, canMoveUp, canMoveDown, type, onMoveUp, onMoveDown, highlighted }) {
     const { t } = useTranslation();
     const dragControls = useDragControls();
 
@@ -44,7 +46,7 @@ function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, highlight
             <div className="min-w-0 space-y-0.5">
                 <div className="flex items-center gap-2">
                     <p className="truncate text-sm font-medium text-fg">{item.assetCode}</p>
-                    <span className="rounded bg-bg-elevated px-1.5 py-0.5 text-[10px] text-fg-muted">#{index + 1}</span>
+                    <span className="rounded bg-bg-elevated px-1.5 py-0.5 text-[10px] text-fg-muted">#{rank}</span>
                 </div>
                 <p className="truncate text-xs text-fg-muted">{item.displayName || item.assetCode}</p>
                 {type === 'CRYPTO' && item.binanceSymbol && <p className="truncate text-xs text-fg-muted">{t('trackedAssetAdmin.binance', { symbol: item.binanceSymbol })}</p>}
@@ -53,7 +55,7 @@ function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, highlight
             <div className="flex items-center gap-1.5">
                 <button
                     onClick={() => onMoveUp(item.assetCode)}
-                    disabled={index === 0}
+                    disabled={!canMoveUp}
                     title={t('trackedAssetAdmin.moveUp')}
                     className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base text-fg-subtle hover:bg-surface disabled:opacity-30 transition-colors"
                 >
@@ -61,7 +63,7 @@ function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, highlight
                 </button>
                 <button
                     onClick={() => onMoveDown(item.assetCode)}
-                    disabled={index === total - 1}
+                    disabled={!canMoveDown}
                     title={t('trackedAssetAdmin.moveDown')}
                     className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base text-fg-subtle hover:bg-surface disabled:opacity-30 transition-colors"
                 >
@@ -91,6 +93,7 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
     const [savedSignature, setSavedSignature] = useState('');
     const [savedItems, setSavedItems] = useState([]);
     const [highlightedCode, setHighlightedCode] = useState(null);
+    const [page, setPage] = useState(0);
 
     const computeSignature = useCallback((list) => {
         return (list || []).map(item => `${item.assetCode}:${item.sortOrder ?? 0}`).join('|');
@@ -122,8 +125,31 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
         );
     }, [items, search]);
 
-    const handleReorder = useCallback((newItems) => {
-        setItems(newItems.map((entry, i) => ({ ...entry, sortOrder: i })));
+    const pageCount = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+    const safePage = Math.min(page, pageCount - 1);
+    const pageItems = useMemo(
+        () => filteredItems.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE),
+        [filteredItems, safePage]
+    );
+    const indexByCode = useMemo(() => {
+        const m = new Map();
+        items.forEach((it, i) => m.set(it.assetCode, i));
+        return m;
+    }, [items]);
+
+    const handleReorder = useCallback((newPageItems) => {
+        // Drag reorders only the visible page; merge it back into the full list by writing the reordered page
+        // items into the slots the page currently occupies (other pages / filtered-out items stay put).
+        setItems((prev) => {
+            const order = newPageItems.map((it) => it.assetCode);
+            const inPage = new Set(order);
+            const byCode = new Map(prev.map((it) => [it.assetCode, it]));
+            const slots = [];
+            prev.forEach((it, idx) => { if (inPage.has(it.assetCode)) slots.push(idx); });
+            const next = [...prev];
+            slots.forEach((slotIdx, k) => { next[slotIdx] = byCode.get(order[k]); });
+            return next.map((entry, i) => ({ ...entry, sortOrder: i }));
+        });
     }, []);
 
     const savedOrderByCode = useMemo(() => {
@@ -221,7 +247,7 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
                 </div>
 
                 <div className="mb-3">
-                    <SearchInput value={search} onChange={setSearch} placeholder={t('trackedAssetAdmin.searchPlaceholder', { title })} />
+                    <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(0); }} placeholder={t('trackedAssetAdmin.searchPlaceholder', { title })} />
                 </div>
 
                 {hasOrderChanges && (
@@ -239,28 +265,63 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
                 {filteredItems.length === 0 ? (
                     <p className="text-xs text-fg-muted py-4 text-center">{search ? t('trackedAssetAdmin.noMatch') : t('trackedAssetAdmin.empty')}</p>
                 ) : (
-                    <div className="max-h-[420px] overflow-y-auto overflow-x-hidden pr-1 select-none">
-                        <Reorder.Group
-                            axis="y"
-                            values={filteredItems}
-                            onReorder={handleReorder}
-                            className="space-y-2 select-none"
-                            layoutScroll
-                        >
-                            {filteredItems.map((item, index) => (
-                                <ReorderItem
-                                    key={item.assetCode}
-                                    item={item}
-                                    index={index}
-                                    total={items.length}
-                                    type={type}
-                                    onMoveUp={(code) => moveItemByStep(code, -1)}
-                                    onMoveDown={(code) => moveItemByStep(code, 1)}
-                                    highlighted={highlightedCode === item.assetCode}
-                                />
-                            ))}
-                        </Reorder.Group>
-                    </div>
+                    <>
+                        <div className="max-h-[420px] overflow-y-auto overflow-x-hidden pr-1 select-none">
+                            <Reorder.Group
+                                axis="y"
+                                values={pageItems}
+                                onReorder={handleReorder}
+                                className="space-y-2 select-none"
+                                layoutScroll
+                            >
+                                {pageItems.map((item) => {
+                                    const globalIndex = indexByCode.get(item.assetCode) ?? 0;
+                                    return (
+                                        <ReorderItem
+                                            key={item.assetCode}
+                                            item={item}
+                                            rank={globalIndex + 1}
+                                            canMoveUp={globalIndex > 0}
+                                            canMoveDown={globalIndex < items.length - 1}
+                                            type={type}
+                                            onMoveUp={(code) => moveItemByStep(code, -1)}
+                                            onMoveDown={(code) => moveItemByStep(code, 1)}
+                                            highlighted={highlightedCode === item.assetCode}
+                                        />
+                                    );
+                                })}
+                            </Reorder.Group>
+                        </div>
+
+                        {pageCount > 1 && (
+                            <div className="mt-3 flex items-center justify-between gap-2 text-xs text-fg-muted">
+                                <span className="tabular-nums">
+                                    {safePage * PAGE_SIZE + 1}–{Math.min(filteredItems.length, (safePage + 1) * PAGE_SIZE)} / {filteredItems.length}
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPage((p) => Math.max(0, p - 1))}
+                                        disabled={safePage === 0}
+                                        title={t('common.previous', { defaultValue: 'Önceki' })}
+                                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base text-fg-subtle hover:bg-surface disabled:opacity-30 transition-colors"
+                                    >
+                                        <ChevronLeft className="h-3.5 w-3.5" />
+                                    </button>
+                                    <span className="tabular-nums px-1">{safePage + 1} / {pageCount}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                                        disabled={safePage >= pageCount - 1}
+                                        title={t('common.next', { defaultValue: 'Sonraki' })}
+                                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base text-fg-subtle hover:bg-surface disabled:opacity-30 transition-colors"
+                                    >
+                                        <ChevronRight className="h-3.5 w-3.5" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </Card>
 

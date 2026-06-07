@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Coins, ChevronRight, ArrowUpRight } from 'lucide-react';
+import { Medal, ChevronRight, ArrowUpRight } from 'lucide-react';
 import { getChangeClass, changeColors, formatPercentSmart } from '../../../shared/utils/formatters';
 import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
 import Card from '../../../shared/components/card';
@@ -108,7 +108,7 @@ function ReturnsSectionImpl({ data }) {
         className="flex items-center gap-2 w-full p-3 cursor-pointer hover:bg-surface/30 transition-colors group/title bg-transparent border-x-0 border-t-0 border-b border-border-default shrink-0"
       >
         <span className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ background: `${ACCENT}26`, boxShadow: `0 0 16px -4px ${ACCENT}99` }}>
-          <Coins className="h-3.5 w-3.5" style={{ color: ACCENT }} />
+          <Medal className="h-3.5 w-3.5" style={{ color: ACCENT }} />
         </span>
         <div className="flex flex-col items-start min-w-0 flex-1">
           <span className="font-display text-[13px] font-bold text-fg truncate leading-tight">

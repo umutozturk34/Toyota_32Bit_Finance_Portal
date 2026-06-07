@@ -39,7 +39,7 @@ function buildViopName(meta, fallback, t, localeTag) {
     if (meta.optionSide) parts.push(t(`viop.side.${meta.optionSide}`, { defaultValue: meta.optionSide }));
     if (meta.strikePrice != null) {
       const strike = Number(meta.strikePrice);
-      parts.push(Number.isInteger(strike) ? String(strike) : strike.toFixed(2).replace(/\.?0+$/, ''));
+      parts.push(Number.isInteger(strike) ? String(strike) : String(parseFloat(strike.toFixed(2))));
     }
   } else if (meta.kind === 'FUTURE') {
     parts.push(t('viop.kind.FUTURE', { defaultValue: 'Vadeli' }));

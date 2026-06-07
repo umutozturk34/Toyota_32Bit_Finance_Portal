@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  TrendingUp, TrendingDown, Coins, Search, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpRight, ShieldAlert, RotateCcw,
+  TrendingUp, TrendingDown, Medal, Search, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpRight, ShieldAlert, RotateCcw,
 } from 'lucide-react';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import { useMoney } from '../../../shared/hooks/useMoney';
@@ -211,7 +211,7 @@ export default function ReturnsPage() {
 
       {data && (data.assets?.length ?? 0) === 0 && (
         <EmptyState
-          icon={<Coins className="h-6 w-6" />}
+          icon={<Medal className="h-6 w-6" />}
           title={t('analytics.returns.title', { defaultValue: 'Varlık Getirileri' })}
           message={t('analytics.returns.preparing')}
         />
@@ -235,7 +235,7 @@ export default function ReturnsPage() {
               accent="#ef4444"
             />
             <HeroStat
-              icon={<Coins className="h-4 w-4" />}
+              icon={<Medal className="h-4 w-4" />}
               label={t('analytics.returns.profitLoss', { defaultValue: 'Kâr / Zarar' })}
               value={(
                 <span className="inline-flex items-center gap-3 text-fg">

@@ -73,15 +73,15 @@ public class ReportSvgService {
             double y = PAD_TOP + (1.0 - (p.value() - yMin) / (yMax - yMin)) * plotH;
             if (i == 0) {
                 linePath.append("M").append(fmt(x)).append(",").append(fmt(y));
-                areaPath.append("M").append(fmt(x)).append(",").append(fmt(PAD_TOP + plotH))
+                areaPath.append("M").append(fmt(x)).append(",").append(fmt((double) PAD_TOP + plotH))
                         .append(" L").append(fmt(x)).append(",").append(fmt(y));
             } else {
                 linePath.append(" L").append(fmt(x)).append(",").append(fmt(y));
                 areaPath.append(" L").append(fmt(x)).append(",").append(fmt(y));
             }
         }
-        double lastX = PAD_LEFT + plotW;
-        areaPath.append(" L").append(fmt(lastX)).append(",").append(fmt(PAD_TOP + plotH)).append(" Z");
+        double lastX = (double) PAD_LEFT + plotW;
+        areaPath.append(" L").append(fmt(lastX)).append(",").append(fmt((double) PAD_TOP + plotH)).append(" Z");
 
         boolean positiveTrend = points.get(points.size() - 1).value() >= points.get(0).value();
         String lineColor = positiveTrend ? palette.successFg() : palette.dangerFg();

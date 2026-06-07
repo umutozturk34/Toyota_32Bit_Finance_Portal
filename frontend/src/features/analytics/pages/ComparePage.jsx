@@ -5,7 +5,7 @@ import useNavigationBack from '../../../shared/hooks/useNavigationBack';
 import { useQueries } from '@tanstack/react-query';
 import ReactECharts from 'echarts-for-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Info, ArrowLeft, Search, LineChart, Briefcase, ChevronDown } from 'lucide-react';
+import { X, Info, ArrowLeft, Search, LineChart, Briefcase, ChevronDown, GitCompare } from 'lucide-react';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
@@ -549,9 +549,14 @@ export default function ComparePage() {
             </span>
           </motion.button>
         )}
-        <h1 className="font-display text-2xl sm:text-3xl font-bold text-fg tracking-tight leading-none">
-          {t('analytics.compareTitle', { defaultValue: 'Karşılaştırma' })}
-        </h1>
+        <div className="flex items-center gap-2.5">
+          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/12 text-accent shrink-0">
+            <GitCompare className="h-5 w-5" />
+          </span>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-fg tracking-tight leading-none">
+            {t('analytics.compareTitle', { defaultValue: 'Karşılaştırma' })}
+          </h1>
+        </div>
         <p className="mt-2 text-sm text-fg-muted max-w-2xl">
           {t('analytics.compareSubtitle', {
             defaultValue: 'Farklı varlıkları aynı grafikte yan yana getir. Tutar/tarih gerekmez — sadece geçmiş fiyat hareketleri.',

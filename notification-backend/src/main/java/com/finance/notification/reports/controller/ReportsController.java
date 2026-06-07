@@ -66,7 +66,7 @@ public class ReportsController {
                 .replace("ğ", "g").replace("Ğ", "g")
                 .toLowerCase(java.util.Locale.ENGLISH)
                 .replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("^-+|-+$", "");
+                .replaceAll("(?:^-++)|(?:-++$)", "");
         return t.length() > 40 ? t.substring(0, 40) : t;
     }
 }

@@ -111,12 +111,13 @@ export function compoundRateSeries(points, endIso) {
   const lastRate = Number(sorted[sorted.length - 1].value);
   if (endIso && Number.isFinite(lastRate)) {
     const dailyRate = lastRate / 100 / 365;
-    const cursor = parseLocal(sorted[sorted.length - 1].date);
+    let cursor = parseLocal(sorted[sorted.length - 1].date);
     const end = parseLocal(endIso);
     cursor.setDate(cursor.getDate() + 1);
     while (cursor <= end) {
       factor *= (1 + dailyRate);
       out.push({ date: fmtLocal(cursor), value: factor, _filled: true });
+      cursor = new Date(cursor);
       cursor.setDate(cursor.getDate() + 1);
     }
   }
@@ -330,6 +331,7 @@ export function forwardFillDaily(points, fromIso, toIso) {
       // Spread the carried point so extra fields (e.g. the portfolio's pnlTry) survive the fill.
       result.push({ ...currentPoint, date: cursorIso, value: currentPoint.value, _filled: true });
     }
+    cursor = new Date(cursor);
     cursor.setDate(cursor.getDate() + 1);
   }
   return result;
@@ -345,11 +347,12 @@ export function forwardFillGaps(points) {
   for (let i = 1; i < sorted.length; i += 1) {
     const prev = sorted[i - 1];
     const curr = sorted[i];
-    const cursor = parseLocal(prev.date);
+    let cursor = parseLocal(prev.date);
     cursor.setDate(cursor.getDate() + 1);
     const currDate = parseLocal(curr.date);
     while (cursor < currDate) {
       result.push({ date: fmtLocal(cursor), value: prev.value, _filled: true });
+      cursor = new Date(cursor);
       cursor.setDate(cursor.getDate() + 1);
     }
     result.push(curr);

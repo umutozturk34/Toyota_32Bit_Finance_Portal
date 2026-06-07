@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Gauge, LayoutGrid, Save, RotateCcw, ToggleRight, ToggleLeft, ChevronUp, ChevronDown, Banknote, BarChart3, Coins } from 'lucide-react';
+import { Activity, Gauge, LayoutGrid, Save, RotateCcw, ToggleRight, ToggleLeft, ChevronUp, ChevronDown, Banknote, BarChart3, Medal } from 'lucide-react';
 import BankRatesPanel from '../bankRates/BankRatesPanel';
 import MacroIndicatorsPanel from '../macro/MacroIndicatorsPanel';
 import ReturnsPage from '../analytics/pages/ReturnsPage';
@@ -261,7 +261,7 @@ export default function MarketDataPage() {
             activeTab === 'returns' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
           }`}
         >
-          <Coins className="h-3.5 w-3.5" />
+          <Medal className="h-3.5 w-3.5" />
           {t('marketOverview.tabReturns', 'Getiriler')}
         </button>
       </div>

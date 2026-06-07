@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
-import { Layers, LayoutGrid, TrendingUp, Bookmark, Newspaper, Check, Plus, ChevronRight, Bitcoin, Banknote, Briefcase, Trophy, Coins } from 'lucide-react';
+import { Layers, LayoutGrid, TrendingUp, Bookmark, Newspaper, Check, Plus, ChevronRight, Bitcoin, Banknote, Briefcase, Trophy, Medal } from 'lucide-react';
 import { GiGoldBar } from 'react-icons/gi';
 import { useWidgetDefinitions } from '../../../shared/hooks/useWidgetDefinitions';
 import { localizeWatchlistName } from '../../../shared/utils/watchlistName';
@@ -38,7 +38,7 @@ const SINGLETON_TILE_BASES = [
   { id: 'tile-movers-commodity', kind: 'MOVERS', labelKey: 'widgetTray.movers.COMMODITY', config: { market: 'COMMODITY' }, accent: '#f97316', Icon: GiGoldBar },
   { id: 'tile-news', kind: 'NEWS', labelKey: 'widgetTray.newsTile', config: {}, accent: '#06b6d4', Icon: Newspaper },
   { id: 'tile-benchmark-beaters', kind: 'BENCHMARK_BEATERS', labelKey: 'widgetTray.beatersTile', config: {}, accent: '#facc15', Icon: Trophy },
-  { id: 'tile-asset-returns', kind: 'ASSET_RETURNS', labelKey: 'widgetTray.returnsTile', config: {}, accent: '#14b8a6', Icon: Coins },
+  { id: 'tile-asset-returns', kind: 'ASSET_RETURNS', labelKey: 'widgetTray.returnsTile', config: {}, accent: '#14b8a6', Icon: Medal },
 ];
 
 const ASSET_CARDS_TILE_BASE = {

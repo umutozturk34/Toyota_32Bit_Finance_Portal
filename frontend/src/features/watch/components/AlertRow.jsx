@@ -19,7 +19,7 @@ export default function AlertRow({ alert, onDelete, onReactivate, onEdit }) {
   const triggerPrefetch = () => prefetch(alert.marketType, alert.assetCode);
   const isPercent = alert.direction === 'CHANGE_PCT_UP' || alert.direction === 'CHANGE_PCT_DOWN';
   const thresholdSymbol = isPercent ? '%' : currencySymbolOf(alert.currency);
-  const thresholdValue = Number(alert.threshold).toLocaleString(localeTag, { maximumFractionDigits: isPercent ? 2 : 2 });
+  const thresholdValue = Number(alert.threshold).toLocaleString(localeTag, { maximumFractionDigits: 2 });
 
   return (
     <div

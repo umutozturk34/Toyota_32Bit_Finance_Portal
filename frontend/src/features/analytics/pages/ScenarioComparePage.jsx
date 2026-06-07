@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Play, AlertCircle } from 'lucide-react';
+import { Play, AlertCircle, Zap } from 'lucide-react';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
@@ -87,9 +87,14 @@ export default function ScenarioComparePage() {
       className="space-y-6"
     >
       <header className="pb-3 border-b border-border-default/40">
-        <h1 className="font-display text-2xl sm:text-3xl font-bold text-fg tracking-tight leading-none">
-          {t('analytics.scenarioTitle', { defaultValue: 'Senaryo Karşılaştırması' })}
-        </h1>
+        <div className="flex items-center gap-2.5">
+          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/12 text-accent shrink-0">
+            <Zap className="h-5 w-5" />
+          </span>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-fg tracking-tight leading-none">
+            {t('analytics.scenarioTitle', { defaultValue: 'Senaryo Karşılaştırması' })}
+          </h1>
+        </div>
         <p className="mt-2 text-sm text-fg-muted max-w-2xl">
           {t('analytics.scenarioSubtitle', { defaultValue: 'Belirli bir tarihte belirli bir miktarı farklı enstrümanlara koysaydın bugün ne kadar olurdu? Gerçek geçmiş veriyle simüle et.' })}
         </p>

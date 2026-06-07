@@ -195,12 +195,10 @@ export default function ProductTour({ open, onFinish, onSkip }) {
     directionRef.current = 'forward';
     setStepIndex((s) => {
       let next = s + 1;
-      while (
-        isMobileLayout
-        && next < tourSteps.length - 1
-        && tourSteps[next]?.skipOnMobile
-      ) {
-        next += 1;
+      if (isMobileLayout) {
+        while (next < tourSteps.length - 1 && tourSteps[next]?.skipOnMobile) {
+          next += 1;
+        }
       }
       return Math.min(tourSteps.length - 1, next);
     });
@@ -210,8 +208,10 @@ export default function ProductTour({ open, onFinish, onSkip }) {
     directionRef.current = 'back';
     setStepIndex((s) => {
       let prev = s - 1;
-      while (isMobileLayout && prev > 0 && tourSteps[prev]?.skipOnMobile) {
-        prev -= 1;
+      if (isMobileLayout) {
+        while (prev > 0 && tourSteps[prev]?.skipOnMobile) {
+          prev -= 1;
+        }
       }
       return Math.max(0, prev);
     });

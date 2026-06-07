@@ -80,21 +80,37 @@ candle is converted at its own day's rate, so P&L and comparisons stay honest ac
 Highlights:
 
 - **Unified market data** — multi-year candle history across every asset class, with per-day
-  currency conversion (TRY / USD / EUR).
-- **Hypothetical-lot portfolio** — multi-asset open/closed positions, realized & unrealized
-  P&L in TRY, allocation donut, performance curve and daily snapshots.
-- **Analytics** — scenario simulation, an inflation-beater ranking (which instruments beat a
-  chosen benchmark), an asset-returns ranking (every spot asset's realized TRY return per window
-  — 1W…5Y — with annualized volatility and a low/medium/high risk band), and multi-asset
-  comparison framed in any currency.
-- **Notifications & email** — themed PDF portfolio reports plus a real-time notification
-  center: an in-app bell over SSE and email for price-alert / watchlist thresholds, news and
-  portfolio moves. Mail is decoupled through a Kafka-relayed **outbox**, so a slow SMTP server
-  never blocks a request, and in the demo every message is captured in **Mailpit**.
-- **Bilingual UI** — TR / EN with per-user preference, plus a drag-and-drop widget dashboard
-  on the market overview.
-- **Auth** — Keycloak with OIDC / JWT, an LDAP user federation, role-based access and optional
-  TOTP-based 2FA.
+  currency conversion (TRY / USD / EUR) and one universal search across assets and macro indicators.
+- **Pro charting workbench** — Lightweight Charts with SMA / EMA / RSI / MACD and volume
+  sub-panels, drawing tools (trend, line, freehand, text, emoji), Fibonacci, magnet snap,
+  multi-asset compare and fullscreen.
+- **Hypothetical-lot portfolio** — multiple named portfolios of open/closed positions — including
+  VIOP derivatives with LONG / SHORT, direction-aware P&L — with realized & unrealized P&L in TRY,
+  an allocation donut, a performance curve and daily snapshots.
+- **Analytics** — multi-asset comparison framed in any currency, benchmarked against Turkish
+  macro indicators: CPI inflation (TÜFE), the TLREF and CBRT policy rate, and TRY/USD/EUR deposit
+  rates. Plus scenario simulation ("what if I'd put X into Y on date Z"), an inflation-beater
+  ranking against an inflation / rate / deposit benchmark, and an asset-returns ranking (every
+  spot asset's realized TRY return per 1W…5Y window, with annualized volatility and a
+  low/medium/high risk band).
+- **Customizable overview** — a drag-and-drop, multi-page widget board (create, rename and delete
+  your own pages, persisted per user) surfacing movers per asset class, bank buy/sell rates, macro
+  indicators and the returns ranking.
+- **Watchlists & price alerts** — group instruments into named watchlists and set price- or
+  percent-change alerts delivered in-app and by email.
+- **Financial news** — a categorized Turkish-market feed (BIST, companies, crypto, FX, commodities,
+  bonds, general) with full-text search.
+- **Notifications & email** — themed PDF portfolio reports plus a real-time notification center:
+  an in-app bell over SSE and email for price-alert / watchlist thresholds, news and portfolio
+  moves, with granular per-type, per-channel preferences. Mail is decoupled through a Kafka-relayed
+  **outbox**, so a slow SMTP server never blocks a request, and in the demo every message is
+  captured in **Mailpit**.
+- **Admin console** — manage tracked assets and news sources, ban / unban users, broadcast notices
+  and trigger data-sync jobs from a live SSE task panel.
+- **Auth & profile** — Keycloak with OIDC / JWT, an LDAP user federation, role-based access,
+  self-service TOTP 2FA, OTP-verified email change and a per-user display-currency preference.
+- **Bilingual UI & theming** — TR / EN per user, a light / dark theme across the app, charts and
+  PDF reports, and a first-run guided tour.
 - **Observability** — structured logs, traces and metrics flow through OpenTelemetry into
   OpenSearch (read in OpenSearch Dashboards).
 
@@ -109,6 +125,10 @@ Highlights:
 - The **seed** (`seed/`, demo mode only) adds *data only* — candles, prices, the sample portfolio
   — so it never conflicts with the migrator.
 - Mail uses **Mailpit** locally; a real SMTP provider is a production concern handled separately.
+- **`finance-common`** is a shared Java library (published to GitHub Packages) that every backend
+  module depends on — the `ApiResponse` envelope and shared DTOs, JWT/security plumbing, Redis
+  caching, i18n, the tiered rate-limit filter, exception handling and the Kafka event contracts —
+  so cross-cutting concerns are defined once instead of copied per service.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -124,14 +144,15 @@ forwards the SPA routes to the **Frontend** container, `/api/v1` to whichever ba
 reachable only through the gateway.
 
 **Backend** (`:8080`) is the core Spring Boot app, split into Maven modules (market, portfolio,
-user, news). It fetches market data from the upstream providers on a daily schedule, writes it to
-Postgres, caches hot reads in Redis, serves the dashboard/portfolio/analytics APIs, and publishes
-domain events to Kafka.
+user, news) that all build on the shared **`finance-common`** library (DTOs, security, caching,
+i18n and Kafka event contracts — see [Architecture](#architecture)). It fetches market data from
+the upstream providers on a daily schedule, writes it to Postgres, caches hot reads in Redis,
+serves the dashboard/portfolio/analytics APIs, and publishes domain events to Kafka.
 
 **Notification Backend** (`:8082`) is a separate Spring Boot service for the real-time side:
-in-app notifications, price alerts, watchlists and the SSE stream. It consumes the backend's Kafka
-events, resolves users through Keycloak, and sends mail through an outbox that relays via Kafka to
-SMTP.
+in-app notifications, price alerts, watchlists and the SSE stream — built on the same
+**`finance-common`** library. It consumes the backend's Kafka events, resolves users through
+Keycloak, and sends mail through an outbox that relays via Kafka to SMTP.
 
 **PDF Service** is a small Node/Puppeteer worker that turns a portfolio report into a PDF on demand.
 

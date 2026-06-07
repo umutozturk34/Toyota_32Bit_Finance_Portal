@@ -1,4 +1,4 @@
-import { LayoutGrid, TrendingUp, Newspaper, Bookmark, Trophy, Coins } from 'lucide-react';
+import { LayoutGrid, TrendingUp, Newspaper, Bookmark, Trophy, Medal } from 'lucide-react';
 import AssetCardsSection from './AssetCardsSection';
 import MoversSection from './MoversSection';
 import NewsSection from './NewsSection';
@@ -50,7 +50,7 @@ export const SECTION_DEFINITIONS = Object.freeze({
   ASSET_RETURNS: {
     labelKey: 'sectionRegistry.ASSET_RETURNS.label',
     descriptionKey: 'sectionRegistry.ASSET_RETURNS.description',
-    Icon: Coins,
+    Icon: Medal,
     Component: ReturnsSection,
     configurable: true,
     multiInstance: true,
@@ -63,5 +63,5 @@ export function definitionFor(kind) {
 
 export function newSectionId(kind) {
   const slug = kind.toLowerCase().replace(/_/g, '-');
-  return `${slug}-${Math.random().toString(36).slice(2, 8)}`;
+  return `${slug}-${crypto.randomUUID().slice(0, 6)}`;
 }

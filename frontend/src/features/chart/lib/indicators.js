@@ -74,14 +74,10 @@ export function calculateMACD(data, fastPeriod = 12, slowPeriod = 26, signalPeri
 
   const macdValues = [];
   for (let i = 0; i < data.length; i++) {
-    if (i < fastPeriod) {
-      fastEma = (i === fastPeriod - 1) ? fastEma : fastEma;
-    } else {
+    if (i >= fastPeriod) {
       fastEma = (data[i].close - fastEma) * fastMult + fastEma;
     }
-    if (i < slowPeriod) {
-      slowEma = (i === slowPeriod - 1) ? slowEma : slowEma;
-    } else {
+    if (i >= slowPeriod) {
       slowEma = (data[i].close - slowEma) * slowMult + slowEma;
     }
     if (i >= slowPeriod - 1) {

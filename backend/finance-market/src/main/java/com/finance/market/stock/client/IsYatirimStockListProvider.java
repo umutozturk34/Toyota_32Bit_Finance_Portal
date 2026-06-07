@@ -52,6 +52,9 @@ public class IsYatirimStockListProvider {
             }
             return extractTickers(response.body());
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             log.error("İş Yatırım stock list fetch failed: {}", e.getMessage());
             return List.of();
         }

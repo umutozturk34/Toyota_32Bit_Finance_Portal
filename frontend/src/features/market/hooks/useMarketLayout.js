@@ -13,7 +13,7 @@ import { newSectionId } from '../sections/sectionRegistry';
 import { REMOVAL_ANIMATION_MS } from '../../../shared/constants/timings';
 
 function newPageId() {
-  return `page-${Math.random().toString(36).slice(2, 8)}`;
+  return `page-${crypto.randomUUID().slice(0, 6)}`;
 }
 
 export function useMarketLayout() {

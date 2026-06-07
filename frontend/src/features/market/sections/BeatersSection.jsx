@@ -149,7 +149,7 @@ function BeatersSectionImpl({ data }) {
     <Card as="section" accentBar="#facc15" radius="xl" padding="none" className="group h-full flex flex-col">
       <button
         type="button"
-        onClick={() => navigate('/analytics?tab=beaters')}
+        onClick={() => navigate('/analytics?tab=beaters&from=overview')}
         className="flex items-center gap-2 w-full p-3 cursor-pointer hover:bg-surface/30 transition-colors group/title bg-transparent border-x-0 border-t-0 border-b border-border-default shrink-0"
       >
         <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-400/15 shadow-[0_0_16px_-4px_rgba(250,204,21,0.6)]">
@@ -189,7 +189,7 @@ function BeatersSectionImpl({ data }) {
       </div>
       <button
         type="button"
-        onClick={() => navigate('/analytics?tab=beaters')}
+        onClick={() => navigate('/analytics?tab=beaters&from=overview')}
         className="flex items-center justify-center gap-1 w-full px-3 py-2 cursor-pointer hover:bg-amber-400/5 transition-colors bg-transparent border-x-0 border-b-0 border-t border-border-default text-amber-400 hover:text-amber-300 shrink-0"
       >
         <span className="font-display text-[11px] font-semibold">

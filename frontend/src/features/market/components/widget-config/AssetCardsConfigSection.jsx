@@ -4,13 +4,13 @@ import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
 } from '@dnd-kit/core';
 import {
-  arrayMove, SortableContext, useSortable, verticalListSortingStrategy, sortableKeyboardCoordinates,
+  arrayMove, SortableContext, useSortable, rectSortingStrategy, sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import PopoverHeader from './PopoverHeader';
 import SearchSuggestions from '../../../../shared/components/form/SearchSuggestions';
 
-const MAX_ASSET_CHIPS = 12;
+const MAX_ASSET_CHIPS = 5;
 
 function SortableChip({ id, code, type, onRemove }) {
   const { t } = useTranslation();
@@ -18,13 +18,19 @@ function SortableChip({ id, code, type, onRemove }) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    // While dragging, LIFT the chip (near-opaque + shadow + raised z) instead of fading it to 0.5 — a faded
+    // chip made it unclear which one was moving. The siblings animate aside to show the drop slot.
+    opacity: isDragging ? 0.95 : 1,
+    zIndex: isDragging ? 30 : undefined,
+    boxShadow: isDragging ? '0 10px 24px -6px rgba(15, 23, 42, 0.45)' : undefined,
   };
   return (
     <span
       ref={setNodeRef}
       style={style}
-      className="inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.06em] font-semibold pl-1 pr-1.5 py-1 rounded-md border border-accent/40 bg-accent/10 text-accent select-none"
+      className={`inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.06em] font-semibold pl-1 pr-1.5 py-1 rounded-md border text-accent select-none transition-colors ${
+        isDragging ? 'border-accent ring-2 ring-accent/40 bg-accent/20' : 'border-accent/40 bg-accent/10'
+      }`}
     >
       <button
         type="button"
@@ -36,7 +42,7 @@ function SortableChip({ id, code, type, onRemove }) {
         <GripVertical className="h-3 w-3 opacity-60" />
       </button>
       <span>{code.replace('.IS', '')}</span>
-      <span className="text-[8px] text-accent/60 ml-0.5 normal-case tracking-wider">{type}</span>
+      <span className="text-[8px] text-accent/80 ml-0.5 normal-case tracking-wider">{type}</span>
       <button
         type="button"
         onClick={onRemove}
@@ -49,9 +55,14 @@ function SortableChip({ id, code, type, onRemove }) {
   );
 }
 
-export default function AssetCardsConfigSection({ config, onChange, autoFocusName }) {
+export default function AssetCardsConfigSection({ config, onChange, autoFocusName, defaultItems }) {
   const { t } = useTranslation();
-  const codes = Array.isArray(config?.assetCodes) ? config.assetCodes : [];
+  // A default (implicit-config) widget has no assetCodes — its cards come from the backend defaults. Seed the
+  // chip list from the currently-rendered items so the FIRST add is ADDITIVE (defaults + new) instead of
+  // replacing the whole list with just the new asset (which silently wiped the 5-6 default cards).
+  const codes = Array.isArray(config?.assetCodes)
+    ? config.assetCodes
+    : (defaultItems ?? []).map((it) => ({ type: it.type, code: it.code, name: it.name }));
   const name = typeof config?.name === 'string' ? config.name : '';
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -81,7 +92,9 @@ export default function AssetCardsConfigSection({ config, onChange, autoFocusNam
             <Search className="h-3.5 w-3.5 text-fg-subtle" />
             <span className="font-mono text-[10px] tracking-[0.16em] uppercase text-fg-subtle">{t('widgetSettings.searchHint')}</span>
           </div>
-          <SearchSuggestions placeholder={t('widgetSettings.searchPlaceholder')} navigateOnSelect={false} onSelect={add} />
+          {/* Macro indicators (CPI/rates/deposits) aren't tradeable price instruments and have their own
+              section — keep them out of asset cards, where they'd render as a ₺ price with no chart. */}
+          <SearchSuggestions placeholder={t('widgetSettings.searchPlaceholder')} navigateOnSelect={false} onSelect={add} excludeTypes={['MACRO']} />
         </div>
         {full && (
           <p className="font-mono text-[9px] tracking-[0.14em] text-warning uppercase mt-1.5">{t('widgetSettings.maxAssets')}</p>
@@ -97,7 +110,7 @@ export default function AssetCardsConfigSection({ config, onChange, autoFocusNam
               {t('widgetSettings.emptyHint')}
             </p>
           : <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+              <SortableContext items={ids} strategy={rectSortingStrategy}>
                 <div className="flex flex-wrap gap-1.5">
                   {codes.map((c, i) => (
                     <SortableChip

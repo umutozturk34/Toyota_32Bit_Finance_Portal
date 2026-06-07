@@ -6,6 +6,7 @@ import { getChangeClass, changeColors, formatPercent } from '../../../shared/uti
 import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
 import Card from '../../../shared/components/card';
 import { useMacroIndicators } from '../../macro/hooks/useMacroIndicators';
+import { instrumentDisplayName } from '../../../shared/utils/instrumentLabel';
 
 const ANALYTICS_TYPE_TO_MARKET = {
   SPOT: 'STOCK',
@@ -41,22 +42,12 @@ function shortLabel(code) {
   return (code || '').replace('.IS', '');
 }
 
-function instrumentDisplayName(entry, t) {
-  if (!entry) return '';
-  const code = entry.code || '';
-  const fallback = entry.name || code;
-  const key = `instruments.${entry.type}.${code}`;
-  const translated = t(key, { defaultValue: '' });
-  if (translated && translated !== key) return translated;
-  return fallback;
-}
-
 function BeaterRow({ entry, rank, t, onNavigate }) {
   const marketKey = ANALYTICS_TYPE_TO_MARKET[entry.type] || 'CASH';
   const color = ASSET_TYPE_COLORS[marketKey] || '#6366f1';
   const cls = getChangeClass(entry.nominalReturnPct);
   const excessCls = getChangeClass(entry.excessReturnPct);
-  const displayName = instrumentDisplayName(entry, t);
+  const displayName = instrumentDisplayName(t, entry.type, entry.code, entry.name);
   const initials = shortLabel(entry.code).slice(0, 2).toUpperCase();
   return (
     <button

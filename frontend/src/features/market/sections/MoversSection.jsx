@@ -8,6 +8,7 @@ import { priceCurrencyOf } from '../../../shared/utils/priceCurrency';
 import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
 import useNavigationStore from '../../../shared/stores/useNavigationStore';
 import Card from '../../../shared/components/card';
+import { commodityLabel } from '../../../shared/utils/commodityName';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
 
@@ -16,13 +17,14 @@ function shortLabel(asset) {
 }
 
 function AssetRow({ asset, color, onClick }) {
+  const { t } = useTranslation();
   const { formatCompact: moneyCompact } = useMoney();
   const cls = getChangeClass(asset.changePercent);
   return (
     <button
       type="button"
       onClick={onClick}
-      title={asset.name}
+      title={commodityLabel(t, asset.type, asset.code, asset.name)}
       className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface/60 transition-colors group cursor-pointer text-left border-none bg-transparent"
     >
       {asset.image

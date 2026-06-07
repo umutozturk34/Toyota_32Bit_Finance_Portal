@@ -73,7 +73,12 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
     const inst = chartRef.current?.getEchartsInstance?.();
     if (!inst) return;
     inst.dispatchAction({ type: 'downplay', seriesIndex: 0 });
-    if (hoveredSliceName != null) inst.dispatchAction({ type: 'highlight', seriesIndex: 0, name: hoveredSliceName });
+    if (hoveredSliceName != null) {
+      inst.dispatchAction({ type: 'highlight', seriesIndex: 0, name: hoveredSliceName });
+    } else {
+      // hideTip clears the cached pointer so _keepShow can't re-show a stale tooltip on the next re-render.
+      inst.dispatchAction({ type: 'hideTip' });
+    }
   }, [hoveredSliceName]);
   const chartEvents = useMemo(() => (forPrint ? {} : {
     mouseover: (params) => setHoveredSliceName(params?.name ?? null),

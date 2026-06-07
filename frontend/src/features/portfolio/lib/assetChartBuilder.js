@@ -220,7 +220,10 @@ export function buildAssetChartOption(data, isDark, t, convertAt, displayCurrenc
     },
     yAxis: {
       type: 'value',
-      min: Math.max(0, dataMin - padding),
+      // Floor at 0 only when every value is non-negative (a price/value chart shouldn't dip below 0 for a
+      // tiny pad). VIOP equity CAN go negative (short/futures), so when dataMin < 0 let the axis show it
+      // instead of clipping the line at the baseline.
+      min: dataMin < 0 ? dataMin - padding : Math.max(0, dataMin - padding),
       max: dataMax + padding,
       axisLine: { show: false },
       axisTick: { show: false },
@@ -237,6 +240,9 @@ export function buildAssetChartOption(data, isDark, t, convertAt, displayCurrenc
       itemStyle: { color: LINE_COLOR },
       lineStyle: { width: 2.2, color: LINE_COLOR },
       areaStyle: seriesData.length < 2 ? undefined : {
+        // Fill from the line to the axis BOTTOM (not 0): for a negative VIOP series the default origin:0 fills
+        // upward from the line to 0 (inverted look); 'start' keeps the normal under-the-line gradient.
+        origin: 'start',
         color: {
           type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
           colorStops: [

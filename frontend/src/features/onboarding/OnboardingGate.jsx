@@ -260,7 +260,7 @@ export default function OnboardingGate() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.55, duration: 0.5 }}
-                className="text-sm text-zinc-800 dark:text-zinc-200 text-center max-w-xs font-medium"
+                className="text-sm text-fg-muted text-center max-w-xs font-medium"
               >
                 {t('onboarding.landing.subtitle', { defaultValue: 'Hoş geldin — birkaç ayar sonra hazırsın.' })}
               </motion.p>
@@ -389,7 +389,7 @@ export default function OnboardingGate() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.6 }}
-                className="text-sm sm:text-base text-center max-w-xs leading-relaxed font-medium px-4 text-zinc-800 dark:text-zinc-200"
+                className="text-sm sm:text-base text-center max-w-xs leading-relaxed font-medium px-4 text-zinc-200"
               >
                 {t('onboarding.tour.farewell.subtitle', {
                   defaultValue: 'Keyifli takipler dileriz, hep yanındayız.',

@@ -48,7 +48,7 @@ function placeNear(anchor) {
   return { top, left, maxHeight };
 }
 
-export default function WidgetSettingsPopover({ anchorEl, kind, config, autoFocusName = false, onChange, onClose }) {
+export default function WidgetSettingsPopover({ anchorEl, kind, config, autoFocusName = false, defaultItems = null, onChange, onClose }) {
   const { t } = useTranslation();
   const ref = useRef(null);
   const [pos, setPos] = useState(null);
@@ -111,7 +111,7 @@ export default function WidgetSettingsPopover({ anchorEl, kind, config, autoFocu
       <div className="flex-1 min-h-0 flex flex-col p-3.5 pt-3 pr-9">
         {kind === 'NEWS' && <NewsConfigSection config={config} onChange={onChange} />}
         {kind === 'WATCHLIST' && <WatchlistConfigSection config={config} onChange={onChange} />}
-        {kind === 'ASSET_CARDS' && <AssetCardsConfigSection config={config} onChange={onChange} autoFocusName={autoFocusName} />}
+        {kind === 'ASSET_CARDS' && <AssetCardsConfigSection config={config} onChange={onChange} autoFocusName={autoFocusName} defaultItems={defaultItems} />}
         {kind === 'BENCHMARK_BEATERS' && <BenchmarkBeatersConfigSection config={config} onChange={onChange} />}
       </div>
       <div className="shrink-0 flex items-center justify-end gap-2 px-3 py-2 border-t border-border-default/60 bg-bg-deep/30 rounded-b-xl">

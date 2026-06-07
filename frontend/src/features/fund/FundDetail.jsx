@@ -1,8 +1,8 @@
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LineChart, ExternalLink } from 'lucide-react';
+import { LineChart, ExternalLink, ChevronUp, ChevronDown } from 'lucide-react';
 import { fundService } from './services/fundService';
-import { formatVolume } from '../../shared/utils/formatters';
+import { formatVolume, getChangeClass, changeColors, formatPercentAbs } from '../../shared/utils/formatters';
 import { useMoney } from '../../shared/hooks/useMoney';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
@@ -28,10 +28,21 @@ function FundMetadata({ asset }) {
   const { t } = useTranslation();
   const { format: money, formatCompact: moneyCompact } = useMoney();
   const meta = asset.metadata || {};
+  const cls = getChangeClass(asset.changePercent);
   return (
     <div className="space-y-3">
       <MetadataTiles tiles={[
         { label: t('marketDetail.priceLabel'), value: money(asset.price) },
+        asset.changePercent != null && {
+          label: t('marketDetail.changeLabel'),
+          color: changeColors[cls],
+          value: (
+            <span className="flex items-center gap-0.5">
+              {asset.changePercent > 0 ? <ChevronUp className="h-3 w-3" /> : asset.changePercent < 0 ? <ChevronDown className="h-3 w-3" /> : null}
+              {formatPercentAbs(asset.changePercent)}
+            </span>
+          ),
+        },
         meta.fundType === 'BYF' && meta.bulletinPrice != null && { label: t('marketDetail.fund.exchange'), value: money(meta.bulletinPrice) },
         {
           label: t('marketDetail.fund.fundType'),

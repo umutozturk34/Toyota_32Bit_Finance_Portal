@@ -139,7 +139,11 @@
       "hide": "Hide",
       "show": "Show",
       "edit": "Edit",
-      "remove": "Remove"
+      "remove": "Remove",
+      "error": {
+        "max": "At most {{max}} indicators can be added",
+        "duplicate": "An indicator with the same type and period already exists"
+      }
     },
     "drawingPanel": {
       "tools": {
@@ -1236,6 +1240,32 @@
       "zw_f": "Wheat"
     }
   },
+  "forex": {
+    "name": {
+      "aed": "UAE Dirham",
+      "aud": "Australian Dollar",
+      "azn": "Azerbaijani Manat",
+      "cad": "Canadian Dollar",
+      "chf": "Swiss Franc",
+      "cny": "Chinese Yuan",
+      "dkk": "Danish Krone",
+      "eur": "Euro",
+      "gbp": "Pound Sterling",
+      "jpy": "Japanese Yen",
+      "krw": "South Korean Won",
+      "kwd": "Kuwaiti Dinar",
+      "kzt": "Kazakhstani Tenge",
+      "nok": "Norwegian Krone",
+      "pkr": "Pakistani Rupee",
+      "qar": "Qatari Riyal",
+      "ron": "Romanian Leu",
+      "rub": "Russian Ruble",
+      "sar": "Saudi Riyal",
+      "sek": "Swedish Krona",
+      "usd": "US Dollar",
+      "xdr": "Special Drawing Rights"
+    }
+  },
   "marketOverview": {
     "title": "Market Overview",
     "loading": "Loading market overview...",
@@ -2216,7 +2246,7 @@
     "compareSearchAssets": "Search stocks, crypto, funds, FX, commodities, bonds…",
     "compareSearchMixed": "Search assets or macro indicators…",
     "portfolioPickerHeading": "My portfolios",
-    "portfolioSeriesHint": "Portfolio line is time-weighted return (%, from 0%); ₺ P&L in tooltip",
+    "portfolioSeriesHint": "Portfolio line is cumulative return (%, from 0%); ₺ P&L in tooltip",
     "compareSubtitle": "Place different assets side-by-side on the same chart. No amount or date — just historical price movements.",
     "compareTitle": "Comparison",
     "cpiGrowth": "CPI growth (period)",

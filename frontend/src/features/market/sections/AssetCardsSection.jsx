@@ -5,16 +5,28 @@ import useNavigationStore from '../../../shared/stores/useNavigationStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layers, X } from 'lucide-react';
 import { ArrowUpRight, ArrowDownRight } from '../../../shared/components/feedback/AnimatedIcons';
-import { getChangeClass, changeColors, changeBg, formatPercentAbs } from '../../../shared/utils/formatters';
+import { getChangeClass, changeColors, changeBg, formatPercentAbs, formatPriceTRY } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { priceCurrencyOf } from '../../../shared/utils/priceCurrency';
 import AssetCardChart from './AssetCardChart';
 
-const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
-const TYPE_ABBR = { STOCK: 'STK', CRYPTO: 'CRY', FOREX: 'FX', FUND: 'FND', COMMODITY: 'CMD', BOND: 'BND', VIOP: 'VIO' };
+const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop', BOND: '/bonds' };
+const TYPE_ABBR = { STOCK: 'STK', CRYPTO: 'CRY', FOREX: 'FX', FUND: 'FND', COMMODITY: 'CMD', BOND: 'BND', VIOP: 'VIOP' };
 
 function shortLabel(asset) {
-  return (asset.code || '').replace('.IS', '');
+  const code = (asset.code || '').replace('.IS', '');
+  // VIOP symbols carry an F_/O_ (futures/option) prefix that is just noise on the tiny card and pushes the
+  // meaningful part (underlying + expiry) under the truncation — strip it so "F_XAUUSD0626" reads "XAUUSD0626".
+  if (asset.type === 'VIOP') return code.replace(/^[FO]_/, '');
+  return code;
+}
+
+// A bond's value is its nominal price in TRY — render it as a ₺ figure WITHOUT FX conversion (bonds always
+// stay TRY, never shown in USD/EUR), bypassing the converting money() path so a USD/EUR display can't rebase it.
+function bondPriceLabel(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  return formatPriceTRY(n);
 }
 
 function typeAbbr(type) {
@@ -79,7 +91,7 @@ function AssetCardImpl({ asset, index = 0, onClick, editMode, onRemove }) {
                   <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                   <span className="text-fg-muted">— ₺</span>
                 </span>
-              : <span className="text-fg">{money(asset.price, priceCurrencyOf(asset))}</span>}
+              : <span className="text-fg">{asset.type === 'BOND' ? bondPriceLabel(asset.price) : money(asset.price, priceCurrencyOf(asset))}</span>}
           </p>
         </div>
       </button>
@@ -109,11 +121,17 @@ export default function AssetCardsSection({ data, editMode = false, config = {},
   const items = useMemo(() => data?.items ?? [], [data]);
 
   const visibleItems = useMemo(() => {
-    if (!Array.isArray(config?.assetCodes)) return items;
-    return config.assetCodes.map((c) => {
-      const found = items.find((it) => it.type === c.type && it.code === c.code);
-      return found || { ...c, _pending: true };
-    });
+    // Asset cards are for tradeable price instruments; macro indicators (CPI/rates/deposits) have their own
+    // section and don't fit the ₺-price card — drop any that linger in a saved config so no broken macro card
+    // renders. (New ones are already blocked from the config search.)
+    const isCardable = (it) => !String(it?.type || '').startsWith('MACRO_');
+    if (!Array.isArray(config?.assetCodes)) return items.filter(isCardable);
+    return config.assetCodes
+      .map((c) => {
+        const found = items.find((it) => it.type === c.type && it.code === c.code);
+        return found || { ...c, _pending: true };
+      })
+      .filter(isCardable);
   }, [items, config?.assetCodes]);
 
   const goToAsset = useCallback((asset) => {

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -33,6 +33,16 @@ function friendlyName(asset) {
   return asset.name;
 }
 
+// Macro indicators are rates / index levels, NOT ₺ prices: a deposit or policy rate renders as a
+// percentage and a CPI-style index as a plain number — never with a currency symbol (the "₺0,31"
+// bug on a deposit rate). Unit drives it; when unit is absent, only inflation is treated as an index.
+function formatMacroValue(value, unit, type) {
+  const v = Number(value);
+  if (!Number.isFinite(v)) return '—';
+  const isPercent = unit ? unit === 'PERCENT' : type !== 'MACRO_INFLATION';
+  return isPercent ? `%${v.toFixed(2)}` : v.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
+}
+
 export default function SearchSuggestions({
   onSelect,
   placeholder,
@@ -58,6 +68,10 @@ export default function SearchSuggestions({
   const macroPreview = macroPreviewCode
     ? macroIndicators.find((i) => i.code === macroPreviewCode) ?? null
     : null;
+  const macroUnitByCode = useMemo(
+    () => Object.fromEntries((macroIndicators || []).map((m) => [m.code, m.unit])),
+    [macroIndicators],
+  );
 
   const trimmedQuery = query.trim();
   const tooShort = trimmedQuery.length < 2;
@@ -322,7 +336,11 @@ export default function SearchSuggestions({
                         </div>
 
                         <div className="text-right shrink-0">
-                          <p className="text-sm font-mono font-semibold text-fg">{money(asset.price, priceCurrencyOf(asset))}</p>
+                          <p className="text-sm font-mono font-semibold text-fg">
+                            {MACRO_TYPES.has(asset.type)
+                              ? formatMacroValue(asset.price, macroUnitByCode[asset.code], asset.type)
+                              : money(asset.price, priceCurrencyOf(asset))}
+                          </p>
                           {asset.changePercent != null && (
                             <div className={`flex items-center justify-end gap-0.5 text-[11px] font-mono font-medium ${changeColors[cls]}`}>
                               {asset.changePercent > 0 ? <TrendingUp className="h-3 w-3" /> : asset.changePercent < 0 ? <TrendingDown className="h-3 w-3" /> : null}

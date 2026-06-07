@@ -108,10 +108,16 @@ export default function AssetCardChart({ assetType, assetCode, changePercent, de
   const native = useMemo(() => nativeCurrencyFor(assetType, assetCode), [assetType, assetCode]);
   const data = useMemo(() => {
     const points = toSparkSeries(history);
+    // Bonds always stay TRY — never FX-convert their sparkline under a USD/EUR display (mirrors the
+    // TRY-locked card price). Every other type converts per-date to the chosen display currency so the
+    // sparkline tracks the same currency as the card's price/change.
+    if (assetType === 'BOND') {
+      return points.map((p) => Number(p.close)).filter((v) => Number.isFinite(v));
+    }
     return points
       .map((p) => Number(convertAt(p.close, native, p.date, native) ?? p.close))
       .filter((v) => Number.isFinite(v));
-  }, [history, convertAt, native]);
+  }, [history, convertAt, native, assetType]);
   const option = useMemo(() => (data.length > 0 ? buildOption(data, color) : null), [data, color]);
 
   useEffect(() => {

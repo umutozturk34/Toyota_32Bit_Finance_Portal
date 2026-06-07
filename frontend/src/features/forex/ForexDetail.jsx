@@ -1,12 +1,16 @@
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import { forexService } from './services/forexService';
 import { getBaseCurrency } from '../../shared/constants/forex';
+import { getChangeClass, changeColors, formatPercentAbs } from '../../shared/utils/formatters';
+import { forexName } from '../../shared/utils/commodityName';
 import { useMoney } from '../../shared/hooks/useMoney';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
 
 function ForexHeader({ asset, code }) {
+  const { t } = useTranslation();
   const base = getBaseCurrency(code);
 
   return (
@@ -18,7 +22,7 @@ function ForexHeader({ asset, code }) {
         : <span className="text-2xl shrink-0">💱</span>}
       <div className="min-w-0">
         <h1 className="text-xl font-bold text-fg truncate">{base}/TRY</h1>
-        <p className="text-xs text-fg-muted truncate max-w-[12rem] sm:max-w-[18rem]">{asset.name}</p>
+        <p className="text-xs text-fg-muted truncate max-w-[12rem] sm:max-w-[18rem]">{forexName(t, code, asset.name)}</p>
       </div>
     </>
   );
@@ -30,9 +34,21 @@ function ForexMetadata({ asset }) {
   const meta = asset.metadata || {};
   const sellingPrice = meta.sellingPrice;
   const buyingPrice = meta.buyingPrice;
+  const cls = getChangeClass(asset.changePercent);
   return (
     <MetadataTiles tiles={[
       { label: t('marketDetail.forex.sell'), value: money(sellingPrice ?? asset.price) },
+      asset.changePercent != null && {
+        label: t('marketDetail.changeLabel'),
+        color: changeColors[cls],
+        value: (
+          <span className="flex items-center gap-0.5">
+            {asset.changePercent > 0 ? <ChevronUp className="h-3 w-3" /> : asset.changePercent < 0 ? <ChevronDown className="h-3 w-3" /> : null}
+            {formatPercentAbs(asset.changePercent)}
+          </span>
+        ),
+      },
+      asset.changeAmount != null && { label: t('marketDetail.forex.deltaTL'), value: money(asset.changeAmount), color: changeColors[cls] },
       buyingPrice != null && { label: t('marketDetail.forex.buy'), value: money(buyingPrice) },
       meta.effectiveBuyingPrice != null && { label: t('marketDetail.forex.banknoteBuy'), value: money(meta.effectiveBuyingPrice) },
       meta.effectiveSellingPrice != null && { label: t('marketDetail.forex.banknoteSell'), value: money(meta.effectiveSellingPrice) },

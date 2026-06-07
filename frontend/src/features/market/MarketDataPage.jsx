@@ -43,6 +43,11 @@ export default function MarketDataPage() {
   }
 
   const popoverSection = popoverState ? sections.find((s) => s.sectionId === popoverState.sectionId) : null;
+  // The currently-rendered cards of the section being configured — lets the Asset Cards config seed its chip
+  // list from the backend defaults so adding a card is additive instead of wiping the implicit defaults.
+  const popoverItems = popoverState
+    ? (widgets.find((w) => w.sectionId === popoverState.sectionId)?.data?.items ?? null)
+    : null;
 
   const header = (
     <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -295,6 +300,7 @@ export default function MarketDataPage() {
             kind={popoverSection.kind}
             config={popoverSection.config}
             autoFocusName={popoverState.autoFocusName}
+            defaultItems={popoverItems}
             onChange={(next) => handleConfigChange(popoverSection.sectionId, next)}
             onClose={closePopover}
           />

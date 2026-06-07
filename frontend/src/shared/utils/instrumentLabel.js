@@ -1,3 +1,5 @@
+import { commodityName, forexName } from './commodityName';
+
 // EVDS deposit maturity buckets (must match backend macro.yaml): MT06 is the all-maturity TOTAL.
 const MATURITY_TO_KEY = {
   MT01: '1m',
@@ -28,6 +30,17 @@ export function instrumentDisplayName(t, type, code, fallbackName) {
   if (type === 'DEPOSIT' || type === 'MACRO_DEPOSIT') {
     const key = depositI18nLabelKey(code);
     if (key) return t(key, { defaultValue: fallbackName || code });
+  }
+  // Commodities carry a localized name (commodity.name.*) — without this they fell back to the backend's
+  // English label ("Gram Gold") on the beater/scenario surfaces while watchlist/search/positions showed the
+  // localized "Gram Altın". Route them through the same resolver so every surface agrees.
+  if (type === 'COMMODITY') {
+    return commodityName(t, code, fallbackName || code);
+  }
+  // Forex carries a localized currency name (forex.name.*); the backend label is Turkish (TCMB), so route it
+  // through i18n too — otherwise the beater/scenario surfaces showed Turkish names in an English UI.
+  if (type === 'FOREX') {
+    return forexName(t, code, fallbackName || code);
   }
   return fallbackName || code;
 }

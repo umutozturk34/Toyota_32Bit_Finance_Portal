@@ -11,7 +11,7 @@ export function usePortfolioList() {
     queryFn: portfolioService.list,
     retry: false,
     staleTime: STALE.SHORT,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -20,7 +20,7 @@ export function usePortfolioLimits() {
     queryKey: ['portfolioLimits'],
     queryFn: portfolioService.getLimits,
     staleTime: STALE.LONG,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -105,7 +105,11 @@ export function usePortfolioView(portfolioId) {
     queryFn: () => portfolioService.getView(portfolioId),
     enabled: !!portfolioId,
     staleTime: STALE.SHORT,
-    refetchOnWindowFocus: false,
+    // Portfolio views/charts refetch on tab focus (overriding the global false): returning to the app after a
+    // price tick / a change made elsewhere shows current data instead of stale cache. Only refetches once a
+    // query is stale, so intra-page filter switches still hit the cache. Mutations + the backfill SSE cover
+    // in-session edits; this is the catch-all so the pie/performance charts never sit on stale data.
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -115,7 +119,7 @@ export function usePortfolioSummary(portfolioId, assetType) {
     queryFn: () => portfolioService.getSummary(portfolioId, assetType),
     enabled: !!portfolioId && !!assetType,
     staleTime: STALE.SHORT,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -127,7 +131,7 @@ export function usePortfolioAllocation(portfolioId, mode, assetType, limit) {
     // Charts are switched/filtered far more often than every 30s; MEDIUM (60s) reuses cached data across a
     // browsing window instead of re-marking it stale on each switch. Add/sell/backfill still invalidate explicitly.
     staleTime: STALE.MEDIUM,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -137,7 +141,11 @@ export function usePortfolioPerformance(portfolioId, range, assetType) {
     queryFn: () => portfolioService.getPerformance(portfolioId, range, assetType),
     enabled: !!portfolioId,
     staleTime: STALE.MEDIUM,   // reuse cached series across tab/range/type switches (see usePortfolioAllocation)
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    // Keep the previous series rendered while a new range/type key revalidates (the query key includes range +
+    // assetType). Without it data falls back to [] on every uncached switch, collapsing the header value row
+    // and the hover-readout strip → the chart area jumps/slides. Mirrors usePortfolioPositions.
+    placeholderData: (prev) => prev,
     select: (data) => (data || []).map((d) => {
       const total = Number(d.totalPnlTry);
       const closed = Number(d.cashTry ?? 0);
@@ -171,7 +179,7 @@ export function useAssetSeries(portfolioId, assetType, assetCode, range, directi
     queryFn: () => portfolioService.getAssetSeries(portfolioId, assetType, assetCode, range, direction),
     enabled: enabled && !!portfolioId && !!assetType && !!assetCode,
     staleTime: STALE.SHORT,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -181,7 +189,7 @@ export function useAssetAggregate(portfolioId, assetType, assetCode, direction =
     queryFn: () => portfolioService.getAssetAggregate(portfolioId, assetType, assetCode, direction),
     enabled: enabled && !!portfolioId && !!assetType && !!assetCode,
     staleTime: STALE.SHORT,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -209,7 +217,7 @@ export function usePortfolioPositions(portfolioId, params) {
     enabled: !!portfolioId,
     placeholderData: (prev) => prev,
     staleTime: STALE.SHORT,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     retry: rateLimitAwareRetry,
     retryDelay: rateLimitAwareDelay,
   });
@@ -221,7 +229,7 @@ export function useAssetLots(portfolioId, assetType, assetCode) {
     queryFn: () => portfolioService.getPositionsByAsset(portfolioId, assetType, assetCode),
     enabled: !!portfolioId && !!assetType && !!assetCode,
     staleTime: STALE.SHORT,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 }
 

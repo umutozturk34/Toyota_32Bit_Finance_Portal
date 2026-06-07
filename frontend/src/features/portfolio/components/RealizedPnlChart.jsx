@@ -83,7 +83,13 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
     const inst = chartRef.current?.getEchartsInstance?.();
     if (!inst) return;
     inst.dispatchAction({ type: 'downplay', seriesIndex: 0 });
-    if (hovered != null) inst.dispatchAction({ type: 'highlight', seriesIndex: 0, name: hovered });
+    if (hovered != null) {
+      inst.dispatchAction({ type: 'highlight', seriesIndex: 0, name: hovered });
+    } else {
+      // hideTip clears ECharts' cached pointer (_lastX/_lastY); without it _keepShow re-shows the tooltip at
+      // the old position on the next notMerge re-render — the donut "stuck" when leaving via the legend below.
+      inst.dispatchAction({ type: 'hideTip' });
+    }
   }, [hovered]);
   const labelFor = useCallback((it) => {
     if (it.label === 'OTHER') return t('portfolio.allocation.otherLabel');
@@ -195,7 +201,10 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
         },
       },
       labelLine: { show: false },
-      emphasis: { scale: false, focus: 'self', label: { show: true } },
+      // focus:'none' (not 'self'): 'self' blurs the other slices AND the center "Net P/L" label, and that blur
+      // could get stuck dimmed after a refetch/hover race — leaving the whole donut faded. The hovered slice
+      // still emphasizes via applyEmphasis; nothing can stay dimmed.
+      emphasis: { scale: false, focus: 'none', label: { show: true } },
       data: seriesData,
     }],
     media: [{

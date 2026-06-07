@@ -139,7 +139,11 @@
       "hide": "Gizle",
       "show": "Göster",
       "edit": "Düzenle",
-      "remove": "Kaldır"
+      "remove": "Kaldır",
+      "error": {
+        "max": "En fazla {{max}} indikatör eklenebilir",
+        "duplicate": "Aynı tür ve periyotta bir indikatör zaten ekli"
+      }
     },
     "drawingPanel": {
       "tools": {
@@ -1236,6 +1240,32 @@
       "zw_f": "Buğday"
     }
   },
+  "forex": {
+    "name": {
+      "aed": "Birleşik Arap Emirlikleri Dirhemi",
+      "aud": "Avustralya Doları",
+      "azn": "Azerbaycan Yeni Manatı",
+      "cad": "Kanada Doları",
+      "chf": "İsviçre Frangı",
+      "cny": "Çin Yuanı",
+      "dkk": "Danimarka Kronu",
+      "eur": "Euro",
+      "gbp": "İngiliz Sterlini",
+      "jpy": "Japon Yeni",
+      "krw": "Güney Kore Wonu",
+      "kwd": "Kuveyt Dinarı",
+      "kzt": "Kazakistan Tengesi",
+      "nok": "Norveç Kronu",
+      "pkr": "Pakistan Rupisi",
+      "qar": "Katar Riyali",
+      "ron": "Rumen Leyi",
+      "rub": "Rus Rublesi",
+      "sar": "S.Arabistan Riyali",
+      "sek": "İsveç Kronu",
+      "usd": "ABD Doları",
+      "xdr": "Özel Çekme Hakkı"
+    }
+  },
   "marketOverview": {
     "title": "Piyasa Özeti",
     "loading": "Piyasa özeti yükleniyor...",
@@ -2216,7 +2246,7 @@
     "compareSearchAssets": "Hisse, kripto, fon, döviz, emtia, bono ara…",
     "compareSearchMixed": "Asset veya makro indikatör ara…",
     "portfolioPickerHeading": "Portföylerim",
-    "portfolioSeriesHint": "Portföy çizgisi zaman-ağırlıklı getiri (%, %0'dan); ₺ kâr/zarar tooltip'te",
+    "portfolioSeriesHint": "Portföy çizgisi kümülatif getiri (%, %0'dan); ₺ kâr/zarar tooltip'te",
     "compareSubtitle": "Farklı varlıkları aynı grafikte yan yana getir. Tutar/tarih gerekmez — sadece geçmiş fiyat hareketleri.",
     "compareTitle": "Karşılaştırma",
     "cpiGrowth": "TÜFE büyümesi (dönemde)",

@@ -6,6 +6,7 @@ import { forexService } from './services/forexService';
 import { adminService } from '../admin/services/adminService';
 import { getBaseCurrency } from '../../shared/constants/forex';
 import { changeColors, changeBg, formatPercent } from '../../shared/utils/formatters';
+import { forexName } from '../../shared/utils/commodityName';
 import MarketListPage from '../../shared/components/market/MarketListPage';
 import AssetCard from '../../shared/components/asset/AssetCard';
 import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
@@ -49,11 +50,11 @@ function ForexPage() {
                             </h3>
                         </div>
                         <span className="mt-0.5 block text-xs text-fg-muted leading-snug line-clamp-2 break-words">
-                            {forex.name}
+                            {forexName(t, forex.code, forex.name)}
                         </span>
                     </div>
                     <AssetBuyButton
-                        onClick={() => setBuyTarget({ assetCode: forex.code, assetName: forex.name, price: sellingPrice ?? forex.price })}
+                        onClick={() => setBuyTarget({ assetCode: forex.code, assetName: forexName(t, forex.code, forex.name), price: sellingPrice ?? forex.price })}
                     />
                 </div>
 

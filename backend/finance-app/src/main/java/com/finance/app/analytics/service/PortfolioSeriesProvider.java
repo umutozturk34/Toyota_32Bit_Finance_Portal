@@ -54,35 +54,34 @@ public class PortfolioSeriesProvider {
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
     /**
-     * Daily time-weighted-return index over {@code [from, to]}, based on the portfolio's real starting value
-     * (so the compare tooltip shows a meaningful TRY figure, not a bare "100"), then growing only by each
-     * day's contribution-immune price return ({@link PortfolioDailySnapshot#getDailyPnlPercent()}). A lot
-     * added on a given day has no prior asset row, so it contributes 0 to that day's factor — deposits stay
-     * out of the curve. The result is a value-like growth index: what the starting capital would be worth if
-     * it only earned the portfolio's returns. The compare chart normalizes it like any price series, giving a
-     * manager-performance line free of cash-flow spikes.
+     * Daily cumulative-return index over {@code [from, to]}: {@code 100 × (1 + cumulativeReturn)} where the
+     * cumulative return is the stored {@link PortfolioDailySnapshot#getPnlPercent()} (capital-weighted P&amp;L
+     * over cost basis — the SAME figure the portfolio's own headline shows). The compare chart normalizes it
+     * by ratio, so its plotted % equals the portfolio's real return from the window start.
+     *
+     * <p>This deliberately does NOT chain {@code dailyPnlPercent} into a time-weighted-return index anymore.
+     * TWR equal-weights each day's return irrespective of the capital at risk, so a book that was tiny-and-up
+     * then large-and-down reads as a gain while the investor lost money: a real portfolio that started at
+     * ₺20 of spot (up ~65%) then added a ₺606K gold-futures lot that lost ₺65.5K showed a TWR index of
+     * +30% against an actual −9.5% (−₺65,530) loss — the same magnitude, opposite sign, surfaced on the
+     * compare graph. No base/weighting tweak fixes that; it is inherent to TWR. The capital-weighted return
+     * matches the portfolio page and is what the user means by "the portfolio's return". Adding a lot dilutes
+     * the percent (return on a larger cost), which is truthful — the curve ends where the portfolio actually is.
      *
      * @throws ResourceNotFoundException if the portfolio doesn't exist or isn't owned by {@code userSub}
      */
     @Transactional(readOnly = true)
-    public List<HistoryPoint> dailyTwrSeries(Long portfolioId, String userSub, LocalDate from, LocalDate to) {
+    public List<HistoryPoint> dailyReturnIndexSeries(Long portfolioId, String userSub, LocalDate from, LocalDate to) {
         portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "error.portfolio.notFound", portfolioId));
         List<PortfolioDailySnapshot> snapshots = dailySnapshotRepository
                 .findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(portfolioId, from, to);
-        BigDecimal index = null;
         List<HistoryPoint> out = new ArrayList<>(snapshots.size());
         for (PortfolioDailySnapshot s : snapshots) {
             if (s.getSnapshotDate() == null) continue;
-            if (index == null) {
-                index = s.getTotalValueTry() != null ? s.getTotalValueTry() : HUNDRED;
-            } else {
-                BigDecimal pct = s.getDailyPnlPercent();
-                if (pct != null) {
-                    index = index.multiply(BigDecimal.ONE.add(pct.divide(HUNDRED, 10, RoundingMode.HALF_UP)));
-                }
-            }
+            BigDecimal cumulativeReturnPct = s.getPnlPercent() != null ? s.getPnlPercent() : BigDecimal.ZERO;
+            BigDecimal index = HUNDRED.add(cumulativeReturnPct);
             out.add(new HistoryPoint(s.getSnapshotDate(), index.setScale(4, RoundingMode.HALF_UP)));
         }
         return out;

@@ -142,7 +142,7 @@ class AnalyticsControllerTest {
     }
 
     @Test
-    void shouldDelegateToTwrSeries_whenTwrRequested() {
+    void shouldDelegateToReturnIndexSeries_whenTwrRequested() {
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "none")
                 .subject("user-42")
@@ -154,11 +154,11 @@ class AnalyticsControllerTest {
         LocalDate to = LocalDate.of(2024, 6, 1);
         List<HistoryPoint> expected = List.of(
                 new HistoryPoint(LocalDate.of(2024, 3, 1), new BigDecimal("110")));
-        when(portfolioSeriesProvider.dailyTwrSeries(7L, "user-42", from, to)).thenReturn(expected);
+        when(portfolioSeriesProvider.dailyReturnIndexSeries(7L, "user-42", from, to)).thenReturn(expected);
 
         ApiResponse<List<HistoryPoint>> response = controller.portfolioSeries(jwt, 7L, from, to, false, true);
 
         assertThat(response.getData()).isEqualTo(expected);
-        verify(portfolioSeriesProvider).dailyTwrSeries(7L, "user-42", from, to);
+        verify(portfolioSeriesProvider).dailyReturnIndexSeries(7L, "user-42", from, to);
     }
 }

@@ -103,16 +103,16 @@ class PortfolioSeriesProviderTest {
         assertThat(series).isEmpty();
     }
 
-    private PortfolioDailySnapshot twrSnapshot(LocalDate date, BigDecimal totalValue, BigDecimal dailyPnlPercent) {
+    private PortfolioDailySnapshot returnIndexSnapshot(LocalDate date, BigDecimal pnlPercent) {
         return PortfolioDailySnapshot.builder()
                 .snapshotDate(date)
-                .totalValueTry(totalValue)
-                .dailyPnlPercent(dailyPnlPercent)
+                .pnlPercent(pnlPercent)
                 .build();
     }
 
     @Test
-    void shouldChainDailyReturnsIntoTwrIndex_whenSnapshotsExist() {
+    void shouldBuildCapitalWeightedReturnIndex_fromCumulativePnlPercent() {
+        // Arrange
         LocalDate from = LocalDate.of(2024, 1, 1);
         LocalDate to = LocalDate.of(2024, 6, 1);
         when(portfolioRepository.findByIdAndUserSub(7L, "u"))
@@ -120,25 +120,68 @@ class PortfolioSeriesProviderTest {
         when(dailySnapshotRepository
                 .findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(7L, from, to))
                 .thenReturn(List.of(
-                        twrSnapshot(LocalDate.of(2024, 2, 1), new BigDecimal("100"), null),                  // base = value 100
-                        twrSnapshot(LocalDate.of(2024, 2, 2), new BigDecimal("999"), new BigDecimal("10")),   // +10% → 110
-                        twrSnapshot(LocalDate.of(2024, 2, 3), new BigDecimal("999"), new BigDecimal("-5"))));  // -5%  → 104.5
+                        returnIndexSnapshot(LocalDate.of(2024, 2, 1), new BigDecimal("0")),       // 0%   → 100
+                        returnIndexSnapshot(LocalDate.of(2024, 2, 2), new BigDecimal("10.50")),    // +10.5% → 110.5
+                        returnIndexSnapshot(LocalDate.of(2024, 2, 3), new BigDecimal("-4.25"))));  // -4.25% → 95.75
 
-        List<HistoryPoint> series = provider.dailyTwrSeries(7L, "u", from, to);
+        // Act
+        List<HistoryPoint> series = provider.dailyReturnIndexSeries(7L, "u", from, to);
 
+        // Assert
         assertThat(series).hasSize(3);
         assertThat(series.get(0).value()).isEqualByComparingTo("100");
-        assertThat(series.get(1).value()).isEqualByComparingTo("110");
-        assertThat(series.get(2).value()).isEqualByComparingTo("104.5");
+        assertThat(series.get(1).value()).isEqualByComparingTo("110.5");
+        assertThat(series.get(2).value()).isEqualByComparingTo("95.75");
     }
 
     @Test
-    void shouldRaiseNotFound_whenPortfolioMissingForTwr() {
+    void shouldYieldIndexBelow100_whenPortfolioAtLoss() {
+        // Arrange — a losing book must read as a loss (index < 100), never a phantom gain (regression: a
+        // leveraged VIOP book that lost -9.51% previously showed a +30% time-weighted index on the compare graph).
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate to = LocalDate.of(2024, 6, 1);
+        when(portfolioRepository.findByIdAndUserSub(7L, "u"))
+                .thenReturn(Optional.of(new Portfolio()));
+        when(dailySnapshotRepository
+                .findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(7L, from, to))
+                .thenReturn(List.of(
+                        returnIndexSnapshot(LocalDate.of(2024, 2, 1), new BigDecimal("0")),
+                        returnIndexSnapshot(LocalDate.of(2024, 2, 28), new BigDecimal("-9.5124"))));
+
+        // Act
+        List<HistoryPoint> series = provider.dailyReturnIndexSeries(7L, "u", from, to);
+
+        // Assert
+        assertThat(series.get(1).value()).isEqualByComparingTo("90.4876");
+        assertThat(series.get(1).value()).isLessThan(new BigDecimal("100"));
+    }
+
+    @Test
+    void shouldDefaultIndexTo100_whenPnlPercentMissing() {
+        // Arrange
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate to = LocalDate.of(2024, 6, 1);
+        when(portfolioRepository.findByIdAndUserSub(7L, "u"))
+                .thenReturn(Optional.of(new Portfolio()));
+        when(dailySnapshotRepository
+                .findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(7L, from, to))
+                .thenReturn(List.of(returnIndexSnapshot(LocalDate.of(2024, 2, 1), null)));
+
+        // Act
+        List<HistoryPoint> series = provider.dailyReturnIndexSeries(7L, "u", from, to);
+
+        // Assert
+        assertThat(series).hasSize(1);
+        assertThat(series.get(0).value()).isEqualByComparingTo("100");
+    }
+
+    @Test
+    void shouldRaiseNotFound_whenPortfolioMissingForReturnIndex() {
         LocalDate from = LocalDate.of(2024, 1, 1);
         LocalDate to = LocalDate.of(2024, 6, 1);
         when(portfolioRepository.findByIdAndUserSub(7L, "u")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> provider.dailyTwrSeries(7L, "u", from, to))
+        assertThatThrownBy(() -> provider.dailyReturnIndexSeries(7L, "u", from, to))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("error.portfolio.notFound");
     }

@@ -1,23 +1,30 @@
 package com.finance.app.analytics.scheduler;
 
 import com.finance.app.analytics.service.InflationBeaterService;
+import com.finance.app.config.MarketDataInitializer;
 import com.finance.shared.service.TaskTrackingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class InflationBeaterSchedulerTest {
@@ -28,15 +35,21 @@ class InflationBeaterSchedulerTest {
     @Mock
     private TaskTrackingService taskTracker;
 
+    @Mock
+    private ObjectProvider<MarketDataInitializer> marketDataInitializer;
+
     private InflationBeaterScheduler scheduler;
 
     @BeforeEach
     void setUp() {
-        scheduler = new InflationBeaterScheduler(
-                inflationBeaterService,
-                taskTracker,
-                List.of("1M", "1Y"),
-                List.of("TP.TUFE1YI.T1", "TP.POLICY"));
+        scheduler = new InflationBeaterScheduler(inflationBeaterService, taskTracker, marketDataInitializer);
+        // Default: no cold-start init bean (so the warm-up proceeds immediately) and a small two-by-two
+        // coverage matrix. Lenient because not every test exercises every stub.
+        lenient().when(marketDataInitializer.getIfAvailable()).thenReturn(null);
+        lenient().when(inflationBeaterService.warmablePeriods())
+                .thenReturn(new LinkedHashSet<>(List.of("1M", "1Y")));
+        lenient().when(inflationBeaterService.warmableBenchmarkCodes())
+                .thenReturn(List.of("TP.TUFE1YI.T1", "TP.POLICY"));
         doAnswer(inv -> {
             Runnable r = inv.getArgument(2);
             r.run();
@@ -46,8 +59,10 @@ class InflationBeaterSchedulerTest {
 
     @Test
     void shouldDelegateStartupWarmup_whenApplicationReady() {
+        // Act
         scheduler.warmCacheOnStartup();
 
+        // Assert
         verify(taskTracker).runTracked(eq("beater-startup-warmup"), any(), any());
         verify(inflationBeaterService, times(4)).refresh(any(), any());
         verify(inflationBeaterService, never()).clearCache();
@@ -55,8 +70,10 @@ class InflationBeaterSchedulerTest {
 
     @Test
     void shouldClearCacheAndWarm_whenDailyCronFires() {
+        // Act
         scheduler.runDailyPrecompute();
 
+        // Assert
         var order = inOrder(inflationBeaterService);
         order.verify(inflationBeaterService).clearCache();
         order.verify(inflationBeaterService, times(4)).refresh(any(), any());
@@ -65,8 +82,10 @@ class InflationBeaterSchedulerTest {
 
     @Test
     void shouldInvokeRefreshForEveryPeriodBenchmarkCombination_whenWarmingAll() {
+        // Act
         scheduler.warmCacheOnStartup();
 
+        // Assert
         verify(inflationBeaterService).refresh("1M", "TP.TUFE1YI.T1");
         verify(inflationBeaterService).refresh("1Y", "TP.TUFE1YI.T1");
         verify(inflationBeaterService).refresh("1M", "TP.POLICY");
@@ -75,22 +94,57 @@ class InflationBeaterSchedulerTest {
 
     @Test
     void shouldSwallowIndividualFailures_whenSingleRefreshThrows() {
+        // Arrange
         doThrow(new RuntimeException("network down"))
                 .when(inflationBeaterService).refresh("1M", "TP.POLICY");
 
+        // Act
         scheduler.warmCacheOnStartup();
 
+        // Assert
         verify(inflationBeaterService, times(4)).refresh(any(), any());
     }
 
     @Test
-    void shouldHandleEmptyConfiguration_whenNoPeriodsOrBenchmarks() {
-        InflationBeaterScheduler empty = new InflationBeaterScheduler(
-                inflationBeaterService, taskTracker, List.of(), List.of());
+    void shouldWarmNothing_whenNoBenchmarksEnumerated() {
+        // Arrange
+        when(inflationBeaterService.warmableBenchmarkCodes()).thenReturn(List.of());
 
-        empty.warmCacheOnStartup();
+        // Act
+        scheduler.warmCacheOnStartup();
 
+        // Assert
         verify(inflationBeaterService, never()).refresh(any(), any());
         verify(taskTracker).runTracked(eq("beater-startup-warmup"), any(), any());
+    }
+
+    @Test
+    void shouldAwaitMarketDataInit_beforeWarming_whenInitializerPresent() {
+        // Arrange — a present cold-start initializer whose completion future is already done.
+        MarketDataInitializer initializer = mock(MarketDataInitializer.class);
+        when(initializer.completion()).thenReturn(CompletableFuture.completedFuture(null));
+        when(marketDataInitializer.getIfAvailable()).thenReturn(initializer);
+
+        // Act
+        scheduler.warmCacheOnStartup();
+
+        // Assert — the warm-up waited on init completion, then warmed every combination.
+        verify(initializer).completion();
+        verify(inflationBeaterService, times(4)).refresh(any(), any());
+    }
+
+    @Test
+    void shouldWarmAnyway_whenMarketDataInitFails() {
+        // Arrange — a present initializer whose completion future fails (get() throws ExecutionException).
+        MarketDataInitializer initializer = mock(MarketDataInitializer.class);
+        when(initializer.completion())
+                .thenReturn(CompletableFuture.failedFuture(new RuntimeException("init boom")));
+        when(marketDataInitializer.getIfAvailable()).thenReturn(initializer);
+
+        // Act
+        scheduler.warmCacheOnStartup();
+
+        // Assert — a failed/stalled init must not strand the cache; it warms anyway.
+        verify(inflationBeaterService, times(4)).refresh(any(), any());
     }
 }

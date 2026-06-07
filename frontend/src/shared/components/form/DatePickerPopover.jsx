@@ -85,7 +85,9 @@ export default function DatePickerPopover({
 
   if (open !== trackedOpen) {
     setTrackedOpen(open);
-    if (!open) setView('day');
+    setView('day');
+    // On every open, land on the SELECTED date's month/year instead of wherever the user last browsed.
+    if (open && selected) setCursor({ year: selected.getFullYear(), month: selected.getMonth() });
   }
 
   useEffect(() => {

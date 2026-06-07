@@ -73,6 +73,11 @@ export function skipLeadingSplit(sortedPoints, startIdx) {
   return jumpIdx;
 }
 
+// Money base a single compounded deposit/rate index is rebased to at the window start (see buildOption), so
+// its line reads as "100.000 → 224.000" instead of the raw carried-over index (~1,25) — which only looks
+// arbitrary because the index resets to 1.0 at the widened fetch start, well before the window.
+const INDEX_MONEY_BASE = 100000;
+
 export function buildOption(seriesData, normalize, isDark, targetCurrency, commonStartDate, levelMode, indexMode) {
   const muted = isDark ? '#6b6b7a' : '#94a3b8';
   const grid = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
@@ -80,34 +85,70 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency, commo
   const tooltipFg = isDark ? '#e2e2ea' : '#1a1a2e';
   const single = seriesData.length === 1;
 
-  const series = seriesData.map(({ indicator: ind, points, color }) => {
+  // First pass: sort each series once and find its effective baseline date — the common start advanced past
+  // any leading split-like cliff (fund launch crash / unadjusted split) for price series. The SHARED baseline
+  // is the LATEST of these across all series; EVERY series is then normalized AND trimmed from that one date,
+  // so they all begin together at 0% (a real apples-to-apples compare). Previously each series anchored
+  // independently — a longer-history asset showed a pre-start tail and per-series split-skips desynced the
+  // 0% point, so e.g. THYAO started a few days before ASELSAN instead of from the same shared origin.
+  const prepared = seriesData.map(({ indicator: ind, points, color }) => {
     if (!points || points.length === 0) return null;
-    const sortedPoints = [...points].sort((a, b) =>
-      String(a.date).localeCompare(String(b.date)));
+    const sortedPoints = [...points].sort((a, b) => String(a.date).localeCompare(String(b.date)));
     const kind = rawKind(ind.type, levelMode);
-    // Normalize from the COMMON start date (the shared 0% baseline) rather than each series' own first
-    // point, so a long-history series like CPI can show its pre-window data without skewing the baseline.
-    const startIdx = commonStartDate
-      ? sortedPoints.findIndex((p) => p.date >= commonStartDate)
-      : 0;
+    const startIdx = commonStartDate ? sortedPoints.findIndex((p) => p.date >= commonStartDate) : 0;
     const safeStart = startIdx >= 0 ? startIdx : 0;
-    // For raw price series, advance the baseline past a leading split-like cliff (fund launch-week crash /
-    // unadjusted split) so Compare anchors on the same post-cliff limb the inflation-beater uses. The
-    // pre-cliff points are also dropped from the plot, so the chart starts at the stable baseline instead
-    // of rendering an ~84% nosedive that visually "broke" the series and made it disagree with the beater.
-    const baseIdx = kind === 'price' ? skipLeadingSplit(sortedPoints, safeStart) : safeStart;
+    const skipIdx = kind === 'price' ? skipLeadingSplit(sortedPoints, safeStart) : safeStart;
+    return {
+      ind, color, sortedPoints, kind,
+      effectiveStartDate: sortedPoints[skipIdx]?.date,
+      lastDate: sortedPoints[sortedPoints.length - 1]?.date,
+    };
+  }).filter(Boolean);
+
+  // Shared window = the INTERSECTION [latest effective start, earliest last point], so EVERY series both
+  // starts at 0% on the same date AND ends on the same date — a fully aligned apples-to-apples compare over
+  // one window (not each series running to its own private start/end).
+  let sharedBaselineDate = commonStartDate || null;
+  let sharedEndDate = null;
+  for (const p of prepared) {
+    if (p.effectiveStartDate && (!sharedBaselineDate || p.effectiveStartDate > sharedBaselineDate)) {
+      sharedBaselineDate = p.effectiveStartDate;
+    }
+    if (p.lastDate && (sharedEndDate === null || p.lastDate < sharedEndDate)) {
+      sharedEndDate = p.lastDate;
+    }
+  }
+
+  const series = prepared.map(({ ind, color, sortedPoints, kind }) => {
+    const found = sharedBaselineDate ? sortedPoints.findIndex((p) => p.date >= sharedBaselineDate) : 0;
+    const baseIdx = found >= 0 ? found : 0;
+    // Cut the tail at the shared end so every series stops on the same date.
+    let endIdx = sortedPoints.length;
+    if (sharedEndDate !== null) {
+      const over = sortedPoints.findIndex((p) => p.date > sharedEndDate);
+      if (over >= 0) endIdx = over;
+    }
     const basePoint = Number(sortedPoints[baseIdx]?.value);
-    const visiblePoints = baseIdx > safeStart ? sortedPoints.slice(baseIdx) : sortedPoints;
+    // Trim to the shared [start, end] window: all begin at the same date/0% and end on the same date.
+    const visiblePoints = sortedPoints.slice(baseIdx, Math.max(baseIdx, endIdx));
     const data = visiblePoints.map((p) => {
       const raw = Number(p.value);
       const pct = basePoint !== 0 ? ((raw - basePoint) / Math.abs(basePoint)) * 100 : 0;
+      // A compounded deposit/rate index (kind 'index') resets to 1.0 at the widened fetch start (~18mo before
+      // the window), so its raw value at the window start is an arbitrary ~1,25 — a confusing baseline. When it
+      // is NOT being normalized to % (single-series view), rebase it to a 100.000 money base at the shared
+      // baseline so the line reads "100.000 → 224.000". Pure ratio rescale → the return % is unchanged; every
+      // other series keeps its raw value.
+      const displayValue = (kind === 'index' && !normalize && basePoint)
+        ? (raw / basePoint) * INDEX_MONEY_BASE
+        : raw;
       // INDEX MODE (macro-vs-macro only): rebase every series to a COMMON index of 100 at the shared start, so
       // deposits/rates read as a growth multiple (100 → 105) instead of disparate compounded-index levels
       // (1,01 vs 2,54). ASSET MODE keeps % change from the real starting price (the asset's price is its unit).
       // Index = % change + 100; line shape / comparison are identical either way.
-      const plotted = normalize ? (indexMode ? pct + 100 : pct) : raw;
+      const plotted = normalize ? (indexMode ? pct + 100 : pct) : displayValue;
       // 5th slot carries the portfolio's cumulative TL P&L at this point (null for every other series).
-      return [new Date(p.date).getTime(), plotted, raw, pct, p.pnlTry != null ? Number(p.pnlTry) : null];
+      return [new Date(p.date).getTime(), plotted, displayValue, pct, p.pnlTry != null ? Number(p.pnlTry) : null];
     });
     // Step lines for sparse/published-snapshot data: CPI is monthly, policy rate /
     // deposit rates are weekly or monthly. The published value is the canonical
@@ -122,6 +163,9 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency, commo
       step: isSparse ? 'end' : undefined,
       showSymbol: false,
       connectNulls: true,
+      // Full data + lttb + dataZoom filterMode:'filter' = viewport-adaptive: ECharts draws ~viewport width at
+      // any zoom, and zooming in re-samples the (now smaller) visible window so DAILY detail returns — TINY
+      // ranges show every real point. Pre-trimming here would have capped that detail, so the data stays full.
       sampling: 'lttb',
       data,
       itemStyle: { color },

@@ -131,6 +131,16 @@ export default function InflationBeaterPage() {
     if (data?.startDate) next.set('start', data.startDate);
     if (data?.endDate) next.set('end', data.endDate);
     if (data?.comparisonCurrency) next.set('currency', data.comparisonCurrency);
+    // Carry the Beater's authoritative (backend-computed, cached) nominal returns as code:pct pairs so
+    // CompareInfoBar prints the SAME numbers as the row clicked. The frontend re-compound anchors the
+    // lead-in slightly differently (first in-window observation vs the prior one), drifting the % ~0.5pt
+    // off the table; pinning the cached value keeps the two screens agreeing to the decimal.
+    const nominals = [];
+    if (entry.nominalReturnPct != null) nominals.push(`${entry.code}:${entry.nominalReturnPct}`);
+    if (data?.benchmarkCode && data?.benchmarkReturnPct != null) {
+      nominals.push(`${data.benchmarkCode}:${data.benchmarkReturnPct}`);
+    }
+    if (nominals.length > 0) next.set('nominals', nominals.join(','));
     navigate({ search: `?${next.toString()}` });
   }
 

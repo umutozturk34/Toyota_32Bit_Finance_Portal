@@ -3,7 +3,7 @@ import { isMacro, isRateLike } from '../lib/compareSeriesUtils';
 import { skipLeadingSplit } from '../lib/compareChartBuilder';
 import { formatPrice } from '../../../shared/utils/formatters';
 
-export default function CompareInfoBar({ selected, targetCurrency, commonStartDate, t }) {
+export default function CompareInfoBar({ selected, targetCurrency, commonStartDate, authoritativeReturns, t }) {
   return (
     <div className="rounded-lg border border-border-default/40 bg-bg-base/30 p-3 space-y-1.5">
       <div className="flex items-center gap-1.5 text-xs font-display font-semibold text-fg-muted">
@@ -30,12 +30,17 @@ export default function CompareInfoBar({ selected, targetCurrency, commonStartDa
         const lastValue = lastPoint?.value;
         const firstValue = firstPoint?.value;
         const isPortfolio = ind.type === 'PORTFOLIO';
-        // Portfolio: % is the TWR (last/first of the index); the headline number is the cumulative TL P&L
-        // carried alongside as pnlTry — "% to compare against inflation, ₺ to feel the money".
+        // Portfolio: % is the cumulative return (last/first of the index); the headline number is the
+        // cumulative TL P&L carried alongside as pnlTry — "% to compare against inflation, ₺ to feel the money".
         const lastPnl = isPortfolio && lastPoint?.pnlTry != null ? Number(lastPoint.pnlTry) : null;
-        const pct = (lastValue != null && firstValue != null && firstValue !== 0)
+        let pct = (lastValue != null && firstValue != null && firstValue !== 0)
           ? ((Number(lastValue) - Number(firstValue)) / Math.abs(Number(firstValue))) * 100
           : null;
+        // When opened from a Beater row, the table's cached (backend-computed) return is the source of truth
+        // for the headline %; show it verbatim instead of the frontend re-compound so the two screens match
+        // to the decimal. The plotted line keeps its own per-date values (visually within ~0.5pt).
+        const authPct = authoritativeReturns?.[ind.code];
+        if (authPct != null) pct = authPct;
 
         let formattedLast = '—';
         // True when formattedLast already carries the cumulative % (growth-index headline), so the

@@ -28,12 +28,11 @@ app:
     macro:
       daily-cron: "0 30 17 * * *"
     beater:
-      daily-cron: "0 0 3 * * *"
-      periods: "1Y,5Y,6M,3M,1M"
-      # TP.GENENDEKS.T1 is the actual TÜFE (CPI) series; TP.TUFE1YI.T1 is Yİ-ÜFE
-      # despite its misleading code name. Both are warmed so users can compare against
-      # either inflation measure.
-      benchmarks: "TP.GENENDEKS.T1,TP.TUFE1YI.T1"
+      # Runs after the evening market-data refresh (the latest is commodity 22:30) so the rebuilt cache holds
+      # the day's freshly fetched prices/indicators, not the previous day's. Coverage — every period × every
+      # benchmark indicator — is enumerated dynamically from the catalog in code, so no period/benchmark
+      # lists are configured here (a newly published indicator/period warms automatically).
+      daily-cron: "0 30 23 * * *"
 
   task:
     max-history: 50

@@ -91,8 +91,13 @@ export default function ScenarioComparePage() {
         </p>
       </header>
 
-      <Card variant="elevated" radius="xl" padding="lg" backdropBlur className="space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+      {/* relative z-10 lifts the whole controls Card (and its absolute search dropdown, trapped in the Card's
+          backdrop-filter stacking context) above the later results/chart sibling — otherwise the chart and its
+          ECharts tooltip paint over the open search results. */}
+      <Card variant="elevated" radius="xl" padding="lg" backdropBlur clip={false} className="relative z-10 space-y-5">
+        {/* z-[60] keeps the date-picker calendars above the InstrumentPicker (its search dropdown sits at
+            z-50); without a higher stacking context the calendar opened underneath the picker below it. */}
+        <div className="relative z-[60] grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
           <Field label={t('analytics.amount', { defaultValue: 'Tutar' })}>
             <div className="flex flex-col gap-1.5">
               <div className="relative flex items-center">

@@ -151,4 +151,13 @@ class MarketDataInitializerTest {
         verify(cryptoDataService, never()).refreshAll();
         assertThat(order).doesNotContain("crypto").contains("forex", "stock", "commodity");
     }
+
+    @Test
+    void should_completeTheInitFuture_when_runFinishes() {
+        // Act
+        initializer.run(new String[]{});
+
+        // Assert — the completion future is exposed and done so late warmers (e.g. the beater cache) can gate on it.
+        assertThat(initializer.completion()).isDone();
+    }
 }

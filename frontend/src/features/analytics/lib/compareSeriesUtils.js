@@ -66,13 +66,30 @@ export function compoundRateSeries(points, endIso) {
   if (sorted.length === 0) return [];
   const out = [{ ...sorted[0], value: 1 }];
   let factor = 1;
+  // Emit the compounding DAY-BY-DAY across each inter-observation gap, not one cumulative lump at the next
+  // observation. Deposit/rate quotes are published ~monthly, so crediting a whole month's interest onto the
+  // observation date — then letting forwardFillDaily carry the value flat in between — rendered the index as
+  // a staircase (flat for a month, then a jump up) even though interest accrues continuously. Walking it
+  // daily makes the line rise smoothly within a fixed-rate month, matching the tail-carry below. The end
+  // value is mathematically identical: (1 + dailyRate)^days == applying (1 + dailyRate) once per day.
   for (let i = 1; i < sorted.length; i += 1) {
     const annualRatePct = Number(sorted[i - 1].value);
-    const days = Math.round((new Date(sorted[i].date) - new Date(sorted[i - 1].date)) / 86400000);
-    if (days > 0) {
-      const dailyRate = annualRatePct / 100 / 365;
-      factor *= (1 + dailyRate) ** days;
+    const dailyRate = Number.isFinite(annualRatePct) ? annualRatePct / 100 / 365 : 0;
+    const cursor = parseLocal(sorted[i - 1].date);
+    const stepEnd = parseLocal(sorted[i].date);
+    const days = Math.round((stepEnd - cursor) / 86400000);
+    if (days <= 0) {
+      out.push({ ...sorted[i], value: factor });
+      continue;
     }
+    for (let d = 1; d < days; d += 1) {
+      cursor.setDate(cursor.getDate() + 1);
+      factor *= (1 + dailyRate);
+      out.push({ date: cursor.toLocaleDateString('sv-SE'), value: factor, _filled: true });
+    }
+    // The final day of the gap IS the next observation date: compound it and attach the real point's
+    // fields (raw rate, etc.) so the observation stays a non-synthetic anchor.
+    factor *= (1 + dailyRate);
     out.push({ ...sorted[i], value: factor });
   }
   // Tail carry-forward: deposit/rate interest keeps accruing daily at the last published rate until a
@@ -140,8 +157,8 @@ function widenBounds(bounds, months) {
 
 export async function fetchSeries(item, bounds) {
   if (item.type === 'PORTFOLIO') {
-    // Two series: the TWR index drives the normalized % line (comparable to inflation); the cumulative TL
-    // P&L rides along per-point (pnlTry) so the tooltip / info-bar can show the money beside the return %.
+    // Two series: the cumulative-return index drives the normalized % line (comparable to inflation); the
+    // cumulative TL P&L rides along per-point (pnlTry) so the tooltip / info-bar can show money beside the %.
     const [twr, pnl] = await Promise.all([
       analyticsService.portfolioSeries(item.code, bounds, 'twr'),
       analyticsService.portfolioSeries(item.code, bounds, 'pnl'),

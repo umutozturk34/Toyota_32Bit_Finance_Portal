@@ -23,17 +23,22 @@ import java.util.Map;
 @Log4j2
 public abstract class MacroMarketAssetProvider implements MarketAssetProvider {
 
+    // The EVDS code naming is misleading: TP.GENENDEKS.T1 is the actual TÜFE (CPI) while TP.TUFE1YI.T1 is
+    // Yİ-ÜFE (domestic PPI). So TÜFE/enflasyon must alias to GENENDEKS (not the literal "TUFE", which lives
+    // in the PPI's code) — otherwise searching "tüfe" returned PPI and never the CPI. ÜFE aliases to TUFE1YI.
     private static final Map<String, String> ALIASES = Map.ofEntries(
-            Map.entry("tüfe", "TUFE"),
-            Map.entry("tufe", "TUFE"),
-            Map.entry("enflasyon", "TUFE"),
-            Map.entry("ufe", "UFE"),
-            Map.entry("üfe", "UFE"),
+            Map.entry("tüfe", "GENENDEKS"),
+            Map.entry("tufe", "GENENDEKS"),
+            Map.entry("enflasyon", "GENENDEKS"),
+            Map.entry("inflation", "GENENDEKS"),
+            Map.entry("cpi", "GENENDEKS"),
+            Map.entry("ufe", "TUFE1YI"),
+            Map.entry("üfe", "TUFE1YI"),
+            Map.entry("ppi", "TUFE1YI"),
             Map.entry("mevduat", "TAS"),
             Map.entry("faiz", "FAIZ"),
             Map.entry("politika", "GLOFFAIZ"),
             Map.entry("interest", "FAIZ"),
-            Map.entry("inflation", "TUFE"),
             Map.entry("deposit", "TAS")
     );
 
@@ -117,7 +122,17 @@ public abstract class MacroMarketAssetProvider implements MarketAssetProvider {
     }
 
     private List<MacroIndicator> sort(List<MacroIndicator> list, String sortBy, String direction) {
-        Comparator<MacroIndicator> cmp = switch (sortBy != null ? sortBy : "default") {
+        // Default ordering: prominent indicators first (each currency's headline TOTAL deposit / key index
+        // ahead of its tenors), then by code ASC. A plain code-DESC default buried EUR deposits (TP.EURTAS.*)
+        // below USD/TRY, past the 8-row search-suggestion cap, so "mevduat" never surfaced Euro. Explicit
+        // user sorts (price/name) keep the requested direction.
+        if (sortBy == null || "default".equals(sortBy)) {
+            return list.stream()
+                    .sorted(Comparator.comparing(MacroIndicator::isProminent, Comparator.reverseOrder())
+                            .thenComparing(MacroIndicator::getCode))
+                    .toList();
+        }
+        Comparator<MacroIndicator> cmp = switch (sortBy) {
             case "price" -> Comparator.comparing(MacroIndicator::getLastValue,
                     Comparator.nullsLast(Comparator.naturalOrder()));
             case "name" -> Comparator.comparing(MacroIndicator::getLabel,

@@ -109,6 +109,17 @@ public class MarketDataInitializer implements CommandLineRunner {
     private final Executor taskExecutor;
     private final SchedulerPorts ports;
 
+    // Completes when the whole cold-start fetch chain finishes (or immediately when every asset class already
+    // has data). Lets a late warmer — the inflation-beater cache — defer until the base market data is in place
+    // instead of flooding a fresh empty DB with external history calls. Defaults to a completed future so a
+    // caller that asks before run() (or when init is skipped) never blocks.
+    private volatile CompletableFuture<Void> completion = CompletableFuture.completedFuture(null);
+
+    /** Future that completes when the cold-start data load has finished; already-complete on a populated DB. */
+    public CompletableFuture<Void> completion() {
+        return completion;
+    }
+
     @Override
     public void run(String... args) {
         // Cold-start fetch, throttled into small concurrent groups so a fresh empty database doesn't
@@ -128,7 +139,7 @@ public class MarketDataInitializer implements CommandLineRunner {
         InitSpec stock = new InitSpec("stock", MarketType.STOCK, stockRepository.count(), stockCandleRepository.count(), stockDataService::refreshAll);
         InitSpec commodity = new InitSpec("commodity", MarketType.COMMODITY, commodityRepository.count(), commodityCandleRepository.count(), commodityDataService::refreshAll);
 
-        runGroup(crypto, fund)
+        completion = runGroup(crypto, fund)
                 .thenCompose(v -> runGroup(bond, macro))
                 .thenCompose(v -> runGroup(viop, news))
                 .thenCompose(v -> runOne(forex))

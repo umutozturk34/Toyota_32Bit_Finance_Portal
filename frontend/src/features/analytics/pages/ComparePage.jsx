@@ -152,9 +152,26 @@ export default function ComparePage() {
   const initialStartRef = useRef(params.get('start'));
   const initialEndRef = useRef(params.get('end'));
   const initialCurrencyRef = useRef(params.get('currency'));
+  const initialNominalsRef = useRef(params.get('nominals'));
   const [useExplicitBounds, setUseExplicitBounds] = useState(
     !!(initialStartRef.current && initialEndRef.current),
   );
+  // Beater click-through carries the table's authoritative (cached, backend-computed) nominal returns as
+  // code:pct pairs, so CompareInfoBar prints the exact same % as the row clicked instead of the frontend
+  // re-compound (which drifts ~0.5pt on the lead-in). Only while the pinned Beater window is active; once
+  // the user changes range/selection (useExplicitBounds off) the recomputed % takes back over.
+  const authoritativeReturns = useMemo(() => {
+    if (!useExplicitBounds || !initialNominalsRef.current) return null;
+    const map = {};
+    for (const pair of initialNominalsRef.current.split(',')) {
+      const sep = pair.lastIndexOf(':');
+      if (sep < 0) continue;
+      const code = pair.slice(0, sep);
+      const n = Number(pair.slice(sep + 1));
+      if (code && Number.isFinite(n)) map[code] = n;
+    }
+    return Object.keys(map).length > 0 ? map : null;
+  }, [useExplicitBounds]);
   // Comparing against a USD/EUR deposit frames the whole chart in that deposit's currency
   // (single non-TRY deposit only; mixed/none → no override).
   const depositFrameCurrency = useMemo(() => {
@@ -179,6 +196,18 @@ export default function ComparePage() {
     const hasTrIndexed = selected.some((s) => isRateLike(s.type));
     return hasInflation || (hasTrIndexed && hasPortfolio);
   }, [selected]);
+  // Mixed native currencies among the compared series (e.g. a USD-native crypto vs a TRY stock; portfolio
+  // counts as TRY). There is no shared native to read returns in, so they must NOT stay in "original" view —
+  // a USD asset left in USD would plot its USD-local return on a TRY chart, hiding the USD/TRY move and making
+  // the compare unfair. When mixed, frame the whole chart in TRY and convert every series per-date.
+  const mixedNative = useMemo(() => {
+    const set = new Set(
+      selected
+        .filter((s) => !isMacro(s.type))
+        .map((s) => (s.type === 'PORTFOLIO' ? 'TRY' : nativeCurrencyFor(s.type, s.code))),
+    );
+    return set.size > 1;
+  }, [selected]);
   const targetCurrency = useMemo(() => {
     if (initialCurrencyRef.current) return initialCurrencyRef.current;
     // CPI/inflation framing (TRY) wins over a single non-TRY deposit frame too: a EUR deposit vs CPI is
@@ -186,15 +215,18 @@ export default function ComparePage() {
     if (forceTryFrame) return 'TRY';
     if (depositFrameCurrency) return depositFrameCurrency;
     if (displayCurrency !== 'ORIGINAL') return displayCurrency;
+    // Mixed natives → TRY (the base): every series converts to TRY per-date for a fair "in my money" compare.
+    if (mixedNative) return 'TRY';
     const first = selected.find((s) => !isMacro(s.type) && s.type !== 'PORTFOLIO');
     return first ? nativeCurrencyFor(first.type, first.code) : 'TRY';
-  }, [displayCurrency, selected, depositFrameCurrency, forceTryFrame]);
+  }, [displayCurrency, selected, depositFrameCurrency, forceTryFrame, mixedNative]);
   // "Original" view (each series in its own native) only when no explicit currency / non-TRY deposit frame
-  // / forced-TRY inflation frame is in effect.
+  // / forced-TRY inflation frame is in effect AND every series shares one native (nothing to reconcile).
   const originalView = displayCurrency === 'ORIGINAL'
     && !initialCurrencyRef.current
     && !depositFrameCurrency
-    && !forceTryFrame;
+    && !forceTryFrame
+    && !mixedNative;
 
   useEffect(() => {
     if (initialRangeRef.current) {
@@ -239,6 +271,7 @@ export default function ComparePage() {
       next.delete('start');
       next.delete('end');
       next.delete('currency');
+      next.delete('nominals');
     }
     setParams(next, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- params/setParams omitted on purpose: setParams is unstable in react-router v7, adding it self-triggers an infinite URL-write loop
@@ -301,7 +334,10 @@ export default function ComparePage() {
       || (s.type === 'MACRO_RATE' && macroUnitByCode[s.code] === 'PERCENT')),
     [selected, macroUnitByCode],
   );
-  const [valueMode, setValueMode] = useSessionState('compare:valueMode', 'level');
+  // Default to Cumulative: a deposit/rate compare's meaningful headline is the compounded growth (a rising
+  // curve), not the raw annual-rate LEVEL (which dips when the rate itself falls and reads as "money going
+  // down"). Level stays one click away for inspecting the rate trajectory.
+  const [valueMode, setValueMode] = useSessionState('compare:valueMode', 'cumulative');
   const levelMode = homogeneousRates && valueMode === 'level';
 
   // Right edge for rate compounding and forward-fill. Local-zone sv-SE (never UTC toISOString, which
@@ -376,7 +412,19 @@ export default function ComparePage() {
         // targetCurrency symbol, so it converts whenever native != targetCurrency — INCLUDING originalView,
         // otherwise a TRY amount renders under a $/€ symbol.
         if (native !== targetCurrency) {
+          // Once a portfolio is closed it earns 0 daily return, so its TWR index value is identical every day
+          // (a flat TRY line). Converting that frozen TRY value at EACH later day's FX would manufacture an
+          // FX-driven slope in USD/EUR where TRY is flat — the line appears to drift after the position is
+          // closed. Lock the FX at the freeze date (the first day of the final constant-value run) so the
+          // closed tail stays flat in every currency, matching the TRY view. An active portfolio's last point
+          // differs from the prior one, leaving freezeDate null → per-date FX as before.
+          let freezeDate = null;
+          for (let i = pts.length - 1; i > 0; i -= 1) {
+            if (Number(pts[i].value) !== Number(pts[i - 1].value)) break;
+            freezeDate = pts[i - 1].date;
+          }
           pts = pts.map((p) => {
+            const fxDate = freezeDate && p.date > freezeDate ? freezeDate : p.date;
             // Prefer the backend per-currency P&L (value@point-date FX − cost@entry-date FX, closed lots at
             // exit FX). Converting the netted TRY P&L at the point rate mis-converts the cost leg (cost should
             // lock at each lot's entry-date FX), so convertBetween is only a fallback when the frame is absent.
@@ -384,8 +432,8 @@ export default function ComparePage() {
               ? Number(p.pnlByCcy[targetCurrency]) : null;
             const cpPnl = framePnl != null
               ? framePnl
-              : (p.pnlTry != null ? convertBetween(p.pnlTry, native, targetCurrency, p.date) : null);
-            const cpVal = !originalView ? convertBetween(p.value, native, targetCurrency, p.date) : null;
+              : (p.pnlTry != null ? convertBetween(p.pnlTry, native, targetCurrency, fxDate) : null);
+            const cpVal = !originalView ? convertBetween(p.value, native, targetCurrency, fxDate) : null;
             return { ...p, value: cpVal ?? p.value, pnlTry: cpPnl ?? p.pnlTry };
           });
         }
@@ -405,7 +453,11 @@ export default function ComparePage() {
       // real points. Inflating sparse macro to daily (CPI back to 2005 × several series → thousands of
       // redundant rows) was the main cause of the lag on the ALL range, with no visual benefit.
       const isSparse = isMacro(s.indicator.type);
-      if (!isSparse) {
+      // Dense series only need daily-fill on SHORT ranges (few points → a clean continuous line is cheap).
+      // On long ranges the raw daily candles are already plentiful AND get downsampled in the builder, so
+      // filling weekends/holidays only inflates each array — and every add/delete recompute reruns this for
+      // ALL series, which is the remaining lag. Skip the fill once the series is already dense.
+      if (!isSparse && (pts.length || 0) <= 1200) {
         pts = forwardFillDaily(pts, commonStartDate || bounds.from, fillUntil);
       }
       // Extend the last value to the right edge so the line reaches today / the window end (no-op for dense
@@ -445,6 +497,17 @@ export default function ComparePage() {
 
   const seriesData = convertedData;
 
+  // The chart / info-bar baseline is the SELECTED range start (bounds.from), not the earliest fetched point.
+  // Macro/deposit series are fetched ~18 months wide (to know the rate in force at the window start), and for a
+  // single series commonStartDate is null — so without this clamp a deposit anchored ~18mo early and its line
+  // started at the carried-over accumulated value (rebased to ~125k) instead of 100k AT the range start. When a
+  // series' own history begins AFTER bounds.from (shorter history), commonStartDate wins — we can't anchor
+  // before a series exists.
+  const baselineDate = useMemo(
+    () => (commonStartDate && bounds.from && commonStartDate > bounds.from ? commonStartDate : bounds.from),
+    [commonStartDate, bounds.from],
+  );
+
   // Always normalize to % when the portfolio is in play (it's a return series, comparable to inflation),
   // and whenever more than one series is being compared.
   const normalize = !levelMode && (selected.length > 1 || selected.some((s) => s.type === 'PORTFOLIO'));
@@ -456,8 +519,8 @@ export default function ComparePage() {
   const indexMode = normalize && selected.length > 1 && selected.every((s) => isMacro(s.type));
 
   const option = useMemo(
-    () => buildOption(seriesData, normalize, isDark, targetCurrency, commonStartDate, levelMode, indexMode),
-    [seriesData, normalize, isDark, targetCurrency, commonStartDate, levelMode, indexMode]
+    () => buildOption(seriesData, normalize, isDark, targetCurrency, baselineDate, levelMode, indexMode),
+    [seriesData, normalize, isDark, targetCurrency, baselineDate, levelMode, indexMode]
   );
 
   function addAsset(asset) {
@@ -718,7 +781,7 @@ export default function ComparePage() {
             </div>
           )}
           {!isLoading && seriesData.some((s) => s.points.length > 0) && (
-            <ReactECharts option={option} style={{ height: '100%', width: '100%' }} opts={{ renderer: 'canvas' }} notMerge />
+            <ReactECharts option={option} style={{ height: '100%', width: '100%' }} opts={{ renderer: 'canvas' }} notMerge lazyUpdate />
           )}
           {!isLoading && (seriesData.length === 0 || seriesData.every((s) => s.points.length === 0)) && (
             <div className="absolute inset-0 flex items-center justify-center p-4">
@@ -736,7 +799,7 @@ export default function ComparePage() {
           )}
         </div>
 
-        {seriesData.length > 0 && <CompareInfoBar selected={seriesData} targetCurrency={targetCurrency} commonStartDate={commonStartDate} t={t} />}
+        {seriesData.length > 0 && <CompareInfoBar selected={seriesData} targetCurrency={targetCurrency} commonStartDate={baselineDate} authoritativeReturns={authoritativeReturns} t={t} />}
       </Card>
     </motion.div>
   );

@@ -19,9 +19,9 @@ export const analyticsService = {
   },
 
   portfolioSeries: async (portfolioId, { from, to }, mode = 'pnl') => {
-    // mode 'twr' → contribution-immune time-weighted-return index (the compare % line, comparable to
-    // inflation); 'pnl' → cumulative profit/loss in TRY (the Kâr/Zarar Total amount, surfaced alongside
-    // the % so the money is still visible). Compare fetches both and zips them by date.
+    // mode 'twr' → capital-weighted cumulative-return index (the compare % line; matches the portfolio's
+    // headline return, comparable to inflation); 'pnl' → cumulative profit/loss in TRY (the Kâr/Zarar Total
+    // amount, surfaced alongside the % so the money is still visible). Compare fetches both and zips by date.
     const params = { from, to };
     if (mode === 'twr') params.twr = true;
     else if (mode === 'pnl') params.pnl = true;

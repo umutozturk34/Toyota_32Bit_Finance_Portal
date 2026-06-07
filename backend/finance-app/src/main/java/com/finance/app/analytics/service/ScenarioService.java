@@ -223,20 +223,14 @@ public class ScenarioService {
         points.add(new ScenarioPoint(startDate, amount));
 
         LocalDate firstObservation = raw.get(0).date();
-        if (startDate.isBefore(firstObservation)) {
-            // Value the lead-in point (no interest yet — first rate publishes at firstObservation) at its
-            // OWN date's FX, amount * fxAt(firstObservation)/baseFx, like every computed point — not raw
-            // amount. Otherwise an FX move over the publication lead-in is dropped and the next plotted
-            // point jumps. Falls back to amount when that day's FX is absent (exact in the TRY/TRY case).
-            BigDecimal leadFx = series.fxAt(firstObservation);
-            BigDecimal leadValue = leadFx != null
-                    ? amount.multiply(leadFx).divide(baseFx, VALUE_SCALE, RoundingMode.HALF_UP)
-                    : amount;
-            points.add(new ScenarioPoint(firstObservation, leadValue));
-        }
 
+        // Compound from the SELECTED start date itself — base = amount at startDate, then it grows from day
+        // one. The first published rate is carried back over the short [startDate, firstObservation] lead-in
+        // (deposit rates barely move week to week) instead of sitting flat with no interest. The old flat
+        // lead-in made the Beater earn 0 over that gap and read ~0.4pt LOWER than Compare, which accrues from
+        // the window start; both now compound from startDate so the numbers reconcile.
         BigDecimal compoundFactor = BigDecimal.ONE;
-        LocalDate cursor = firstObservation.isAfter(startDate) ? firstObservation : startDate;
+        LocalDate cursor = startDate;
 
         for (int i = 0; i + 1 < raw.size(); i++) {
             BigDecimal annualRatePct = raw.get(i).value();

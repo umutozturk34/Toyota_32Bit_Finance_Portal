@@ -77,6 +77,7 @@ const Card = forwardRef(function Card(
     interactive = false,
     backdropBlur = false,
     pending = false,
+    clip = true,
     gradientFrom,
     gradientTo,
     as,
@@ -114,7 +115,11 @@ const Card = forwardRef(function Card(
     <Component
       ref={ref}
       className={cx(
-        'relative overflow-hidden',
+        'relative',
+        // Cards clip to their rounded corners by default. Set clip={false} when a child needs to overflow
+        // the card bounds — e.g. a search-results / date-picker dropdown that opens downward past the card
+        // edge would otherwise be cut off ("crushed") by overflow-hidden.
+        clip ? 'overflow-hidden' : 'overflow-visible',
         variantClass,
         toneClass,
         radiusClass,

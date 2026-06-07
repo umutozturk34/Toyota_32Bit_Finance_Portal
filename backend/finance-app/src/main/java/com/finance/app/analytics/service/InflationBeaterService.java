@@ -14,6 +14,7 @@ import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.market.core.service.AssetNativeCurrencyResolver;
 import com.finance.market.core.service.TrackedAssetQueryService;
+import com.finance.market.macro.model.DepositMaturity;
 import com.finance.market.macro.model.MacroCategory;
 import com.finance.market.macro.model.MacroIndicator;
 import com.finance.market.macro.model.MacroUnit;
@@ -32,6 +33,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Ranks a curated universe of instruments (tracked stocks/crypto/forex/funds/commodities plus standard
@@ -52,19 +54,6 @@ public class InflationBeaterService {
     private static final BigDecimal HUNDRED = new BigDecimal("100");
     // Excess decimals — matches ScenarioService RETURN_SCALE so excess and nominal share precision.
     private static final int EXCESS_SCALE = 4;
-
-    // Codes and labels follow macro.yaml: MT02=3M (M3), MT03=6M (M6), MT04=1Y (M12). MT12 does not
-    // exist in the config and must not be referenced.
-    private static final List<CuratedAsset> CURATED_DEPOSITS = List.of(
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT02", "TRY 3M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT03", "TRY 6M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT04", "TRY 1Y Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT02", "USD 3M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT03", "USD 6M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT04", "USD 1Y Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.EURTAS.MT02", "EUR 3M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.EURTAS.MT03", "EUR 6M Mevduat")
-    );
 
     private static final Map<TrackedAssetType, AnalyticsInstrumentType> TYPE_MAP = Map.of(
             TrackedAssetType.STOCK,     AnalyticsInstrumentType.SPOT,
@@ -90,6 +79,11 @@ public class InflationBeaterService {
             MacroCategory.INFLATION, MarketType.MACRO_INFLATION
     );
 
+    // Categories the UI offers as beater benchmarks (mirrors the frontend's BENCHMARK_CATEGORIES). The
+    // warm-up enumerates every indicator in these so all selectable benchmarks are cached, not a subset.
+    private static final List<MacroCategory> BENCHMARK_CATEGORIES =
+            List.of(MacroCategory.INFLATION, MacroCategory.RATES, MacroCategory.DEPOSIT);
+
     private final ScenarioService scenarioService;
     private final UnifiedHistoryService historyService;
     private final MacroIndicatorQueryService macroQueryService;
@@ -98,6 +92,12 @@ public class InflationBeaterService {
 
     @Autowired(required = false)
     private AssetNativeCurrencyResolver nativeCurrencyResolver;
+
+    // Cold-start guard. The scheduled warm-up waits for the market-data init, but a USER request isn't gated —
+    // on a fresh empty DB compute() would 404 on the not-yet-persisted benchmark macro (findByCode throws) or
+    // hammer external APIs against an empty DB. Injected optionally: absent (init disabled) ⇒ treated as ready.
+    @Autowired(required = false)
+    private com.finance.app.config.MarketDataInitializer marketDataInitializer;
 
     public InflationBeaterResponse rank(String period, String benchmarkCode) {
         return rank(period, benchmarkCode, null);
@@ -116,8 +116,26 @@ public class InflationBeaterService {
         }
         String code = resolveBenchmarkCode(benchmarkCode);
         Currency override = parseCurrencyOverride(targetCurrencyOverride);
+        if (!dataReady()) {
+            // Market data is still cold-loading: return an empty ranking so the page degrades to "no data yet"
+            // instead of a 404 / an external-API storm. The scheduled warm-up fills the cache once init finishes.
+            return emptyRanking(period, code, override);
+        }
         String key = cacheManager.buildKey(period, code, override);
         return cacheManager.getOrCompute(key, () -> compute(period, code, months, override));
+    }
+
+    /** True once the cold-start market-data init has finished (or when no initializer is wired). */
+    private boolean dataReady() {
+        return marketDataInitializer == null || marketDataInitializer.completion().isDone();
+    }
+
+    /** Empty ranking for the window — used while market data is still loading (no benchmark/universe yet). */
+    private InflationBeaterResponse emptyRanking(String period, String code, Currency override) {
+        LocalDate end = LocalDate.now();
+        LocalDate start = end.minusMonths(PERIOD_MONTHS.getOrDefault(period, 12));
+        Currency ccy = override != null ? override : Currency.TRY;
+        return new InflationBeaterResponse(start, end, code, code, BigDecimal.ZERO, 0, 0, ccy, List.of());
     }
 
     /** Returns a cached ranking without computing; null on a cold cache (caller may {@link #warmAsync}). */
@@ -129,6 +147,7 @@ public class InflationBeaterService {
     }
 
     public void warmAsync(String period, String benchmarkCode) {
+        if (!dataReady()) return;
         Integer months = PERIOD_MONTHS.get(period);
         if (months == null) return;
         String code = resolveBenchmarkCode(benchmarkCode);
@@ -148,6 +167,31 @@ public class InflationBeaterService {
         cacheManager.clear();
     }
 
+    /**
+     * Every macro indicator the UI offers as a beater benchmark — all INFLATION, RATES and DEPOSIT series,
+     * enumerated from the catalog (mirrors the frontend's BENCHMARK_CATEGORIES filter). Drives the warm-up so
+     * every selectable benchmark is cached and a newly published series warms automatically, rather than a
+     * hard-coded config subset. A category that fails to enumerate is logged and skipped, not fatal.
+     */
+    public List<String> warmableBenchmarkCodes() {
+        List<String> codes = new ArrayList<>();
+        for (MacroCategory category : BENCHMARK_CATEGORIES) {
+            try {
+                for (MacroIndicator m : macroQueryService.listByCategory(category)) {
+                    if (m.getCode() != null) codes.add(m.getCode());
+                }
+            } catch (RuntimeException e) {
+                log.warn("Failed to enumerate benchmark category {}: {}", category, e.getMessage());
+            }
+        }
+        return codes;
+    }
+
+    /** Every period token the ranking supports (1M..5Y); the warm-up caches all of them, not a config subset. */
+    public Set<String> warmablePeriods() {
+        return PERIOD_MONTHS.keySet();
+    }
+
     private static String resolveBenchmarkCode(String benchmarkCode) {
         return (benchmarkCode != null && !benchmarkCode.isBlank()) ? benchmarkCode : DEFAULT_BENCHMARK;
     }
@@ -163,7 +207,12 @@ public class InflationBeaterService {
      * then sorts entries by excess return descending. Partial/incomplete series are dropped.
      */
     private InflationBeaterResponse compute(String period, String code, int months, Currency override) {
-        LocalDate endDate = resolveStableEndDate(code);
+        // Window ends TODAY, not the benchmark's last published EVDS observation. Deposit interest accrues
+        // daily (ScenarioService.simulateRate carries the last rate to endDate) and prices keep moving, so
+        // anchoring to a lagging monthly/weekly print silently dropped the most recent days of real return.
+        // A missing end-of-window benchmark print is harmless: computeIndexGrowthPct and the rate scenario
+        // both use the latest value at or before endDate (carry-forward).
+        LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusMonths(months);
 
         MacroIndicator benchmark = macroQueryService.findByCode(code);
@@ -247,8 +296,35 @@ public class InflationBeaterService {
                 log.warn("Failed to enumerate tracked type={}: {}", trackedType, e.getMessage());
             }
         }
-        universe.addAll(CURATED_DEPOSITS);
+        universe.addAll(depositUniverse());
         return universe;
+    }
+
+    /**
+     * Deposits enumerated from the macro catalog (every published TRY/USD/EUR tenor), not a hard-coded list —
+     * mirroring how stocks/crypto/forex/commodity are enumerated, so newly added deposit tenors rank
+     * automatically. The synthetic {@link DepositMaturity#TOTAL} bucket is excluded: it is the weighted
+     * average across the other tenors, so ranking it beside them would double-count an aggregate that is not
+     * itself a holdable product.
+     */
+    private List<CuratedAsset> depositUniverse() {
+        List<CuratedAsset> deposits = new ArrayList<>();
+        try {
+            for (MacroIndicator d : macroQueryService.listByCategory(MacroCategory.DEPOSIT)) {
+                if (d.getMaturity() == DepositMaturity.TOTAL) continue;
+                deposits.add(new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, d.getCode(), depositName(d)));
+            }
+        } catch (Exception e) {
+            log.warn("Failed to enumerate deposit universe: {}", e.getMessage());
+        }
+        return deposits;
+    }
+
+    /** Fallback display name "{CURRENCY} {tenor}" (e.g. "TRY 3M"); the frontend localizes via the label key. */
+    private static String depositName(MacroIndicator d) {
+        String currency = d.getCurrency() != null ? d.getCurrency() + " " : "";
+        String tenor = d.getMaturity() != null ? d.getMaturity().tenorLabel() : d.getCode();
+        return currency + tenor;
     }
 
     private Map<String, String> nameMapFor(List<CuratedAsset> universe) {
@@ -257,22 +333,6 @@ public class InflationBeaterService {
             out.put(c.type + "|" + c.code, c.name);
         }
         return out;
-    }
-
-    /**
-     * Anchors the window end to the benchmark's latest actual observation (not today), so a lagging
-     * monthly indicator doesn't yield a window with no benchmark data point near the end.
-     */
-    private LocalDate resolveStableEndDate(String code) {
-        LocalDate today = LocalDate.now();
-        List<HistoryPoint> recent = historyService.getMacroSeries(code,
-                today.minusMonths(3), today);
-        LocalDate latest = null;
-        for (HistoryPoint p : recent) {
-            if (p == null || p.date() == null || p.value() == null) continue;
-            if (latest == null || p.date().isAfter(latest)) latest = p.date();
-        }
-        return latest != null ? latest : today;
     }
 
     /**

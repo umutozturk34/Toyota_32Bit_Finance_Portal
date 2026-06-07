@@ -47,6 +47,11 @@ class MacroMarketAssetProviderTest {
 
     private MacroIndicator indicator(String code, String label, MacroCategory category,
                                      BigDecimal lastValue) {
+        return indicator(code, label, category, lastValue, false);
+    }
+
+    private MacroIndicator indicator(String code, String label, MacroCategory category,
+                                     BigDecimal lastValue, boolean prominent) {
         Instrument instrument = Instrument.create(category.instrumentType(), code);
         MacroIndicator i = MacroIndicator.builder()
                 .instrument(instrument)
@@ -55,7 +60,7 @@ class MacroMarketAssetProviderTest {
                 .category(category)
                 .unit(MacroUnit.PERCENT)
                 .frequency(MacroFrequency.DAILY)
-                .prominent(false)
+                .prominent(prominent)
                 .build();
         if (lastValue != null) {
             i.recordObservation(LocalDate.of(2026, 5, 1), lastValue);
@@ -312,6 +317,65 @@ class MacroMarketAssetProviderTest {
 
         // Assert
         assertThat(count).isEqualTo(1L);
+    }
+
+    @Test
+    void should_returnCpiNotPpi_when_searchingTufe() {
+        // Arrange — EVDS code naming is misleading: TP.GENENDEKS.T1 is CPI (TÜFE), TP.TUFE1YI.T1 is PPI (Yİ-ÜFE).
+        MacroMarketAssetProvider inflation =
+                new MacroMarketAssetProvider(queryService, MacroCategory.INFLATION, messageSource) {};
+        when(queryService.listByCategory(MacroCategory.INFLATION)).thenReturn(List.of(
+                indicator("TP.GENENDEKS.T1", "cpiIndex", MacroCategory.INFLATION, new BigDecimal("60")),
+                indicator("TP.TUFE1YI.T1", "ppiIndex", MacroCategory.INFLATION, new BigDecimal("50"))
+        ));
+
+        // Act
+        List<MarketAssetResponse> result = inflation.search("tüfe", MarketAssetFilters.none(),
+                "default", "asc", 0, 10);
+
+        // Assert
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).code()).isEqualTo("TP.GENENDEKS.T1");
+    }
+
+    @Test
+    void should_returnPpiNotCpi_when_searchingUfe() {
+        // Arrange
+        MacroMarketAssetProvider inflation =
+                new MacroMarketAssetProvider(queryService, MacroCategory.INFLATION, messageSource) {};
+        when(queryService.listByCategory(MacroCategory.INFLATION)).thenReturn(List.of(
+                indicator("TP.GENENDEKS.T1", "cpiIndex", MacroCategory.INFLATION, new BigDecimal("60")),
+                indicator("TP.TUFE1YI.T1", "ppiIndex", MacroCategory.INFLATION, new BigDecimal("50"))
+        ));
+
+        // Act
+        List<MarketAssetResponse> result = inflation.search("üfe", MarketAssetFilters.none(),
+                "default", "asc", 0, 10);
+
+        // Assert
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).code()).isEqualTo("TP.TUFE1YI.T1");
+    }
+
+    @Test
+    void should_surfaceProminentFirst_when_defaultSort() {
+        // Arrange — the prominent EUR Total sorts LAST by code (E<T<U) and was buried past the suggestion cap by
+        // the old code-DESC default; prominent-first must surface it ahead of non-prominent USD tenors.
+        MacroMarketAssetProvider deposits =
+                new MacroMarketAssetProvider(queryService, MacroCategory.DEPOSIT, messageSource) {};
+        when(queryService.listByCategory(MacroCategory.DEPOSIT)).thenReturn(List.of(
+                indicator("TP.USDTAS.MT01", "depositUsd1m", MacroCategory.DEPOSIT, new BigDecimal("3")),
+                indicator("TP.USDTAS.MT02", "depositUsd3m", MacroCategory.DEPOSIT, new BigDecimal("3")),
+                indicator("TP.EURTAS.MT06", "depositEurTotal", MacroCategory.DEPOSIT, new BigDecimal("2"), true)
+        ));
+
+        // Act — single-slot page: only the top-ranked result survives
+        List<MarketAssetResponse> result = deposits.search(null, MarketAssetFilters.none(),
+                "default", "desc", 0, 1);
+
+        // Assert
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).code()).isEqualTo("TP.EURTAS.MT06");
     }
 
     @Test

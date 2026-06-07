@@ -11,6 +11,7 @@ import com.finance.app.analytics.dto.response.ScenarioSeries;
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.market.core.service.TrackedAssetQueryService;
+import com.finance.market.macro.model.DepositMaturity;
 import com.finance.market.macro.model.MacroCategory;
 import com.finance.market.macro.model.MacroIndicator;
 import com.finance.market.macro.model.MacroUnit;
@@ -57,6 +58,24 @@ class InflationBeaterServiceTest {
             lenient().when(trackedAssetQueryService.getEnabledCodes(t)).thenReturn(List.of());
             lenient().when(trackedAssetQueryService.getDisplayNameMap(t)).thenReturn(Map.of());
         }
+    }
+
+    @Test
+    void shouldReturnEmptyRanking_whenMarketDataStillInitializing() {
+        // Arrange — cold-start init not finished (completion future never completes). rank must short-circuit:
+        // no compute (findByCode is unstubbed → would NPE), no scenario simulation, just an empty ranking.
+        com.finance.app.config.MarketDataInitializer initializer =
+                mock(com.finance.app.config.MarketDataInitializer.class);
+        when(initializer.completion()).thenReturn(new java.util.concurrent.CompletableFuture<>());
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "marketDataInitializer", initializer);
+
+        // Act
+        InflationBeaterResponse response = service.rank("1Y", null);
+
+        // Assert
+        assertThat(response.entries()).isEmpty();
+        assertThat(response.totalCount()).isZero();
+        verify(scenarioService, org.mockito.Mockito.never()).simulate(any());
     }
 
     @Test
@@ -110,6 +129,24 @@ class InflationBeaterServiceTest {
         long monthsBetween = java.time.temporal.ChronoUnit.MONTHS.between(
                 captor.getValue().startDate(), captor.getValue().endDate());
         assertThat(monthsBetween).isEqualTo(6);
+    }
+
+    @Test
+    void shouldEndWindowToday_notBenchmarkLastObservation() {
+        // Arrange — the window must run to today so the most recent days of accrued interest / price moves
+        // count, instead of anchoring to a lagging benchmark print.
+        wireInflationBenchmark(new BigDecimal("10"));
+        when(scenarioService.simulate(any())).thenReturn(new ScenarioResponse(
+                new BigDecimal("10000"), LocalDate.now().minusYears(1), LocalDate.now(),
+                BigDecimal.ZERO, null, List.of()));
+
+        // Act
+        service.rank("1Y", null);
+
+        // Assert
+        ArgumentCaptor<ScenarioRequest> captor = ArgumentCaptor.forClass(ScenarioRequest.class);
+        verify(scenarioService).simulate(captor.capture());
+        assertThat(captor.getValue().endDate()).isEqualTo(LocalDate.now());
     }
 
     @Test
@@ -254,6 +291,36 @@ class InflationBeaterServiceTest {
         assertThat(response.comparisonCurrency()).isEqualTo(com.finance.common.model.Currency.USD);
     }
 
+    @Test
+    void shouldEnumerateDepositUniverseFromCatalogExcludingTotalBucket() {
+        wireInflationBenchmark(new BigDecimal("20"));
+        MacroIndicator try3m = depositIndicator("TP.TRYTAS.MT02", "TRY", DepositMaturity.M3);
+        MacroIndicator eur1y = depositIndicator("TP.EURTAS.MT04", "EUR", DepositMaturity.M12);
+        MacroIndicator usdTotal = depositIndicator("TP.USDTAS.MT06", "USD", DepositMaturity.TOTAL);
+        when(macroQueryService.listByCategory(MacroCategory.DEPOSIT))
+                .thenReturn(List.of(try3m, eur1y, usdTotal));
+        when(scenarioService.simulate(any())).thenReturn(new ScenarioResponse(
+                new BigDecimal("10000"), LocalDate.now().minusYears(1), LocalDate.now(),
+                new BigDecimal("20"), null, List.of()));
+
+        service.rank("1Y", null);
+
+        ArgumentCaptor<ScenarioRequest> captor = ArgumentCaptor.forClass(ScenarioRequest.class);
+        verify(scenarioService).simulate(captor.capture());
+        List<String> codes = captor.getValue().instruments().stream()
+                .map(AnalyticsInstrument::code).toList();
+        assertThat(codes).contains("TP.TRYTAS.MT02", "TP.EURTAS.MT04");
+        assertThat(codes).doesNotContain("TP.USDTAS.MT06");
+    }
+
+    private MacroIndicator depositIndicator(String code, String currency, DepositMaturity maturity) {
+        MacroIndicator d = mock(MacroIndicator.class);
+        lenient().when(d.getCode()).thenReturn(code);
+        lenient().when(d.getCurrency()).thenReturn(currency);
+        lenient().when(d.getMaturity()).thenReturn(maturity);
+        return d;
+    }
+
     private void wireInflationBenchmark(BigDecimal growthPct) {
         MacroIndicator cpi = mock(MacroIndicator.class);
         lenient().when(cpi.getCategory()).thenReturn(MacroCategory.INFLATION);
@@ -273,5 +340,53 @@ class InflationBeaterServiceTest {
                 new AnalyticsInstrument(type, code),
                 List.of(new ScenarioPoint(LocalDate.now(), new BigDecimal("10000"))),
                 new BigDecimal("11000"), nominalPct, null, null, false);
+    }
+
+    @Test
+    void shouldEnumerateEverySelectableBenchmark_acrossAllCategories() {
+        // Arrange — build mocks first; a nested when() inside when(...).thenReturn(...) is illegal stubbing.
+        MacroIndicator cpi = macroWithCode("TP.GENENDEKS.T1");
+        MacroIndicator policy = macroWithCode("TP.POLICY");
+        MacroIndicator depTry = macroWithCode("TP.TRYTAS.MT02");
+        MacroIndicator depUsd = macroWithCode("TP.USDTAS.MT06");
+        when(macroQueryService.listByCategory(MacroCategory.INFLATION)).thenReturn(List.of(cpi));
+        when(macroQueryService.listByCategory(MacroCategory.RATES)).thenReturn(List.of(policy));
+        when(macroQueryService.listByCategory(MacroCategory.DEPOSIT)).thenReturn(List.of(depTry, depUsd));
+
+        // Act
+        List<String> codes = service.warmableBenchmarkCodes();
+
+        // Assert
+        assertThat(codes).containsExactly("TP.GENENDEKS.T1", "TP.POLICY", "TP.TRYTAS.MT02", "TP.USDTAS.MT06");
+    }
+
+    @Test
+    void shouldSkipFailingCategory_whenEnumeratingBenchmarks() {
+        // Arrange — one category throws; the others must still enumerate. Build mocks first (see above).
+        MacroIndicator cpi = macroWithCode("TP.GENENDEKS.T1");
+        MacroIndicator depTry = macroWithCode("TP.TRYTAS.MT02");
+        when(macroQueryService.listByCategory(MacroCategory.INFLATION)).thenReturn(List.of(cpi));
+        when(macroQueryService.listByCategory(MacroCategory.RATES))
+                .thenThrow(new RuntimeException("catalog down"));
+        when(macroQueryService.listByCategory(MacroCategory.DEPOSIT)).thenReturn(List.of(depTry));
+
+        // Act
+        List<String> codes = service.warmableBenchmarkCodes();
+
+        // Assert
+        assertThat(codes).containsExactly("TP.GENENDEKS.T1", "TP.TRYTAS.MT02");
+    }
+
+    @Test
+    void shouldExposeEverySupportedPeriod_forWarmup() {
+        // Act + Assert
+        assertThat(service.warmablePeriods())
+                .containsExactlyInAnyOrder("1M", "3M", "6M", "1Y", "3Y", "5Y");
+    }
+
+    private MacroIndicator macroWithCode(String code) {
+        MacroIndicator m = mock(MacroIndicator.class);
+        when(m.getCode()).thenReturn(code);
+        return m;
     }
 }

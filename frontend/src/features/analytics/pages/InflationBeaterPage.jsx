@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import useSessionState from '../../../shared/hooks/useSessionState';
-import { TrendingUp, TrendingDown, Trophy, Search, ChevronLeft, ChevronRight, GitCompare, ArrowUp, ArrowDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Trophy, Search, ChevronLeft, ChevronRight, GitCompare, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
 import Card from '../../../shared/components/card';
 import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
@@ -16,6 +16,11 @@ import { formatPercent } from '../utils';
 
 const PAGE_SIZE = 10;
 const FIXED_TYPE_ORDER = ['SPOT', 'CRYPTO', 'FUND', 'FOREX', 'COMMODITY', 'DEPOSIT', 'MACRO'];
+const SORT_OPTIONS = [
+  { id: 'rank', labelKey: 'analytics.rankOrder' },
+  { id: 'nominal', labelKey: 'analytics.nominalReturn' },
+  { id: 'excess', labelKey: 'analytics.excessReturn' },
+];
 const BENCHMARK_CATEGORIES = ['INFLATION', 'RATES', 'DEPOSIT'];
 const MACRO_CATEGORY_TO_MARKET_TYPE = {
   DEPOSIT: 'MACRO_DEPOSIT',
@@ -225,6 +230,14 @@ export default function InflationBeaterPage() {
           sortKey={sortKey}
           sortDir={sortDir}
           onToggleSort={toggleSort}
+          onReset={() => {
+            setSortKey('rank');
+            setSortDir('asc');
+            setVerdictFilter('all');
+            setTypeFilter(new Set());
+            setSearch('');
+            setPage(0);
+          }}
           onCompare={compareWithBenchmark}
         />
       )}
@@ -234,12 +247,11 @@ export default function InflationBeaterPage() {
 
 function Results({ data, period, t, search, onSearchChange, page, onPageChange, onCompare,
                    verdictFilter, onVerdictChange, typeFilter, onTypeToggle, onClearTypes,
-                   sortKey, sortDir, onToggleSort }) {
-  const indexedEntries = useMemo(
-    () => (data.entries || []).map((e, idx) => ({ ...e, _rank: idx + 1 })),
-    [data.entries]
-  );
+                   sortKey, sortDir, onToggleSort, onReset }) {
+  const indexedEntries = useMemo(() => data.entries || [], [data.entries]);
   const totalCount = indexedEntries.length;
+  const isDefaultView = sortKey === 'rank' && sortDir === 'asc'
+    && verdictFilter === 'all' && typeFilter.size === 0 && !search.trim();
   const winRate = totalCount > 0 ? Math.round((data.beatingCount / totalCount) * 100) : 0;
 
   const availableTypes = useMemo(() => {
@@ -263,18 +275,24 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
     });
   }, [indexedEntries, search, verdictFilter, typeFilter]);
 
+  // Rank recomputed WITHIN the filtered subset (filteredEntries keeps the backend excess-desc order), so
+  // narrowing to one asset type renumbers 1,2,3… instead of keeping the global position (1,3,5…).
+  const rankedFiltered = useMemo(
+    () => filteredEntries.map((e, idx) => ({ ...e, _displayRank: idx + 1 })),
+    [filteredEntries]
+  );
+
   const sortedEntries = useMemo(() => {
-    const arr = [...filteredEntries];
+    const arr = [...rankedFiltered];
     const num = (v) => (v == null ? -Infinity : Number(v));
     const cmpAsc = (a, b) => {
       if (sortKey === 'nominal') return num(a.nominalReturnPct) - num(b.nominalReturnPct);
       if (sortKey === 'excess') return num(a.excessReturnPct) - num(b.excessReturnPct);
-      if (sortKey === 'name') return (a.name || a.code).localeCompare(b.name || b.code);
-      return a._rank - b._rank;
+      return a._displayRank - b._displayRank;
     };
     arr.sort((a, b) => (sortDir === 'asc' ? cmpAsc(a, b) : -cmpAsc(a, b)));
     return arr;
-  }, [filteredEntries, sortKey, sortDir]);
+  }, [rankedFiltered, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(sortedEntries.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
@@ -310,6 +328,40 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
         />
       </div>
 
+      <div className="flex items-center gap-1.5 flex-wrap pt-1">
+        <span className="text-xs font-display font-semibold text-fg-muted mr-1">
+          {t('analytics.sortBy', { defaultValue: 'Sırala' })}
+        </span>
+        {SORT_OPTIONS.map((opt) => {
+          const active = sortKey === opt.id;
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => onToggleSort(opt.id)}
+              className={`inline-flex items-center gap-1 text-[11px] font-mono font-semibold rounded-md px-2.5 py-1 cursor-pointer border-none transition-colors ${
+                active ? 'bg-accent/15 text-accent shadow-[inset_0_0_0_1px_rgba(99,102,241,0.4)]' : 'text-fg-muted hover:text-fg'
+              }`}
+            >
+              {t(opt.labelKey)}
+              {active && (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={onReset}
+          disabled={isDefaultView}
+          title={t('analytics.reset', { defaultValue: 'Sıfırla' })}
+          className={`inline-flex items-center gap-1 text-[11px] font-display font-semibold rounded-md px-2 py-1 ml-1 border-none bg-transparent transition-colors ${
+            isDefaultView ? 'text-fg-subtle/40 cursor-default' : 'text-fg-subtle hover:text-fg cursor-pointer'
+          }`}
+        >
+          <RotateCcw className="h-3 w-3" />
+          {t('analytics.reset', { defaultValue: 'Sıfırla' })}
+        </button>
+      </div>
+
       <div className="flex flex-wrap items-center gap-3 pt-1">
         <div className="flex items-center gap-1">
           <span className="text-xs font-display font-semibold text-fg-muted mr-1">
@@ -320,12 +372,12 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
               key={v}
               type="button"
               onClick={() => onVerdictChange(v)}
-              className={`text-[11px] font-mono font-semibold rounded-md px-2.5 py-1 cursor-pointer border-none transition-colors ${
+              className={`text-[11px] font-mono font-semibold rounded-md px-2.5 py-1 cursor-pointer border transition-colors ${
                 verdictFilter === v
-                  ? v === 'beats' ? 'bg-emerald-500/15 text-emerald-500 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.4)]'
-                    : v === 'losers' ? 'bg-red-500/15 text-red-500 shadow-[inset_0_0_0_1px_rgba(239,68,68,0.4)]'
-                    : 'bg-accent/15 text-accent shadow-[inset_0_0_0_1px_rgba(99,102,241,0.4)]'
-                  : 'text-fg-muted hover:text-fg'
+                  ? v === 'beats' ? 'bg-success/15 text-success border-success/40'
+                    : v === 'losers' ? 'bg-danger/15 text-danger border-danger/40'
+                    : 'bg-accent/15 text-accent border-accent/40'
+                  : 'text-fg-muted border-transparent hover:text-fg'
               }`}
             >
               {t(`analytics.verdict_${v}`, { defaultValue: v })}
@@ -394,35 +446,30 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
           <table className="w-full text-xs sm:text-sm min-w-[560px]">
             <thead className="bg-bg-elevated/40">
               <tr>
-                <Th sortKey="rank" activeSort={sortKey} dir={sortDir} onToggle={onToggleSort}>#</Th>
-                <Th sortKey="name" activeSort={sortKey} dir={sortDir} onToggle={onToggleSort}>
+                <Th sortKey="rank" activeSort={sortKey} dir={sortDir}>#</Th>
+                <Th>
                   {t('analytics.instrument', { defaultValue: 'Enstrüman' })}
                 </Th>
-                <Th align="right" sortKey="nominal" activeSort={sortKey} dir={sortDir} onToggle={onToggleSort}
-                    title={t('analytics.nominalReturnTooltip', { defaultValue: 'Mutlak yüzde değişim' })}>
+                <Th align="right" sortKey="nominal" activeSort={sortKey} dir={sortDir} title={t('analytics.nominalReturnTooltip', { defaultValue: 'Mutlak yüzde değişim' })}>
                   {t('analytics.nominalReturn', { defaultValue: 'Nominal' })}
                 </Th>
-                <Th align="right" sortKey="excess" activeSort={sortKey} dir={sortDir} onToggle={onToggleSort}
-                    title={t('analytics.excessReturnTooltip', { defaultValue: 'Nominal − Gösterge' })}>
+                <Th align="right" sortKey="excess" activeSort={sortKey} dir={sortDir} title={t('analytics.excessReturnTooltip', { defaultValue: 'Nominal − Gösterge' })}>
                   {t('analytics.excessReturn', { defaultValue: 'Gösterge Üzeri' })}
                 </Th>
                 <Th align="right">{t('analytics.verdict', { defaultValue: 'Sonuç' })}</Th>
               </tr>
             </thead>
             <tbody>
-              {pageEntries.map((entry, idx) => (
-                <motion.tr
+              {pageEntries.map((entry) => (
+                <tr
                   key={`${entry.type}|${entry.code}`}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.02 }}
                   onClick={() => onCompare?.(entry)}
                   className="group border-t border-border-default/40 hover:bg-bg-elevated/40 transition-colors cursor-pointer"
                   title={t('analytics.openInCompare', { defaultValue: 'Compare’de aç' })}
                 >
                   <td className="py-3 px-2 sm:px-3 font-mono text-xs tabular-nums">
-                    <span className={entry._rank <= 3 ? 'text-amber-500 font-bold' : 'text-fg-muted'}>
-                      {entry._rank}
+                    <span className={entry._displayRank <= 3 ? 'text-warning font-bold' : 'text-fg-muted'}>
+                      {entry._displayRank}
                     </span>
                   </td>
                   <td className="py-3 px-2 sm:px-3">
@@ -446,29 +493,29 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
                     </div>
                   </td>
                   <td className="py-3 px-2 sm:px-3 text-right font-mono tabular-nums">
-                    <span className={Number(entry.nominalReturnPct) >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+                    <span className={Number(entry.nominalReturnPct) >= 0 ? 'text-success' : 'text-danger'}>
                       {formatPercent(entry.nominalReturnPct)}
                     </span>
                   </td>
                   <td className="py-3 px-2 sm:px-3 text-right font-mono font-bold tabular-nums">
-                    <span className={Number(entry.excessReturnPct) >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+                    <span className={Number(entry.excessReturnPct) >= 0 ? 'text-success' : 'text-danger'}>
                       {formatPercent(entry.excessReturnPct)}
                     </span>
                   </td>
                   <td className="py-3 px-2 sm:px-3 text-right">
                     {entry.beatsBenchmark ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.14em] rounded-md px-2 py-0.5 bg-emerald-500/15 text-emerald-500">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.14em] rounded-md px-2 py-0.5 bg-success/15 text-success">
                         <Trophy className="h-3 w-3" />
                         {t('analytics.beats', { defaultValue: 'Yendi' })}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.14em] rounded-md px-2 py-0.5 bg-red-500/10 text-red-500">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.14em] rounded-md px-2 py-0.5 bg-danger/10 text-danger">
                         <TrendingDown className="h-3 w-3" />
                         {t('analytics.lost', { defaultValue: 'Kaybetti' })}
                       </span>
                     )}
                   </td>
-                </motion.tr>
+                </tr>
               ))}
               {pageEntries.length === 0 && (
                 <tr>
@@ -514,14 +561,14 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
 function HeroStat({ icon, label, value, sub, accent }) {
   return (
     <div
-      className="rounded-xl border px-3 sm:px-4 py-3 sm:py-3.5"
-      style={{ background: `${accent}0d`, borderColor: `${accent}33` }}
+      className="rounded-xl border border-border-default px-3 sm:px-4 py-3 sm:py-3.5"
+      style={{ background: `${accent}0d` }}
     >
       <div className="flex items-center gap-2 mb-2 text-xs font-display font-semibold tracking-tight" style={{ color: accent }}>
         {icon}
         <span>{label}</span>
       </div>
-      <div className="font-display text-2xl sm:text-3xl font-bold text-fg tabular-nums leading-none">{value}</div>
+      <div className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-fg tabular-nums leading-none">{value}</div>
       <div className="mt-1.5 text-xs font-mono text-fg-subtle">{sub}</div>
     </div>
   );
@@ -529,7 +576,7 @@ function HeroStat({ icon, label, value, sub, accent }) {
 
 function Th({ children, align = 'left', title, sortKey, activeSort, dir, onToggle }) {
   const sortable = !!(sortKey && onToggle);
-  const active = sortable && activeSort === sortKey;
+  const active = !!(sortKey && activeSort === sortKey);
   const indicator = active ? (dir === 'asc' ? <ArrowUp className="inline h-3 w-3 ml-1" /> : <ArrowDown className="inline h-3 w-3 ml-1" />) : null;
   return (
     <th

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
@@ -249,9 +249,10 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
             <div onMouseLeave={() => setHoveredSliceName(null)}>
               <ReactECharts
                 ref={chartRef}
-                key={`${isDark}-${displayCurrency}-${forPrint}`}
+                key={forPrint ? 'print' : 'screen'}
                 option={option}
                 notMerge
+                lazyUpdate
                 style={forPrint ? { height: 260, width: '100%', pointerEvents: 'none' } : { height: 'min(40vh, 260px)', minHeight: 200, width: '100%' }}
                 opts={{ renderer: forPrint ? 'svg' : 'canvas' }}
                 onEvents={chartEvents}
@@ -315,4 +316,6 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
   );
 }
 
-export default AllocationChart;
+// Memoized: with the ECharts key no longer keyed on theme/currency, the donut updates in place via notMerge,
+// so blocking parent-churn re-renders (stable `allocation` ref) keeps the canvas from rebuilding on first load.
+export default memo(AllocationChart);

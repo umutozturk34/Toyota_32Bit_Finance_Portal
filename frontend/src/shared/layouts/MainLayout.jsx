@@ -5,12 +5,13 @@ import { Outlet, Link, useLocation, useNavigationType } from 'react-router-dom';
 import { useAuth } from '../../features/auth/useAuth';
 import { useTheme } from '../context/useTheme';
 import useAppStore from '../stores/useAppStore';
+import { TrendingUp, Shield, Menu, FolderOpen } from 'lucide-react';
 import {
-  Newspaper, BarChart3, TrendingUp, Bitcoin,
-  DollarSign, Shield,
-  Briefcase, Activity, Menu, Landmark, Wallet, Database, Gem, Users, Layers,
-  LayoutDashboard, FolderOpen, Eye,
-} from 'lucide-react';
+  PiHouseDuotone, PiChartLineUpDuotone, PiTrendUpDuotone, PiCurrencyBtcDuotone,
+  PiCurrencyDollarSimpleDuotone, PiBriefcaseDuotone, PiDiamondDuotone, PiBankDuotone,
+  PiStackDuotone, PiNewspaperClippingDuotone, PiWalletDuotone, PiEyeDuotone,
+  PiChartPieSliceDuotone, PiDatabaseDuotone, PiUsersThreeDuotone,
+} from 'react-icons/pi';
 import TasksPanel from '../../features/admin/components/TasksPanel';
 import SettingsSidebar from '../../features/settings/SettingsSidebar';
 import ProfileDrawer from '../../features/profile/ProfileDrawer';
@@ -24,35 +25,35 @@ import KeycloakActionToast from '../../features/auth/components/KeycloakActionTo
 import SidebarContent from './SidebarContent';
 
 const baseNavStructure = [
-  { kind: 'item', to: '/market', labelKey: 'nav.overview', Icon: LayoutDashboard },
+  { kind: 'item', to: '/market', labelKey: 'nav.overview', Icon: PiHouseDuotone },
   {
-    kind: 'group', id: 'markets', labelKey: 'nav.groupMarkets', Icon: BarChart3,
+    kind: 'group', id: 'markets', labelKey: 'nav.groupMarkets', Icon: PiChartLineUpDuotone,
     items: [
-      { to: '/stocks',      labelKey: 'nav.stocks',      subKey: 'nav.subStocks',      Icon: TrendingUp },
-      { to: '/crypto',      labelKey: 'nav.crypto',      subKey: 'nav.subCrypto',      Icon: Bitcoin },
-      { to: '/forex',       labelKey: 'nav.forex',       subKey: 'nav.subForex',       Icon: DollarSign },
-      { to: '/funds',       labelKey: 'nav.funds',       subKey: 'nav.subFunds',       Icon: Briefcase },
-      { to: '/commodities', labelKey: 'nav.commodities', subKey: 'nav.subCommodities', Icon: Gem },
-      { to: '/bonds',       labelKey: 'nav.bonds',       subKey: 'nav.subBonds',       Icon: Landmark },
-      { to: '/viop',        labelKey: 'nav.viop',        subKey: 'nav.subViop',        Icon: Layers },
+      { to: '/stocks',      labelKey: 'nav.stocks',      subKey: 'nav.subStocks',      Icon: PiTrendUpDuotone },
+      { to: '/crypto',      labelKey: 'nav.crypto',      subKey: 'nav.subCrypto',      Icon: PiCurrencyBtcDuotone },
+      { to: '/forex',       labelKey: 'nav.forex',       subKey: 'nav.subForex',       Icon: PiCurrencyDollarSimpleDuotone },
+      { to: '/funds',       labelKey: 'nav.funds',       subKey: 'nav.subFunds',       Icon: PiBriefcaseDuotone },
+      { to: '/commodities', labelKey: 'nav.commodities', subKey: 'nav.subCommodities', Icon: PiDiamondDuotone },
+      { to: '/bonds',       labelKey: 'nav.bonds',       subKey: 'nav.subBonds',       Icon: PiBankDuotone },
+      { to: '/viop',        labelKey: 'nav.viop',        subKey: 'nav.subViop',        Icon: PiStackDuotone },
     ],
   },
-  { kind: 'item', to: '/news', labelKey: 'nav.news', Icon: Newspaper },
+  { kind: 'item', to: '/news', labelKey: 'nav.news', Icon: PiNewspaperClippingDuotone },
   {
     kind: 'group', id: 'my', labelKey: 'nav.groupMy', Icon: FolderOpen,
     items: [
-      { to: '/portfolio', labelKey: 'nav.portfolio', subKey: 'nav.subPortfolio', Icon: Wallet },
-      { to: '/watch',     labelKey: 'nav.watch',     subKey: 'nav.subWatch',     Icon: Eye },
+      { to: '/portfolio', labelKey: 'nav.portfolio', subKey: 'nav.subPortfolio', Icon: PiWalletDuotone },
+      { to: '/watch',     labelKey: 'nav.watch',     subKey: 'nav.subWatch',     Icon: PiEyeDuotone },
     ],
   },
-  { kind: 'item', to: '/analytics', labelKey: 'nav.analytics', Icon: Activity },
+  { kind: 'item', to: '/analytics', labelKey: 'nav.analytics', Icon: PiChartPieSliceDuotone },
 ];
 
 const adminGroup = {
   kind: 'group', id: 'admin', labelKey: 'nav.groupAdmin', Icon: Shield,
   items: [
-    { to: '/admin/tracked-assets', labelKey: 'nav.adminTrackedAssets', subKey: 'nav.subAdminTrackedAssets', Icon: Database },
-    { to: '/admin/users',          labelKey: 'nav.adminUsers',         subKey: 'nav.subAdminUsers',         Icon: Users },
+    { to: '/admin/tracked-assets', labelKey: 'nav.adminTrackedAssets', subKey: 'nav.subAdminTrackedAssets', Icon: PiDatabaseDuotone },
+    { to: '/admin/users',          labelKey: 'nav.adminUsers',         subKey: 'nav.subAdminUsers',         Icon: PiUsersThreeDuotone },
   ],
 };
 

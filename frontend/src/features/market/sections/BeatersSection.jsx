@@ -2,7 +2,7 @@ import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Trophy, ChevronRight } from 'lucide-react';
-import { getChangeClass, changeColors, formatPercent } from '../../../shared/utils/formatters';
+import { getChangeClass, changeColors, formatPercentSmart } from '../../../shared/utils/formatters';
 import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
 import Card from '../../../shared/components/card';
 import { useMacroIndicators } from '../../macro/hooks/useMacroIndicators';
@@ -82,14 +82,14 @@ function BeaterRow({ entry, rank, t, onNavigate }) {
         <span
           className={`font-mono text-[11px] font-bold tabular-nums leading-tight px-1.5 py-0.5 rounded-md ${changeColors[cls]} bg-surface/50`}
         >
-          {formatPercent(entry.nominalReturnPct)}
+          {formatPercentSmart(entry.nominalReturnPct)}
         </span>
         {entry.excessReturnPct != null && (
           <span
             className={`font-mono text-[9px] font-semibold tabular-nums leading-tight ${changeColors[excessCls]}`}
             title={t('beatersSection.excessTooltip', { defaultValue: 'Excess over benchmark' })}
           >
-            {entry.beatsBenchmark ? '▲' : '▼'} {formatPercent(entry.excessReturnPct)}
+            {entry.beatsBenchmark ? '▲' : '▼'} {formatPercentSmart(entry.excessReturnPct)}
           </span>
         )}
       </div>
@@ -137,7 +137,9 @@ function BeatersSectionImpl({ data }) {
       codes: codes.join(','),
       types: types.join(','),
       range: period,
-      from: 'beaters',
+      // 'overview' (not 'beaters') so Compare's back button returns to the market-overview home where this
+      // widget lives, instead of the standalone beater page the user never opened.
+      from: 'overview',
     });
     if (comparisonCurrency) params.set('currency', comparisonCurrency);
     navigate(`/analytics?${params.toString()}`);
@@ -160,7 +162,7 @@ function BeatersSectionImpl({ data }) {
           <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-fg-subtle leading-tight truncate">
             {benchmarkLabel}
             <span className="mx-1 text-fg-faint">·</span>
-            <span className={changeColors[benchmarkCls]}>{formatPercent(benchmarkReturn)}</span>
+            <span className={changeColors[benchmarkCls]}>{formatPercentSmart(benchmarkReturn)}</span>
             <span className="mx-1 text-fg-faint">·</span>
             {period}
             {comparisonCurrency && (

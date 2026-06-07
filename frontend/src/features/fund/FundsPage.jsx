@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { STALE } from '../../shared/constants/query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LineChart, Tag, Activity, Clock, Users as UsersIcon, Wallet, X } from 'lucide-react';
+import { LineChart, Briefcase, Tag, Activity, Clock, Users as UsersIcon, Wallet, X } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../shared/components/feedback/AnimatedIcons';
 import { fundService } from './services/fundService';
 import { adminService } from '../admin/services/adminService';
@@ -18,6 +18,17 @@ import { useMoney } from '../../shared/hooks/useMoney';
 
 const SORT_OPTION_IDS = ['changePercent', 'price', 'bulletinPrice', 'portfolioSize', 'investorCount', 'name'];
 const FUND_TYPE_IDS = ['BYF', 'YAT'];
+// Funds carry TEFAS trailing returns per window; sorting by one also drives which window the card shows.
+const RETURN_PERIODS = [
+    { id: 'return1m', shortKey: 'analytics.periodOneMonth' },
+    { id: 'return3m', shortKey: 'analytics.periodThreeMonths' },
+    { id: 'return6m', shortKey: 'analytics.periodSixMonths' },
+    { id: 'returnYtd', shortKey: 'market.fund.ytdShort' },
+    { id: 'return1y', shortKey: 'analytics.periodOneYear' },
+    { id: 'return3y', shortKey: 'analytics.periodThreeYears' },
+    { id: 'return5y', shortKey: 'analytics.periodFiveYears' },
+];
+const RETURN_SORT_IDS = RETURN_PERIODS.map((p) => p.id);
 
 function FundsPage() {
     const { t } = useTranslation();
@@ -25,7 +36,14 @@ function FundsPage() {
     const listParams = useListParams();
     const { format: money, formatCompact: moneyCompact } = useMoney();
     const typeFilter = listParams.filter || 'ALL';
-    const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`market.sort.${id}`) }));
+    const returnLabel = t('market.fund.returnLabel', { defaultValue: 'Getiri' });
+    const sortOptions = [
+        ...SORT_OPTION_IDS.map(id => ({ id, label: t(`market.sort.${id}`) })),
+        ...RETURN_PERIODS.map(p => ({ id: p.id, label: `${returnLabel} ${t(p.shortKey)}` })),
+    ];
+    // The card's trailing-return figure follows the selected return sort; otherwise it shows the 1Y return.
+    const activeReturnKey = RETURN_SORT_IDS.includes(listParams.sort) ? listParams.sort : 'return1y';
+    const activeReturnShort = RETURN_PERIODS.find(p => p.id === activeReturnKey)?.shortKey || 'analytics.periodOneYear';
     const fundTypeLabel = (id) => FUND_TYPE_IDS.includes(id) ? t(`market.fund.types.${id}`) : id;
 
     const { data: fundTypes = [] } = useQuery({
@@ -149,7 +167,7 @@ function FundsPage() {
 
     const renderCard = (fund, { setBuyTarget }) => {
         const meta = fund.metadata || {};
-        const oneYear = meta.return1y;
+        const ret = meta[activeReturnKey];
         const rawCategory = meta.category || meta.subCategory;
         const categoryLabel = rawCategory ? t(`fundCategory.${rawCategory}`, { defaultValue: rawCategory }) : null;
         return (
@@ -209,12 +227,12 @@ function FundsPage() {
                             <span className="ml-1 opacity-75">{t('market.fund.dayBadge')}</span>
                         </ChangePercentBadge>
                     </div>
-                    {oneYear != null && (
+                    {ret != null && (
                         <div className="text-right shrink-0">
-                            <span className={`block font-mono text-base font-semibold ${oneYear >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                {oneYear >= 0 ? '+' : ''}{Number(oneYear).toFixed(2)}%
+                            <span className={`block font-mono text-base font-semibold ${ret >= 0 ? 'text-success' : 'text-danger'}`}>
+                                {ret >= 0 ? '+' : ''}{Number(ret).toFixed(2)}%
                             </span>
-                            <span className="block text-[10px] uppercase tracking-wider text-fg-subtle">{t('market.fund.return1yLabel')}</span>
+                            <span className="block text-[10px] uppercase tracking-wider text-fg-subtle">{returnLabel} {t(activeReturnShort)}</span>
                         </div>
                     )}
                 </div>
@@ -257,7 +275,7 @@ function FundsPage() {
     return (
         <MarketListPage
             title={t('market.fund.title')}
-            icon={<LineChart className="h-5 w-5" />}
+            icon={<Briefcase className="h-5 w-5" />}
             emptyIcon={<LineChart className="h-7 w-7 text-fg-subtle" />}
             marketType="FUND"
             service={fundService}

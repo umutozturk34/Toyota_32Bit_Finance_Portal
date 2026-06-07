@@ -26,6 +26,10 @@ import {
 } from './hooks/usePortfolioData';
 import { useReopenDerivativePosition } from './hooks/useDerivativePositions';
 
+// Stable empty-array reference so the memoized AllocationChart isn't re-rendered by a fresh `[]` each render
+// while allocation data is absent (React Query keeps the populated array referentially stable via structural sharing).
+const EMPTY_ALLOCATION = [];
+
 export default function Portfolio() {
   const { t } = useTranslation();
   const goBack = useNavigationBack('/portfolio');
@@ -65,7 +69,7 @@ export default function Portfolio() {
 
   const { data: view, isLoading: viewLoading, error: viewError } = usePortfolioView(portfolio?.id);
   const summary = view?.summary ?? null;
-  const allocation = view?.allocation ?? [];
+  const allocation = view?.allocation ?? EMPTY_ALLOCATION;
   const viewPositions = view?.positions?.content ?? [];
   const backfill = useBackfillStatus(portfolio?.id);
 

@@ -1,14 +1,14 @@
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
-import { Activity, Trophy, GitCompare } from 'lucide-react';
+import { Zap, Trophy, GitCompare } from 'lucide-react';
 import ScenarioComparePage from './pages/ScenarioComparePage';
 import InflationBeaterPage from './pages/InflationBeaterPage';
 import ComparePage from './pages/ComparePage';
 
 const TABS = [
   { id: 'compare',   labelKey: 'tabCompare',   Icon: GitCompare },
-  { id: 'scenario',  labelKey: 'tabScenario',  Icon: Activity },
+  { id: 'scenario',  labelKey: 'tabScenario',  Icon: Zap },
   { id: 'beaters',   labelKey: 'tabBeaters',   Icon: Trophy },
 ];
 const VALID_TABS = new Set(TABS.map((t) => t.id));

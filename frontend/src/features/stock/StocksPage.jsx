@@ -3,7 +3,7 @@ import { STALE } from '../../shared/constants/query';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { BarChart2, ChevronUp, ChevronDown, Activity, Clock } from 'lucide-react';
+import { BarChart2, ChevronUp, ChevronDown, CandlestickChart, Clock } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../shared/components/feedback/AnimatedIcons';
 import { stockService } from './services/stockService';
 import { adminService } from '../admin/services/adminService';
@@ -147,7 +147,7 @@ function StocksPage() {
     return (
         <MarketListPage
             title={t('market.stock.title')}
-            icon={<Activity className="h-5 w-5" />}
+            icon={<CandlestickChart className="h-5 w-5" />}
             emptyIcon={<BarChart2 className="h-7 w-7 text-fg-subtle" />}
             marketType="STOCK"
             service={stockService}

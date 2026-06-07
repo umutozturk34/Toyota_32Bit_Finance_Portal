@@ -78,7 +78,7 @@ export function skipLeadingSplit(sortedPoints, startIdx) {
 // arbitrary because the index resets to 1.0 at the widened fetch start, well before the window.
 const INDEX_MONEY_BASE = 100000;
 
-export function buildOption(seriesData, normalize, isDark, targetCurrency, commonStartDate, levelMode, indexMode) {
+export function buildOption(seriesData, normalize, isDark, targetCurrency, commonStartDate, levelMode) {
   const muted = isDark ? '#6b6b7a' : '#94a3b8';
   const grid = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
   const tooltipBg = isDark ? 'rgba(12,12,20,0.96)' : 'rgba(255,255,255,0.98)';
@@ -142,11 +142,10 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency, commo
       const displayValue = (kind === 'index' && !normalize && basePoint)
         ? (raw / basePoint) * INDEX_MONEY_BASE
         : raw;
-      // INDEX MODE (macro-vs-macro only): rebase every series to a COMMON index of 100 at the shared start, so
-      // deposits/rates read as a growth multiple (100 → 105) instead of disparate compounded-index levels
-      // (1,01 vs 2,54). ASSET MODE keeps % change from the real starting price (the asset's price is its unit).
-      // Index = % change + 100; line shape / comparison are identical either way.
-      const plotted = normalize ? (indexMode ? pct + 100 : pct) : displayValue;
+      // Normalized compare: rebase EVERY series (assets AND macro) to a common 100.000 money base at the
+      // shared window start, so the chart reads as "100.000 grows to …" — directly comparable across deposits,
+      // stocks and CPI. Pure rescale (same line shape as a % view); the % change rides in the tooltip/info-bar.
+      const plotted = normalize ? INDEX_MONEY_BASE * (1 + pct / 100) : displayValue;
       // 5th slot carries the portfolio's cumulative TL P&L at this point (null for every other series).
       return [new Date(p.date).getTime(), plotted, displayValue, pct, p.pnlTry != null ? Number(p.pnlTry) : null];
     });
@@ -168,6 +167,7 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency, commo
       // ranges show every real point. Pre-trimming here would have capped that detail, so the data stays full.
       sampling: 'lttb',
       data,
+      _type: ind.type,
       itemStyle: { color },
       lineStyle: { width: 2, color },
       areaStyle: single ? {
@@ -261,16 +261,22 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency, commo
             valueSpans = `<span style="font-weight:700;font-size:12px;color:${pctColor}">${pctFmt}</span>`
               + (tl ? `<span style="font-size:10px;font-weight:600;color:${tooltipFg};opacity:0.7">${tl}</span>` : '');
           } else {
-            // Normalized: the primary number is the common 100-based index (every series visibly starts at
-            // 100, so the growth multiplier reads directly); the native level differs per series and is
-            // dropped. Level mode / single-series still show the native level (price/rate/index).
+            // Normalized: primary is the common 100.000 money base ("100.000 grows to …", comparable across
+            // series). For real ASSETS (kind 'price') ALSO show the actual price at this date next to it
+            // ("145.000 · ₺52,30"), and for CPI (MACRO_INFLATION) the actual index level ("…· 4.097,55"), so
+            // you see both the comparable growth AND the real value. Compounded deposit/rate indices (kind
+            // 'index' from MACRO_DEPOSIT/MACRO_RATE) carry only an arbitrary ~1,25 factor, so they show none.
             const idx = Number(pt[1]);
-            const primary = (normalize && indexMode && !levelMode)
-              ? idx.toLocaleString('tr-TR', { maximumFractionDigits: idx >= 1000 ? 0 : 2 })
+            const hasRealValue = kind === 'price' || seriesDef._type === 'MACRO_INFLATION';
+            const primary = (normalize && !levelMode)
+              ? idx.toLocaleString('tr-TR', { maximumFractionDigits: 0 })
               : formatRaw(kind, raw, targetCurrency);
+            const realSpan = (normalize && !levelMode && hasRealValue)
+              ? `<span style="font-size:10px;font-weight:600;color:${tooltipFg};opacity:0.6">${formatRaw(kind, raw, targetCurrency)}</span>`
+              : '';
             // Level mode plots the actual rate, so the level IS the value — the % from baseline is noise there.
             const pctSpan = levelMode ? '' : `<span style="font-size:10px;font-weight:600;color:${pctColor};opacity:0.9">${pctFmt}</span>`;
-            valueSpans = `<span style="font-weight:700;color:${color}">${primary}</span>${pctSpan}`;
+            valueSpans = `<span style="font-weight:700;color:${color}">${primary}</span>${realSpan}${pctSpan}`;
           }
           return `<div style="display:flex;justify-content:space-between;gap:14px;align-items:center;padding:3px 0;font-family:ui-monospace,monospace;font-size:11px">
             <span style="display:flex;align-items:center;gap:6px;min-width:0">
@@ -297,20 +303,9 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency, commo
       axisLabel: {
         color: muted, fontSize: 10,
         formatter: (val) => {
-          if (normalize && indexMode) {
-            // Macro-only compare: indexed to 100 at the window start. Adaptive precision so a near-flat
-            // series still shows movement instead of collapsing every tick to "100".
-            const span = Math.abs(val - 100);
-            const dec = span >= 10 ? 0 : span >= 1 ? 1 : 2;
-            return val.toLocaleString('tr-TR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
-          }
           if (normalize) {
-            // Asset compare: % change from the real starting price. Adaptive precision so a near-flat series
-            // (e.g. a USD position in a USD frame, ~0%) doesn't collapse every tick to "0%"/"-0%".
-            const mag = Math.abs(val);
-            const dec = mag >= 10 ? 0 : mag >= 1 ? 1 : 2;
-            const sign = val > 0 ? '+' : '';
-            return `${sign}${val.toFixed(dec)}%`;
+            // Every series rebased to a 100.000 money base at the window start — integer ticks at this scale.
+            return Math.round(val).toLocaleString('tr-TR');
           }
           if (levelMode) return `%${val.toFixed(0)}`;
           return val.toLocaleString('tr-TR');

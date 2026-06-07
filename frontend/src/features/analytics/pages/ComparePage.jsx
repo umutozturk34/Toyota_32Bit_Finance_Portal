@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import useNavigationBack from '../../../shared/hooks/useNavigationBack';
 import { useQueries } from '@tanstack/react-query';
 import ReactECharts from 'echarts-for-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,7 +24,7 @@ import { buildOption } from '../lib/compareChartBuilder';
 import {
   isMacro,
   isRateLike,
-  rangeBounds,
+  rangeBoundsCalendar,
   fetchSeries,
   colorFor,
   parseInitialSelection,
@@ -36,7 +37,10 @@ import {
 } from '../lib/compareSeriesUtils';
 
 const MAX_COMPARE = 6;
-const MARKET_TYPES_FILTER = 'STOCK,CRYPTO,FOREX,FUND,COMMODITY,VIOP,BOND';
+// Bonds are excluded from Compare (they are rate-level series that never FX-convert and aren't a
+// meaningful price-return comparison); excludeTypes={['BOND']} on the search is the belt, this is the
+// suspenders — the assets-mode type filter simply never asks for them.
+const MARKET_TYPES_FILTER = 'STOCK,CRYPTO,FOREX,FUND,COMMODITY,VIOP';
 
 const ASSET_ROUTE = {
   STOCK: 'stocks',
@@ -49,6 +53,9 @@ const ASSET_ROUTE = {
 
 function buildBackTarget(from, fromType, fromCode) {
   if (from === 'beaters') return '/analytics?tab=beaters';
+  // The beater WIDGET lives on the market-overview home, not the beater page, so its click-through must
+  // return there — otherwise "back" dropped the user on /analytics?tab=beaters they never visited.
+  if (from === 'overview') return '/market';
   if (from === 'portfolio') return '/portfolio';
   if (from === 'asset' && fromType && fromCode) {
     const segment = ASSET_ROUTE[fromType];
@@ -82,12 +89,16 @@ export default function ComparePage() {
   );
   const [portfolioPickerOpen, setPortfolioPickerOpen] = useState(false);
   const portfolioPickerRef = useRef(null);
-  const navigate = useNavigate();
   const cameFrom = params.get('from');
   const backTarget = useMemo(
     () => buildBackTarget(cameFrom, params.get('fromType'), params.get('fromCode')),
     [cameFrom, params],
   );
+  // Prefer real browser-back so returns → detail → compare → back → detail → back → returns walks history
+  // linearly. The old navigate(backTarget) PUSHED a reconstructed detail route, so detail's own back (which
+  // uses navigate(-1)) landed on the compare entry just below it — an endless detail ↔ compare ping-pong.
+  // backTarget stays the fallback for direct-link arrivals that have no in-app history to step back through.
+  const goBack = useNavigationBack(backTarget);
   const [mode, setMode] = useSessionState('compare:mode', params.get('mode') || 'assets');
   const [selected, setSelected] = useSessionState('compare:selected', parseInitialSelection(params));
 
@@ -213,8 +224,11 @@ export default function ComparePage() {
     // CPI/inflation framing (TRY) wins over a single non-TRY deposit frame too: a EUR deposit vs CPI is
     // only meaningful in TRY (deposit's TRY-terms growth vs TRY inflation), not in EUR vs a TRY index.
     if (forceTryFrame) return 'TRY';
-    if (depositFrameCurrency) return depositFrameCurrency;
+    // An explicit display-currency choice (TRY/USD/EUR) wins over the deposit-native frame: a EUR deposit
+    // with TRY selected converts per-date and reads in TRY. Only "Original" falls back to the deposit's own
+    // currency — foreign deposits are always convertible, so there is no need to force their native frame.
     if (displayCurrency !== 'ORIGINAL') return displayCurrency;
+    if (depositFrameCurrency) return depositFrameCurrency;
     // Mixed natives → TRY (the base): every series converts to TRY per-date for a fair "in my money" compare.
     if (mixedNative) return 'TRY';
     const first = selected.find((s) => !isMacro(s.type) && s.type !== 'PORTFOLIO');
@@ -308,7 +322,7 @@ export default function ComparePage() {
     if (useExplicitBounds && initialStartRef.current && initialEndRef.current) {
       return { from: initialStartRef.current, to: initialEndRef.current };
     }
-    return rangeBounds(range.days);
+    return rangeBoundsCalendar(range.id);
   }, [range, useExplicitBounds]);
 
   const queries = useQueries({
@@ -512,15 +526,10 @@ export default function ComparePage() {
   // and whenever more than one series is being compared.
   const normalize = !levelMode && (selected.length > 1 || selected.some((s) => s.type === 'PORTFOLIO'));
 
-  // Base-100 INDEX view only when comparing macro indicators among themselves (deposit-vs-deposit, rate-vs-CPI
-  // …) — those have no natural price, so a common 100-based growth index is the right shared unit. The moment a
-  // real ASSET is involved (e.g. a fund/stock arriving from the inflation-beater) keep the actual price as the
-  // anchor (% change from the real starting price), since the asset's own price IS the meaningful unit.
-  const indexMode = normalize && selected.length > 1 && selected.every((s) => isMacro(s.type));
 
   const option = useMemo(
-    () => buildOption(seriesData, normalize, isDark, targetCurrency, baselineDate, levelMode, indexMode),
-    [seriesData, normalize, isDark, targetCurrency, baselineDate, levelMode, indexMode]
+    () => buildOption(seriesData, normalize, isDark, targetCurrency, baselineDate, levelMode),
+    [seriesData, normalize, isDark, targetCurrency, baselineDate, levelMode]
   );
 
   function addAsset(asset) {
@@ -556,7 +565,7 @@ export default function ComparePage() {
         {backTarget && (
           <motion.button
             type="button"
-            onClick={() => navigate(backTarget)}
+            onClick={goBack}
             whileHover={{ x: -2 }}
             whileTap={{ scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
@@ -756,13 +765,9 @@ export default function ComparePage() {
         {normalize && (
           <div className="flex items-center gap-2 text-[10px] font-mono text-amber-500 italic">
             <Info className="h-3 w-3" />
-            {indexMode
-              ? t('analytics.normalizedHintCompareIndex', {
-                defaultValue: 'Makro seriler — başlangıçta 100\'e endekslendi',
-              })
-              : t('analytics.normalizedHintCompare', {
-                defaultValue: 'Çoklu seri — başlangıçtan % değişim olarak normalize edildi',
-              })}
+            {t('analytics.normalizedHintCompare', {
+              defaultValue: 'Her seri başlangıçta 100.000\'e endekslendi',
+            })}
           </div>
         )}
         {selected.some((s) => s.type === 'PORTFOLIO') && (

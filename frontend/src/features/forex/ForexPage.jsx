@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Activity, Clock, Coins } from 'lucide-react';
+import { Activity, Clock, ArrowRightLeft } from 'lucide-react';
 import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
 import { forexService } from './services/forexService';
 import { adminService } from '../admin/services/adminService';
@@ -115,8 +115,8 @@ function ForexPage() {
     return (
         <MarketListPage
             title={t('market.forex.title')}
-            icon={<Coins className="h-5 w-5" />}
-            emptyIcon={<Coins className="h-8 w-8 text-fg-subtle" />}
+            icon={<ArrowRightLeft className="h-5 w-5" />}
+            emptyIcon={<ArrowRightLeft className="h-8 w-8 text-fg-subtle" />}
             marketType="FOREX"
             service={forexService}
             queryKey="forex"

@@ -1,7 +1,19 @@
 import { memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { BarChart3, ChevronRight } from 'lucide-react';
+import { BarChart3, ChevronRight, TrendingUp, Bitcoin, ArrowRightLeft, Briefcase } from 'lucide-react';
+import { GiGoldBar } from 'react-icons/gi';
+
+// Per-market-type header icon so the Stock / Forex / Crypto / Fund / Commodity mover panels read as distinct
+// surfaces instead of five identical bar-chart glyphs differing only by colour. Forex uses the exchange
+// arrows (↔), distinct from the Bank-Rates tab's banknote.
+const ICON_BY_MARKET = {
+  STOCK: TrendingUp,
+  CRYPTO: Bitcoin,
+  FOREX: ArrowRightLeft,
+  FUND: Briefcase,
+  COMMODITY: GiGoldBar,
+};
 import { getChangeClass, changeColors, formatPercent } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { priceCurrencyOf } from '../../../shared/utils/priceCurrency';
@@ -62,6 +74,7 @@ function MoversSectionImpl({ data }) {
   }, [navigate, setOrigin, market]);
   const losers = data?.losers ?? [];
   const color = ASSET_TYPE_COLORS[market] || '#6366f1';
+  const TypeIcon = ICON_BY_MARKET[market] || BarChart3;
   const label = market ? t(`assets.labels.${market}`, { defaultValue: market }) : t('moversSection.fallback');
 
   return (
@@ -75,7 +88,7 @@ function MoversSectionImpl({ data }) {
           className="flex items-center justify-center w-7 h-7 rounded-lg transition-transform duration-300 group-hover/title:scale-105"
           style={{ backgroundColor: `${color}18`, boxShadow: `0 0 16px ${color}15` }}
         >
-          <BarChart3 className="h-3.5 w-3.5" style={{ color }} />
+          <TypeIcon className="h-3.5 w-3.5" style={{ color }} />
         </span>
         <span className="font-display text-[13px] font-bold text-fg">{label}</span>
         <ChevronRight className="h-3.5 w-3.5 text-fg-subtle ml-auto opacity-0 group-hover/title:opacity-100 group-hover/title:translate-x-0.5 transition-all" />

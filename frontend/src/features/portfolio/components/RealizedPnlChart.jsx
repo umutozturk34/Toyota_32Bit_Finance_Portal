@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
@@ -260,9 +260,10 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
             <div onMouseLeave={() => setHovered(null)}>
               <ReactECharts
                 ref={chartRef}
-                key={`${isDark}-${displayCurrency}-${forPrint}`}
+                key={forPrint ? 'print' : 'screen'}
                 option={option}
                 notMerge
+                lazyUpdate
                 style={forPrint ? { height: 260, width: '100%', pointerEvents: 'none' } : { height: 'min(40vh, 260px)', minHeight: 200, width: '100%' }}
                 opts={{ renderer: forPrint ? 'svg' : 'canvas' }}
                 onEvents={chartEvents}
@@ -308,4 +309,6 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
   );
 }
 
-export default RealizedPnlChart;
+// Memoized for the same reason as AllocationChart: the donut now updates in place (notMerge) instead of
+// remounting on theme/currency, so we avoid rebuilding it on unrelated parent re-renders.
+export default memo(RealizedPnlChart);

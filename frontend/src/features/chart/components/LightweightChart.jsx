@@ -315,7 +315,14 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                 {/* overflow-hidden: clip the chart canvas to its box so a stale fullscreen-height canvas can't
                     inflate the container (or spill over the page) before the resize settles it back down. */}
                 <div className={`relative flex-1 overflow-hidden ${isFullscreen ? 'min-h-0' : 'min-h-[55vh] sm:min-h-[400px] lg:min-h-[420px]'}`}>
-                    <div ref={chartContainerRef} className="w-full h-full" />
+                    {/* Absolutely positioned, NOT in-flow w-full/h-full. Lightweight-charts sizes this div's
+                        canvas via applyOptions(height); handleResize then reads it back from clientHeight. If
+                        the div were in-flow with h-full inside this content-sized (min-h, not fixed-height)
+                        flex parent, the canvas height would feed the parent's height — so after a fullscreen
+                        EXIT clientHeight read the stale fullscreen height and re-applied it, leaving the chart
+                        stuck tall and spilling down the page. Anchored to the relative, flex-sized chart area,
+                        the container's size is driven by the layout and never by the canvas, breaking the loop. */}
+                    <div ref={chartContainerRef} className="absolute inset-0" />
                     <canvas
                         ref={canvasOverlayRef}
                         className="absolute inset-0 w-full h-full"

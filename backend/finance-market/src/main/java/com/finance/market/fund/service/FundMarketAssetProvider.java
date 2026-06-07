@@ -86,6 +86,14 @@ public class FundMarketAssetProvider extends BaseTrackedMarketAssetProvider<Fund
                 Map.entry("bulletinPrice", "bulletinPrice"),
                 Map.entry("portfolioSize", "portfolioSize"),
                 Map.entry("investorCount", "investorCount"),
+                // TEFAS trailing returns per window — let the list rank funds by any of them.
+                Map.entry("return1m", "return1m"),
+                Map.entry("return3m", "return3m"),
+                Map.entry("return6m", "return6m"),
+                Map.entry("returnYtd", "returnYtd"),
+                Map.entry("return1y", "return1y"),
+                Map.entry("return3y", "return3y"),
+                Map.entry("return5y", "return5y"),
                 Map.entry("default", "changePercent")
         );
     }

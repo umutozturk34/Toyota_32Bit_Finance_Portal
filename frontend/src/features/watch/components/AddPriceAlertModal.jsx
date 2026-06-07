@@ -199,6 +199,7 @@ export default function AddPriceAlertModal({
               <SearchSuggestions
                 placeholder={t('addPriceAlert.searchPlaceholder')}
                 navigateOnSelect={false}
+                excludeTypes={['MACRO', 'BOND']}
                 onSelect={(asset) => {
                   setSelectedAsset(asset);
                   if (asset.price != null) {
@@ -320,7 +321,7 @@ export default function AddPriceAlertModal({
                 value={threshold}
                 onChange={(e) => setThreshold(e.target.value)}
                 placeholder={isPercent ? '5' : (currentPrice != null ? formatLocale(currentPrice) : '100000')}
-                className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 pr-10 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+                className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 pr-10 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:[-webkit-appearance:none] [&::-webkit-outer-spin-button]:[-webkit-appearance:none] [&::-webkit-inner-spin-button]:[margin:0]"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-mono text-fg-subtle pointer-events-none">
                 {isPercent ? '%' : `${symbol} ${alertCurrency}`}
@@ -352,7 +353,7 @@ export default function AddPriceAlertModal({
                 value={referencePrice}
                 onChange={(e) => setReferencePrice(e.target.value)}
                 placeholder={t('addPriceAlert.referencePlaceholder')}
-                className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+                className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:[-webkit-appearance:none] [&::-webkit-outer-spin-button]:[-webkit-appearance:none] [&::-webkit-inner-spin-button]:[margin:0]"
               />
             </div>
           )}

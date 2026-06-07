@@ -169,6 +169,7 @@ export default function AddWatchlistItemModal({
               <SearchSuggestions
                 placeholder={t('addWatchlistItem.searchPlaceholder')}
                 navigateOnSelect={false}
+                excludeTypes={['MACRO', 'BOND']}
                 onSelect={(asset) => setSelectedAsset(asset)}
               />
             )}

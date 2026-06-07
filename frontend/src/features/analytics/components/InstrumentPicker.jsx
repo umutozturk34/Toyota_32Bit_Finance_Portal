@@ -115,7 +115,7 @@ export default function InstrumentPicker({ value, onChange, max = 6 }) {
               onSelect={handleSearchSelect}
               navigateOnSelect={false}
               excludeCodes={excludedCodes}
-              excludeTypes={['BOND', 'MACRO_INFLATION']}
+              excludeTypes={['BOND', 'VIOP', 'MACRO_INFLATION']}
               placeholder={t('analytics.searchPlaceholder', { defaultValue: 'ASELS, altın, bitcoin, TP.TRYTAS...' })}
             />
           </motion.div>

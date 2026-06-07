@@ -45,8 +45,8 @@ export default function ScenarioComparePage() {
     { type: 'COMMODITY', code: 'XAUTRY', name: 'Altın', labelKey: 'analytics.preset.gold' },
   ]);
 
-  // A selected non-TRY deposit frames the whole comparison in its own currency (a USD/EUR deposit
-  // makes that currency the base), overriding the display setting; mixed/none falls back to display.
+  // A single non-TRY deposit's own currency is the DEFAULT frame (a USD/EUR deposit makes that currency the
+  // base) — but only under the "Original" display setting; an explicit currency choice overrides it below.
   const depositFrameCurrency = (() => {
     const set = new Set(
       instruments
@@ -56,8 +56,12 @@ export default function ScenarioComparePage() {
     );
     return set.size === 1 ? [...set][0] : null;
   })();
-  const inputCurrency = depositFrameCurrency
-    || (displayCurrency === 'ORIGINAL' ? 'TRY' : displayCurrency);
+  // An explicit display-currency choice (TRY/USD/EUR) wins: a foreign deposit converts per-date, so a USD
+  // deposit with TRY selected computes over the entered TRY. "Original" falls back to the deposit's own
+  // currency (then TRY when there is no single non-TRY deposit).
+  const inputCurrency = displayCurrency !== 'ORIGINAL'
+    ? displayCurrency
+    : (depositFrameCurrency || 'TRY');
   const simulation = useScenarioSimulation();
 
   function run() {

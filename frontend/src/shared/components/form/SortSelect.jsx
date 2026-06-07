@@ -79,7 +79,7 @@ export default function SortSelect({ value, direction, options, onSortChange, on
       >
         <AnimatePresence mode="wait">
           <motion.div
-            key={direction}
+            key={isDesc ? 'desc' : 'asc'}
             initial={{ rotateX: isDesc ? -90 : 90, opacity: 0 }}
             animate={{ rotateX: 0, opacity: 1 }}
             exit={{ rotateX: isDesc ? 90 : -90, opacity: 0 }}

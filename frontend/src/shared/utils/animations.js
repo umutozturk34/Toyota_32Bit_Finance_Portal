@@ -6,7 +6,7 @@ export const containerVariants = (staggerDelay = 0.03) => ({
 });
 
 export const cardVariants = {
-    hidden: { opacity: 0, y: 10 },
+    hidden: { opacity: 0, y: 4 },
     show: {
         opacity: 1,
         y: 0,

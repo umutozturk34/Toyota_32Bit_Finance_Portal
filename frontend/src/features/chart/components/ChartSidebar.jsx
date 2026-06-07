@@ -49,8 +49,13 @@ const ChartSidebar = ({
     setShowPortfolioSize,
 }) => {
     const { t } = useTranslation();
+    // Height caps are mobile-only (max-lg): they bound the panel so the chart keeps room when it stacks on top
+    // in the column layout. They MUST be scoped to max-lg — a desktop is always landscape, so a bare
+    // `landscape:max-h` leaked onto large screens and capped the panel at ~80vh, leaving it short of the chart
+    // in fullscreen. At lg+ there is no max-h, so flex align-stretch grows it to the chart's full height
+    // (normal AND fullscreen) dynamically.
     return (
-        <div className="w-full lg:w-60 shrink-0 border-b lg:border-b-0 lg:border-r border-border-default flex flex-col bg-surface/40 backdrop-blur-md relative z-20 min-h-[260px] max-h-[60vh] landscape:max-h-[85vh] sm:max-h-[55vh] sm:landscape:max-h-[80vh] lg:min-h-0 lg:max-h-none">
+        <div className="w-full lg:w-60 shrink-0 border-b lg:border-b-0 lg:border-r border-border-default flex flex-col bg-surface/40 backdrop-blur-md relative z-20 min-h-[260px] max-lg:max-h-[60vh] max-lg:landscape:max-h-[85vh] sm:max-lg:max-h-[55vh] sm:max-lg:landscape:max-h-[80vh] lg:min-h-0">
             <div className="pointer-events-none absolute inset-y-0 left-0 w-px bg-gradient-to-b from-indigo-400/40 via-fuchsia-400/20 to-transparent" />
             <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-400/20 to-transparent" />
             <div className="flex border-b border-border-default">

@@ -180,14 +180,18 @@ public class ScenarioService {
     }
 
     /**
-     * Finds the baseline (start) index for the price path, skipping past any early stock-split-like
-     * jump (ratio &gt;5 or &lt;0.2 within the leading probe window) so the simulation isn't distorted by
-     * an unadjusted split. Returns the index after the last such jump, else 0.
+     * Finds the baseline (start) index for the price path, skipping past a LEADING stock-split-like jump
+     * (ratio &gt;5 or &lt;0.2 within only the first {@link #BASELINE_PROBE_WINDOW} points) so an unadjusted
+     * split or launch-week artifact at the very start doesn't distort the simulation. The probe is
+     * deliberately leading-only: a large jump DEEPER in the window is a real move (e.g. ISATR, İş Bankası's
+     * thinly-traded A-class share, genuinely re-pricing ~88x) and must be kept — skipping it would push the
+     * baseline months in and wrongly drop a full-history asset as "partial". Returns the index after the last
+     * leading jump, else 0.
      */
     private static int pickBaselineIndex(List<HistoryPoint> raw) {
         if (raw == null || raw.isEmpty()) return -1;
         if (raw.size() < 3) return 0;
-        int scanLimit = Math.min(raw.size() - 1, Math.max(BASELINE_PROBE_WINDOW, raw.size() / 3));
+        int scanLimit = Math.min(raw.size() - 1, BASELINE_PROBE_WINDOW);
         int jumpIdx = -1;
         for (int i = 0; i < scanLimit; i++) {
             BigDecimal cur = raw.get(i).value();

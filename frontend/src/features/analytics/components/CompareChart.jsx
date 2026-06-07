@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../../shared/context/useTheme';
+import useMediaQuery from '../../../shared/hooks/useMediaQuery';
 import {
   chartPalette,
   timeAxis,
@@ -31,10 +32,11 @@ function valueAsOf(data, ts) {
 export default function CompareChart({ scenario }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
+  const isMobile = useMediaQuery('(max-width: 640px)');
   const scenarioCurrency = scenario?.targetCurrency || 'TRY';
   const option = useMemo(
-    () => buildOption(scenario, isDark, scenarioCurrency),
-    [scenario, isDark, scenarioCurrency],
+    () => buildOption(scenario, isDark, scenarioCurrency, isMobile),
+    [scenario, isDark, scenarioCurrency, isMobile],
   );
 
   if (!scenario || !scenario.series?.length) {
@@ -52,7 +54,7 @@ export default function CompareChart({ scenario }) {
   );
 }
 
-function buildOption(scenario, isDark, displayCurrency) {
+function buildOption(scenario, isDark, displayCurrency, isMobile) {
   const palette = chartPalette(isDark);
 
   const series = (scenario?.series || []).map((s, idx) => {
@@ -72,9 +74,17 @@ function buildOption(scenario, isDark, displayCurrency) {
   return {
     backgroundColor: 'transparent',
     animation: true,
-    grid: { left: 8, right: 12, top: 36, bottom: showZoom ? 64 : 32, containLabel: true },
+    grid: {
+      left: isMobile ? 4 : 8, right: isMobile ? 8 : 12, top: isMobile ? 28 : 36,
+      bottom: showZoom ? (isMobile ? 56 : 64) : (isMobile ? 24 : 32), containLabel: true,
+    },
     dataZoom: showZoom ? dataZoomBlock(palette) : undefined,
-    legend: legendBase(palette),
+    // Legend stays at the TOP (scrollable) at every width. The old `media` query flipped it to the bottom on
+    // mobile — where it overlapped the dataZoom and, with notMerge, ECharts didn't revert it back to the top
+    // when the viewport grew again (it stuck at the bottom). Driven from React instead so it rebuilds cleanly.
+    legend: legendBase(palette, isMobile
+      ? { textStyle: { color: palette.muted, fontSize: 9, fontFamily: 'ui-monospace,monospace' } }
+      : {}),
     tooltip: tooltipBase(palette, {
       confine: true,
       formatter: (params) => {
@@ -112,14 +122,5 @@ function buildOption(scenario, isDark, displayCurrency) {
       },
     }),
     series,
-    media: [{
-      query: { maxWidth: 640 },
-      option: {
-        grid: { left: 4, right: 8, top: 28, bottom: showZoom ? 56 : 24 },
-        legend: { top: 'bottom', left: 'center', orient: 'horizontal', textStyle: { fontSize: 9 } },
-        xAxis: { axisLabel: { fontSize: 9, rotate: 30 } },
-        yAxis: { axisLabel: { fontSize: 9 } },
-      },
-    }],
   };
 }

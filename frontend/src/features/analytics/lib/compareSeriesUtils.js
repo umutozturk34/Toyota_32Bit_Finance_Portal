@@ -55,6 +55,16 @@ const parseLocal = (iso) => {
   return new Date(y, m - 1, d);
 };
 
+// Fast local YYYY-MM-DD (same shape as toLocaleDateString('sv-SE')) WITHOUT Intl. The day-by-day fill and
+// compound loops below run tens of thousands of times on the ALL range × several mixed series, and Intl
+// formatting was a measurable chunk of that recompute; manual zero-padding is identical output, far cheaper.
+const fmtLocal = (d) => {
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  return `${y}-${m < 10 ? '0' : ''}${m}-${day < 10 ? '0' : ''}${day}`;
+};
+
 // Compound an annual-rate-% series into a cumulative growth index (starts at 1.0). Mirrors backend
 // ScenarioService.applyCompound: daily compounding over a 365-day year, with the rate in effect
 // during each interval applied over that interval's day count. When `endIso` is given, the last
@@ -85,7 +95,7 @@ export function compoundRateSeries(points, endIso) {
     for (let d = 1; d < days; d += 1) {
       cursor.setDate(cursor.getDate() + 1);
       factor *= (1 + dailyRate);
-      out.push({ date: cursor.toLocaleDateString('sv-SE'), value: factor, _filled: true });
+      out.push({ date: fmtLocal(cursor), value: factor, _filled: true });
     }
     // The final day of the gap IS the next observation date: compound it and attach the real point's
     // fields (raw rate, etc.) so the observation stays a non-synthetic anchor.
@@ -106,7 +116,7 @@ export function compoundRateSeries(points, endIso) {
     cursor.setDate(cursor.getDate() + 1);
     while (cursor <= end) {
       factor *= (1 + dailyRate);
-      out.push({ date: cursor.toLocaleDateString('sv-SE'), value: factor, _filled: true });
+      out.push({ date: fmtLocal(cursor), value: factor, _filled: true });
       cursor.setDate(cursor.getDate() + 1);
     }
   }
@@ -139,13 +149,50 @@ export function displayLabel(t, indicator, macroLabelByCode) {
 // local-zone candle/observation dates. toISOString would shift the boundary a day in non-Istanbul or
 // pre-03:00 zones, filtering out a same-day edge candle or landing the window start a day off.
 export function toIso(d) {
-  return d.toLocaleDateString('sv-SE');
+  return fmtLocal(d);
 }
 
 export function rangeBounds(days) {
   const to = new Date();
   const from = new Date(to);
   from.setDate(from.getDate() - days);
+  return { from: toIso(from), to: toIso(to) };
+}
+
+// Subtract a calendar span, clamping the day-of-month exactly like java.time.LocalDate.minusMonths/minusYears
+// (e.g. Mar 31 − 1 month = Feb 28, not Mar 3 as naive setMonth would roll to). Shifting via day=1 first avoids
+// the JS month-overflow before re-clamping to the target month's last valid day.
+function minusCalendar(base, { years = 0, months = 0, days = 0 }) {
+  const d = new Date(base);
+  if (years || months) {
+    const day = d.getDate();
+    d.setDate(1);
+    d.setMonth(d.getMonth() - months - years * 12);
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    d.setDate(Math.min(day, lastDay));
+  }
+  if (days) d.setDate(d.getDate() - days);
+  return d;
+}
+
+// Calendar-correct window bounds for a range token, mirroring the backend's LocalDate.minusYears/minusMonths
+// (5Y = today.minusYears(5)) instead of a naive day count. The day count drifts one day per leap year — e.g.
+// 5Y as 1825 days lands a day late — and when an asset happens to jump on that exact boundary day Compare's %
+// diverged from the inflation-beater (which anchors at the calendar date). ALL keeps the wide day sweep, which
+// has no calendar meaning.
+export function rangeBoundsCalendar(rangeId) {
+  const to = new Date();
+  const spans = {
+    '1W': { days: 7 },
+    '1M': { months: 1 },
+    '3M': { months: 3 },
+    '6M': { months: 6 },
+    '1Y': { years: 1 },
+    '3Y': { years: 3 },
+    '5Y': { years: 5 },
+    ALL: { days: 11000 },
+  };
+  const from = minusCalendar(to, spans[rangeId] ?? { years: 1 });
   return { from: toIso(from), to: toIso(to) };
 }
 
@@ -255,8 +302,8 @@ export function forwardFillDaily(points, fromIso, toIso) {
   if (sorted.length > 1) {
     let maxGap = 0;
     for (let i = 1; i < sorted.length; i += 1) {
-      const prev = new Date(sorted[i - 1].date);
-      const curr = new Date(sorted[i].date);
+      const prev = parseLocal(sorted[i - 1].date);
+      const curr = parseLocal(sorted[i].date);
       const gap = Math.round((curr - prev) / 86400000);
       if (gap > maxGap) maxGap = gap;
     }
@@ -268,7 +315,7 @@ export function forwardFillDaily(points, fromIso, toIso) {
   let idx = 0;
   let currentPoint = null;
   while (cursor <= end) {
-    const cursorIso = cursor.toLocaleDateString('sv-SE');
+    const cursorIso = fmtLocal(cursor);
     while (idx < sorted.length && sorted[idx].date <= cursorIso) {
       currentPoint = sorted[idx];
       idx += 1;
@@ -302,7 +349,7 @@ export function forwardFillGaps(points) {
     cursor.setDate(cursor.getDate() + 1);
     const currDate = parseLocal(curr.date);
     while (cursor < currDate) {
-      result.push({ date: cursor.toLocaleDateString('sv-SE'), value: prev.value, _filled: true });
+      result.push({ date: fmtLocal(cursor), value: prev.value, _filled: true });
       cursor.setDate(cursor.getDate() + 1);
     }
     result.push(curr);

@@ -48,4 +48,25 @@ class ViopCandleTest {
         assertThat(candle.getCreatedAt()).isEqualTo(now);
         assertThat(candle.getUpdatedAt()).isEqualTo(now);
     }
+
+    @Test
+    void should_beEqualAndShareHash_when_idsMatch() {
+        ViopCandle a = ViopCandle.builder().id(7L).symbol("F_X").build();
+        ViopCandle b = ViopCandle.builder().id(7L).symbol("F_Y").build();
+
+        assertThat(a).isEqualTo(a);
+        assertThat(a).isEqualTo(b);
+        assertThat(a.hashCode()).isEqualTo(b.hashCode());
+    }
+
+    @Test
+    void should_notBeEqual_when_idsDifferOrAreNullOrTypeDiffers() {
+        ViopCandle persisted = ViopCandle.builder().id(1L).build();
+        ViopCandle other = ViopCandle.builder().id(2L).build();
+        ViopCandle transientCandle = ViopCandle.builder().build();
+
+        assertThat(persisted).isNotEqualTo(other);
+        assertThat(transientCandle).isNotEqualTo(persisted);
+        assertThat(persisted).isNotEqualTo("not-a-candle");
+    }
 }

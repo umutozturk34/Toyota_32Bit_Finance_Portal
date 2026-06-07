@@ -83,8 +83,10 @@ Highlights:
   currency conversion (TRY / USD / EUR).
 - **Hypothetical-lot portfolio** — multi-asset open/closed positions, realized & unrealized
   P&L in TRY, allocation donut, performance curve and daily snapshots.
-- **Analytics** — scenario simulation, inflation-beater ranking, and asset comparison framed
-  in any currency.
+- **Analytics** — scenario simulation, an inflation-beater ranking (which instruments beat a
+  chosen benchmark), an asset-returns ranking (every spot asset's realized TRY return per window
+  — 1W…5Y — with annualized volatility and a low/medium/high risk band), and multi-asset
+  comparison framed in any currency.
 - **Notifications & email** — themed PDF portfolio reports plus a real-time notification
   center: an in-app bell over SSE and email for price-alert / watchlist thresholds, news and
   portfolio moves. Mail is decoupled through a Kafka-relayed **outbox**, so a slow SMTP server
@@ -114,9 +116,12 @@ Highlights:
 
 A quick tour of what each container is responsible for:
 
-**Nginx Gateway** (`:80`) is the only thing the browser talks to. It serves the React build,
-reverse-proxies `/api/v1` to whichever backend owns the route, forwards `/auth` to Keycloak, and
-applies the edge rate-limit zones.
+**Nginx Gateway** (`:80` / `:443`) is the only thing the browser talks to — the edge proxy. It
+forwards the SPA routes to the **Frontend** container, `/api/v1` to whichever backend owns the route,
+`/auth` to Keycloak, and applies the edge rate-limit zones.
+
+**Frontend** is the built React / Vite single-page app, served by its own lightweight Nginx and
+reachable only through the gateway.
 
 **Backend** (`:8080`) is the core Spring Boot app, split into Maven modules (market, portfolio,
 user, news). It fetches market data from the upstream providers on a daily schedule, writes it to
@@ -136,12 +141,19 @@ from **OpenLDAP**; **phpLDAPadmin** is just the LDAP admin UI.
 **Kafka** (KRaft, no Zookeeper) is the event bus the two backends communicate over. **Redis** is the
 shared cache (market snapshots, the overview's movers) and also holds the Bucket4j rate-limit
 buckets. **PostgreSQL** is one instance with two databases — the app and Keycloak — and Flyway owns
-the schema.
+the schema. A one-shot **db-migrator** (Flyway) applies the SQL migrations against it before the
+backends start.
 
 **Observability**: an OpenTelemetry agent in each backend ships traces to the **OTel Collector**;
 application logs travel Kafka → **Data Prepper** → **OpenSearch**, and you read both in OpenSearch
-Dashboards. **Mailpit** is the dev SMTP catcher — outgoing mail lands in its inbox instead of a real
-provider.
+Dashboards. A one-shot **opensearch-init** bootstraps the index templates after OpenSearch is up, and
+a small **opensearch-proxy** (Nginx) injects the `X-Elastic-Product` header that Data Prepper's
+client expects. **Mailpit** is the dev SMTP catcher — outgoing mail lands in its inbox instead of a
+real provider.
+
+**SonarQube** (the `sonarqube` scanner plus its own `sonar-db` Postgres) is the self-hosted
+code-quality server. It sits behind a Compose `profiles:` flag, so it starts only when explicitly
+enabled — it is not part of the default stack.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -306,6 +318,9 @@ Login runs through Keycloak. Demo credentials (in `.env`, intentionally visible 
 | http://localhost:8025 | Mailpit — all outgoing mail is captured here |
 | http://localhost:8081 | phpLDAPadmin — directory entries (login: `cn=admin,dc=finance,dc=local`) |
 | http://localhost:5601 | OpenSearch Dashboards (logs / traces) |
+| `localhost:5432` | PostgreSQL — connect with any DB client (creds in `.env`) |
+| `localhost:6379` | Redis — cache + rate-limit buckets |
+| http://localhost:9200 | OpenSearch — log / trace store API |
 
 > On a VDS deploy these ports stay bound to `127.0.0.1` (security — the public internet only
 > reaches `:80` / `:443` through Nginx). To open OpenSearch Dashboards / phpLDAPadmin /

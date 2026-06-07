@@ -109,7 +109,7 @@ export default function WidgetSettingsPopover({ anchorEl, kind, config, autoFocu
       >
         <X className="h-3 w-3" />
       </button>
-      <div className="flex-1 min-h-0 flex flex-col p-3.5 pt-3 pr-9">
+      <div className="flex-1 min-h-0 flex flex-col overflow-y-auto p-3.5 pt-3 pr-9">
         {kind === 'NEWS' && <NewsConfigSection config={config} onChange={onChange} />}
         {kind === 'WATCHLIST' && <WatchlistConfigSection config={config} onChange={onChange} />}
         {kind === 'ASSET_CARDS' && <AssetCardsConfigSection config={config} onChange={onChange} autoFocusName={autoFocusName} defaultItems={defaultItems} />}

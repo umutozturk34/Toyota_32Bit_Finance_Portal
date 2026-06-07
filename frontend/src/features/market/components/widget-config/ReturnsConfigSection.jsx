@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Coins, ArrowDownAZ, ArrowUpAZ } from 'lucide-react';
 import PopoverHeader from './PopoverHeader';
@@ -38,11 +38,6 @@ export default function ReturnsConfigSection({ config, onChange }) {
   const sortBy = (config?.sortBy || 'RETURN').toUpperCase();
   const sortDir = (config?.sortDir || 'DESC').toUpperCase();
   const limit = Math.min(MAX_LIMIT, Math.max(MIN_LIMIT, parseInt(config?.limit ?? 10, 10) || 10));
-  // Drive the range thumb from local state during the drag and COMMIT only on release: setField rewrites the
-  // whole sections array (which re-renders the react-grid-layout canvas), so committing on every tick made the
-  // grid re-render on each pixel and the thumb stutter/stick. Resync when the committed value changes elsewhere.
-  const [limitDraft, setLimitDraft] = useState(limit);
-  useEffect(() => { setLimitDraft(limit); }, [limit]);
 
   const selectedTypes = useMemo(() => parseSet(config?.assetType), [config?.assetType]);
   const selectedRisks = useMemo(() => parseSet(config?.risk), [config?.risk]);
@@ -197,17 +192,15 @@ export default function ReturnsConfigSection({ config, onChange }) {
 
       <label className="block font-mono text-[9px] tracking-[0.18em] uppercase text-fg-subtle mb-1.5">
         {t('widgetSettings.returnsLimit', { defaultValue: 'Liste uzunluğu' })}
-        <span className="ml-1 text-accent font-bold tabular-nums">{limitDraft}</span>
+        <span className="ml-1 text-accent font-bold tabular-nums">{limit}</span>
       </label>
       <input
         type="range"
         min={MIN_LIMIT}
         max={MAX_LIMIT}
         step={1}
-        value={limitDraft}
-        onChange={(e) => setLimitDraft(parseInt(e.target.value, 10))}
-        onPointerUp={(e) => setField('limit', parseInt(e.target.value, 10))}
-        onKeyUp={(e) => setField('limit', parseInt(e.target.value, 10))}
+        value={limit}
+        onChange={(e) => setField('limit', parseInt(e.target.value, 10))}
         className="w-full accent-accent cursor-pointer"
       />
       <div className="flex justify-between font-mono text-[9px] text-fg-subtle tabular-nums mt-1">

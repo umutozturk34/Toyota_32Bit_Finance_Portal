@@ -19,6 +19,7 @@ import NotificationPanel from '../../features/notifications/NotificationPanel';
 import { useUnreadNotificationCount } from '../hooks/useNotifications';
 import useNotificationStream from '../hooks/useNotificationStream';
 import useScrollRestoration from '../hooks/useScrollRestoration';
+import useMediaQuery from '../hooks/useMediaQuery';
 import useNavigationStore from '../stores/useNavigationStore';
 import OnboardingGate from '../../features/onboarding/OnboardingGate';
 import KeycloakActionToast from '../../features/auth/components/KeycloakActionToast';
@@ -83,6 +84,14 @@ const MainLayout = () => {
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   useNotificationStream();
   useScrollRestoration();
+
+  // Auto-close the mobile drawer once the viewport grows into the lg breakpoint. Without this, a drawer
+  // opened at mobile width leaves mobileOpen=true after enlarging, which keeps blurCls (pointer-events-none)
+  // on the main content and hides the now-visible desktop sidebar behind the stale mobile overlay.
+  // Adjusted during render (not in an effect) per the codebase's derived-state pattern, avoiding a wasted
+  // render pass and the cascading-render lint rule.
+  const isLargeScreen = useMediaQuery('(min-width: 1024px)');
+  if (isLargeScreen && mobileOpen) setMobileOpen(false);
 
   const navType = useNavigationType();
   const setOriginInStore = useNavigationStore((s) => s.setOrigin);
@@ -176,7 +185,7 @@ const MainLayout = () => {
         animate={{ width: sidebarWidth }}
         initial={false}
         transition={{ type: 'spring', stiffness: 380, damping: 36, mass: 0.8 }}
-        className={`hidden lg:flex flex-col fixed top-0 left-0 h-screen border-r border-border-default z-30 ${blurCls} overflow-visible`}
+        className="hidden lg:flex flex-col fixed top-0 left-0 h-screen border-r border-border-default z-30 overflow-visible"
         style={{
           background: 'var(--sidebar-bg)',
           backdropFilter: 'var(--sidebar-blur)',

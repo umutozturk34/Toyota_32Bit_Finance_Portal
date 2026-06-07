@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import IconButton from '../buttons/IconButton';
+import useMediaQuery from '../../hooks/useMediaQuery';
 
 const cx = (...parts) => parts.filter(Boolean).join(' ');
 
@@ -31,7 +32,7 @@ export default function SideDrawer({
   const { t } = useTranslation();
   const closeText = closeLabel ?? t('common.close');
   const sideConfig = SIDES[side] ?? SIDES.right;
-  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
+  const isMobile = useMediaQuery('(max-width: 639px)');
   const resolvedWidth = isMobile ? '100vw' : width;
   return (
     <AnimatePresence>

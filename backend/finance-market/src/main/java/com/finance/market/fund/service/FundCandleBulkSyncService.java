@@ -41,6 +41,10 @@ public class FundCandleBulkSyncService {
     private final ZoneId appZone;
     private final FundProperties fundProperties;
 
+    /**
+     * Wires dependencies, derives the {@link WindowingPolicy} from fund configuration, and resolves
+     * the application timezone used to compute business days.
+     */
     public FundCandleBulkSyncService(FundRepository fundRepository,
                                      FundCandleRepository fundCandleRepository,
                                      TrackedAssetQueryService trackedAssetQueryService,
@@ -58,6 +62,7 @@ public class FundCandleBulkSyncService {
         this.fundProperties = fundProperties;
     }
 
+    /** Bulk-syncs candles for every tracked fund, processing BYF and YAT fund types separately. */
     public void refreshAllCandles() {
         log.info("Starting fund candle update (bulk strategy)");
         long byfStart = System.currentTimeMillis();

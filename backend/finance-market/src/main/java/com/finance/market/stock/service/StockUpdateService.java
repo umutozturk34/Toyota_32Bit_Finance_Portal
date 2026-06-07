@@ -51,6 +51,12 @@ public class StockUpdateService implements MarketRefresher {
         return MarketType.STOCK;
     }
 
+    /**
+     * Full BIST refresh cycle: first auto-tracks newly listed İş Yatırım tickers, then updates every
+     * tracked stock from Yahoo in a batch where per-symbol failures are isolated and counted.
+     *
+     * @throws com.finance.common.exception.BusinessException if no BIST stocks are configured for tracking
+     */
     @Override
     public void refreshAll() {
         discoverAndTrack();
@@ -75,6 +81,7 @@ public class StockUpdateService implements MarketRefresher {
         BatchLogHelper.logSummaryWithMetric(log, "Stock update", result, "candles", totalCandles[0]);
     }
 
+    /** Refreshes a single stock by code; the code is upper-normalized first and blank codes are no-ops. */
     @Override
     public void refresh(String code) {
         String normalized = CodeNormalizer.upper(code);
@@ -82,6 +89,7 @@ public class StockUpdateService implements MarketRefresher {
         snapshotProcessor.updateOne(normalized);
     }
 
+    /** Whether a stock with the given code is already known to the snapshot store. */
     public boolean exists(String code) {
         return snapshotProcessor.exists(code);
     }

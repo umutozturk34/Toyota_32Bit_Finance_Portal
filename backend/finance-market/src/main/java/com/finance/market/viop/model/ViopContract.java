@@ -131,6 +131,13 @@ public class ViopContract extends BaseAsset {
     @Column(name = "active", nullable = false)
     private boolean active;
 
+    /**
+     * Rescales every monetary/price field plus the derived change amount and percent to the given
+     * decimal scale in place. {@code strikePrice} is included (relevant for options); contract
+     * metadata such as size, margin and tick size is left untouched.
+     *
+     * @param scale target decimal scale to apply
+     */
     @Override
     public void scaleFields(int scale) {
         this.lastPrice = scaleValue(this.lastPrice, scale);
@@ -148,6 +155,7 @@ public class ViopContract extends BaseAsset {
         setChangePercent(scaleValue(getChangePercent(), scale));
     }
 
+    /** Asset code used by the {@link BaseAsset} contract; for a VIOP contract this is its {@code symbol}. */
     @Override
     public String getCode() {
         return symbol;
@@ -177,6 +185,7 @@ public class ViopContract extends BaseAsset {
         return Currency.viopQuoteCurrencyOf(symbol).name();
     }
 
+    /** Human-readable label, preferring the explicit display name, then the base name, then the raw symbol. */
     @Override
     public String resolveDisplayName() {
         return firstNonBlank(displayName, getName(), symbol);

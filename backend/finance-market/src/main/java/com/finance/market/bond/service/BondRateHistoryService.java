@@ -47,6 +47,10 @@ public class BondRateHistoryService {
     private final BigDecimal faceValue;
     private final int daysInYear;
 
+    /**
+     * Unpacks the classification/yield tuning constants (auction and CPI-fixed thresholds, face value,
+     * day-count) from {@link BondProperties} into immutable fields so they need not be re-read per bond.
+     */
     public BondRateHistoryService(BondMapper bondMapper,
                                   BondRepository bondRepository,
                                   BondRateHistoryRepository rateHistoryRepository,
@@ -68,6 +72,15 @@ public class BondRateHistoryService {
         this.daysInYear = bondProperties.getDaysInYear();
     }
 
+    /**
+     * Processes a batch of bond snapshots in three passes: upsert each bond, gap-fill rate history
+     * (fetched in bulk from each bond's last stored date, or maturity start when new), then append
+     * today's rate, classify the bond type, compute its yield and refresh the cache. Per-bond failures
+     * in any pass are logged and skipped so one bad bond cannot abort the batch. No-op for a null/empty
+     * batch.
+     *
+     * @param now timestamp stamped on upserted bonds for this run
+     */
     public void processBatch(List<BondSnapshotDto> batch, LocalDateTime now) {
         if (batch == null || batch.isEmpty()) return;
         LocalDate today = LocalDate.now();

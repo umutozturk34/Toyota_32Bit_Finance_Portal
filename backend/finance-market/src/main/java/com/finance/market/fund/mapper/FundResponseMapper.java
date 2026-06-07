@@ -16,14 +16,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
+/**
+ * MapStruct mapper that exposes fund entities through the unified market API surface. It maps
+ * {@link Fund} to {@link MarketAssetResponse} and {@link FundCandle} history to
+ * {@link FundCandleResponse}, and supplies the fund-specific {@link FundMetadata} via the
+ * {@link MarketMetadataBuilder} contract. Building metadata also reads the fund's asset-class
+ * allocation breakdown from {@code allocationRepository}.
+ */
 @Mapper(componentModel = "spring")
 public abstract class FundResponseMapper implements MarketMetadataBuilder<Fund, FundMetadata> {
 
     @Autowired
     protected FundAllocationRepository allocationRepository;
 
+    /** Maps fund NAV history to candle responses, preserving order. */
     public abstract List<FundCandleResponse> toFundCandleResponses(List<FundCandle> candles);
 
+    /**
+     * Maps a fund entity to the unified market-asset response, renaming code/price fields, tagging
+     * the asset {@code type} as {@code FUND}, and nesting fund-specific fields under {@code metadata}.
+     * {@code changeAmount} and {@code image} are intentionally left unset for funds.
+     */
     @Mapping(target = "code", source = "fundCode")
     @Mapping(target = "price", source = "price")
     @Mapping(target = "changeAmount", ignore = true)
@@ -33,8 +46,15 @@ public abstract class FundResponseMapper implements MarketMetadataBuilder<Fund, 
     @Mapping(target = "metadata", source = "fund", qualifiedByName = "metadata")
     public abstract MarketAssetResponse toMarketAssetResponse(Fund fund);
 
+    /** Maps a list of funds to unified market-asset responses, preserving order. */
     public abstract List<MarketAssetResponse> toMarketAssetResponses(List<Fund> funds);
 
+    /**
+     * Builds the fund-specific metadata block nested inside the unified asset response, including
+     * type, portfolio/investor figures, risk, category ranking and trailing returns, plus the
+     * asset-class allocation breakdown loaded (ordered by percentage descending) from
+     * {@code allocationRepository}. Registered under the {@code "metadata"} qualifier.
+     */
     @Override
     @Named("metadata")
     public FundMetadata buildMetadata(Fund fund) {

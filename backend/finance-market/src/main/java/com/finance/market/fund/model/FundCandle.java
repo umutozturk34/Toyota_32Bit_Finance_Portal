@@ -69,6 +69,11 @@ public class FundCandle {
     @Column(name = "portfolio_size", precision = 19, scale = 2)
     private BigDecimal portfolioSize;
 
+    /**
+     * Identity equality based solely on the persisted {@code id}. A candle with a null id (not yet
+     * persisted) is never equal to another instance, which keeps transient entities distinct in
+     * collections before they receive database identifiers.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -76,6 +81,11 @@ public class FundCandle {
         return id != null && Objects.equals(id, that.id);
     }
 
+    /**
+     * Returns a constant, class-derived hash so an entity's bucket stays stable across the
+     * transient-to-persistent transition (before and after an id is assigned), consistent with the
+     * id-based {@link #equals(Object)} contract.
+     */
     @Override
     public int hashCode() {
         return getClass().hashCode();
@@ -94,6 +104,14 @@ public class FundCandle {
         return value != null ? value.setScale(scale, RoundingMode.HALF_UP) : null;
     }
 
+    /**
+     * Rescales all numeric fields, applying the caller-supplied {@code scale} to the
+     * bulletin price while keeping the fixed precision of the other fields. Unlike
+     * {@link #applyScaling(FundType)}, this is type-agnostic and never nulls out the
+     * bulletin price or investor count.
+     *
+     * @param scale the decimal scale to apply to the bulletin price
+     */
     public void scaleFields(int scale) {
         this.price = scaleValue(this.price, 6);
         this.bulletinPrice = scaleValue(this.bulletinPrice, scale);

@@ -55,6 +55,10 @@ public class CryptoUpdateService implements MarketRefresher {
     private final int binancePageSize;
     private final ZoneId appZone;
 
+    /**
+     * Wires dependencies and snapshots the tuning knobs (history span, healthy-candle threshold,
+     * batch sample floor, Binance page size, app timezone) from configuration.
+     */
     public CryptoUpdateService(CoinGeckoClient coinGeckoClient,
                                CryptoMapper cryptoMapper,
                                CryptoRepository cryptoRepository,
@@ -87,12 +91,14 @@ public class CryptoUpdateService implements MarketRefresher {
         return MarketType.CRYPTO;
     }
 
+    /** Refreshes every tracked coin's snapshot, then its candle history. */
     @Override
     public void refreshAll() {
         snapshotProcessor.refreshAll();
         refreshAllCandles();
     }
 
+    /** Refreshes one coin's snapshot and candles; no-op on a blank id. */
     @Override
     public void refresh(String coinId) {
         snapshotProcessor.refreshOne(coinId);
@@ -102,10 +108,12 @@ public class CryptoUpdateService implements MarketRefresher {
         log.info("Refreshed tracked crypto candles for {}", normalizedId);
     }
 
+    /** @return whether a coin with the given CoinGecko id is known */
     public boolean exists(String code) {
         return snapshotProcessor.exists(code);
     }
 
+    /** @return whether a coin resolvable by either its CoinGecko id or Binance symbol is known */
     public boolean exists(String coinId, String binanceSymbol) {
         return snapshotProcessor.exists(coinId, binanceSymbol);
     }

@@ -23,6 +23,11 @@ public class ViopMetadataMapper {
     private static final DateTimeFormatter EXPIRY_FMT =
             DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss", new Locale.Builder().setLanguage("tr").build());
 
+    /**
+     * Builds a fully specified futures {@link ViopContractSpec} from an İş Yatırım future metadata
+     * record, deriving a display name from the underlying and expiry and parsing the Turkish-formatted
+     * expiry, contract size and initial margin (each null when unparseable).
+     */
     public ViopContractSpec toFutureSpec(ViopFutureMetadataDto dto) {
         return ViopContractSpec.future(
                 dto.symbol(),
@@ -36,6 +41,13 @@ public class ViopMetadataMapper {
         );
     }
 
+    /**
+     * Builds an option template {@link ViopContractSpec} from option metadata. The result is a
+     * template, not a tradable contract: expiry, margin and strike are left null (filled in per
+     * instrument elsewhere). The underlying code falls back to the raw underlying when blank, the
+     * contract size is extracted from the free-text size description, and the side is parsed from
+     * the option type.
+     */
     public ViopContractSpec toOptionTemplateSpec(ViopOptionMetadataDto dto) {
         return ViopContractSpec.option(
                 dto.sampleCode(),

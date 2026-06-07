@@ -9,6 +9,13 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Request payload to create or update a tracked asset. The asset is identified by the required
+ * {@link TrackedAssetType} and asset code; remaining fields are optional overrides such as the
+ * display name, the Binance trading symbol used for crypto pricing, the {@link StockSegment}, and
+ * the {@code indexAsset}/{@code compareOnly} flags that govern how the asset surfaces in the UI.
+ * {@code sortOrder} controls list position and defaults to {@code 0}.
+ */
 @Getter
 @Setter
 @RequiredArgsConstructor

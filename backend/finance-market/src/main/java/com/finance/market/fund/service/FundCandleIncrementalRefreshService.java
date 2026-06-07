@@ -42,6 +42,10 @@ public class FundCandleIncrementalRefreshService {
     private final WindowingPolicy windowing;
     private final ZoneId appZone;
 
+    /**
+     * Wires dependencies, derives the {@link WindowingPolicy} from fund configuration, and resolves
+     * the application timezone used to compute business days.
+     */
     public FundCandleIncrementalRefreshService(TefasClient tefasClient,
                                                FundRepository fundRepository,
                                                FundCandleRepository fundCandleRepository,
@@ -62,6 +66,11 @@ public class FundCandleIncrementalRefreshService {
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 
+    /**
+     * Refreshes one fund's candles, bootstrapping its snapshot first if unknown. Fetches the full
+     * history when under-populated, otherwise only the tail since the last stored candle, then
+     * recomputes the change percent on the latest candle. No-op on a blank code or unavailable fund.
+     */
     public void refresh(String fundCode) {
         String normalized = CodeNormalizer.upper(fundCode);
         if (normalized.isBlank()) return;

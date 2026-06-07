@@ -85,6 +85,7 @@ public class ForexEvdsMapper {
         return null;
     }
 
+    /** Returns the date of the first (oldest) row in the response, or null when empty/unparseable. */
     public LocalDate extractEarliestDate(EvdsDataResponse response) {
         if (response.items() == null || response.items().isEmpty()) return null;
         LocalDateTime dt = parseCandleDate(response.items().getFirst());
@@ -133,6 +134,10 @@ public class ForexEvdsMapper {
         return code.replace('.', '_');
     }
 
+    /**
+     * Carrier for a single EVDS row's raw (unscaled, not yet divided by quote unit) prices,
+     * as produced by {@link #extractLatestRow}. Any field may be null when that price is absent.
+     */
     public record ItemRow(
             LocalDateTime candleDate,
             BigDecimal buyingRaw,

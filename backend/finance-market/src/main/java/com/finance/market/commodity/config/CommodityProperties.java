@@ -12,6 +12,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Externalized configuration ({@code app.commodity.*}) for commodity market data.
+ *
+ * <p>Defines the Yahoo chart fetch window ({@code chartRange}/{@code chartInterval}),
+ * the minimum sample size for batch processing, and the sort order applied to
+ * synthetic derivative instruments. {@code yahooSymbolOverrides} maps internal
+ * commodity codes to Yahoo tickers (e.g. {@code XAUTRY} → {@code GC=F}), while
+ * {@code derivatives} declares computed instruments such as gram-priced gold/silver
+ * derived from an ounce-priced source via {@link DerivativeRule}.
+ */
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "app.commodity")
@@ -34,6 +44,12 @@ public class CommodityProperties {
             new DerivativeRule("XAGTRY", "XAGTRYG", new BigDecimal("31.1035"), "Gümüş (Gram)", "Gram Gümüş")
     ));
 
+    /**
+     * Declares a synthetic commodity derived from a source instrument by a fixed
+     * divisor (e.g. converting an ounce-priced metal to a gram price). Carries the
+     * source/derivative codes, the conversion {@code divisor}, and English/Turkish
+     * display names.
+     */
     @Getter
     @Setter
     @NoArgsConstructor

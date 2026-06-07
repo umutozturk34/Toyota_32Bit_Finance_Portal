@@ -15,6 +15,12 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * A daily OHLCV candle for a commodity, unique per (commodity code, candle date) and owned by the
+ * referenced {@link Commodity}. Inherits its open/high/low/close/volume and {@code candleDate} from
+ * {@link BaseCandle}; the {@code commodityCode} column is read-only (the {@code commodity}
+ * association owns the FK). Audited via {@code createdAt}/{@code updatedAt} timestamps.
+ */
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "commodity_candles",
@@ -56,6 +62,11 @@ public class CommodityCandle extends BaseCandle {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    /**
+     * Identity equality by persisted primary key: two instances are equal only once both hold a
+     * non-null {@code id} and those ids match, so transient (unsaved) candles are never equal and
+     * Hibernate proxies compare correctly.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -63,6 +74,10 @@ public class CommodityCandle extends BaseCandle {
         return id != null && Objects.equals(id, that.id);
     }
 
+    /**
+     * Returns a constant (class-based) hash so an entity's hash stays stable across its transient and
+     * persisted states, consistent with the id-based {@link #equals(Object)} contract.
+     */
     @Override
     public int hashCode() {
         return getClass().hashCode();

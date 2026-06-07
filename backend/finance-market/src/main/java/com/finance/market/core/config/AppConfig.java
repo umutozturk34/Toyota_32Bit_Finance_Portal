@@ -8,12 +8,23 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.Executor;
 
+/**
+ * Core application configuration for the market module, providing shared
+ * infrastructure beans such as the async task executor.
+ */
 @Configuration
 @RequiredArgsConstructor
 public class AppConfig {
 
     private final AppProperties appProperties;
 
+    /**
+     * Defines the {@code taskExecutor} backing {@code @Async} work, sized from
+     * {@code app.async.*} (core/max pool, queue capacity) with an {@code async-}
+     * thread-name prefix for easier diagnostics.
+     *
+     * @return the initialized thread-pool executor
+     */
     @Bean(name = "taskExecutor")
     public Executor taskExecutor() {
         AppProperties.Async async = appProperties.getAsync();

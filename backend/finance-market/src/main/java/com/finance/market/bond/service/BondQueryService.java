@@ -45,6 +45,13 @@ public class BondQueryService {
     private final BondResponseMapper bondResponseMapper;
     private final MarketCacheService<Bond> bondCacheService;
 
+    /**
+     * Paged bond search. A non-blank {@code search} matches the series or ISIN code (contains); a non-blank
+     * {@code bondType} filters by type. Sorting falls back to simple yield when no sort field is given; the
+     * page size is clamped to the configured default/max bounds.
+     *
+     * @throws com.finance.common.exception.BadRequestException if {@code bondType} is not a valid type
+     */
     public PagedResponse<BondResponse> search(String search, String bondType, String sort, String direction, int page, Integer size) {
         Specification<Bond> spec = (root, query, cb) -> cb.conjunction();
 
@@ -71,6 +78,11 @@ public class BondQueryService {
         return PagedResponse.of(bonds, page, resolvedSize, result.getTotalElements());
     }
 
+    /**
+     * Single bond by series code, served from the snapshot cache.
+     *
+     * @throws ResourceNotFoundException if no bond is cached for the series code
+     */
     public BondResponse getByCode(String seriesCode) {
         Bond bond = bondCacheService.getSnapshot(seriesCode);
         if (bond == null) {
@@ -79,12 +91,16 @@ public class BondQueryService {
         return bondResponseMapper.toBondResponse(bond);
     }
 
+    /**
+     * Coupon-rate history for the bond (by ISIN), ascending by date, from the period's start date to now.
+     */
     public List<BondRateResponse> getRateHistory(String isinCode, CandlePeriod period) {
         List<BondRateHistory> history = bondRateHistoryRepository
                 .findByIsinCodeAndRateDateAfterOrderByRateDateAsc(isinCode, period.toStartDate());
         return bondResponseMapper.toRateResponses(history);
     }
 
+    /** Bond counts grouped by type (for type-filter facet badges). */
     public List<GroupCount> getTypeCounts() {
         return bondRepository.countByBondType().stream()
                 .map(row -> new GroupCount(row[0].toString(), ((Number) row[1]).longValue()))

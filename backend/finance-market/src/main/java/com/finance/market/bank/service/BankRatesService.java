@@ -28,6 +28,10 @@ public class BankRatesService {
     private final BankExchangeRateRepository repository;
     private BankRatesService self;
 
+    /**
+     * The {@code @Lazy} self-reference is injected so the per-row {@code REQUIRES_NEW} upsert is invoked
+     * through the Spring proxy (an internal {@code this} call would bypass the transaction advice).
+     */
     public BankRatesService(List<BankRateProvider> providers,
                              BankExchangeRateRepository repository,
                              @Lazy BankRatesService self) {
@@ -36,6 +40,13 @@ public class BankRatesService {
         this.self = self;
     }
 
+    /**
+     * Fetches and upserts rates from every provider, stamping all rows with a single capture timestamp.
+     * Provider fetch failures and individual bad rows are logged and skipped so the batch always makes
+     * forward progress.
+     *
+     * @return the total number of rows successfully persisted across all providers
+     */
     public int refreshAll() {
         LocalDateTime now = LocalDateTime.now();
         int total = 0;
@@ -87,16 +98,19 @@ public class BankRatesService {
         repository.save(row);
     }
 
+    /** All banks' latest rates for the currency, ordered by bank name. */
     @Transactional(readOnly = true)
     public List<BankExchangeRate> findByCurrency(String currencyCode) {
         return repository.findByCurrencyCodeOrderByBankNameAsc(currencyCode);
     }
 
+    /** All rates of the given asset kind (currency vs. gold), ordered by currency then bank name. */
     @Transactional(readOnly = true)
     public List<BankExchangeRate> findByKind(BankRateAssetKind kind) {
         return repository.findByAssetKindOrderByCurrencyCodeAscBankNameAsc(kind);
     }
 
+    /** Distinct currency codes that have at least one rate of the given asset kind (for filter options). */
     @Transactional(readOnly = true)
     public List<String> listCurrencyCodes(BankRateAssetKind kind) {
         return repository.findDistinctCurrencyCodesByAssetKind(kind);

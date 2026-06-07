@@ -39,6 +39,10 @@ public class CommodityUpdateService implements MarketRefresher {
     private final YahooSymbolResolver yahooSymbolResolver;
     private final int batchMinSample;
 
+    /**
+     * Reads the minimum-sample batch threshold from {@link CommodityProperties} (below which a batch run
+     * is treated as a failed sample) and stores the collaborators for the refresh pipeline.
+     */
     public CommodityUpdateService(CommoditySnapshotProcessor snapshotProcessor,
                                   ExchangeRateProvider exchangeRateProvider,
                                   PreciousMetalDerivativeCalculator derivativeCalculator,
@@ -53,11 +57,20 @@ public class CommodityUpdateService implements MarketRefresher {
         this.batchMinSample = commodityProperties.getBatchMinSample();
     }
 
+    /** Identifies this refresher as handling {@link MarketType#COMMODITY}. */
     @Override
     public MarketType getMarketType() {
         return MarketType.COMMODITY;
     }
 
+    /**
+     * Refreshes every tracked commodity that has a Yahoo symbol mapping. Loads the USD/TRY history once
+     * and shares it across all items (TRY prices are synthesised from USD). No-op when no commodities are
+     * tracked; per-item failures are isolated by the batch runner.
+     *
+     * @throws BusinessException if commodities are tracked but none have a Yahoo symbol mapping
+     * @throws ExternalApiException if USD/TRY rates are unavailable (TRY prices cannot be synthesised)
+     */
     @Override
     public void refreshAll() {
         List<String> enabledCodes = trackedAssetQueryService.getCodes(TrackedAssetType.COMMODITY);
@@ -95,11 +108,13 @@ public class CommodityUpdateService implements MarketRefresher {
         BatchLogHelper.logSummary(log, "Commodity sync", result);
     }
 
+    /** Refreshes a single commodity by code, delegating to the snapshot processor. */
     @Override
     public void refresh(String code) {
         snapshotProcessor.refreshOne(code);
     }
 
+    /** Whether a commodity with the given code is currently persisted. */
     public boolean exists(String code) {
         return snapshotProcessor.exists(code);
     }

@@ -42,6 +42,10 @@ public class FundUpdateService implements MarketRefresher {
         return MarketType.FUND;
     }
 
+    /**
+     * Runs the full fund refresh in order: snapshots, bulk candle sync, change-percent recompute,
+     * returns/risk enrichment, then allocation enrichment as of today.
+     */
     public void refreshAll() {
         long totalStart = System.currentTimeMillis();
         snapshotProcessor.refreshAll();
@@ -52,6 +56,10 @@ public class FundUpdateService implements MarketRefresher {
         log.info("[TIMING] Total fund update took {}s", (System.currentTimeMillis() - totalStart) / 1000);
     }
 
+    /**
+     * Refreshes one fund: snapshot, incremental candles, then detail/returns/allocation enrichment.
+     * Each enrichment step is isolated so a failure in one is logged and does not block the others.
+     */
     @Override
     public void refresh(String fundCode) {
         snapshotProcessor.refreshOne(fundCode);
@@ -73,6 +81,7 @@ public class FundUpdateService implements MarketRefresher {
         }
     }
 
+    /** @return whether a fund with the given code is known */
     public boolean exists(String fundCode) {
         return snapshotProcessor.exists(fundCode);
     }

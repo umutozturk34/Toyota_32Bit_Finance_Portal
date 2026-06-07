@@ -23,5 +23,13 @@ public enum MacroFrequency {
         }
     };
 
+    /**
+     * Decides whether a fresh observation is overdue for this cadence. A {@code null}
+     * {@code lastObserved} is always considered stale.
+     *
+     * @param lastObserved date of the most recent observation, or {@code null} if none
+     * @param today        the reference date to measure staleness against
+     * @return {@code true} if the gap since the last observation exceeds what this frequency permits
+     */
     public abstract boolean isStale(LocalDate lastObserved, LocalDate today);
 }

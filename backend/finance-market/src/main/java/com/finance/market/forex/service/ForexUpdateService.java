@@ -56,6 +56,11 @@ public class ForexUpdateService implements MarketRefresher {
         return MarketType.FOREX;
     }
 
+    /**
+     * Runs the full forex refresh: resolve active EVDS currencies, smoke-filter out series with no
+     * recent data, auto-track survivors, batch-update snapshots, back-fill the candle gap below the
+     * snapshot window, and finally piggyback a bank-rate refresh. Each phase degrades gracefully.
+     */
     @Override
     public void refreshAll() {
         List<ForexSerieMetadata> candidates = currencyResolver.resolveActive(
@@ -109,11 +114,16 @@ public class ForexUpdateService implements MarketRefresher {
         }
     }
 
+    /** Refreshes the latest snapshot for a single currency. */
     @Override
     public void refresh(String currencyCode) {
         snapshotProcessor.refreshOne(currencyCode);
     }
 
+    /**
+     * @return whether EVDS currently publishes the given currency code as an active buying series;
+     *         {@code false} for blank input
+     */
     public boolean isActiveCurrency(String code) {
         if (code == null || code.isBlank()) return false;
         return currencyResolver.isActiveCurrencyCode(evdsClient.fetchDovizSerieList(), code);

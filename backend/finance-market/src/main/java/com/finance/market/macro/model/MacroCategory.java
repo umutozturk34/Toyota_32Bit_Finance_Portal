@@ -14,6 +14,7 @@ public enum MacroCategory {
         this.instrumentType = instrumentType;
     }
 
+    /** The {@link MarketType} this category's indicators are persisted/queried as. */
     public MarketType instrumentType() {
         return instrumentType;
     }

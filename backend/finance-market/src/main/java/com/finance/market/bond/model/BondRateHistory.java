@@ -54,6 +54,11 @@ public class BondRateHistory {
     @Column(name = "price", precision = 14, scale = 4)
     private BigDecimal price;
 
+    /**
+     * Identity equality by persisted primary key: two instances are equal only once both hold a
+     * non-null {@code id} and those ids match. Transient (unsaved) rows are therefore never equal,
+     * which keeps Hibernate proxies and pre-persist entities from colliding.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -61,6 +66,10 @@ public class BondRateHistory {
         return id != null && Objects.equals(id, that.id);
     }
 
+    /**
+     * Returns a constant (class-based) hash so an entity's hash is stable across its transient and
+     * persisted states, consistent with the id-based {@link #equals(Object)} contract.
+     */
     @Override
     public int hashCode() {
         return getClass().hashCode();

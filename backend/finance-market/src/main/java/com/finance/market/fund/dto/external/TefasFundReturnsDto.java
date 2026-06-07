@@ -5,6 +5,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
 
+/**
+ * External TEFAS API payload carrying a fund's identity, category, tradability flag,
+ * trailing-period returns (1m/3m/6m/1y/YTD/3y/5y, as percentages), and risk rating.
+ * Turkish source field names are mapped to English accessors via {@link JsonProperty};
+ * unknown fields are ignored so the contract tolerates upstream additions.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record TefasFundReturnsDto(
         @JsonProperty("fonKodu") String fundCode,

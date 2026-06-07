@@ -27,6 +27,15 @@ public class MarketCacheService<T extends BaseAsset> {
     private final String entityName;
     private final Function<String, Optional<T>> snapshotFinder;
 
+    /**
+     * Wires the cache for a single asset type.
+     *
+     * @param snapshotPrefix key namespace prepended to each asset code
+     * @param ttl            expiry applied to every cached entry
+     * @param snapshotType   target type used to deserialize cached values
+     * @param entityName     human-readable label used in not-found messages and logs
+     * @param snapshotFinder source-of-truth loader invoked on a cache miss
+     */
     public MarketCacheService(RedisTemplate<String, Object> redisTemplate,
                               ObjectMapper objectMapper,
                               String snapshotPrefix,
@@ -63,6 +72,7 @@ public class MarketCacheService<T extends BaseAsset> {
         throw new ResourceNotFoundException(entityName + " not found: " + key);
     }
 
+    /** Evicts the cached snapshot for {@code key}; silent when nothing was cached. */
     public void clearCache(String key) {
         String cacheKey = snapshotPrefix + key;
         Boolean deleted = redisTemplate.delete(cacheKey);
@@ -71,6 +81,7 @@ public class MarketCacheService<T extends BaseAsset> {
         }
     }
 
+    /** Writes (or overwrites) the snapshot for {@code key}, resetting its TTL. */
     public void putSnapshot(String key, T entity) {
         String cacheKey = snapshotPrefix + key;
         redisTemplate.opsForValue().set(cacheKey, entity, ttl);

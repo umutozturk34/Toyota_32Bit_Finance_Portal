@@ -22,7 +22,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/** A single observed value of a macro indicator on a date; unique per (indicator, date). */
+/**
+ * JPA entity for a single observed value of a {@link MacroIndicator} on a calendar date,
+ * forming the indicator's historical time series. Each row holds the observation date and value,
+ * is uniquely keyed by (indicator, observed_at) so the same date cannot be ingested twice, and
+ * holds a lazy many-to-one reference back to its owning indicator.
+ */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)

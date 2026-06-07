@@ -27,14 +27,30 @@ public class YahooClientMapper {
 
     private final ZoneId appZone;
 
+    /**
+     * Resolves the application timezone used to convert Yahoo epoch timestamps into local dates.
+     *
+     * @param appProperties application config supplying the configured timezone id
+     */
     public YahooClientMapper(AppProperties appProperties) {
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 
+    /**
+     * Maps a Yahoo chart result into a combined quote-plus-candles bundle.
+     *
+     * @param result         raw Yahoo chart result
+     * @param truncateToDays whether candle timestamps are floored to day granularity
+     * @return the quote DTO paired with the mapped candle series
+     */
     public YahooChartFullResult<YahooQuoteDto> toFullResult(Result result, boolean truncateToDays) {
         return new YahooChartFullResult<>(toQuoteDto(result), toCandleDtos(result, truncateToDays));
     }
 
+    /**
+     * Extracts the latest-quote DTO from a chart result, resolving the previous close and opening
+     * price from metadata with fallbacks to the embedded quote series.
+     */
     public YahooQuoteDto toQuoteDto(Result result) {
         var meta = result.meta();
         Quote firstQuote = result.firstQuote();
@@ -50,6 +66,17 @@ public class YahooClientMapper {
         );
     }
 
+    /**
+     * Maps the quote series of a chart result into candle DTOs. Returns an empty list when there
+     * are no timestamps or quote data. For each bar, fully-empty rows are skipped; a missing close
+     * falls back to the regular-market price (and the bar is skipped if that is also absent), and
+     * missing open/high/low default to the resolved close. Timestamps are converted to the app
+     * timezone and optionally truncated to whole days; volume is matched positionally when present.
+     *
+     * @param result         raw Yahoo chart result
+     * @param truncateToDays whether to floor each candle timestamp to day granularity
+     * @return the mapped, gap-filled candle series in source order
+     */
     public List<YahooCandleDto> toCandleDtos(Result result, boolean truncateToDays) {
         Quote quote = result.firstQuote();
         if (result.timestamp() == null || result.timestamp().isEmpty() || quote == null) {

@@ -5,6 +5,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
 
+/**
+ * External TEFAS API payload describing a fund's static profile: identity (code,
+ * name, ISIN, KAP link), tradability status, trading limits and commissions, daily
+ * trade window, settlement valors (sell/buyback), interest content, and risk rating.
+ * Turkish source field names are mapped to English accessors via {@link JsonProperty};
+ * unknown fields are ignored so the contract tolerates upstream additions.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record TefasFundProfileDto(
         @JsonProperty("fonKodu") String fundCode,

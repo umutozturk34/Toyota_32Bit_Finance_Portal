@@ -44,16 +44,24 @@ public class Stock extends BaseAsset {
     @Enumerated(EnumType.STRING)
     private StockSegment stockSegment;
 
+    /** Asset code used by the {@link BaseAsset} contract; for stocks this is the BIST {@code symbol}. */
     @Override
     public String getCode() {
         return symbol;
     }
 
+    /** Stocks are quoted natively in TRY, so the TRY price is simply {@code currentPrice}. */
     @Override
     public BigDecimal getPriceTry() {
         return currentPrice;
     }
 
+    /**
+     * Rescales the monetary price fields (current, previous close, open, day high/low) to the given
+     * decimal scale in place; the integer {@code volume} is left untouched.
+     *
+     * @param scale target decimal scale to apply to each price field
+     */
     @Override
     public void scaleFields(int scale) {
         this.currentPrice = scaleValue(this.currentPrice, scale);

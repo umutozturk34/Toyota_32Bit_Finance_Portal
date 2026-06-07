@@ -25,6 +25,7 @@ public enum ViopCategory {
         this.underlyingClass = underlyingClass;
     }
 
+    /** The broader underlying class (pay, index, currency, metal) this fine-grained category rolls up to. */
     public ViopUnderlyingClass underlyingClass() {
         return underlyingClass;
     }

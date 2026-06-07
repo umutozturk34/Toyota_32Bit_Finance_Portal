@@ -34,6 +34,11 @@ public class ViopDataService implements MarketRefresher {
         return MarketType.VIOP;
     }
 
+    /**
+     * Runs the full VIOP refresh pipeline in order: apply live snapshots, deactivate contracts that
+     * no longer trade, enrich contract specs and any missing prices, expire matured contracts, and
+     * sync daily candles. Each stage is independently resilient to per-symbol upstream failures.
+     */
     @Override
     public void refreshAll() {
         Set<String> activeSymbols = refreshLiveSnapshots();
@@ -44,6 +49,10 @@ public class ViopDataService implements MarketRefresher {
         syncCandlesFromLastStored();
     }
 
+    /**
+     * Refreshes a single contract: applies its latest snapshot, then best-effort syncs its candles up
+     * to today. A candle-refresh failure is logged at debug and swallowed so the snapshot still lands.
+     */
     @Override
     public void refresh(String code) {
         ViopQuoteSnapshot snapshot = marketData.fetchSnapshot(code);
@@ -66,12 +75,25 @@ public class ViopDataService implements MarketRefresher {
         return entityWriter.applyBulkSnapshots(snapshots);
     }
 
+    /**
+     * Marks inactive every stored contract whose symbol is absent from the set that traded in this
+     * cycle, pruning the active universe to what the market currently quotes.
+     *
+     * @param activeSymbols symbols that produced a live snapshot this cycle
+     * @return the number of contracts deactivated
+     */
     public int deactivateStale(Set<String> activeSymbols) {
         int deactivated = entityWriter.deactivateNotIn(activeSymbols);
         log.info("VIOP: {} non-trading contracts deactivated", deactivated);
         return deactivated;
     }
 
+    /**
+     * Augments active contracts with futures contract specifications fetched from the VadeliIslemler
+     * feed (underlying, expiry, multipliers, etc.).
+     *
+     * @return the number of contracts whose specs were updated
+     */
     public int enrichSpecs() {
         List<ViopContractSpec> futures = marketData.fetchFutureContractSpecs();
         int enriched = entityWriter.enrichSpecs(futures);
@@ -96,6 +118,11 @@ public class ViopDataService implements MarketRefresher {
         return enriched;
     }
 
+    /**
+     * Marks as expired every contract whose maturity date is on or before today.
+     *
+     * @return the number of contracts newly flagged expired
+     */
     public int sweepExpired() {
         return entityWriter.markExpired(LocalDate.now());
     }

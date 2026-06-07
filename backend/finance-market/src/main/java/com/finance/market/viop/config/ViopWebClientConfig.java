@@ -12,10 +12,19 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 
+/**
+ * Builds the {@link WebClient} used to fetch VİOP (Turkish derivatives) market data.
+ */
 @Configuration
 @EnableConfigurationProperties(ViopProperties.class)
 public class ViopWebClientConfig {
 
+    /**
+     * Creates the VİOP client configured from {@link ViopProperties}: connect and
+     * read/write timeouts derived from the request timeout, transparent gzip handling and
+     * redirect following, browser-like headers, and an enlarged in-memory buffer for
+     * sizeable JSON responses.
+     */
     @Bean
     public WebClient viopWebClient(ViopProperties properties) {
         HttpClient httpClient = HttpClient.create()

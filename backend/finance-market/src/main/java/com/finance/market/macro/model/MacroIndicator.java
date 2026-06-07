@@ -132,6 +132,10 @@ public class MacroIndicator {
         }
     }
 
+    /**
+     * Overwrites this indicator's configuration-driven definition fields (everything except identity
+     * and cached observation), so an existing row can be reconciled when its config entry changes.
+     */
     public void applyDefinition(String newLabel, MacroCategory newCategory, MacroUnit newUnit,
                                 MacroFrequency newFrequency, String newCurrency,
                                 DepositMaturity newMaturity, boolean nowProminent) {

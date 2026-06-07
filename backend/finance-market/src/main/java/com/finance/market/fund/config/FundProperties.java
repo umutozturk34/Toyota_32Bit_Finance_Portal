@@ -5,6 +5,14 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * Externalised configuration ({@code app.fund.*}) for fund (TEFAS) data ingestion.
+ *
+ * <p>Controls history depth and incremental refresh thresholds, TEFAS request shaping
+ * (page sizes, response-size limit, language, browser User-Agent) and the various
+ * look-back windows used for holiday, gap and allocation detection. The EOD cutover
+ * hour distinguishes same-day provisional NAVs from finalised ones.
+ */
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "app.fund")

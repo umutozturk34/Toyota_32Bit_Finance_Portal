@@ -34,34 +34,42 @@ public class TopMoversRedisService {
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
 
+    /** Replaces the cached top-gainers list for the given market. */
     public void updateGainers(MarketType type, List<MarketAssetResponse> gainers) {
         writeField(gainersField(type), gainers, "gainers " + type);
     }
 
+    /** Replaces the cached top-losers list for the given market. */
     public void updateLosers(MarketType type, List<MarketAssetResponse> losers) {
         writeField(losersField(type), losers, "losers " + type);
     }
 
+    /** Replaces the cached market-index list (a single market-agnostic field). */
     public void updateIndices(List<MarketAssetResponse> indices) {
         writeField(INDICES_FIELD, indices, "indices");
     }
 
+    /** @return cached top gainers for the market, or an empty list on miss/error */
     public List<MarketAssetResponse> getGainers(MarketType type) {
         return readField(gainersField(type), "gainers " + type);
     }
 
+    /** @return cached top losers for the market, or an empty list on miss/error */
     public List<MarketAssetResponse> getLosers(MarketType type) {
         return readField(losersField(type), "losers " + type);
     }
 
+    /** @return cached market-index list, or an empty list on miss/error */
     public List<MarketAssetResponse> getIndices() {
         return readField(INDICES_FIELD, "indices");
     }
 
+    /** @return every market's cached gainers, keyed by market type (markets absent on miss/error) */
     public Map<MarketType, List<MarketAssetResponse>> getAllGainers() {
         return readAllByType(GAINERS_SUFFIX);
     }
 
+    /** @return every market's cached losers, keyed by market type (markets absent on miss/error) */
     public Map<MarketType, List<MarketAssetResponse>> getAllLosers() {
         return readAllByType(LOSERS_SUFFIX);
     }

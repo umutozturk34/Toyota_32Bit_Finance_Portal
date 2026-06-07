@@ -28,7 +28,15 @@ public enum FundType {
         }
     };
 
+    /**
+     * Whether the raw bulletin price for this fund category is reported in a scaled form and must be
+     * unscaled before use. True for {@link #BYF}, false for {@link #YAT}.
+     */
     public abstract boolean scalesBulletinPrice();
 
+    /**
+     * Whether the raw investor count for this fund category is reported in a scaled form and must be
+     * unscaled before use. True for {@link #YAT}, false for {@link #BYF}.
+     */
     public abstract boolean scalesInvestorCount();
 }

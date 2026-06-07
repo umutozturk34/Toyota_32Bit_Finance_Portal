@@ -24,6 +24,7 @@ public enum ViopHistoryResolution {
         this.periodMinutes = periodMinutes;
     }
 
+    /** Bar length in minutes (e.g. {@code 60} for {@code H1}, {@code 1440} for {@code DAILY}). */
     public int periodMinutes() {
         return periodMinutes;
     }

@@ -84,6 +84,11 @@ public class TrackedAssetCommandService {
         codeCache.invalidate(type);
     }
 
+    /**
+     * Removes a tracked asset and invalidates the code cache.
+     *
+     * @throws ResourceNotFoundException if no asset of that type and code is tracked
+     */
     public void delete(TrackedAssetType type, String assetCode) {
         String normalizedCode = type.normalizeCode(assetCode);
         TrackedAsset entity = trackedAssetRepository
@@ -93,6 +98,11 @@ public class TrackedAssetCommandService {
         codeCache.invalidate(type);
     }
 
+    /**
+     * Reorders tracked assets by applying each item's sort order in one batch; no-op on empty input.
+     *
+     * @throws ResourceNotFoundException if any referenced asset code is not tracked
+     */
     public void updateSortOrders(TrackedAssetType type, List<TrackedAssetOrderItemRequest> items) {
         if (items == null || items.isEmpty()) {
             return;

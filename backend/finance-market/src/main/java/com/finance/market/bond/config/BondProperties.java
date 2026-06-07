@@ -7,6 +7,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.math.BigDecimal;
 
+/**
+ * Externalized configuration ({@code app.bond.*}) for Turkish government bond
+ * ingestion and analytics against the EVDS data provider.
+ *
+ * <p>Controls how bond series are fetched (batch sizes, the {@code bie_pydibs}
+ * data group, the per-request day window) and the thresholds/constants used to
+ * classify and value instruments: {@code rateThreshold}, {@code auctionThreshold}
+ * and {@code cpiFixedThreshold} drive instrument-type detection, while
+ * {@code faceValue} and {@code daysInYear} feed yield/price calculations.
+ */
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "app.bond")

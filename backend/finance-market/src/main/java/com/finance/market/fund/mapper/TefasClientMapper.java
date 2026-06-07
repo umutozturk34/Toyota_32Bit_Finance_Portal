@@ -11,12 +11,21 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
+/**
+ * MapStruct mapper translating a single TEFAS fund record from the external API shape
+ * ({@link TefasResponse.FundData}, Turkish field names) into the internal {@link TefasFundDto}.
+ * The fund's trade date is reinterpreted at start-of-day in the application timezone.
+ */
 @Mapper(componentModel = "spring")
 public abstract class TefasClientMapper {
 
     @Autowired
     protected AppProperties appProperties;
 
+    /**
+     * Maps one external TEFAS fund record to the internal DTO, renaming the Turkish source
+     * fields and converting the textual ISO date via {@link #parseDate(String)}.
+     */
     @Mapping(target = "fundCode", source = "fonKodu")
     @Mapping(target = "name", source = "fonUnvan")
     @Mapping(target = "date", expression = "java(parseDate(data.tarih()))")

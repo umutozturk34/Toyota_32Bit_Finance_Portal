@@ -11,6 +11,11 @@ import lombok.Setter;
 
 import java.util.List;
 
+/**
+ * Request payload for reordering the tracked assets of a single asset type in one atomic call.
+ * Carries the {@link TrackedAssetType} scope and the complete list of per-asset sort positions to
+ * apply. The item list must be non-empty and every item is cascade-validated.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

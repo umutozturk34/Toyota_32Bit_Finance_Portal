@@ -46,12 +46,20 @@ public class StockCandle extends BaseCandle {
 
     @Column(name = "volume")
     private Long volume;
+    /**
+     * Identity equality based solely on the persisted {@code id}. A candle with a null id (not yet
+     * persisted) is never equal to another instance, which keeps transient entities distinct.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof StockCandle that)) return false;
         return id != null && Objects.equals(id, that.id);
     }
+    /**
+     * Class-constant hash so an entity's bucket stays stable across the transient-to-persistent
+     * transition (before and after an id is assigned), as recommended for JPA entities.
+     */
     @Override
     public int hashCode() {
         return getClass().hashCode();

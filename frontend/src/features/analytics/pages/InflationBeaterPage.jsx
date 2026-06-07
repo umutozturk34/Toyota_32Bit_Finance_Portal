@@ -11,43 +11,19 @@ import { useInflationBeaters } from '../hooks/useAnalytics';
 import { useMacroIndicators } from '../../macro/hooks/useMacroIndicators';
 import { instrumentDisplayName } from '../../../shared/utils/instrumentLabel';
 import BenchmarkPicker from '../components/BenchmarkPicker';
+import HeroStat from '../components/BeaterHeroStat';
+import Th from '../components/BeaterTh';
 import { PERIODS } from '../constants';
 import { formatPercent } from '../utils';
-
-const PAGE_SIZE = 10;
-const FIXED_TYPE_ORDER = ['SPOT', 'CRYPTO', 'FUND', 'FOREX', 'COMMODITY', 'DEPOSIT', 'MACRO'];
-const SORT_OPTIONS = [
-  { id: 'rank', labelKey: 'analytics.rankOrder' },
-  { id: 'nominal', labelKey: 'analytics.nominalReturn' },
-  { id: 'excess', labelKey: 'analytics.excessReturn' },
-];
-const BENCHMARK_CATEGORIES = ['INFLATION', 'RATES', 'DEPOSIT'];
-const MACRO_CATEGORY_TO_MARKET_TYPE = {
-  DEPOSIT: 'MACRO_DEPOSIT',
-  INFLATION: 'MACRO_INFLATION',
-  RATES: 'MACRO_RATE',
-};
-const ANALYTICS_TO_MARKET_TYPE = {
-  SPOT: 'STOCK',
-  CRYPTO: 'CRYPTO',
-  FOREX: 'FOREX',
-  FUND: 'FUND',
-  COMMODITY: 'COMMODITY',
-  VIOP: 'VIOP',
-  BOND: 'BOND',
-  DEPOSIT: 'MACRO_DEPOSIT',
-};
-const TYPE_BADGE = {
-  SPOT:      { label: 'BIST',      color: '#5E6AD2' },
-  CRYPTO:    { label: 'CRYPTO',    color: '#f97316' },
-  FOREX:     { label: 'FOREX',     color: '#06b6d4' },
-  FUND:      { label: 'FUND',      color: '#8b5cf6' },
-  COMMODITY: { label: 'COMMODITY', color: '#f59e0b' },
-  VIOP:      { label: 'VIOP',      color: '#ef4444' },
-  BOND:      { label: 'BOND',      color: '#d946ef' },
-  DEPOSIT:   { label: 'DEPOSIT',   color: '#10b981' },
-  MACRO:     { label: 'MACRO',     color: '#0ea5e9' },
-};
+import {
+  PAGE_SIZE,
+  FIXED_TYPE_ORDER,
+  SORT_OPTIONS,
+  BENCHMARK_CATEGORIES,
+  MACRO_CATEGORY_TO_MARKET_TYPE,
+  ANALYTICS_TO_MARKET_TYPE,
+  TYPE_BADGE,
+} from '../inflationBeaterConstants';
 
 export default function InflationBeaterPage() {
   const { t } = useTranslation();
@@ -555,36 +531,5 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
         )}
       </Card>
     </>
-  );
-}
-
-function HeroStat({ icon, label, value, sub, accent }) {
-  return (
-    <div
-      className="rounded-xl border border-border-default px-3 sm:px-4 py-3 sm:py-3.5"
-      style={{ background: `${accent}0d` }}
-    >
-      <div className="flex items-center gap-2 mb-2 text-xs font-display font-semibold tracking-tight" style={{ color: accent }}>
-        {icon}
-        <span>{label}</span>
-      </div>
-      <div className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-fg tabular-nums leading-none">{value}</div>
-      <div className="mt-1.5 text-xs font-mono text-fg-subtle">{sub}</div>
-    </div>
-  );
-}
-
-function Th({ children, align = 'left', title, sortKey, activeSort, dir, onToggle }) {
-  const sortable = !!(sortKey && onToggle);
-  const active = !!(sortKey && activeSort === sortKey);
-  const indicator = active ? (dir === 'asc' ? <ArrowUp className="inline h-3 w-3 ml-1" /> : <ArrowDown className="inline h-3 w-3 ml-1" />) : null;
-  return (
-    <th
-      title={title}
-      onClick={sortable ? () => onToggle(sortKey) : undefined}
-      className={`text-xs font-display font-semibold py-2.5 px-2 sm:px-3 select-none ${align === 'right' ? 'text-right' : 'text-left'} ${sortable ? 'cursor-pointer' : title ? 'cursor-help' : ''} ${active ? 'text-accent' : 'text-fg-muted'} ${sortable ? 'hover:text-fg' : ''}`}
-    >
-      {children}{indicator}
-    </th>
   );
 }

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, ArrowRight, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import tourSteps from './tourSteps';
 import {
   DEFAULT_PADDING,
@@ -13,7 +13,6 @@ import {
   Z_MASK,
   Z_OVERLAY,
   Z_TOOLTIP,
-  Z_TOP_SKIP,
 } from './tour/constants';
 import {
   buildArrowPath,
@@ -28,7 +27,8 @@ import {
 } from './tour/theme';
 import { SpotlightMask, SpotlightRing } from './tour/Spotlight';
 import ArrowConnector from './tour/Arrow';
-import { SummaryGrid, TooltipPointer } from './tour/TooltipParts';
+import { SummaryGrid, SummaryTitle, TooltipPointer, TooltipProgress } from './tour/TooltipParts';
+import SkipButton from './tour/SkipButton';
 import useTourTarget from './tour/useTourTarget';
 
 export default function ProductTour({ open, onFinish, onSkip }) {
@@ -292,16 +292,7 @@ export default function ProductTour({ open, onFinish, onSkip }) {
         />
       )}
 
-      <button
-        type="button"
-        onClick={handleSkip}
-        aria-label={t('onboarding.skip')}
-        className="fixed top-3 right-3 sm:top-5 sm:right-5 inline-flex items-center justify-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated/95 min-w-[40px] min-h-[40px] sm:min-w-0 sm:min-h-0 sm:px-2.5 sm:py-1.5 text-[11px] text-fg-muted backdrop-blur-md transition-colors hover:text-fg hover:border-accent/40 cursor-pointer"
-        style={{ zIndex: Z_TOP_SKIP }}
-      >
-        <X className="h-4 w-4 sm:h-3 sm:w-3" />
-        <span className="hidden sm:inline">{t('onboarding.skip')}</span>
-      </button>
+      <SkipButton t={t} onSkip={handleSkip} />
 
       <AnimatePresence mode="wait">
         {(isSummary || !step?.selector || pollingDone) && (
@@ -338,94 +329,11 @@ export default function ProductTour({ open, onFinish, onSkip }) {
               <span className="text-[10px] sm:text-[11px] text-accent font-medium whitespace-nowrap shrink-0">
                 {counterLabel}
               </span>
-              <div className="flex items-center gap-1 min-w-0 flex-wrap justify-end">
-                {visibleSteps.map((s, i) => {
-                  const active = i === visibleIndex;
-                  const done = i < visibleIndex;
-                  const baseCls = 'h-1 rounded-full block';
-                  const fillCls = active
-                    ? 'bg-gradient-accent'
-                    : done
-                      ? 'bg-accent/50'
-                      : 'bg-border-default';
-                  return (
-                    <motion.span
-                      key={s.id}
-                      layout
-                      aria-hidden="true"
-                      className={`${baseCls} ${fillCls}`}
-                      animate={
-                        active
-                          ? {
-                              width: 18,
-                              boxShadow: [
-                                '0 0 0 0 rgba(99,102,241,0.0)',
-                                '0 0 10px 1px rgba(99,102,241,0.55)',
-                                '0 0 0 0 rgba(99,102,241,0.0)',
-                              ],
-                            }
-                          : { width: 4, boxShadow: '0 0 0 0 rgba(0,0,0,0)' }
-                      }
-                      transition={
-                        active
-                          ? {
-                              width: { duration: 0.35, ease: EASE_OUT_EXPO },
-                              boxShadow: { duration: 1.8, ease: 'easeInOut', repeat: Infinity },
-                            }
-                          : { width: { duration: 0.35, ease: EASE_OUT_EXPO } }
-                      }
-                    />
-                  );
-                })}
-              </div>
+              <TooltipProgress visibleSteps={visibleSteps} visibleIndex={visibleIndex} />
             </div>
 
             {isSummary ? (
-              <div className="relative flex items-center justify-center">
-                <motion.span
-                  aria-hidden="true"
-                  className="absolute -left-1 -top-1 text-base"
-                  animate={{
-                    scale: [0, 1.2, 0.8, 1.2, 0],
-                    rotate: [0, 90, 180, 270, 360],
-                    opacity: [0, 1, 1, 1, 0],
-                  }}
-                  transition={{ delay: 0.4, duration: 2.4, repeat: Infinity, repeatDelay: 1.6, ease: 'easeInOut' }}
-                >
-                  ✨
-                </motion.span>
-                <motion.span
-                  aria-hidden="true"
-                  className="absolute -right-2 top-1 text-sm"
-                  animate={{
-                    scale: [0, 1.1, 0.7, 1.1, 0],
-                    rotate: [0, -90, -180, -270, -360],
-                    opacity: [0, 1, 1, 1, 0],
-                  }}
-                  transition={{ delay: 0.9, duration: 2.4, repeat: Infinity, repeatDelay: 1.6, ease: 'easeInOut' }}
-                >
-                  ✨
-                </motion.span>
-                <motion.h3
-                  initial={{ opacity: 0, y: -10, scale: 0.9 }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                    scale: 1,
-                    backgroundPosition: ['0% 50%', '200% 50%'],
-                  }}
-                  transition={{
-                    opacity: { duration: 0.55, ease: EASE_OUT_EXPO },
-                    y: { duration: 0.55, ease: EASE_OUT_EXPO },
-                    scale: { duration: 0.55, ease: EASE_OUT_EXPO },
-                    backgroundPosition: { delay: 0.6, duration: 3.6, repeat: Infinity, ease: 'linear' },
-                  }}
-                  className="font-display text-2xl landscape:text-xl sm:text-3xl sm:landscape:text-2xl font-bold leading-tight tracking-tight text-center bg-gradient-to-r from-accent via-fuchsia-400 to-accent-bright bg-clip-text text-transparent"
-                  style={{ backgroundSize: '200% 100%' }}
-                >
-                  {t(step?.titleKey ?? '')}
-                </motion.h3>
-              </div>
+              <SummaryTitle t={t} titleKey={step?.titleKey} />
             ) : (
               <h3 className="font-display text-[17px] font-semibold text-fg leading-tight tracking-tight">
                 {t(step?.titleKey ?? '')}

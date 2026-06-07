@@ -10,6 +10,7 @@ import {
   User,
   Wallet,
 } from 'lucide-react';
+import { EASE_OUT_EXPO } from './constants';
 
 const SUMMARY_FEATURES = [
   { key: 'markets', Icon: TrendingUp, labelKey: 'onboarding.tour.summary.features.markets', fallback: 'Pazarlar' },
@@ -40,6 +41,101 @@ export function TooltipPointer({ placement, bg }) {
     return <span aria-hidden="true" style={style} className={`${base} -right-1.5 top-1/2 -translate-y-1/2 border-l-0 border-b-0`} />;
   }
   return null;
+}
+
+export function TooltipProgress({ visibleSteps, visibleIndex }) {
+  return (
+    <div className="flex items-center gap-1 min-w-0 flex-wrap justify-end">
+      {visibleSteps.map((s, i) => {
+        const active = i === visibleIndex;
+        const done = i < visibleIndex;
+        const baseCls = 'h-1 rounded-full block';
+        const fillCls = active
+          ? 'bg-gradient-accent'
+          : done
+            ? 'bg-accent/50'
+            : 'bg-border-default';
+        return (
+          <motion.span
+            key={s.id}
+            layout
+            aria-hidden="true"
+            className={`${baseCls} ${fillCls}`}
+            animate={
+              active
+                ? {
+                    width: 18,
+                    boxShadow: [
+                      '0 0 0 0 rgba(99,102,241,0.0)',
+                      '0 0 10px 1px rgba(99,102,241,0.55)',
+                      '0 0 0 0 rgba(99,102,241,0.0)',
+                    ],
+                  }
+                : { width: 4, boxShadow: '0 0 0 0 rgba(0,0,0,0)' }
+            }
+            transition={
+              active
+                ? {
+                    width: { duration: 0.35, ease: EASE_OUT_EXPO },
+                    boxShadow: { duration: 1.8, ease: 'easeInOut', repeat: Infinity },
+                  }
+                : { width: { duration: 0.35, ease: EASE_OUT_EXPO } }
+            }
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+export function SummaryTitle({ t, titleKey }) {
+  return (
+    <div className="relative flex items-center justify-center">
+      <motion.span
+        aria-hidden="true"
+        className="absolute -left-1 -top-1 text-base"
+        animate={{
+          scale: [0, 1.2, 0.8, 1.2, 0],
+          rotate: [0, 90, 180, 270, 360],
+          opacity: [0, 1, 1, 1, 0],
+        }}
+        transition={{ delay: 0.4, duration: 2.4, repeat: Infinity, repeatDelay: 1.6, ease: 'easeInOut' }}
+      >
+        ✨
+      </motion.span>
+      <motion.span
+        aria-hidden="true"
+        className="absolute -right-2 top-1 text-sm"
+        animate={{
+          scale: [0, 1.1, 0.7, 1.1, 0],
+          rotate: [0, -90, -180, -270, -360],
+          opacity: [0, 1, 1, 1, 0],
+        }}
+        transition={{ delay: 0.9, duration: 2.4, repeat: Infinity, repeatDelay: 1.6, ease: 'easeInOut' }}
+      >
+        ✨
+      </motion.span>
+      <motion.h3
+        initial={{ opacity: 0, y: -10, scale: 0.9 }}
+        animate={{
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          backgroundPosition: ['0% 50%', '200% 50%'],
+        }}
+        transition={{
+          opacity: { duration: 0.55, ease: EASE_OUT_EXPO },
+          y: { duration: 0.55, ease: EASE_OUT_EXPO },
+          scale: { duration: 0.55, ease: EASE_OUT_EXPO },
+          backgroundPosition: { delay: 0.6, duration: 3.6, repeat: Infinity, ease: 'linear' },
+        }}
+        className="font-display text-2xl landscape:text-xl sm:text-3xl sm:landscape:text-2xl font-bold leading-tight tracking-tight text-center bg-gradient-to-r from-accent via-fuchsia-400 to-accent-bright bg-clip-text text-transparent"
+        style={{ backgroundSize: '200% 100%' }}
+      >
+        {t(titleKey ?? '')}
+      </motion.h3>
+    </div>
+  );
 }
 
 export function SummaryGrid({ t }) {

@@ -5,7 +5,7 @@ import useNavigationBack from '../../../shared/hooks/useNavigationBack';
 import { useQueries } from '@tanstack/react-query';
 import ReactECharts from 'echarts-for-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Info, BarChart3, Activity, ArrowLeft, Search, LineChart, Briefcase, ChevronDown } from 'lucide-react';
+import { X, Info, ArrowLeft, Search, LineChart, Briefcase, ChevronDown } from 'lucide-react';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
@@ -35,39 +35,8 @@ import {
   nativeCurrencyFor,
   compoundRateSeries,
 } from '../lib/compareSeriesUtils';
-
-const MAX_COMPARE = 6;
-// Bonds are excluded from Compare (they are rate-level series that never FX-convert and aren't a
-// meaningful price-return comparison); excludeTypes={['BOND']} on the search is the belt, this is the
-// suspenders — the assets-mode type filter simply never asks for them.
-const MARKET_TYPES_FILTER = 'STOCK,CRYPTO,FOREX,FUND,COMMODITY,VIOP';
-
-const ASSET_ROUTE = {
-  STOCK: 'stocks',
-  CRYPTO: 'crypto',
-  FOREX: 'forex',
-  COMMODITY: 'commodities',
-  VIOP: 'viop',
-  FUND: 'funds',
-};
-
-function buildBackTarget(from, fromType, fromCode) {
-  if (from === 'beaters') return '/analytics?tab=beaters';
-  // The beater WIDGET lives on the market-overview home, not the beater page, so its click-through must
-  // return there — otherwise "back" dropped the user on /analytics?tab=beaters they never visited.
-  if (from === 'overview') return '/market';
-  if (from === 'portfolio') return '/portfolio';
-  if (from === 'asset' && fromType && fromCode) {
-    const segment = ASSET_ROUTE[fromType];
-    if (segment) return `/${segment}/${encodeURIComponent(fromCode)}`;
-  }
-  return null;
-}
-
-const MODES = [
-  { id: 'assets',    labelKey: 'modeAssets',    Icon: BarChart3, filterType: MARKET_TYPES_FILTER },
-  { id: 'mixed',     labelKey: 'modeMixed',     Icon: Activity,  filterType: undefined },
-];
+import { buildBackTarget } from '../lib/compareNav';
+import { MAX_COMPARE, MODES } from '../lib/compareConstants';
 
 export default function ComparePage() {
   const { t } = useTranslation();
@@ -721,7 +690,7 @@ export default function ComparePage() {
                   : 'text-fg-muted hover:text-fg'
               }`}
             >
-              {r.id}
+              {t(`marketOverview.macro.${r.labelKey}`, { defaultValue: r.id })}
             </button>
           ))}
         </div>

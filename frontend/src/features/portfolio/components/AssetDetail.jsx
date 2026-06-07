@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import useChartRange from '../../../shared/hooks/useChartRange';
-import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar, ExternalLink, Plus } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Plus } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../../shared/components/feedback/AnimatedIcons';
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../../shared/context/useTheme';
 import { useAssetSeries, useAssetAggregate, useBackfillStatus, isLotPending, useAssetLots } from '../hooks/usePortfolioData';
-import { formatPercent, changeColors, changeBg, getChangeClass, currentLocaleTag } from '../../../shared/utils/formatters';
+import { formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { cardVariants } from '../../../shared/utils/animations';
@@ -24,28 +24,7 @@ import { commodityLabel } from '../../../shared/utils/commodityName';
 import { computeViopAggregate, computeClosedAggregate } from '../lib/assetAggregates';
 import { processAssetSeries } from '../lib/assetSeriesProcessing';
 import { LotsTable } from './LotsTable';
-
-const formatEntryDate = (v) => v ? new Date(v).toLocaleDateString(currentLocaleTag(), { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-
-const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
-const marketHref = (type, code) => `${TYPE_ROUTES[type] ?? '/market'}/${encodeURIComponent(code)}`;
-
-const STAT_CARD_DEFS = [
-  { key: 'quantity', labelKey: 'quantity', Icon: Hash, format: (v) => Number(v).toLocaleString(currentLocaleTag(), { maximumFractionDigits: 6 }) },
-  { key: 'entryDate', labelKey: 'entryDate', Icon: Calendar, format: formatEntryDate },
-  { key: 'entryPrice', labelKey: 'entryPrice', Icon: DollarSign, money: true },
-  { key: 'currentPriceTry', labelKey: 'currentPrice', Icon: BarChart3, money: true },
-  { key: 'marketValueTry', labelKey: 'marketValue', Icon: Wallet, money: true },
-];
-
-// A VİOP lot's direction: structured field first, then the legacy "LONG · …" / "SHORT · …" assetName prefix.
-// The prefix is only honoured when it is exactly LONG/SHORT — a plain assetName (no " · ") must yield null,
-// not the whole string (which would be misread as a direction and force headDirectionSign to +1 for a SHORT).
-const lotDirection = (lot) => {
-  if (lot?.derivative?.direction) return lot.derivative.direction;
-  const prefix = String(lot?.assetName || '').split(' · ')[0];
-  return (prefix === 'LONG' || prefix === 'SHORT') ? prefix : null;
-};
+import { marketHref, STAT_CARD_DEFS, lotDirection } from '../lib/assetDetailHelpers';
 
 function AssetChart({ data, isDark, t, convertAt, displayCurrency, nativeCurrency }) {
   const option = useMemo(

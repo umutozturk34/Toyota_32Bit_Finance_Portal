@@ -14,36 +14,13 @@ import EmptyState from '../../../shared/components/feedback/EmptyState';
 import { useAssetReturns } from '../hooks/useAnalytics';
 import { instrumentDisplayName } from '../../../shared/utils/instrumentLabel';
 import { RETURN_PERIODS } from '../constants';
-import { formatPercent } from '../utils';
+import { formatPercent, moneyDigits } from '../utils';
 import { assetRoute } from '../../watch/lib/watchConstants';
-
-const PAGE_SIZE = 12;
-// Analytics instrument type → the market type the detail route is keyed by (SPOT is the stock route).
-const ANALYTICS_TO_MARKET_TYPE = { SPOT: 'STOCK', CRYPTO: 'CRYPTO', FOREX: 'FOREX', FUND: 'FUND', COMMODITY: 'COMMODITY' };
-const FIXED_TYPE_ORDER = ['SPOT', 'CRYPTO', 'FOREX', 'FUND', 'COMMODITY'];
-const TYPE_BADGE = {
-  SPOT:      { label: 'BIST',      color: '#5E6AD2' },
-  CRYPTO:    { label: 'CRYPTO',    color: '#f97316' },
-  FOREX:     { label: 'FOREX',     color: '#06b6d4' },
-  FUND:      { label: 'FUND',      color: '#8b5cf6' },
-  COMMODITY: { label: 'COMMODITY', color: '#f59e0b' },
-};
-const RISK_STYLE = {
-  LOW:    { key: 'analytics.returns.riskLow',    badge: 'bg-success/10 text-success border-success/30', chip: 'bg-success/15 text-success border-success/40', idle: 'text-success/70 border-success/25 hover:border-success/50' },
-  MEDIUM: { key: 'analytics.returns.riskMedium', badge: 'bg-warning/10 text-warning border-warning/30', chip: 'bg-warning/15 text-warning border-warning/40', idle: 'text-warning/70 border-warning/25 hover:border-warning/50' },
-  HIGH:   { key: 'analytics.returns.riskHigh',   badge: 'bg-danger/10 text-danger border-danger/30',   chip: 'bg-danger/15 text-danger border-danger/40',   idle: 'text-danger/70 border-danger/25 hover:border-danger/50' },
-};
-const SORT_OPTIONS = [
-  { id: 'return', labelKey: 'analytics.returns.return' },
-  { id: 'riskAdj', labelKey: 'analytics.returns.riskAdjusted' },
-  { id: 'price', labelKey: 'analytics.returns.price' },
-  { id: 'delta', labelKey: 'analytics.returns.deltaTry' },
-  { id: 'vol', labelKey: 'analytics.returns.volatility' },
-];
-
-const CCY_SYMBOL = { TRY: '₺', USD: '$', EUR: '€' };
-// Decimals scaled to magnitude (mirrors utils.formatMoney): big figures drop decimals, sub-cent keep precision.
-const moneyDigits = (n) => { const a = Math.abs(n); return a >= 1000 ? 0 : a >= 1 ? 2 : a >= 0.01 ? 4 : 6; };
+import {
+  PAGE_SIZE, ANALYTICS_TO_MARKET_TYPE, FIXED_TYPE_ORDER, TYPE_BADGE, RISK_STYLE, SORT_OPTIONS, CCY_SYMBOL,
+} from '../returnsConstants';
+import HeroStat from '../components/HeroStat';
+import Th from '../components/ReturnsTh';
 
 export default function ReturnsPage() {
   const { t } = useTranslation();
@@ -514,30 +491,5 @@ export default function ReturnsPage() {
         </>
       )}
     </motion.div>
-  );
-}
-
-function HeroStat({ icon, label, value, sub, accent }) {
-  return (
-    <div className="rounded-xl border border-border-default px-3 sm:px-4 py-3 sm:py-3.5" style={{ background: `${accent}0d` }}>
-      <div className="flex items-center gap-2 mb-2 text-xs font-display font-semibold tracking-tight" style={{ color: accent }}>
-        {icon}
-        <span>{label}</span>
-      </div>
-      <div className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-fg tabular-nums leading-none break-words">{value}</div>
-      <div className="mt-1.5 text-xs font-mono text-fg-subtle leading-snug break-words">{sub}</div>
-    </div>
-  );
-}
-
-function Th({ children, align = 'left', title, active = false, dir }) {
-  return (
-    <th
-      title={title}
-      className={`text-xs font-display font-semibold py-2.5 px-2 sm:px-3 select-none whitespace-nowrap ${align === 'right' ? 'text-right' : 'text-left'} ${title ? 'cursor-help' : ''} ${active ? 'text-accent' : 'text-fg-muted'}`}
-    >
-      {children}
-      {active && (dir === 'asc' ? <ArrowUp className="inline h-3 w-3 ml-1" /> : <ArrowDown className="inline h-3 w-3 ml-1" />)}
-    </th>
   );
 }

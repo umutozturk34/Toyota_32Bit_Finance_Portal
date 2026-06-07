@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Plus, Trash2, Eye, EyeOff, Settings2, X,
+    Plus, Trash2, Eye, EyeOff, Settings2, X, AlertCircle,
 } from 'lucide-react';
+import { MAX_INDICATORS } from '../hooks/useIndicators';
 const INDICATOR_TYPES = [
     { value: 'SMA', label: 'SMA', defaultPeriod: 20, defaultColor: '#2196f3' },
     { value: 'EMA', label: 'EMA', defaultPeriod: 50, defaultColor: '#ff9800' },
@@ -23,14 +24,22 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
     const [newPeriod, setNewPeriod] = useState(20);
     const [newColor, setNewColor] = useState('#2196f3');
     const [editingId, setEditingId] = useState(null);
+    const [addError, setAddError] = useState(null);
+    const atMax = indicators.length >= MAX_INDICATORS;
     const handleAddType = (type) => {
         const t = INDICATOR_TYPES.find(i => i.value === type);
         setNewType(type);
         setNewPeriod(t?.defaultPeriod || 20);
         setNewColor(t?.defaultColor || '#2196f3');
+        setAddError(null);
     };
     const handleAdd = () => {
-        addIndicator(newType, newPeriod, newColor);
+        const result = addIndicator(newType, newPeriod, newColor);
+        if (result && result.ok === false) {
+            setAddError(result.error);
+            return;
+        }
+        setAddError(null);
         setShowAddForm(false);
     };
     return (
@@ -75,7 +84,7 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                                         {COLOR_PRESETS.slice(0, 5).map(c => (
                                             <button
                                                 key={c}
-                                                onClick={() => updateIndicator(ind.id, { color: c })}
+                                                onClick={() => { updateIndicator(ind.id, { color: c }); setEditingId(null); }}
                                                 className="w-4 h-4 rounded-full border-none cursor-pointer hover:scale-125 transition-transform"
                                                 style={{
                                                     background: c,
@@ -160,6 +169,12 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                             />
                         ))}
                     </div>
+                    {addError && (
+                        <div className="flex items-start gap-1.5 text-[11px] text-danger">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-px" />
+                            <span>{t(`chart.indicators.error.${addError}`, { max: MAX_INDICATORS })}</span>
+                        </div>
+                    )}
                     <div className="flex gap-1.5">
                         <button
                             onClick={handleAdd}
@@ -175,9 +190,14 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                         </button>
                     </div>
                 </div>
+            ) : atMax ? (
+                <div className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[40px] rounded-lg text-[11px] font-medium text-fg-subtle bg-surface/30 border border-dashed border-border-default">
+                    <AlertCircle className="w-3 h-3 shrink-0" />
+                    {t('chart.indicators.error.max', { max: MAX_INDICATORS })}
+                </div>
             ) : (
                 <button
-                    onClick={() => setShowAddForm(true)}
+                    onClick={() => { setAddError(null); setShowAddForm(true); }}
                     className="w-full flex items-center justify-center gap-1.5 px-3 py-2 min-h-[40px] rounded-lg text-xs font-medium text-fg-muted bg-transparent border border-dashed border-border-default cursor-pointer hover:text-fg hover:border-fg-subtle hover:bg-surface/50 transition-all duration-150"
                 >
                     <Plus className="w-3 h-3" /> {t('chart.indicators.addIndicator')}

@@ -1,8 +1,13 @@
 import { CrosshairMode, LineStyle } from 'lightweight-charts';
 
 export const getChartOptions = (isDark) => ({
-    autoSize: true,
+    // No autoSize: lightweight-charts' autoSize would OWN sizing and ignore applyOptions(width/height), which
+    // (a) made our manual handleResize a no-op — the chart stayed stuck at the fullscreen height after exit —
+    // and (b) re-enabled itself on every theme re-apply (applyOptions(getChartOptions)). Both the main chart
+    // and the sub-charts size manually via their own ResizeObserver/handleResize, so the lightweight-charts
+    // default (autoSize off) is correct. (createChart also passes autoSize:false explicitly for clarity.)
     layout: {
+        attributionLogo: false,
         background: { color: isDark ? '#050506' : '#ffffff' },
         textColor: isDark ? '#7a7a85' : '#6b7280',
     },

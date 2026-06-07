@@ -81,6 +81,9 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         return analyzeTrend(candleData);
     }, [data]);
     const [crosshairData, setCrosshairData] = useState(null);
+    // Last value of each overlay (SMA/EMA) by indicator id — shown in the toolbar legend when idle (the
+    // built-in right-axis last-value tags are disabled to stop EMA/SMA/price boxes stacking on the axis).
+    const [overlayLast, setOverlayLast] = useState({});
     const compareDataAtKeyRef = useRef({ byKey: new Map(), symbols: [] });
 
     useEffect(() => {
@@ -94,6 +97,13 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         hoveredOverlayRef.current = null;
         const chart = createChart(chartContainerRef.current, {
             ...getChartOptions(isDark),
+            // autoSize is forced OFF here (getChartOptions sets it true): with autoSize, lightweight-charts
+            // OWNS sizing via its own ResizeObserver and IGNORES applyOptions(width/height) — so our manual
+            // handleResize was a no-op and, after a fullscreen exit, the canvas stayed stuck at the fullscreen
+            // height (a canvas==container / container==canvas-content deadlock autoSize never re-measured).
+            // With it off, handleResize (ResizeObserver + the fullscreen resize nudge) controls the size and
+            // the chart shrinks back correctly. Mirrors the sub-charts, which already use autoSize:false.
+            autoSize: false,
             width: chartContainerRef.current.clientWidth || 300,
             height: chartContainerRef.current.clientHeight || 400,
         });
@@ -255,6 +265,14 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                     if (pt) compares.push({ symbol, value: pt.value, color });
                 }
             }
+            // Each overlay's value at the hovered point, keyed by indicator id, so the toolbar legend shows
+            // SMA/EMA at the crosshair instead of only the latest point.
+            const overlayVals = {};
+            for (const [series, meta] of overlayMetaRef.current) {
+                const sd = param.seriesData?.get(series);
+                const v = sd?.value ?? sd?.close;
+                if (v != null && meta.id) overlayVals[meta.id] = v;
+            }
             if (cd) setCrosshairData({
                 open: cd.open, high: cd.high, low: cd.low, close: cd.close,
                 sellingPrice: cd.sellingPrice, buyingPrice: cd.buyingPrice,
@@ -262,6 +280,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 bulletinPrice: cd.bulletinPrice,
                 time: cd.time,
                 compares: compares.length > 0 ? compares : undefined,
+                overlays: Object.keys(overlayVals).length > 0 ? overlayVals : undefined,
             });
             const overlays = overlayMetaRef.current;
             if (overlays.size > 0 && param.point) {
@@ -538,28 +557,35 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 delete indicatorSeriesRef.current[id];
             }
         });
+        const lastMap = {};
         desiredOverlay.forEach(ind => {
             if (ind.type === 'MACD') return;
             const calcFn = ind.type === 'SMA' ? calculateSMA : calculateEMA;
             const seriesData = calcFn(candleData, ind.period);
+            lastMap[ind.id] = seriesData.length ? seriesData[seriesData.length - 1].value : null;
+            const meta = { color: ind.color, id: ind.id };
+            // lastValueVisible/priceLineVisible false: overlay values live in the toolbar legend (crosshair-
+            // aware), not as stacked right-axis tags that overlapped each other and the price.
             if (indicatorSeriesRef.current[ind.id]) {
                 const series = indicatorSeriesRef.current[ind.id];
-                series.applyOptions({ color: ind.color, visible: ind.visible, title: `${ind.type} ${ind.period}` });
+                series.applyOptions({ color: ind.color, visible: ind.visible, title: `${ind.type} ${ind.period}`, lastValueVisible: false, priceLineVisible: false });
                 series.setData(seriesData);
-                overlayMetaRef.current.set(series, { color: ind.color });
+                overlayMetaRef.current.set(series, meta);
             } else {
                 const series = chart.addSeries(LineSeries, {
                     color: ind.color, lineWidth: 2, title: `${ind.type} ${ind.period}`,
                     crosshairMarkerVisible: false, visible: ind.visible,
+                    lastValueVisible: false, priceLineVisible: false,
                 });
                 series.setData(seriesData);
                 indicatorSeriesRef.current[ind.id] = series;
-                overlayMetaRef.current.set(series, { color: ind.color });
+                overlayMetaRef.current.set(series, meta);
             }
         });
+        setOverlayLast(lastMap);
     }, [indicators, data, chartType]);
 
-    return { chartRef, chartContainerRef, candleSeriesRef, candleDataRef, volumeDataRef, trend, crosshairData };
+    return { chartRef, chartContainerRef, candleSeriesRef, candleDataRef, volumeDataRef, trend, crosshairData, overlayLast };
 };
 
 export default useChartCore;

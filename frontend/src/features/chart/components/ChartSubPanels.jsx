@@ -21,6 +21,7 @@ const ChartSubPanels = ({
     showPortfolioSize,
     setShowPortfolioSize,
     portfolioSizeContainerRef,
+    subValues = {},
 }) => {
     const { t } = useTranslation();
     return (
@@ -31,6 +32,11 @@ const ChartSubPanels = ({
                         <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
                             <Activity className="w-3.5 h-3.5" style={{ color: rsiIndicator?.color || '#e91e63' }} />
                             RSI {rsiIndicator?.period || 14}
+                            {subValues.rsi != null && (
+                                <span className="ml-1 font-mono tabular-nums" style={{ color: rsiIndicator?.color || '#e91e63' }}>
+                                    {subValues.rsi.toFixed(2)}
+                                </span>
+                            )}
                         </span>
                         <button
                             onClick={() => { const rsi = indicators.find(i => i.type === 'RSI'); if (rsi) toggleIndicator(rsi.id); }}
@@ -48,6 +54,16 @@ const ChartSubPanels = ({
                         <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
                             <Activity className="w-3.5 h-3.5" style={{ color: macdIndicator?.color || '#06b6d4' }} />
                             MACD (12, 26, 9)
+                            {subValues.macd != null && (
+                                <span className="ml-1 font-mono tabular-nums" style={{ color: macdIndicator?.color || '#06b6d4' }}>
+                                    {subValues.macd.toFixed(4)}
+                                </span>
+                            )}
+                            {subValues.signal != null && (
+                                <span className="ml-1 font-mono tabular-nums" style={{ color: '#f59e0b' }}>
+                                    {subValues.signal.toFixed(4)}
+                                </span>
+                            )}
                         </span>
                         <button
                             onClick={() => { const m = indicators.find(i => i.type === 'MACD'); if (m) toggleIndicator(m.id); }}

@@ -10,7 +10,7 @@ const ChartToolbar = ({
     isDark, sidebarOpen, setSidebarOpen,
     chartType, setChartType,
     magnetMode, setMagnetMode,
-    symbol, trend, crosshairData,
+    symbol, trend, crosshairData, overlayLast,
     assetType,
     indicators, drawings,
     isAnyToolActive, activeTool, activeFibTool,
@@ -123,77 +123,7 @@ const ChartToolbar = ({
                     <span style={{ opacity: 0.7 }}>({trend.change > 0 ? '+' : ''}{trend.change.toFixed(2)}%)</span>
                 </div>
             )}
-            {crosshairData && (() => {
-                const isFund = assetType === 'FUND';
-                const isForex = assetType === 'FOREX';
-                if (isFund && crosshairData.close != null) {
-                    return (
-                        <div className="hidden sm:flex landscape:flex items-center gap-2 sm:gap-3 text-[11px] font-mono shrink-0 pr-2 md:pr-32 lg:pr-2">
-                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.price')} <span className="text-fg">{Number(crosshairData.close).toFixed(4)}</span></span>
-                            {crosshairData.bulletinPrice != null && (
-                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.bulletin')} <span className="text-fg">{Number(crosshairData.bulletinPrice).toFixed(4)}</span></span>
-                            )}
-                        </div>
-                    );
-                }
-                if (isForex && crosshairData.sellingPrice != null) {
-                    return (
-                        <div className="hidden sm:flex landscape:flex items-center gap-2 sm:gap-3 text-[11px] font-mono shrink-0 pr-2 md:pr-32 lg:pr-2">
-                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.sell')} <span className="text-fg">{Number(crosshairData.sellingPrice).toFixed(4)}</span></span>
-                            {crosshairData.buyingPrice != null && (
-                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.buy')} <span className="text-fg">{Number(crosshairData.buyingPrice).toFixed(4)}</span></span>
-                            )}
-                            {crosshairData.effectiveBuyingPrice != null && (
-                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.effBuy')} <span className="text-fg">{Number(crosshairData.effectiveBuyingPrice).toFixed(4)}</span></span>
-                            )}
-                            {crosshairData.effectiveSellingPrice != null && (
-                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.effSell')} <span className="text-fg">{Number(crosshairData.effectiveSellingPrice).toFixed(4)}</span></span>
-                            )}
-                        </div>
-                    );
-                }
-                if (crosshairData.open != null) {
-                    return (
-                        <div className="hidden sm:flex landscape:flex items-center gap-2 sm:gap-3 text-[11px] font-mono whitespace-nowrap shrink-0 pr-2 md:pr-32 lg:pr-2">
-                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.open')} <span className="text-fg">{fmtPrice(crosshairData.open)}</span></span>
-                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.high')} <span className="text-[#10b981]">{fmtPrice(crosshairData.high)}</span></span>
-                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.low')} <span className="text-[#ef4444]">{fmtPrice(crosshairData.low)}</span></span>
-                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.close')} <span style={{ color: Number(crosshairData.close) >= Number(crosshairData.open) ? '#10b981' : '#ef4444' }}>{fmtPrice(crosshairData.close)}</span></span>
-                            {crosshairData.compares?.map((c) => (
-                                <span key={c.symbol} className="text-fg-muted flex items-center gap-1">
-                                    <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />
-                                    {c.symbol} <span style={{ color: c.color }}>{fmtPrice(c.value)}</span>
-                                </span>
-                            ))}
-                        </div>
-                    );
-                }
-                if (crosshairData.compares?.length > 0) {
-                    return (
-                        <div className="hidden sm:flex landscape:flex items-center gap-2 sm:gap-3 text-[11px] font-mono whitespace-nowrap shrink-0 pr-2 md:pr-32 lg:pr-2">
-                            {crosshairData.compares.map((c) => (
-                                <span key={c.symbol} className="text-fg-muted flex items-center gap-1">
-                                    <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />
-                                    {c.symbol} <span style={{ color: c.color }}>{fmtPrice(c.value)}</span>
-                                </span>
-                            ))}
-                        </div>
-                    );
-                }
-                return null;
-            })()}
-            <div className="shrink-0 flex items-center gap-2 sm:gap-2.5 ml-auto sticky right-0 bg-surface/95 backdrop-blur-md pl-2 shadow-[-8px_0_12px_-8px_rgba(0,0,0,0.25)]">
-                {indicators.filter(i => i.visible && i.type !== 'RSI').map(ind => (
-                    <span key={ind.id} className="hidden sm:flex items-center gap-1 text-[11px] font-medium" style={{ color: ind.color }}>
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: ind.color }} />
-                        {ind.type} {ind.period}
-                    </span>
-                ))}
-                {drawings.length > 0 && (
-                    <span className="hidden sm:inline text-[11px] text-fg-subtle font-medium px-2 py-0.5 rounded-full bg-surface border border-border-default">
-                        {t('chart.toolbar.drawingsCount', { count: drawings.length })}
-                    </span>
-                )}
+            <div className="shrink-0 flex items-center gap-1.5 ml-auto">
                 {isAnyToolActive && (
                     <button
                         onClick={cancelAllDrawing}
@@ -217,6 +147,88 @@ const ChartToolbar = ({
                     {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                 </button>
             </div>
+        </div>
+        {/* Readouts row: OHLC / price + indicator values + drawings count. ALWAYS rendered with a fixed height
+            and single-line (nowrap + horizontal scroll) — its presence/height must NOT depend on crosshairData,
+            otherwise hovering the chart top edge toggled the row, shifted the chart down, dropped the crosshair,
+            and re-toggled in an infinite flicker loop. A stable strip keeps OHLC visible on mobile too. */}
+        <div className="flex items-center gap-3 px-2 sm:px-3 py-1.5 border-b border-border-default bg-surface/25 overflow-x-auto scrollbar-thin text-[11px] font-mono min-h-[30px]">
+                {crosshairData && (() => {
+                    const isFund = assetType === 'FUND';
+                    const isForex = assetType === 'FOREX';
+                    if (isFund && crosshairData.close != null) {
+                        return (
+                            <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap shrink-0">
+                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.price')} <span className="text-fg">{Number(crosshairData.close).toFixed(4)}</span></span>
+                                {crosshairData.bulletinPrice != null && (
+                                    <span className="text-fg-muted">{t('chart.toolbar.crosshair.bulletin')} <span className="text-fg">{Number(crosshairData.bulletinPrice).toFixed(4)}</span></span>
+                                )}
+                            </div>
+                        );
+                    }
+                    if (isForex && crosshairData.sellingPrice != null) {
+                        return (
+                            <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap shrink-0">
+                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.sell')} <span className="text-fg">{Number(crosshairData.sellingPrice).toFixed(4)}</span></span>
+                                {crosshairData.buyingPrice != null && (
+                                    <span className="text-fg-muted">{t('chart.toolbar.crosshair.buy')} <span className="text-fg">{Number(crosshairData.buyingPrice).toFixed(4)}</span></span>
+                                )}
+                                {crosshairData.effectiveBuyingPrice != null && (
+                                    <span className="text-fg-muted">{t('chart.toolbar.crosshair.effBuy')} <span className="text-fg">{Number(crosshairData.effectiveBuyingPrice).toFixed(4)}</span></span>
+                                )}
+                                {crosshairData.effectiveSellingPrice != null && (
+                                    <span className="text-fg-muted">{t('chart.toolbar.crosshair.effSell')} <span className="text-fg">{Number(crosshairData.effectiveSellingPrice).toFixed(4)}</span></span>
+                                )}
+                            </div>
+                        );
+                    }
+                    if (crosshairData.open != null) {
+                        return (
+                            <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap shrink-0">
+                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.open')} <span className="text-fg">{fmtPrice(crosshairData.open)}</span></span>
+                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.high')} <span className="text-[#10b981]">{fmtPrice(crosshairData.high)}</span></span>
+                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.low')} <span className="text-[#ef4444]">{fmtPrice(crosshairData.low)}</span></span>
+                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.close')} <span style={{ color: Number(crosshairData.close) >= Number(crosshairData.open) ? '#10b981' : '#ef4444' }}>{fmtPrice(crosshairData.close)}</span></span>
+                                {crosshairData.compares?.map((c) => (
+                                    <span key={c.symbol} className="text-fg-muted flex items-center gap-1">
+                                        <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />
+                                        {c.symbol} <span style={{ color: c.color }}>{fmtPrice(c.value)}</span>
+                                    </span>
+                                ))}
+                            </div>
+                        );
+                    }
+                    if (crosshairData.compares?.length > 0) {
+                        return (
+                            <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap shrink-0">
+                                {crosshairData.compares.map((c) => (
+                                    <span key={c.symbol} className="text-fg-muted flex items-center gap-1">
+                                        <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />
+                                        {c.symbol} <span style={{ color: c.color }}>{fmtPrice(c.value)}</span>
+                                    </span>
+                                ))}
+                            </div>
+                        );
+                    }
+                    return null;
+                })()}
+                {indicators.filter(i => i.visible && i.type !== 'RSI').map(ind => {
+                    // SMA/EMA value at the crosshair (falls back to the latest point when idle); MACD has no
+                    // overlay value here (its line lives in the sub-panel), so it shows the label only.
+                    const v = crosshairData?.overlays?.[ind.id] ?? overlayLast?.[ind.id];
+                    return (
+                        <span key={ind.id} className="flex items-center gap-1 whitespace-nowrap font-medium" style={{ color: ind.color }}>
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ background: ind.color }} />
+                            {ind.type} {ind.period}
+                            {v != null && <span className="tabular-nums">{fmtPrice(v)}</span>}
+                        </span>
+                    );
+                })}
+                {drawings.length > 0 && (
+                    <span className="text-fg-subtle font-medium px-2 py-0.5 rounded-full bg-surface border border-border-default whitespace-nowrap">
+                        {t('chart.toolbar.drawingsCount', { count: drawings.length })}
+                    </span>
+                )}
         </div>
         {isAnyToolActive && (
             <div className="flex items-center justify-between px-3 py-1.5 bg-accent/10 border-b border-[rgba(94,106,210,0.15)]">

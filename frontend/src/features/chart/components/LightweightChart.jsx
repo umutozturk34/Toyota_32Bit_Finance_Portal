@@ -79,9 +79,29 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
         return () => document.removeEventListener('fullscreenchange', onChange);
     }, []);
 
+    // Entering/exiting fullscreen swaps the container's height class, but the transition settles asynchronously
+    // (native fullscreen even has a browser animation), so a single early nudge fired before the layout settled
+    // and the chart kept its fullscreen height after exit ("büyüttükten sonra büyük kalıyor"). Re-dispatch a
+    // resize across the transition window so the LAST one reads the settled container size; the chart area's
+    // overflow-hidden keeps the canvas from inflating the box in the meantime.
+    useEffect(() => {
+        const fire = () => window.dispatchEvent(new Event('resize'));
+        const raf = requestAnimationFrame(() => requestAnimationFrame(fire));
+        const t1 = setTimeout(fire, 130);
+        const t2 = setTimeout(fire, 380);
+        return () => { cancelAnimationFrame(raf); clearTimeout(t1); clearTimeout(t2); };
+    }, [isFullscreen]);
+
     const toggleFullscreen = useCallback(() => {
         const wrapper = wrapperRef.current;
         if (!wrapper) return;
+        // Already in the CSS fallback (a prior native request rejected) → just drop it; never re-attempt
+        // native, which would otherwise make the exit click try to ENTER fullscreen again (stuck enlarged).
+        if (wrapper.classList.contains('chart-pseudo-fullscreen')) {
+            wrapper.classList.remove('chart-pseudo-fullscreen');
+            setIsFullscreen(false);
+            return;
+        }
         const nativeSupported = typeof wrapper.requestFullscreen === 'function'
             && typeof document.exitFullscreen === 'function';
         if (nativeSupported) {
@@ -89,14 +109,14 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                 document.exitFullscreen?.();
             } else {
                 wrapper.requestFullscreen?.().catch(() => {
-                    wrapper.classList.toggle('chart-pseudo-fullscreen');
-                    setIsFullscreen((prev) => !prev);
+                    wrapper.classList.add('chart-pseudo-fullscreen');
+                    setIsFullscreen(true);
                 });
             }
             return;
         }
-        wrapper.classList.toggle('chart-pseudo-fullscreen');
-        setIsFullscreen((prev) => !prev);
+        wrapper.classList.add('chart-pseudo-fullscreen');
+        setIsFullscreen(true);
     }, []);
 
     const isFund = assetType === 'FUND';
@@ -147,12 +167,12 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
     const hasMACD = useMemo(() => !isFund && indicators.some(i => i.type === 'MACD' && i.visible), [indicators, isFund]);
     const macdIndicator = useMemo(() => indicators.find(i => i.type === 'MACD' && i.visible), [indicators]);
 
-    const { chartRef, chartContainerRef, candleSeriesRef, candleDataRef, volumeDataRef, trend, crosshairData } = useChartCore({
+    const { chartRef, chartContainerRef, candleSeriesRef, candleDataRef, volumeDataRef, trend, crosshairData, overlayLast } = useChartCore({
         data: data, symbol, chartType: allowCandle ? chartType : 'line', isDark, indicators: filteredIndicators, renderDrawingsRef, assetType,
         compareDatas, timeRange, showSecondaryLines,
     });
 
-    const { rsiContainerRef, macdContainerRef, volumeContainerRef, investorCountContainerRef, portfolioSizeContainerRef } = useSubCharts({
+    const { rsiContainerRef, macdContainerRef, volumeContainerRef, investorCountContainerRef, portfolioSizeContainerRef, subValues } = useSubCharts({
         chartRef, candleDataRef, volumeDataRef, isDark,
         hasRSI, rsiIndicator, hasMACD, macdIndicator, showVolume: showVolumeToggle && showVolume, data: data,
         showInvestorCount: isFund && showInvestorCount,
@@ -264,6 +284,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                     symbol={symbol}
                     trend={trend}
                     crosshairData={crosshairData}
+                    overlayLast={overlayLast}
                     assetType={assetType}
                     indicators={filteredIndicators}
                     drawings={drawings}
@@ -291,7 +312,9 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                         );
                     })}
                 </div>
-                <div className={`relative flex-1 ${isFullscreen ? 'min-h-0' : 'min-h-[55vh] sm:min-h-[400px] lg:min-h-[420px]'}`}>
+                {/* overflow-hidden: clip the chart canvas to its box so a stale fullscreen-height canvas can't
+                    inflate the container (or spill over the page) before the resize settles it back down. */}
+                <div className={`relative flex-1 overflow-hidden ${isFullscreen ? 'min-h-0' : 'min-h-[55vh] sm:min-h-[400px] lg:min-h-[420px]'}`}>
                     <div ref={chartContainerRef} className="w-full h-full" />
                     <canvas
                         ref={canvasOverlayRef}
@@ -343,6 +366,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                     showPortfolioSize={showPortfolioSize}
                     setShowPortfolioSize={setShowPortfolioSize}
                     portfolioSizeContainerRef={portfolioSizeContainerRef}
+                    subValues={subValues}
                 />
 
             </div>

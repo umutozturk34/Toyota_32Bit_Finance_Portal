@@ -190,6 +190,32 @@ public class GlobalExceptionHandler {
                 .body(error);
     }
 
+    @ExceptionHandler(TaskCapacityExceededException.class)
+    public ResponseEntity<ErrorResponse> handleTaskCapacityExceeded(TaskCapacityExceededException ex, HttpServletRequest request) {
+        log.warn("Task capacity exceeded: {}", ex.getMessage());
+        ErrorResponse error = ErrorResponse.of(
+                translator.translateOrSelf(ex.getMessage()),
+                "TASK_CAPACITY_EXCEEDED",
+                request.getRequestURI()
+        );
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(error);
+    }
+
+    @ExceptionHandler(MarketDataNotReadyException.class)
+    public ResponseEntity<ErrorResponse> handleMarketDataNotReady(MarketDataNotReadyException ex, HttpServletRequest request) {
+        log.warn("Market data not ready: {}", ex.getMessage());
+        ErrorResponse error = ErrorResponse.of(
+                translator.translateOrSelf(ex.getMessage()),
+                "MARKET_DATA_NOT_READY",
+                request.getRequestURI()
+        );
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(error);
+    }
+
     @ExceptionHandler(ExternalApiException.class)
     public ResponseEntity<ErrorResponse> handleExternalApiException(ExternalApiException ex, HttpServletRequest request) {
         log.error("External API error [{}]: {}", ex.getServiceName(), ex.getMessage());

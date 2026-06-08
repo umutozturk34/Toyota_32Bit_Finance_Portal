@@ -1,7 +1,9 @@
 package com.finance.portfolio.derivative.service;
 
 import com.finance.common.exception.BadRequestException;
+import com.finance.common.exception.MarketDataNotReadyException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.common.market.MarketDataReadiness;
 import com.finance.common.model.Currency;
 import com.finance.market.core.service.CurrencyConverter;
 import com.finance.market.viop.model.ViopContract;
@@ -21,6 +23,7 @@ import com.finance.portfolio.repository.PortfolioRepository;
 import com.finance.portfolio.service.PortfolioBackfillService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +54,19 @@ public class DerivativePositionService {
     private final DerivativeSnapshotMaintenance snapshotMaintenance;
     private final DerivativePriceResolver priceResolver;
     private final CurrencyConverter currencyConverter;
+
+    // Optional: absent outside the full app context (e.g. unit tests), where the gate is a no-op. When present
+    // (the market-data initializer), blocks opening a position until the cold-start price/FX load has finished.
+    @Autowired(required = false)
+    private MarketDataReadiness marketDataReadiness;
+
+    /** @throws MarketDataNotReadyException (HTTP 503) if the cold-start market-data load has not finished yet. */
+    private void requireMarketDataReady() {
+        MarketDataReadiness readiness = marketDataReadiness;
+        if (readiness != null && !readiness.isReady()) {
+            throw new MarketDataNotReadyException("error.market.dataNotReady");
+        }
+    }
 
     private void publishLotChange(Long portfolioId, DerivativePosition position, LocalDate from) {
         if (from == null) return;
@@ -90,6 +106,7 @@ public class DerivativePositionService {
      */
     @Transactional
     public DerivativePositionResponse open(Long portfolioId, String userSub, OpenDerivativePositionRequest request) {
+        requireMarketDataReady();
         Portfolio portfolio = requireOwnedPortfolio(portfolioId, userSub);
         ViopContract contract = contractRepository.findBySymbol(request.contractSymbol())
                 .orElseThrow(() -> new ResourceNotFoundException("error.viop.contractNotFound", request.contractSymbol()));

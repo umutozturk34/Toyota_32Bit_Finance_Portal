@@ -53,7 +53,7 @@ app:
       allow-credentials: true
       max-age-seconds: 3600
   rate-limit:
-    admin-trigger-limit: 20
+    admin-trigger-limit: 6
     admin-read-limit: 20
     api-limit: 250
     bucket-expiration-hours: 2

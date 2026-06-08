@@ -330,6 +330,18 @@ class DerivativePositionServiceTest {
     }
 
     @Test
+    void should_throwMarketDataNotReady_when_openingBeforeColdStartLoadFinished() {
+        com.finance.common.market.MarketDataReadiness readiness =
+                org.mockito.Mockito.mock(com.finance.common.market.MarketDataReadiness.class);
+        when(readiness.isReady()).thenReturn(false);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "marketDataReadiness", readiness);
+
+        assertThatThrownBy(() -> service.open(PORTFOLIO_ID, USER_SUB, null))
+                .isInstanceOf(com.finance.common.exception.MarketDataNotReadyException.class);
+        verify(positionRepository, never()).save(any(DerivativePosition.class));
+    }
+
+    @Test
     void should_throwResourceNotFound_when_openingWithUnknownContract() {
         OpenDerivativePositionRequest req = new OpenDerivativePositionRequest(
                 "F_MISSING", DerivativeDirection.LONG, LocalDate.of(2026, 4, 1),

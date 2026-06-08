@@ -1,6 +1,5 @@
 package com.finance.market.forex.service;
 
-import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.market.forex.dto.response.ForexCandleResponse;
 import com.finance.market.forex.mapper.ForexResponseMapper;
 import com.finance.market.forex.model.ForexCandle;
@@ -19,7 +18,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -39,12 +37,12 @@ class ForexQueryServiceTest {
     }
 
     @Test
-    void should_throw_when_currencyCodeNotFound() {
+    void should_returnEmpty_when_currencyRowMissing() {
         when(forexRepository.existsById("XYZ")).thenReturn(false);
 
-        assertThatThrownBy(() -> service.getHistory("xyz", CandlePeriod.ONE_MONTH))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("error.market.forexNotFound");
+        List<ForexCandleResponse> result = service.getHistory("xyz", CandlePeriod.ONE_MONTH);
+
+        assertThat(result).isEmpty();
     }
 
     @Test

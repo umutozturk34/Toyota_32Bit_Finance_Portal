@@ -82,6 +82,18 @@ class MacroIndicatorFetchServiceTest {
     }
 
     @Test
+    void should_tolerateWindowFailure_andNotThrow_when_evdsFetchThrows() {
+        MacroIndicator indicator = buildIndicator("TP.RATE");
+        when(indicatorRepository.findAll()).thenReturn(List.of(indicator));
+        when(client.fetchSeriesBatched(any(), any(), any(), anyInt()))
+                .thenThrow(new com.finance.common.exception.ExternalApiException("EVDS", "rate limited"));
+
+        MacroIndicatorFetchService.FetchOutcome outcome = service.refreshAll();
+
+        assertThat(outcome.pointsInserted()).isZero();
+    }
+
+    @Test
     void should_recordChangedCode_when_indicatorGainsNewPoint() {
         MacroIndicator indicator = buildIndicator("TP.RATE");
         EvdsDataResponse response = new EvdsDataResponse(0, List.of());

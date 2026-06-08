@@ -4,7 +4,9 @@ import com.finance.portfolio.service.performance.PortfolioPerformanceService;
 import com.finance.portfolio.service.summary.PortfolioSummaryService;
 
 import com.finance.common.dto.response.PagedResponse;
+import com.finance.common.exception.MarketDataNotReadyException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.common.market.MarketDataReadiness;
 import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.portfolio.config.PortfolioProperties.LotLimits;
 import com.finance.portfolio.dto.request.PortfolioCreateRequest;
@@ -20,6 +22,7 @@ import com.finance.portfolio.dto.response.PositionResponse;
 import com.finance.portfolio.repository.PortfolioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -49,6 +52,20 @@ public class PortfolioFacade {
     private final PortfolioPerformanceService performanceService;
     private final PortfolioProperties portfolioProperties;
 
+    // Optional: absent outside the full app context (e.g. unit tests), where the gate is a no-op. When present
+    // (the market-data initializer), blocks position creation until the cold-start price/FX load has finished,
+    // so a fresh-DB user gets a clean "still loading" 503 instead of a position that later fails to value.
+    @Autowired(required = false)
+    private MarketDataReadiness marketDataReadiness;
+
+    /** @throws MarketDataNotReadyException (HTTP 503) if the cold-start market-data load has not finished yet. */
+    private void requireMarketDataReady() {
+        MarketDataReadiness readiness = marketDataReadiness;
+        if (readiness != null && !readiness.isReady()) {
+            throw new MarketDataNotReadyException("error.market.dataNotReady");
+        }
+    }
+
     public LotLimitsResponse getLotLimits() {
         LotLimits limits = portfolioProperties.getLotLimits();
         return new LotLimitsResponse(
@@ -70,6 +87,7 @@ public class PortfolioFacade {
     }
 
     public PositionResponse addPosition(String userSub, Long portfolioId, PositionRequest request) {
+        requireMarketDataReady();
         return crudService.addPosition(portfolioId, userSub, request);
     }
 

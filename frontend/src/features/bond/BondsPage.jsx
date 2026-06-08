@@ -183,7 +183,11 @@ export default function BondsPage() {
             toast.success(t('market.bond.updateStartedTitle'), response.message || t('market.bond.updateStarted'));
             setTimeout(refetch, 10000);
         } catch (err) {
-            toast.error(t('market.bond.updateErrorTitle'), err.response?.data?.message || err.message);
+            // 429 (rate limit / pool busy) already gets the global interceptor's rate-limit toast — skip here
+            // to avoid double-toasting the "system busy" message.
+            if (err.response?.status !== 429) {
+                toast.error(t('market.bond.updateErrorTitle'), err.response?.data?.message || err.message);
+            }
         } finally {
             setUpdating(prev => ({ ...prev, full: false }));
         }

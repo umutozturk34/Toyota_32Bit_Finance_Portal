@@ -230,8 +230,12 @@ export default function TasksPanel({ open, onClose }) {
         try {
             await triggerFn();
         } catch (err) {
-            const msg = err.response?.data?.message || err.message;
-            toast.info(t('tasksPanel.taskToast'), msg);
+            // 429 (rate limit / pool busy) already gets the global interceptor's rate-limit toast — skip here
+            // so the "system busy" message isn't shown twice.
+            if (err.response?.status !== 429) {
+                const msg = err.response?.data?.message || err.message;
+                toast.info(t('tasksPanel.taskToast'), msg);
+            }
         } finally {
             setTriggering(p => ({ ...p, [key]: false }));
         }

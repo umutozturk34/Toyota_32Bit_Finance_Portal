@@ -8,7 +8,7 @@ import { useAddPosition, usePortfolioLimits, useUpdatePosition } from './usePort
 import {
   FRACTIONAL_TYPES, ONE_HOUR_MS, SUCCESS_HOLD_MS, PROCESSING_STEP_DEFS,
   todayInputValue, dateInputToIso, isoToDateInput, buildInitialState,
-  resolveTarget, toYearMonth, buildPriceIndex, resolveNativeCurrency,
+  resolveTarget, toYearMonth, buildPriceIndex, latestPriceAtOrBefore, resolveNativeCurrency,
 } from '../lib/positionFormHelpers';
 
 export function usePositionForm({ mode, portfolioId, asset, position, onClose, onComplete }) {
@@ -90,7 +90,7 @@ export function usePositionForm({ mode, portfolioId, asset, position, onClose, o
   const entryLoading = viewLoading;
   const viewPrices = useMemo(() => buildPriceIndex(viewAvailability), [viewAvailability]);
   const highlightedDates = useMemo(() => new Set(viewPrices.keys()), [viewPrices]);
-  const suggestedPriceTry = entryMonth === viewMonth ? viewPrices.get(form.entryDate) : undefined;
+  const suggestedPriceTry = entryMonth === viewMonth ? latestPriceAtOrBefore(viewPrices, form.entryDate) : undefined;
   const suggestedPriceDisplay = useMemo(
     () => tryToDisplay(suggestedPriceTry, form.entryDate),
     [suggestedPriceTry, form.entryDate, tryToDisplay],
@@ -106,7 +106,7 @@ export function usePositionForm({ mode, portfolioId, asset, position, onClose, o
   });
   const exitPrices = useMemo(() => buildPriceIndex(exitAvailability), [exitAvailability]);
   const exitHighlights = useMemo(() => new Set(exitPrices.keys()), [exitPrices]);
-  const exitSuggestedTry = toYearMonth(exitDate) === exitViewMonth ? exitPrices.get(exitDate) : undefined;
+  const exitSuggestedTry = toYearMonth(exitDate) === exitViewMonth ? latestPriceAtOrBefore(exitPrices, exitDate) : undefined;
   const exitSuggestedDisplay = useMemo(
     () => tryToDisplay(exitSuggestedTry, exitDate),
     [exitSuggestedTry, exitDate, tryToDisplay],

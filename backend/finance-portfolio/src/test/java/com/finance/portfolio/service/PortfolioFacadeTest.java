@@ -56,7 +56,9 @@ class PortfolioFacadeTest {
     @BeforeEach
     void setUp() {
         facade = new PortfolioFacade(portfolioRepository, crudService, summaryService,
-                performanceService, portfolioProperties);
+                performanceService, portfolioProperties,
+                new com.finance.market.viop.config.ViopProperties(
+                        null, null, null, null, null, null, null, null, null, null, 5));
     }
 
     @Test

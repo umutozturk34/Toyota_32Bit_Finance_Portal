@@ -97,6 +97,22 @@ export function buildPriceIndex(response) {
   return index;
 }
 
+/**
+ * Price for {@code dateIso}, falling back to the most recent earlier date in the index when that exact day
+ * has none — so a non-trading day (weekend/holiday) suggests the last active value instead of nothing.
+ * ISO {@code YYYY-MM-DD} keys sort lexically, so a string compare finds the latest day on or before.
+ */
+export function latestPriceAtOrBefore(priceIndex, dateIso) {
+  if (!priceIndex || !dateIso) return undefined;
+  const exact = priceIndex.get(dateIso);
+  if (exact != null) return exact;
+  let bestKey = null;
+  for (const key of priceIndex.keys()) {
+    if (key <= dateIso && (bestKey === null || key > bestKey)) bestKey = key;
+  }
+  return bestKey === null ? undefined : priceIndex.get(bestKey);
+}
+
 export function preventDecimal(e) {
   if (e.key === '.' || e.key === ',') e.preventDefault();
 }

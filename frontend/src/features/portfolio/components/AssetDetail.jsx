@@ -105,7 +105,7 @@ function DirectionPanel({
     // compact formatChartMoney rendered a 100k+ TRY market value as "₺1,2M" with no tooltip to read the exact figure.
     if (key === 'entryPrice') return formatChartMoneyFull(entryPriceConverted, targetCurrency);
     if (key === 'currentPriceTry') return formatChartMoneyFull(currentPriceConverted, targetCurrency);
-    if (key === 'marketValueTry') return formatChartMoneyFull(marketValueConverted, targetCurrency);
+    if (key === 'marketValueTry') return formatChartMoneyFull(marketValueDisplay, targetCurrency);
     return null;
   };
 
@@ -162,6 +162,16 @@ function DirectionPanel({
   const framePnl = headFrame.base !== 'TRY' ? headFrame.pnl : null;
   const aggPnlPercentFramed = headFrame.pnlPercent ?? aggPnlPercent;
   const pnlSignVal = headFrame.pnl ?? aggPnlTry;
+
+  // Market value must reconcile with the headline K/Z: value = entry cost + K/Z, both in the display frame.
+  // Converting marketValueTry separately at a single (today) rate drifts from cost + pnl for a non-TRY frame
+  // (a SHORT read ~4918 instead of the cost+K/Z 5020). Falls back to the single-date convert when no display
+  // frame applies (TRY/native fallback), where it already equals the raw TRY value.
+  const entryCostDisplay = (entryPriceConverted != null && aggQuantity != null)
+    ? Number(entryPriceConverted) * Number(aggQuantity) : null;
+  const marketValueDisplay = (framePnl != null && entryCostDisplay != null)
+    ? entryCostDisplay + framePnl
+    : marketValueConverted;
 
   const latestPoint = series.length > 0 ? series[series.length - 1] : null;
   // For a closed asset the series ends at its exit date; convert the daily card at that point's date

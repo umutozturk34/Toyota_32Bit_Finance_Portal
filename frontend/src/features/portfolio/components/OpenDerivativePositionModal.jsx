@@ -9,8 +9,9 @@ import { unifiedMarketService } from '../../../shared/services/unifiedMarketServ
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { extractApiError } from '../../../shared/utils/apiError';
-import { ONE_HOUR_MS, toYearMonth, buildPriceIndex, resolveNativeCurrency } from '../lib/positionFormHelpers';
+import { ONE_HOUR_MS, toYearMonth, buildPriceIndex, latestPriceAtOrBefore, resolveNativeCurrency } from '../lib/positionFormHelpers';
 import { useOpenDerivativePosition, useUpdateDerivativePosition } from '../hooks/useDerivativePositions';
+import { usePortfolioLimits } from '../hooks/usePortfolioData';
 
 const today = () => new Date().toLocaleDateString('sv-SE');
 
@@ -39,6 +40,7 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
   const { t } = useTranslation();
   const { format: money, currency: displayCurrency } = useMoney();
   const { convertAt, rateAt } = useRateHistory();
+  const { data: limits } = usePortfolioLimits();
   const symbol = (lockedContract?.symbol || lockedContract?.code || '').toUpperCase();
   const meta = lockedContract?.metadata || {};
   const isOption = meta.kind === 'OPTION';
@@ -122,11 +124,11 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
   }, [lockedContract?.currentPrice, currency, rateAt, todayIso]);
   const entryNative = useMemo(() => {
     if (entryDate === todayIso && liveTodayInTry != null) return liveTodayInTry;
-    return entryDatePrices.get(entryDate);
+    return latestPriceAtOrBefore(entryDatePrices, entryDate);
   }, [entryDate, todayIso, liveTodayInTry, entryDatePrices]);
   const closeNative = useMemo(() => {
     if (closeDate === todayIso && liveTodayInTry != null) return liveTodayInTry;
-    return closeDatePrices.get(closeDate);
+    return latestPriceAtOrBefore(closeDatePrices, closeDate);
   }, [closeDate, todayIso, liveTodayInTry, closeDatePrices]);
   const entrySuggestedDisplay = useMemo(
     () => (entryNative != null ? convertAt(entryNative, 'TRY', entryDate, currency) : null),
@@ -258,6 +260,7 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
             value={entryDate}
             onChange={(iso) => { setEntryDate(iso); setEntryPriceTouched(false); setError(null); }}
             onMonthChange={(y, m) => setEntryViewMonth(`${y}-${String(m + 1).padStart(2, '0')}`)}
+            minDate={limits?.viopMinEntryDate ?? limits?.minEntryDate}
             maxDate={today()}
             highlightedDates={entryHighlights}
             loading={entryLoading}

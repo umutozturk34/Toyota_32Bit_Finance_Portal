@@ -51,6 +51,7 @@ public class PortfolioFacade {
     private final PortfolioSummaryService summaryService;
     private final PortfolioPerformanceService performanceService;
     private final PortfolioProperties portfolioProperties;
+    private final com.finance.market.viop.config.ViopProperties viopProperties;
 
     // Optional: absent outside the full app context (e.g. unit tests), where the gate is a no-op. When present
     // (the market-data initializer), blocks position creation until the cold-start price/FX load has finished,
@@ -68,8 +69,12 @@ public class PortfolioFacade {
 
     public LotLimitsResponse getLotLimits() {
         LotLimits limits = portfolioProperties.getLotLimits();
+        // VIOP candle history only spans the last max-history-years, so its entry floor is later than the
+        // spot one (EUR's 1999) — clamp the VIOP date picker to where VIOP data actually starts.
+        LocalDate viopMinEntryDate = LocalDate.now().minusYears(viopProperties.maxHistoryYears());
         return new LotLimitsResponse(
                 limits.getMinEntryDate(),
+                viopMinEntryDate,
                 LocalDate.now(),
                 limits.getMinPriceTry(),
                 limits.getMaxPriceTry(),

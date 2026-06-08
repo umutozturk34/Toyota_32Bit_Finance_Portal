@@ -78,9 +78,12 @@ class DerivativePositionServiceTest {
                 positionRepository);
         DerivativePriceResolver priceResolver = new DerivativePriceResolver(
                 candleRepository, historicalPricingPort);
+        com.finance.market.viop.config.ViopProperties viopProperties =
+                new com.finance.market.viop.config.ViopProperties(
+                        null, null, null, null, null, null, null, null, null, null, 5);
         service = new DerivativePositionService(positionRepository, portfolioRepository,
                 contractRepository, assetSnapshotRepository, mapper, eventPublisher,
-                snapshotMaintenance, priceResolver, currencyConverter);
+                snapshotMaintenance, priceResolver, currencyConverter, viopProperties);
 
         portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).name("test").build();
 
@@ -389,6 +392,18 @@ class DerivativePositionServiceTest {
         assertThatThrownBy(() -> service.open(PORTFOLIO_ID, USER_SUB, req))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("error.viop.entryAfterExpiry");
+    }
+
+    @Test
+    void should_throwEntryDateTooOld_when_openingBeforeViopHistoryWindow() {
+        OpenDerivativePositionRequest req = new OpenDerivativePositionRequest(
+                "F_USDTRY0626", DerivativeDirection.LONG, LocalDate.of(2015, 1, 1),
+                new BigDecimal("35.20"), new BigDecimal("1"), null, null);
+        when(contractRepository.findBySymbol("F_USDTRY0626")).thenReturn(Optional.of(contract));
+
+        assertThatThrownBy(() -> service.open(PORTFOLIO_ID, USER_SUB, req))
+                .isInstanceOf(com.finance.common.exception.BusinessException.class)
+                .hasMessageContaining("error.portfolio.lot.entryDateTooOld");
     }
 
     @Test

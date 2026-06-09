@@ -52,7 +52,7 @@ class PriceAlertServiceUnitTest {
 
     @BeforeEach
     void setUp() {
-        PriceAlertProperties properties = new PriceAlertProperties(50);
+        PriceAlertProperties properties = new PriceAlertProperties(50, 10);
         service = new PriceAlertService(repository, mapper, assetSnapshotCache,
                 trackedAssetRepository, properties);
     }
@@ -88,6 +88,18 @@ class PriceAlertServiceUnitTest {
     @Test
     void create_raises_whenUserReachedMaxAlerts() {
         when(repository.countByUserSub("user-1")).thenReturn(50L);
+
+        assertThatThrownBy(() -> service.create("user-1", createRequest()))
+                .isInstanceOf(BadRequestException.class);
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void create_raises_whenAssetReachedMaxAlertsPerAsset() {
+        when(repository.countByUserSub("user-1")).thenReturn(0L);
+        when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(eq(TrackedAssetType.STOCK), anyString()))
+                .thenReturn(Optional.of(tracked()));
+        when(repository.countByUserSubAndTrackedAsset_Id(eq("user-1"), any())).thenReturn(10L);
 
         assertThatThrownBy(() -> service.create("user-1", createRequest()))
                 .isInstanceOf(BadRequestException.class);

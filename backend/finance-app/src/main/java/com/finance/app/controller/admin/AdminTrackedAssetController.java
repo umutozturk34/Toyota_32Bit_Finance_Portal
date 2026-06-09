@@ -11,8 +11,10 @@ import com.finance.common.model.TrackedAssetType;
 import com.finance.app.service.TrackedAssetAdminService;
 import com.finance.market.core.service.TrackedAssetQueryService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -30,6 +32,7 @@ import java.util.List;
 @RequestMapping("/api/v1/admin/tracked-assets")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
+@Validated
 public class AdminTrackedAssetController {
 
     private final TrackedAssetAdminService trackedAssetAdminService;
@@ -39,7 +42,7 @@ public class AdminTrackedAssetController {
     @GetMapping
     public ApiResponse<List<TrackedAssetResponse>> getTrackedAssets(
             @RequestParam(required = false) String type,
-            @RequestParam(required = false) String search,
+            @RequestParam(required = false) @Size(max = 64) String search,
             @RequestParam(defaultValue = "sortOrder") String sort,
             @RequestParam(defaultValue = "asc") String direction
     ) {

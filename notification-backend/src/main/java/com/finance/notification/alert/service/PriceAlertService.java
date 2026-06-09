@@ -48,8 +48,8 @@ public class PriceAlertService {
     private final PriceAlertProperties properties;
 
     /**
-     * Creates an alert after enforcing the per-user cap, resolving the asset against the tracked
-     * universe, converting the threshold to the asset's native currency and rejecting duplicates.
+     * Creates an alert after enforcing the per-user and per-asset caps, resolving the asset against the
+     * tracked universe, converting the threshold to the asset's native currency and rejecting duplicates.
      */
     @Transactional
     public PriceAlertResponse create(String userSub, PriceAlertCreateRequest request) {
@@ -58,6 +58,11 @@ public class PriceAlertService {
             throw new BadRequestException("error.priceAlert.maxReached", maxPerUser);
         }
         TrackedAsset trackedAsset = requireTrackedAsset(request.marketType(), request.assetCode());
+        int maxPerAsset = properties.maxPerAsset();
+        if (maxPerAsset > 0
+                && repository.countByUserSubAndTrackedAsset_Id(userSub, trackedAsset.getId()) >= maxPerAsset) {
+            throw new BadRequestException("error.priceAlert.maxPerAssetReached", maxPerAsset, trackedAsset.getAssetCode());
+        }
         String nativeCurrency = resolveAssetCurrency(request.marketType(), trackedAsset.getAssetCode());
         BigDecimal thresholdNative = convertToCurrency(request.threshold(), request.currency(), nativeCurrency);
         if (repository.existsByUserSubAndTrackedAsset_IdAndDirectionAndThresholdAndActiveTrue(

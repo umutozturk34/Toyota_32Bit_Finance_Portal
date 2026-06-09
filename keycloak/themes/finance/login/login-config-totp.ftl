@@ -41,6 +41,7 @@
             <div class="form-group">
                 <label for="totp">${msg("authenticatorCode")}</label>
                 <input type="text" id="totp" name="totp" autocomplete="off" autofocus
+                    inputmode="numeric" pattern="[0-9]*" maxlength="8"
                     placeholder="${msg("authenticatorCode")}"
                     aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>" />
                 <#if messagesPerField.existsError('totp')>
@@ -51,6 +52,7 @@
             <div class="form-group">
                 <label for="userLabel">${msg("loginTotpDeviceName")}</label>
                 <input type="text" id="userLabel" name="userLabel" autocomplete="off"
+                    maxlength="80"
                     placeholder="${msg("loginTotpDeviceName")}" />
             </div>
 

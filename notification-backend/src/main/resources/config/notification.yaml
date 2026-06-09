@@ -37,6 +37,7 @@ notification:
     max-items-per-list: 100
   alert:
     max-per-user: 50
+    max-per-asset: 10
   async:
     sse:
       core-pool-size: 4

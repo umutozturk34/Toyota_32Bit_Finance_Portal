@@ -15,8 +15,13 @@ import com.finance.common.model.MarketType;
 import com.finance.app.service.UnifiedMarketService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,6 +33,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/market")
 @RequiredArgsConstructor
+@Validated
 public class UnifiedMarketController {
 
     private final AppProperties appProperties;
@@ -40,25 +46,25 @@ public class UnifiedMarketController {
             @Parameter(description = "Instrument types (comma-separated)", schema = @Schema(allowableValues = {"STOCK", "CRYPTO", "FOREX", "FUND", "COMMODITY", "VIOP", "BOND", "MACRO_DEPOSIT", "MACRO_INFLATION", "MACRO_RATE"}))
             @RequestParam(required = false) String type,
             @Parameter(description = "Single asset code lookup", example = "THYAO.IS")
-            @RequestParam(required = false) String code,
+            @RequestParam(required = false) @Size(max = 64) String code,
             @Parameter(description = "Stock segment filter", schema = @Schema(allowableValues = {"EQUITY", "MAIN_INDEX", "SECONDARY_INDEX"}))
-            @RequestParam(required = false) String segment,
+            @RequestParam(required = false) @Size(max = 64) String segment,
             @Parameter(description = "Search by code or name")
-            @RequestParam(required = false) String search,
+            @RequestParam(required = false) @Size(max = 64) String search,
             @Parameter(description = "Fund type filter", schema = @Schema(allowableValues = {"BYF", "YAT"}))
-            @RequestParam(required = false) String subType,
+            @RequestParam(required = false) @Size(max = 64) String subType,
             @Parameter(description = "Sort field", schema = @Schema(allowableValues = {"price", "changePercent", "name"}))
             @RequestParam(required = false) String sort,
             @Parameter(description = "Sort direction", schema = @Schema(allowableValues = {"asc", "desc"}))
             @RequestParam(defaultValue = "desc") String direction,
             @Parameter(description = "Filter by change", schema = @Schema(allowableValues = {"all", "gainers", "losers"}))
             @RequestParam(defaultValue = "all") String filter,
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(required = false) Integer size,
             @Parameter(description = "Fund sub-category filter (multi)")
-            @RequestParam(required = false) List<String> subCategory,
+            @RequestParam(required = false) @Size(max = 64) List<@Size(max = 64) String> subCategory,
             @Parameter(description = "Fund risk level filter (1-7, multi)")
-            @RequestParam(required = false) List<Integer> riskValue) {
+            @RequestParam(required = false) @Size(max = 7) List<@Min(1) @Max(7) Integer> riskValue) {
 
         AppProperties.Market market = appProperties.getPagination().getMarket();
         List<MarketType> types = MarketRequestHelper.parseMarketTypes(type);
@@ -95,7 +101,7 @@ public class UnifiedMarketController {
             @Parameter(description = "Instrument code", example = "THYAO.IS")
             @RequestParam String code,
             @Parameter(description = "Year-month (yyyy-MM)", example = "2025-04")
-            @RequestParam String yearMonth) {
+            @RequestParam @Pattern(regexp = "\\d{4}-\\d{2}") String yearMonth) {
         return ApiResponse.success(translator.translate("api.market.availabilityRetrieved"),
                 unifiedMarketService.getMonthlyAvailability(type, code, yearMonth));
     }

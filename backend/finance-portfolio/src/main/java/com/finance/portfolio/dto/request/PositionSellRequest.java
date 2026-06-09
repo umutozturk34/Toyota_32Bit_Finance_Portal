@@ -1,5 +1,6 @@
 package com.finance.portfolio.dto.request;
 
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -8,8 +9,8 @@ import java.time.LocalDateTime;
 
 /** Request to sell some/all of a spot lot; {@code exitPrice} in {@code priceCurrency} is converted to TRY at {@code exitDate}. */
 public record PositionSellRequest(
-        @NotNull @Positive BigDecimal quantity,
-        @NotNull @Positive BigDecimal exitPrice,
+        @NotNull @Positive @DecimalMax("1000000000") BigDecimal quantity,
+        @NotNull @Positive @DecimalMax("1000000000000") BigDecimal exitPrice,
         @NotNull LocalDateTime exitDate,
         String priceCurrency
 ) {

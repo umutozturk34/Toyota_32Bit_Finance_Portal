@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 
 /** Partial update for a watchlist item's note and delta threshold; null fields are left unchanged. */
 public record WatchlistItemUpdateRequest(
-        @Size(max = 255, message = "{validation.watchlist.note.maxLen}") String note,
+        @Size(max = 50, message = "{validation.watchlist.note.maxLen}") String note,
         @DecimalMin(value = "0", inclusive = true, message = "{validation.watchlist.threshold.nonNegative}")
         @DecimalMax(value = "999.9999", message = "{validation.watchlist.threshold.maxPercent}")
         BigDecimal deltaThreshold

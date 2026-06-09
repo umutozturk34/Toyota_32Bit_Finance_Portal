@@ -6,8 +6,10 @@ import com.finance.market.core.dto.response.TrackedAssetResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.market.core.service.TrackedAssetQueryService;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/tracked-assets")
 @RequiredArgsConstructor
+@Validated
 public class TrackedAssetController {
 
     private final TrackedAssetQueryService trackedAssetQueryService;
@@ -29,7 +32,7 @@ public class TrackedAssetController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<TrackedAssetResponse>> getTrackedAssets(
             @RequestParam(required = false) String type,
-            @RequestParam(required = false) String search,
+            @RequestParam(required = false) @Size(max = 64) String search,
             @RequestParam(defaultValue = "sortOrder") String sort,
             @RequestParam(defaultValue = "asc") String direction
     ) {

@@ -1,7 +1,11 @@
 package com.finance.portfolio.derivative.dto.request;
 
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Pattern;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -13,9 +17,9 @@ import java.time.LocalDate;
  */
 public record CloseDerivativePositionRequest(
         @NotNull @PastOrPresent LocalDate closeDate,
-        BigDecimal closePrice,
-        BigDecimal closeQuantityLot,
-        String priceCurrency
+        @DecimalMin(value = "0", inclusive = true) @DecimalMax("1000000000000") @Digits(integer = 15, fraction = 4) BigDecimal closePrice,
+        @DecimalMin(value = "0", inclusive = false) @DecimalMax("1000000000") @Digits(integer = 12, fraction = 4) BigDecimal closeQuantityLot,
+        @Pattern(regexp = "^[A-Z]{3}$") String priceCurrency
 ) {
     public CloseDerivativePositionRequest(LocalDate closeDate, BigDecimal closePrice) {
         this(closeDate, closePrice, null, null);

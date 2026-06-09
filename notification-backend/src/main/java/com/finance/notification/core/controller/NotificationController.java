@@ -7,6 +7,7 @@ import com.finance.notification.core.dto.NotificationResponse;
 import com.finance.notification.core.service.NotificationService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -42,7 +43,7 @@ public class NotificationController {
             @RequestParam(defaultValue = "false") boolean unreadOnly,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) @Size(max = 100) String search) {
         Page<NotificationResponse> result = service.list(jwt.getSubject(), page, size, unreadOnly, search);
         return ApiResponse.success(translator.translate("api.notification.listRetrieved"),
                 PagedResponse.of(result.getContent(), page, size, result.getTotalElements()));

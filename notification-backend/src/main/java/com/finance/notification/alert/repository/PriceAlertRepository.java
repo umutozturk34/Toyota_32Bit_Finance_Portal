@@ -19,6 +19,8 @@ public interface PriceAlertRepository extends JpaRepository<PriceAlert, Long> {
 
     long countByUserSub(String userSub);
 
+    long countByUserSubAndTrackedAsset_Id(String userSub, Long trackedAssetId);
+
     boolean existsByUserSubAndTrackedAsset_IdAndDirectionAndThresholdAndActiveTrue(
             String userSub, Long trackedAssetId, AlertDirection direction, BigDecimal threshold);
 }

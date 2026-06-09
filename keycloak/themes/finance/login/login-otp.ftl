@@ -30,6 +30,7 @@
             <div class="form-group">
                 <label for="otp">${msg("loginOtpOneTime")}</label>
                 <input type="text" id="otp" name="otp" autocomplete="off" autofocus
+                    inputmode="numeric" pattern="[0-9]*" maxlength="8"
                     placeholder="${msg("loginOtpOneTime")}"
                     aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>" />
                 <#if messagesPerField.existsError('totp')>

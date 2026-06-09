@@ -22,7 +22,9 @@ import java.util.TreeMap;
 @RequiredArgsConstructor
 public class CurrencyConverter {
 
-    private static final int OUTPUT_SCALE = 4;
+    // 8 dp, not 4: a 4-dp money scale quantized small converted prices to zero — a sub-cent fund NAV
+    // (e.g. 0.0018 TRY → ~0.0000468 USD) rounded to 0.0000, so the USD/EUR return series read -100%.
+    private static final int OUTPUT_SCALE = 8;
 
     private final FxRateProvider fxRateProvider;
 

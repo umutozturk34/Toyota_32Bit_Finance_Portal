@@ -56,6 +56,11 @@ public class AssetReturnsService {
     );
 
     private static final BigDecimal HUNDRED = new BigDecimal("100");
+    // A long position can lose at most its whole value, so returns are floored at −100% — and a still-priced
+    // asset never truly reaches it. A −99.99x% loss that 2-dp rounding pushes to exactly −100% is pinned just
+    // under, so the UI never prints a phantom "−100%" total wipeout.
+    private static final BigDecimal MIN_RETURN_PCT = new BigDecimal("-100");
+    private static final BigDecimal NEAR_TOTAL_LOSS_PCT = new BigDecimal("-99.99");
     // 6 dp so sub-cent unit prices (small "serbest fon" units, minor currencies like KRW) don't round to
     // 0 in the response; the frontend trims trailing precision per magnitude for display.
     private static final int PRICE_SCALE = 6;
@@ -263,6 +268,11 @@ public class AssetReturnsService {
         BigDecimal returnPct = priceNow.subtract(priceThen)
                 .multiply(HUNDRED)
                 .divide(priceThen, PCT_SCALE, RoundingMode.HALF_UP);
+        // Never let a still-priced asset read as a full −100% wipeout; that only happens when rounding nudges a
+        // −99.99x% loss to exactly −100% (e.g. a fund that lost almost all its value).
+        if (returnPct.compareTo(MIN_RETURN_PCT) <= 0) {
+            returnPct = NEAR_TOTAL_LOSS_PCT;
+        }
         BigDecimal returnValue = priceNow.subtract(priceThen).setScale(PRICE_SCALE, RoundingMode.HALF_UP);
         BigDecimal volatility = annualizedVolatilityPct(series, start, anchor);
         return new Figures(

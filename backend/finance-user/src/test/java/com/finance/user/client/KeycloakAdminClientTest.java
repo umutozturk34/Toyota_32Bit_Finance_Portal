@@ -109,6 +109,24 @@ class KeycloakAdminClientTest {
     }
 
     @Test
+    void listUnverifiedUsers_returnsCollectedFlux() {
+        KeycloakUser u = new KeycloakUser("id-1", "ali", "ali@x.com", "Ali", "Yilmaz", true, false, 0L);
+        when(getResponseSpec.bodyToFlux(KeycloakUser.class)).thenReturn(Flux.just(u));
+
+        List<KeycloakUser> result = client.listUnverifiedUsers(0, 200);
+
+        assertThat(result).containsExactly(u);
+    }
+
+    @Test
+    void deleteUser_invokesDeleteEndpoint() {
+        client.deleteUser(USER_ID);
+
+        verify(webClient).delete();
+        verify(deleteResponseSpec).toBodilessEntity();
+    }
+
+    @Test
     void countUsers_returnsTotal_whenBodyPresent() {
         when(getResponseSpec.bodyToMono(Long.class)).thenReturn(Mono.just(42L));
 

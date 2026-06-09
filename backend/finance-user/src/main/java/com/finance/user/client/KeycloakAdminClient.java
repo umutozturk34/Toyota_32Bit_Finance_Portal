@@ -75,6 +75,23 @@ public class KeycloakAdminClient {
         return total != null ? total : 0L;
     }
 
+    /** Lists users whose email is still unverified (server-side filtered), capped at {@code max}; used by stale-registration cleanup. */
+    @CircuitBreaker(name = "keycloak-admin")
+    @Retry(name = "keycloak-admin")
+    public List<KeycloakUser> listUnverifiedUsers(int first, int max) {
+        return executeWithRetry("listUnverifiedUsers", token -> webClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/admin/realms/{realm}/users")
+                        .queryParam("emailVerified", false)
+                        .queryParam("first", first)
+                        .queryParam("max", max)
+                        .build(properties.getRealm()))
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .bodyToFlux(KeycloakUser.class)
+                .collectList()
+                .block());
+    }
+
     @CircuitBreaker(name = "keycloak-admin")
     @Retry(name = "keycloak-admin")
     public Map<String, Object> getUser(String userId) {
@@ -264,6 +281,18 @@ public class KeycloakAdminClient {
         executeWithRetry("deleteCredential", token -> webClient.delete()
                 .uri("/admin/realms/{realm}/users/{id}/credentials/{credId}",
                         properties.getRealm(), userId, credentialId)
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .toBodilessEntity()
+                .block());
+    }
+
+    /** Permanently deletes a user; used by the stale-registration cleanup to remove never-verified accounts. */
+    @CircuitBreaker(name = "keycloak-admin")
+    @Retry(name = "keycloak-admin")
+    public void deleteUser(String userId) {
+        executeWithRetry("deleteUser", token -> webClient.delete()
+                .uri("/admin/realms/{realm}/users/{id}", properties.getRealm(), userId)
                 .header("Authorization", "Bearer " + token)
                 .retrieve()
                 .toBodilessEntity()

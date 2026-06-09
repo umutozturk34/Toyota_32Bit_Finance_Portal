@@ -38,8 +38,8 @@ class AdminUserServiceTest {
     @Test
     void shouldMapKeycloakUsersToResponses_whenListing() {
         KeycloakUser u1 = new KeycloakUser("id-1", "alice", "alice@example.com",
-                "Alice", "Wonder", true, 1714560000000L);
-        KeycloakUser u2 = new KeycloakUser("id-2", "bob", null, "Bob", null, false, null);
+                "Alice", "Wonder", true, true, 1714560000000L);
+        KeycloakUser u2 = new KeycloakUser("id-2", "bob", null, "Bob", null, false, false, null);
         when(client.listUsers(0, 50, null)).thenReturn(List.of(u1, u2));
 
         List<AdminUserResponse> result = service.listUsers(0, 50, null);
@@ -119,7 +119,7 @@ class AdminUserServiceTest {
 
     @Test
     void shouldTreatNullEnabled_asFalseInResponse() {
-        KeycloakUser legacy = new KeycloakUser("legacy", "legacyuser", null, null, null, null, null);
+        KeycloakUser legacy = new KeycloakUser("legacy", "legacyuser", null, null, null, null, null, null);
         when(client.listUsers(0, 50, null)).thenReturn(List.of(legacy));
 
         List<AdminUserResponse> result = service.listUsers(0, 50, null);

@@ -91,7 +91,7 @@ class KeycloakAdminClientTest {
 
     @Test
     void listUsers_returnsCollectedFlux_onHappyPath() {
-        KeycloakUser u = new KeycloakUser("id-1", "ali", "ali@x.com", "Ali", "Yilmaz", true, 0L);
+        KeycloakUser u = new KeycloakUser("id-1", "ali", "ali@x.com", "Ali", "Yilmaz", true, true, 0L);
         when(getResponseSpec.bodyToFlux(KeycloakUser.class)).thenReturn(Flux.just(u));
 
         List<KeycloakUser> result = client.listUsers(0, 20, "ali");

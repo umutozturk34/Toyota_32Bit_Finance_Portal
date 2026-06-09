@@ -37,6 +37,16 @@ app:
       # Asset-returns dataset (all spot assets × all windows, in TRY), recomputed after the evening
       # market-data refresh — staggered 5 min after the beater so they don't rebuild at the same instant.
       daily-cron: "0 35 23 * * *"
+    user-cleanup:
+      # Deletes never-verified registrations older than the TTL. Keycloak persists a user as soon as the
+      # registration form is submitted and has no native expiry for unverified accounts, so abandoned and
+      # fake sign-ups would otherwise pile up and keep their email/username reserved. The TTL must stay above
+      # the verify-code window (accessCodeLifespanUserAction, 15m) so a user still entering the code is never
+      # deleted mid-verification; the cron runs often enough that a short TTL is actually honored.
+      cron: "0 */5 * * * *"
+      enabled: true
+      ttl: 20m
+      max-per-run: 200
 
   task:
     max-history: 50

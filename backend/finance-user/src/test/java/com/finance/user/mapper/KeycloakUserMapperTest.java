@@ -16,7 +16,7 @@ class KeycloakUserMapperTest {
     void should_copyAllFields_when_keycloakUserIsFullyPopulated() {
         KeycloakUser source = new KeycloakUser(
                 "kc-id-1", "umut", "umut@finance.local",
-                "Umut", "Ozturk", true, 1714521600000L);
+                "Umut", "Ozturk", true, true, 1714521600000L);
 
         AdminUserResponse response = mapper.toResponse(source);
 
@@ -31,7 +31,7 @@ class KeycloakUserMapperTest {
 
     @Test
     void should_returnFalseEnabled_when_keycloakReportedNull() {
-        KeycloakUser source = new KeycloakUser("id", "u", "e", null, null, null, 0L);
+        KeycloakUser source = new KeycloakUser("id", "u", "e", null, null, null, false, 0L);
 
         AdminUserResponse response = mapper.toResponse(source);
 
@@ -40,7 +40,7 @@ class KeycloakUserMapperTest {
 
     @Test
     void should_returnFalseEnabled_when_keycloakReportedFalse() {
-        KeycloakUser source = new KeycloakUser("id", "u", "e", null, null, false, 0L);
+        KeycloakUser source = new KeycloakUser("id", "u", "e", null, null, false, false, 0L);
 
         AdminUserResponse response = mapper.toResponse(source);
 
@@ -49,7 +49,7 @@ class KeycloakUserMapperTest {
 
     @Test
     void should_returnNullCreatedAt_when_timestampIsNull() {
-        KeycloakUser source = new KeycloakUser("id", "u", "e", null, null, true, null);
+        KeycloakUser source = new KeycloakUser("id", "u", "e", null, null, true, false, null);
 
         AdminUserResponse response = mapper.toResponse(source);
 

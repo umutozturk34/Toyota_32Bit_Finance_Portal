@@ -337,7 +337,7 @@ Login runs through Keycloak. Demo credentials (in `.env`, intentionally visible 
 | http://localhost:8082/swagger-ui/index.html | Swagger UI — notification backend (`:8082`) interactive API |
 | http://localhost:8180/auth | Keycloak admin console (same Keycloak, direct port) |
 | http://localhost:8025 | Mailpit — all outgoing mail is captured here |
-| http://localhost:8081 | phpLDAPadmin — directory entries (login: `cn=admin,dc=finance,dc=local`) |
+| http://localhost:8081 | phpLDAPadmin — directory entries (login: `cn=admin,dc=finance,dc=com`) |
 | http://localhost:5601 | OpenSearch Dashboards (logs / traces) |
 | `localhost:5432` | PostgreSQL — connect with any DB client (creds in `.env`) |
 | `localhost:6379` | Redis — cache + rate-limit buckets |

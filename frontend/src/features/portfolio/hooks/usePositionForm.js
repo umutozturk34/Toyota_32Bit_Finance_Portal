@@ -10,6 +10,7 @@ import {
   todayInputValue, dateInputToIso, isoToDateInput, buildInitialState,
   resolveTarget, toYearMonth, buildPriceIndex, latestPriceAtOrBefore, resolveNativeCurrency,
 } from '../lib/positionFormHelpers';
+import { MAX_MONEY, MAX_QUANTITY } from '../../../shared/utils/numberInput';
 
 export function usePositionForm({ mode, portfolioId, asset, position, onClose, onComplete }) {
   const { t } = useTranslation();
@@ -167,13 +168,14 @@ export function usePositionForm({ mode, portfolioId, asset, position, onClose, o
 
   const validate = () => {
     if (!form.entryDate) return t('positionForm.errors.dateRequired');
-    if (!form.entryPrice || Number(form.entryPrice) <= 0) return t('positionForm.errors.priceInvalid');
+    const price = Number(form.entryPrice);
+    if (!form.entryPrice || price <= 0 || price > MAX_MONEY) return t('positionForm.errors.priceInvalid');
     const qty = Number(form.quantity);
-    if (!qty || qty <= 0) return t('positionForm.errors.quantityInvalid');
+    if (!qty || qty <= 0 || qty > MAX_QUANTITY) return t('positionForm.errors.quantityInvalid');
     if (!isFractional && !Number.isInteger(qty)) return t('positionForm.errors.quantityInteger');
     if (closeEnabled) {
       if (!exitDate) return t('positionForm.errors.exitDateRequired', { defaultValue: 'Çıkış tarihi gerekli' });
-      if (!exitPrice || Number(exitPrice) <= 0) return t('positionForm.errors.exitPriceInvalid', { defaultValue: 'Çıkış fiyatı geçersiz' });
+      if (!exitPrice || Number(exitPrice) <= 0 || Number(exitPrice) > MAX_MONEY) return t('positionForm.errors.exitPriceInvalid', { defaultValue: 'Çıkış fiyatı geçersiz' });
       if (new Date(exitDate) < new Date(form.entryDate)) {
         return t('positionForm.errors.exitBeforeEntry', { defaultValue: 'Çıkış tarihi giriş tarihinden önce olamaz' });
       }

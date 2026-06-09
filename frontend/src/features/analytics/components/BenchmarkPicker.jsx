@@ -212,6 +212,7 @@ export default function BenchmarkPicker({ value, onChange, options, t, defaultLa
                 ref={searchRef}
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setActiveIdx(-1); }}
+                maxLength={64}
                 placeholder={t('analytics.bmSearchPlaceholder', { defaultValue: 'Benchmark ara…' })}
                 className="w-full bg-bg-base/60 border border-border-default rounded-lg pl-8 pr-3 py-1.5 text-xs font-mono text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors"
               />

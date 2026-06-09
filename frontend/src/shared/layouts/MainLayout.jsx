@@ -176,8 +176,8 @@ const MainLayout = () => {
     <div className="flex min-h-screen min-h-[100dvh] bg-bg-base relative">
       {isDark && (
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute top-0 left-1/4 w-[600px] h-[400px] rounded-full bg-accent/[0.04] blur-[150px] animate-float-slow" />
-          <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] rounded-full bg-[#7c3aed]/[0.03] blur-[120px] animate-float-mid" />
+          <div className="absolute top-0 left-1/4 w-[600px] h-[400px] rounded-full bg-accent/[0.04] blur-[150px]" />
+          <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] rounded-full bg-[#7c3aed]/[0.03] blur-[120px]" />
         </div>
       )}
 

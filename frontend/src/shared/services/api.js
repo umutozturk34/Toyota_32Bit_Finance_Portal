@@ -66,6 +66,7 @@ api.interceptors.response.use(
     }
     const status = error.response?.status;
     const backendMessage = error.response?.data?.message;
+    const isValidation = status === 400 && error.response?.data?.errorCode === 'VALIDATION_ERROR';
     let messageKey = null;
     if (!error.response) {
       messageKey = 'error.networkError';
@@ -75,10 +76,12 @@ api.interceptors.response.use(
       messageKey = 'error.gatewayTimeout';
     } else if (status >= 500) {
       messageKey = 'error.serverError';
+    } else if (isValidation) {
+      messageKey = 'error.validationFailed';
     }
     if (messageKey) {
       const fallback = i18n.t(messageKey);
-      toast.error(i18n.t('error.actionFailed'), backendMessage || fallback);
+      toast.error(i18n.t('error.actionFailed'), isValidation ? fallback : (backendMessage || fallback));
     }
     return Promise.reject(error);
   }

@@ -171,7 +171,7 @@ export default function PortfolioOnboardingHost({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={defaultPortfolioName}
-                maxLength={64}
+                maxLength={25}
                 className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
               />
               <motion.div

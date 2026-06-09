@@ -10,6 +10,7 @@ import { useMoney } from '../../../shared/hooks/useMoney';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { extractApiError } from '../../../shared/utils/apiError';
 import { ONE_HOUR_MS, toYearMonth, buildPriceIndex, latestPriceAtOrBefore, resolveNativeCurrency } from '../lib/positionFormHelpers';
+import { clampNumberInput, MAX_MONEY, MAX_QUANTITY } from '../../../shared/utils/numberInput';
 import { useOpenDerivativePosition, useUpdateDerivativePosition } from '../hooks/useDerivativePositions';
 import { usePortfolioLimits } from '../hooks/usePortfolioData';
 
@@ -36,7 +37,7 @@ function AvailabilityHint({ loading, price, currency, t }) {
   );
 }
 
-export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClose, lockedContract, editPosition = null }) {
+export default function OpenDerivativePositionModal({ portfolioId, portfolioPicker, isOpen, onClose, lockedContract, editPosition = null }) {
   const { t } = useTranslation();
   const { format: money, currency: displayCurrency } = useMoney();
   const { convertAt, rateAt } = useRateHistory();
@@ -207,6 +208,7 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} title={title}>
       <form onSubmit={submit} className="space-y-4">
+        {portfolioPicker}
         <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-2">
           <div className="text-sm font-semibold text-fg">{symbol}</div>
           {lockedContract?.name && <div className="text-xs text-fg-muted truncate">{lockedContract.name}</div>}
@@ -245,8 +247,8 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
               <Hash className="h-3 w-3" /> {t('portfolio.derivatives.qty')}
             </span>
             <input
-              type="number" min="0.01" step="0.01" required inputMode="decimal" value={quantityLot}
-              onChange={(e) => setQuantityLot(e.target.value)}
+              type="number" min="0.01" max={MAX_QUANTITY} step="0.01" required inputMode="decimal" value={quantityLot}
+              onChange={(e) => setQuantityLot(clampNumberInput(e.target.value, MAX_QUANTITY))}
               className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all"
             />
           </label>
@@ -273,8 +275,8 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
             <Tag className="h-3 w-3" /> {priceLabel}
           </span>
           <input
-            type="number" step="0.0001" inputMode="decimal" value={entryPrice}
-            onChange={(e) => { setEntryPrice(e.target.value); setEntryPriceTouched(true); }}
+            type="number" min="0" max={MAX_MONEY} step="0.0001" inputMode="decimal" value={entryPrice}
+            onChange={(e) => { setEntryPrice(clampNumberInput(e.target.value, MAX_MONEY)); setEntryPriceTouched(true); }}
             placeholder={t('portfolio.derivatives.autoFromHistory')}
             className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
           />
@@ -315,8 +317,8 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
               <label className="space-y-1.5 block">
                 <span className="text-xs font-medium text-fg-muted">{t('portfolio.derivatives.closePrice')}</span>
                 <input
-                  type="number" step="0.0001" inputMode="decimal" value={closePrice}
-                  onChange={(e) => { setClosePrice(e.target.value); setClosePriceTouched(true); }}
+                  type="number" min="0" max={MAX_MONEY} step="0.0001" inputMode="decimal" value={closePrice}
+                  onChange={(e) => { setClosePrice(clampNumberInput(e.target.value, MAX_MONEY)); setClosePriceTouched(true); }}
                   placeholder={t('portfolio.derivatives.autoFromHistory')}
                   className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
                 />

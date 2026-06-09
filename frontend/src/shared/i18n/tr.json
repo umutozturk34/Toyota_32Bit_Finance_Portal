@@ -666,7 +666,7 @@
     "tabGold": "Altın",
     "buy": "Alış",
     "sell": "Satış",
-    "spread": "Spread",
+    "spread": "Makas",
     "refresh": "Yenile",
     "searchCurrency": "Ara...",
     "searchBank": "Banka ara...",
@@ -680,6 +680,10 @@
     "emptyHint": "Scheduler en son ne zaman çalıştığı kontrol edilmeli",
     "noData": "Veri yok",
     "bankCount": "{{count}} banka",
+    "sort": "Sırala",
+    "sortBuy": "Alış",
+    "sortSell": "Satış",
+    "sortSpread": "Makas",
     "currency": {
       "USD": "Amerikan Doları",
       "EUR": "Euro",
@@ -1200,7 +1204,8 @@
   "marketAddPosition": {
     "noPortfolioTitle": "Portföy bulunamadı",
     "noPortfolioHint": "Pozisyon ekleyebilmek için önce portföyünüzü oluşturmanız gerekiyor.",
-    "goToPortfolio": "Portföye Git"
+    "goToPortfolio": "Portföye Git",
+    "choosePortfolio": "Portföy seç"
   },
   "positionDelete": {
     "title": "Pozisyonu Sil",
@@ -1461,7 +1466,8 @@
     "networkError": "Bağlantı kurulamadı. İnternet bağlantınızı kontrol edin.",
     "serverUnavailable": "Sunucu şu anda erişilemiyor. Lütfen biraz sonra tekrar deneyin.",
     "gatewayTimeout": "Sunucu zaman aşımına uğradı. Lütfen tekrar deneyin.",
-    "serverError": "Sunucuda bir hata oluştu. Lütfen tekrar deneyin."
+    "serverError": "Sunucuda bir hata oluştu. Lütfen tekrar deneyin.",
+    "validationFailed": "Lütfen girdilerini kontrol edip tekrar dene."
   },
   "notificationPanel": {
     "title": "Bildirimler",

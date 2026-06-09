@@ -3,11 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { Pencil, Save, ArrowUp, ArrowDown, TrendingUp, TrendingDown } from 'lucide-react';
 import { useUpdatePriceAlert } from '../../../shared/hooks/usePriceAlerts';
 import { toast } from '../../../shared/components/feedback/toastBus';
-import { extractApiError } from '../../../shared/utils/apiError';
+import { toastApiError } from '../../../shared/utils/apiError';
 import BaseModal from '../../../shared/components/modal/BaseModal';
 import Button from '../../../shared/components/buttons/Button';
 import { currencySymbolOf } from '../../../shared/utils/priceCurrency';
 import { commodityLabel } from '../../../shared/utils/commodityName';
+import { clampNumberInput, MAX_MONEY, MAX_PERCENT } from '../../../shared/utils/numberInput';
 
 const DIRECTION_DEFS = [
   { value: 'ABOVE', Icon: ArrowUp },
@@ -50,7 +51,7 @@ export default function EditPriceAlertModal({ open, onClose, alert }) {
       toast.success(t('priceAlertEdit.updated'), t('priceAlertEdit.updatedBody', { code: alert.assetCode }));
       onClose?.();
     } catch (err) {
-      toast.error(extractApiError(err, t('priceAlertEdit.updateFailed')));
+      toastApiError(err, t('priceAlertEdit.updateFailed'));
     }
   };
 
@@ -97,7 +98,14 @@ export default function EditPriceAlertModal({ open, onClose, alert }) {
               type="text"
               inputMode="decimal"
               value={threshold}
-              onChange={(e) => setThreshold(e.target.value)}
+              onChange={(e) => {
+                const raw = e.target.value;
+                const max = isPercent ? MAX_PERCENT : MAX_MONEY;
+                // Threshold accepts comma decimals (TR locale), so normalise before the cap check; keep the
+                // raw keystroke unless the value exceeds max, in which case fall back to the capped string.
+                const capped = clampNumberInput(raw.replace(',', '.'), max);
+                setThreshold(capped === raw.replace(',', '.') ? raw : capped);
+              }}
               placeholder={t('priceAlertEdit.thresholdPlaceholder')}
               className="w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 pr-10 text-sm font-mono text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)] transition-all"
             />

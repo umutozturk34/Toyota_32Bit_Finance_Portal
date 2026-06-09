@@ -14,7 +14,7 @@ import { todayInputValue, preventDecimal, describeAction } from '../lib/position
 import { currencySymbolOf } from '../../../shared/utils/priceCurrency';
 import { commodityLabel } from '../../../shared/utils/commodityName';
 
-export default function PositionFormModal({ mode, portfolioId, asset, position, onClose, onComplete }) {
+export default function PositionFormModal({ mode, portfolioId, portfolioPicker, asset, position, onClose, onComplete }) {
   const { t } = useTranslation();
   const { format: money, formatCompact } = useMoney();
   const f = usePositionForm({ mode, portfolioId, asset, position, onClose, onComplete });
@@ -97,6 +97,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
 
         {phase === 'form' && (
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            {portfolioPicker}
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
                 <Calendar className="h-3 w-3" />
@@ -138,6 +139,8 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
                 <input
                   type="number"
                   step="any"
+                  min="0"
+                  max="1000000000000"
                   inputMode="decimal"
                   value={form.entryPrice}
                   onChange={handlePriceChange}
@@ -155,6 +158,8 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
               <input
                 type="number"
                 step={isFractional ? 'any' : '1'}
+                min="0"
+                max="1000000000"
                 inputMode={isFractional ? 'decimal' : 'numeric'}
                 value={form.quantity}
                 onChange={handleQuantityChange}
@@ -209,6 +214,8 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
                         <input
                           type="number"
                           step="any"
+                          min="0"
+                          max="1000000000000"
                           inputMode="decimal"
                           value={exitPrice}
                           onChange={(e) => { setExitPrice(e.target.value); setExitPriceTouched(true); setError(null); }}

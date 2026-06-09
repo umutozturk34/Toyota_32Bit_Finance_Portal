@@ -125,6 +125,7 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
       </span>
       <input
         type="text"
+        maxLength={64}
         value={local}
         onChange={handleChange}
         onFocus={() => { if (withSuggestions) setOpen(true); }}

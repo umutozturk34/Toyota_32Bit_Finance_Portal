@@ -3,10 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { Pencil, Save } from 'lucide-react';
 import { useUpdateWatchlistItem } from '../../../shared/hooks/useWatchlist';
 import { toast } from '../../../shared/components/feedback/toastBus';
-import { extractApiError } from '../../../shared/utils/apiError';
+import { toastApiError } from '../../../shared/utils/apiError';
 import BaseModal from '../../../shared/components/modal/BaseModal';
 import Button from '../../../shared/components/buttons/Button';
 import { commodityLabel } from '../../../shared/utils/commodityName';
+import { clampNumberInput, MAX_PERCENT } from '../../../shared/utils/numberInput';
 
 export default function EditWatchlistItemModal({ open, onClose, item, watchlistId }) {
   const { t } = useTranslation();
@@ -45,7 +46,7 @@ export default function EditWatchlistItemModal({ open, onClose, item, watchlistI
       toast.success(t('watchlistItemEdit.updated'), t('watchlistItemEdit.updatedBody', { code: item.assetCode }));
       onClose?.();
     } catch (err) {
-      toast.error(extractApiError(err, t('watchlistItemEdit.updateFailed')));
+      toastApiError(err, t('watchlistItemEdit.updateFailed'));
     }
   };
 
@@ -67,7 +68,7 @@ export default function EditWatchlistItemModal({ open, onClose, item, watchlistI
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            maxLength={255}
+            maxLength={50}
             placeholder={t('watchlistItemEdit.notePlaceholder')}
             className="mt-1.5 w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:bg-bg-elevated focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)] transition-all"
           />
@@ -81,7 +82,13 @@ export default function EditWatchlistItemModal({ open, onClose, item, watchlistI
             type="text"
             inputMode="decimal"
             value={threshold}
-            onChange={(e) => setThreshold(e.target.value)}
+            onChange={(e) => {
+              const raw = e.target.value;
+              // Threshold accepts comma decimals (TR locale), so normalise before the cap check; keep the
+              // raw keystroke unless the value exceeds max, in which case fall back to the capped string.
+              const capped = clampNumberInput(raw.replace(',', '.'), MAX_PERCENT);
+              setThreshold(capped === raw.replace(',', '.') ? raw : capped);
+            }}
             placeholder={t('watchlistItemEdit.thresholdPlaceholder')}
             className="mt-1.5 w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-sm font-mono text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)] transition-all"
           />

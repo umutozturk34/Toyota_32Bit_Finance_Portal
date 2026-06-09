@@ -680,6 +680,10 @@
     "emptyHint": "Check when the scheduler last ran",
     "noData": "No data",
     "bankCount": "{{count}} banks",
+    "sort": "Sort",
+    "sortBuy": "Buy",
+    "sortSell": "Sell",
+    "sortSpread": "Spread",
     "currency": {
       "USD": "US Dollar",
       "EUR": "Euro",
@@ -1200,7 +1204,8 @@
   "marketAddPosition": {
     "noPortfolioTitle": "Portfolio not found",
     "noPortfolioHint": "You need to create a portfolio first before adding positions.",
-    "goToPortfolio": "Go to Portfolio"
+    "goToPortfolio": "Go to Portfolio",
+    "choosePortfolio": "Choose portfolio"
   },
   "positionDelete": {
     "title": "Delete Position",
@@ -1461,7 +1466,8 @@
     "networkError": "Cannot reach the server. Please check your connection.",
     "serverUnavailable": "Server is currently unavailable. Please try again shortly.",
     "gatewayTimeout": "The server took too long to respond. Please try again.",
-    "serverError": "An unexpected server error occurred. Please try again."
+    "serverError": "An unexpected server error occurred. Please try again.",
+    "validationFailed": "Please check your input and try again."
   },
   "notificationPanel": {
     "title": "Notifications",

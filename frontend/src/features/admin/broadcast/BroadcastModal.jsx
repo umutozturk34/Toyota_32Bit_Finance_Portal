@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Megaphone } from 'lucide-react';
 import { useBroadcast } from './useBroadcast';
 import { toast } from '../../../shared/components/feedback/toastBus';
-import { extractApiError } from '../../../shared/utils/apiError';
+import { toastApiError } from '../../../shared/utils/apiError';
 import BaseModal from '../../../shared/components/modal/BaseModal';
 import Button from '../../../shared/components/buttons/Button';
 
@@ -30,7 +30,7 @@ export default function BroadcastModal({ open, onClose }) {
       toast.success(t('broadcast.successTitle'), t('broadcast.successBody', { dispatched: result.dispatched, total: result.totalRecipients }));
       onClose?.();
     } catch (err) {
-      toast.error(extractApiError(err, t('broadcast.failed')));
+      toastApiError(err, t('broadcast.failed'));
     }
   };
 

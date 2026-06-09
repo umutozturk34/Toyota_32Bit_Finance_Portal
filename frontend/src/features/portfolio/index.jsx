@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
@@ -66,6 +67,11 @@ export default function Portfolio() {
       return next;
     });
   };
+
+  const setActivePortfolioId = useAppStore((s) => s.setActivePortfolioId);
+  useEffect(() => {
+    if (portfolio?.id != null) setActivePortfolioId(portfolio.id);
+  }, [portfolio?.id, setActivePortfolioId]);
 
   const { data: view, isLoading: viewLoading, error: viewError } = usePortfolioView(portfolio?.id);
   const summary = view?.summary ?? null;

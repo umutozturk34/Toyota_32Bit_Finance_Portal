@@ -4,7 +4,7 @@ import { ListPlus, Tag } from 'lucide-react';
 import BaseModal from '../../../shared/components/modal/BaseModal';
 import { useCreateWatchlist } from '../../../shared/hooks/useWatchlist';
 import { toast } from '../../../shared/components/feedback/toastBus';
-import { extractApiError } from '../../../shared/utils/apiError';
+import { toastApiError } from '../../../shared/utils/apiError';
 
 export default function CreateWatchlistModal({ isOpen, onClose, onCreated }) {
   const { t } = useTranslation();
@@ -32,7 +32,7 @@ export default function CreateWatchlistModal({ isOpen, onClose, onCreated }) {
       onCreated?.(created);
       onClose();
     } catch (err) {
-      toast.error(extractApiError(err, t('createWatchlist.createFailed')));
+      toastApiError(err, t('createWatchlist.createFailed'));
     }
   };
 
@@ -54,7 +54,7 @@ export default function CreateWatchlistModal({ isOpen, onClose, onCreated }) {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            maxLength={64}
+            maxLength={25}
             autoFocus
             placeholder={t('createWatchlist.namePlaceholder')}
             className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"

@@ -36,7 +36,7 @@ import CreateWatchlistModal from './components/CreateWatchlistModal';
 import EditWatchlistItemModal from './components/EditWatchlistItemModal';
 import EditPriceAlertModal from './components/EditPriceAlertModal';
 import { toast } from '../../shared/components/feedback/toastBus';
-import { extractApiError } from '../../shared/utils/apiError';
+import { toastApiError } from '../../shared/utils/apiError';
 import { WATCHLIST_SORT_OPTION_IDS } from './lib/watchConstants';
 import WatchlistRow from './components/WatchlistRow';
 import AlertRow from './components/AlertRow';
@@ -105,7 +105,7 @@ export default function WatchPage() {
       await removeWatchlistItem.mutateAsync(id);
       toast.success(t('watch.toast.itemRemoved'));
     } catch (err) {
-      toast.error(extractApiError(err, t('watch.toast.deleteFailed')));
+      toastApiError(err, t('watch.toast.deleteFailed'));
     }
   };
 
@@ -114,7 +114,7 @@ export default function WatchPage() {
       await deletePriceAlert.mutateAsync(id);
       toast.success(t('watch.toast.alertDeleted'));
     } catch (err) {
-      toast.error(extractApiError(err, t('watch.toast.deleteFailed')));
+      toastApiError(err, t('watch.toast.deleteFailed'));
     }
   };
 
@@ -123,7 +123,7 @@ export default function WatchPage() {
       await reactivatePriceAlert.mutateAsync(id);
       toast.success(t('watch.toast.alertReactivated'));
     } catch (err) {
-      toast.error(extractApiError(err, t('watch.toast.reactivateFailed')));
+      toastApiError(err, t('watch.toast.reactivateFailed'));
     }
   };
 
@@ -141,7 +141,7 @@ export default function WatchPage() {
       toast.success(t('watch.toast.listDeleted'));
       if (activeListId === list.id) setActiveListId(null);
     } catch (err) {
-      toast.error(extractApiError(err, t('watch.toast.deleteFailed')));
+      toastApiError(err, t('watch.toast.deleteFailed'));
     }
   };
 

@@ -12,9 +12,10 @@ import {
   useAddToFavorites,
 } from '../../../shared/hooks/useWatchlist';
 import { toast } from '../../../shared/components/feedback/toastBus';
-import { extractApiError } from '../../../shared/utils/apiError';
+import { toastApiError } from '../../../shared/utils/apiError';
 import { watchlistName } from '../../../shared/utils/watchlistName';
 import { commodityLabel } from '../../../shared/utils/commodityName';
+import { clampNumberInput, MAX_PERCENT } from '../../../shared/utils/numberInput';
 
 export default function AddWatchlistItemModal({
   isOpen,
@@ -119,7 +120,7 @@ export default function AddWatchlistItemModal({
       }));
       onClose();
     } catch (err) {
-      toast.error(extractApiError(err, t('addWatchlistItem.failed')));
+      toastApiError(err, t('addWatchlistItem.failed'));
     }
   };
 
@@ -256,7 +257,7 @@ export default function AddWatchlistItemModal({
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            maxLength={255}
+            maxLength={50}
             placeholder={t('addWatchlistItem.notePlaceholder')}
             className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
           />
@@ -271,8 +272,9 @@ export default function AddWatchlistItemModal({
             type="number"
             step="0.1"
             min="0"
+            max={MAX_PERCENT}
             value={deltaThreshold}
-            onChange={(e) => setDeltaThreshold(e.target.value)}
+            onChange={(e) => setDeltaThreshold(clampNumberInput(e.target.value, MAX_PERCENT))}
             placeholder={t('addWatchlistItem.thresholdPlaceholder')}
             className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all"
           />

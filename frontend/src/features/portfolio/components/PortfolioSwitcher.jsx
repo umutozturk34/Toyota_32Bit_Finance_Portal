@@ -153,7 +153,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
                               if (e.key === 'Enter') submitRename();
                               if (e.key === 'Escape') { setRenameTarget(null); setError(null); }
                             }}
-                            maxLength={64}
+                            maxLength={25}
                             autoComplete="off"
                             spellCheck={false}
                             className="flex-1 min-w-0 rounded-md bg-bg-base/80 border border-border-default px-2.5 py-1.5 text-sm text-fg outline-none focus:border-accent focus:ring-1 focus:ring-accent/40 transition-colors"
@@ -252,7 +252,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
                           if (e.key === 'Enter') submitCreate();
                           if (e.key === 'Escape') { setCreating(false); setNewName(''); setError(null); }
                         }}
-                        maxLength={64}
+                        maxLength={25}
                         className="flex-1 min-w-0 rounded-md bg-bg-base/80 border border-border-default px-2.5 py-1.5 text-sm text-fg placeholder:text-fg-subtle outline-none focus:border-accent focus:ring-1 focus:ring-accent/40 transition-colors"
                       />
                       <button

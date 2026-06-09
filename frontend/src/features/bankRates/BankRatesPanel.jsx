@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Banknote, Clock, Coins, DollarSign, RefreshCw, Search, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Banknote, Clock, Coins, DollarSign, RefreshCw, Search, X } from 'lucide-react';
 import { useBankRates, useBankRateCurrencies } from './hooks/useBankRates';
 import Card from '../../shared/components/card';
 import CurrencyMarker from '../../shared/components/currency/CurrencyMarker';
@@ -12,6 +12,15 @@ import { formatDateTimeShort } from '../../shared/utils/formatters';
 import { commodityVisual } from '../../shared/icons/commodities';
 
 const DEFAULT_CURRENCY_BY_KIND = { CURRENCY: 'USD', GOLD: 'GRAM_ALTIN' };
+
+// Sort the bank list by a rate column; clicking an active chip flips its arrow, mirroring the returns page.
+const SORT_CHIPS = [
+  { id: 'buy', labelKey: 'bankRates.sortBuy' },
+  { id: 'sell', labelKey: 'bankRates.sortSell' },
+  { id: 'spread', labelKey: 'bankRates.sortSpread' },
+];
+// First-click direction per column: highest buy, cheapest sell, tightest spread.
+const SORT_DEFAULT_DIR = { buy: 'desc', sell: 'asc', spread: 'asc' };
 
 const CURRENCY_COUNTRY = {
   USD: 'US', EUR: 'EU', GBP: 'GB', CHF: 'CH', CAD: 'CA', AUD: 'AU', JPY: 'JP', SAR: 'SA',
@@ -25,10 +34,6 @@ function flagEmoji(currencyCode) {
   if (!cc) return null;
   if (cc === 'EU') return '🇪🇺';
   return String.fromCodePoint(...cc.split('').map(c => 0x1F1E6 + c.charCodeAt(0) - 'A'.charCodeAt(0)));
-}
-
-function goldVisual(code) {
-  return commodityVisual(code);
 }
 
 function BankCard({ row, t, displayCurrency, money }) {
@@ -85,42 +90,36 @@ function BankCard({ row, t, displayCurrency, money }) {
         </div>
       </div>
       {spread != null && (
-        <div className="text-[10px] text-fg-muted text-right font-mono">
-          {t('bankRates.spread')}: {formatSpread(spread)}
+        <div className="flex items-center justify-between pt-0.5 font-mono text-[10px]">
+          <span className="uppercase tracking-wide text-fg-subtle">{t('bankRates.spread')}</span>
+          <span className="font-semibold tabular-nums text-fg-muted">{formatSpread(spread)}</span>
         </div>
       )}
     </Card>
   );
 }
 
-function FilterItem({ active, label, code, count, onClick, showCode = true, kind }) {
+// A single compact chip in the horizontal currency/gold strip: flag + ISO code for currencies, gold glyph +
+// localized name for gold (the gold "codes" aren't user-facing). The full currency name lives in the title and
+// in the detail header below. shrink-0 keeps chips from squishing so the strip scrolls horizontally instead.
+function RateChip({ active, code, label, onClick, kind }) {
   const isGold = kind === 'GOLD';
   const flag = isGold ? null : flagEmoji(code);
-  const goldIcon = isGold ? goldVisual(code) : null;
+  const goldIcon = isGold ? commodityVisual(code) : null;
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-all border ${
+      title={label}
+      data-active={active ? 'true' : undefined}
+      className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition-all ${
         active
-          ? 'bg-accent/15 border-accent/40 text-accent font-semibold'
-          : 'bg-transparent border-transparent text-fg-muted hover:text-fg hover:bg-surface'
+          ? 'bg-accent/15 border-accent/40 text-accent'
+          : 'bg-transparent border-border-default text-fg-muted hover:text-fg hover:border-border-hover'
       }`}
     >
-      {flag && <span className="shrink-0 text-lg leading-none">{flag}</span>}
-      {goldIcon && (
-        <goldIcon.Icon className={`shrink-0 h-5 w-5 ${goldIcon.color}`} strokeWidth={2} />
-      )}
-      <div className="min-w-0 flex-1">
-        <p className="truncate">{label}</p>
-        {showCode && (
-          <p className="text-[10px] font-mono opacity-70">{code}</p>
-        )}
-      </div>
-      {count != null && (
-        <span className="shrink-0 text-[10px] font-mono bg-bg-elevated px-1.5 py-0.5 rounded">
-          {count}
-        </span>
-      )}
+      {flag && <span className="shrink-0 text-base leading-none">{flag}</span>}
+      {goldIcon && <goldIcon.Icon className={`shrink-0 h-4 w-4 ${goldIcon.color}`} />}
+      <span className="whitespace-nowrap">{isGold ? label : code}</span>
     </button>
   );
 }
@@ -147,6 +146,16 @@ export default function BankRatesPanel() {
   }, [searchParams, setSearchParams]);
   const [currencyQuery, setCurrencyQuery] = useState('');
   const [bankQuery, setBankQuery] = useState('');
+  const [sortBy, setSortBy] = useState('');
+  const [sortDir, setSortDir] = useState('desc');
+  const toggleSort = useCallback((id) => {
+    if (sortBy === id) {
+      setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'));
+    } else {
+      setSortBy(id);
+      setSortDir(SORT_DEFAULT_DIR[id]);
+    }
+  }, [sortBy]);
 
   const { data: currencies = [], isLoading: currenciesLoading } = useBankRateCurrencies({ kind });
   const { data: rates = [], isLoading: ratesLoading, isFetching, refetch } = useBankRates({ currency, kind });
@@ -189,6 +198,23 @@ export default function BankRatesPanel() {
     );
   }, [rates, bankQuery]);
 
+  // Sort by the chosen rate column in the chosen direction; rows missing that rate always sink to the end.
+  const sortedRates = useMemo(() => {
+    if (!sortBy) return filteredRates;
+    const metric = (r) => {
+      const buy = Number(r.buyRate), sell = Number(r.sellRate);
+      const v = sortBy === 'spread' ? sell - buy : sortBy === 'sell' ? sell : buy;
+      return Number.isFinite(v) ? v : null;
+    };
+    return [...filteredRates].sort((a, b) => {
+      const av = metric(a), bv = metric(b);
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      return sortDir === 'asc' ? av - bv : bv - av;
+    });
+  }, [filteredRates, sortBy, sortDir]);
+
   const lastUpdatedAt = useMemo(() => {
     if (rates.length === 0) return null;
     let latest = null;
@@ -202,95 +228,103 @@ export default function BankRatesPanel() {
 
   const isLoading = ratesLoading && rates.length === 0;
 
+  // Keep the selected chip visible in the horizontal strip — otherwise it can sit scrolled off-screen while
+  // its rates show below, leaving the strip looking disconnected from the current selection.
+  const stripRef = useRef(null);
+  useEffect(() => {
+    const activeChip = stripRef.current?.querySelector('[data-active="true"]');
+    activeChip?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  }, [currency, kind]);
+
   return (
-    <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-start">
+    <div className="flex flex-col gap-4">
       <Card
         variant="elevated"
         radius="xl"
         padding="sm"
         backdropBlur
-        className="w-full lg:w-60 lg:shrink-0 flex flex-col gap-3 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] overflow-hidden"
+        className="flex flex-col gap-2.5"
       >
-        <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-bg-base">
-          <button
-            onClick={() => setKind('CURRENCY')}
-            className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all border-none ${
-              kind === 'CURRENCY'
-                ? 'bg-accent text-white shadow-sm shadow-accent/30'
-                : 'bg-transparent text-fg-muted hover:text-fg'
-            }`}
-          >
-            <DollarSign className="h-3 w-3" /> {t('bankRates.tabCurrency')}
-          </button>
-          <button
-            onClick={() => setKind('GOLD')}
-            className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all border-none ${
-              kind === 'GOLD'
-                ? 'bg-warning text-white shadow-sm shadow-warning/30'
-                : 'bg-transparent text-fg-muted hover:text-fg'
-            }`}
-          >
-            <Coins className="h-3 w-3" /> {t('bankRates.tabGold')}
-          </button>
-        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-bg-base shrink-0">
+            <button
+              onClick={() => setKind('CURRENCY')}
+              className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all border-none ${
+                kind === 'CURRENCY'
+                  ? 'bg-accent text-white shadow-sm shadow-accent/30'
+                  : 'bg-transparent text-fg-muted hover:text-fg'
+              }`}
+            >
+              <DollarSign className="h-3 w-3" /> {t('bankRates.tabCurrency')}
+            </button>
+            <button
+              onClick={() => setKind('GOLD')}
+              className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all border-none ${
+                kind === 'GOLD'
+                  ? 'bg-warning text-white shadow-sm shadow-warning/30'
+                  : 'bg-transparent text-fg-muted hover:text-fg'
+              }`}
+            >
+              <Coins className="h-3 w-3" /> {t('bankRates.tabGold')}
+            </button>
+          </div>
 
-        <div className="flex items-center justify-between px-1 text-[10px] font-mono text-fg-muted">
-          <span>
+          <div className="relative flex-1 min-w-[140px] sm:flex-none sm:w-56">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-fg-muted pointer-events-none" />
+            <input
+              type="text"
+              value={currencyQuery}
+              onChange={(e) => setCurrencyQuery(e.target.value)}
+              maxLength={64}
+              placeholder={t('bankRates.searchCurrency')}
+              className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-bg-base border border-border-default text-xs text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent/60"
+            />
+            {currencyQuery && (
+              <button
+                onClick={() => setCurrencyQuery('')}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-fg-muted hover:text-fg p-0.5"
+                type="button"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+
+          <span className="ml-auto shrink-0 text-[10px] font-mono text-fg-muted">
             {kind === 'GOLD'
               ? t('bankRates.goldCount', { count: filteredCurrencies.length, total: orderedCurrencies.length })
               : t('bankRates.currencyCount', { count: filteredCurrencies.length, total: orderedCurrencies.length })}
           </span>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-fg-muted pointer-events-none" />
-          <input
-            type="text"
-            value={currencyQuery}
-            onChange={(e) => setCurrencyQuery(e.target.value)}
-            placeholder={t('bankRates.searchCurrency')}
-            className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-bg-base border border-border-default text-xs text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent/60"
-          />
-          {currencyQuery && (
-            <button
-              onClick={() => setCurrencyQuery('')}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-fg-muted hover:text-fg p-0.5"
-              type="button"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-1 overflow-y-auto max-h-64 lg:max-h-none">
+        <div ref={stripRef} className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin pb-1 -mb-1">
           {currenciesLoading && filteredCurrencies.length === 0 && (
-            <div className="flex justify-center py-6"><Spinner size="sm" /></div>
+            <div className="flex justify-center py-2 w-full"><Spinner size="sm" /></div>
           )}
           {filteredCurrencies.map((code) => (
-            <FilterItem
+            <RateChip
               key={code}
               active={currency === code}
               code={code}
               label={labelFor(code)}
-              showCode={kind !== 'GOLD'}
               kind={kind}
               onClick={() => setCurrency(code)}
             />
           ))}
           {filteredCurrencies.length === 0 && !currenciesLoading && (
-            <p className="text-xs text-fg-muted text-center py-6">
+            <p className="text-xs text-fg-muted py-2">
               {currencyQuery ? t('bankRates.noMatch') : t('bankRates.noData')}
             </p>
           )}
         </div>
       </Card>
 
-      <div className="flex-1 flex flex-col gap-4 min-w-0 w-full">
+      <div className="flex flex-col gap-4 min-w-0 w-full">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
             {kind === 'GOLD' ? (
               (() => {
-                const gv = goldVisual(currency);
+                const gv = commodityVisual(currency);
                 const GIcon = gv.Icon;
                 return (
                   <GIcon className={`h-8 w-8 ${gv.color}`} strokeWidth={2} />
@@ -330,6 +364,7 @@ export default function BankRatesPanel() {
                 type="text"
                 value={bankQuery}
                 onChange={(e) => setBankQuery(e.target.value)}
+                maxLength={64}
                 placeholder={t('bankRates.searchBank')}
                 className="w-full sm:w-44 pl-8 pr-7 py-2 rounded-lg bg-bg-elevated border border-border-default text-xs text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent/60"
               />
@@ -354,6 +389,31 @@ export default function BankRatesPanel() {
           </div>
         </div>
 
+        {rates.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted mr-1">
+              <ArrowUpDown className="h-3 w-3" />
+              {t('bankRates.sort')}
+            </span>
+            {SORT_CHIPS.map((opt) => {
+              const active = sortBy === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => toggleSort(opt.id)}
+                  className={`inline-flex items-center gap-1 text-[11px] font-mono font-semibold rounded-md px-2.5 py-1 cursor-pointer border-none transition-colors ${
+                    active ? 'bg-accent/15 text-accent shadow-[inset_0_0_0_1px_rgba(99,102,241,0.4)]' : 'text-fg-muted hover:text-fg'
+                  }`}
+                >
+                  {t(opt.labelKey)}
+                  {active && (sortDir === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />)}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
             <Spinner size="lg" tone="accent" />
@@ -369,9 +429,9 @@ export default function BankRatesPanel() {
             initial="hidden"
             animate="show"
             variants={{ hidden: {}, show: { transition: { staggerChildren: 0.03 } } }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
           >
-            {filteredRates.map((row) => (
+            {sortedRates.map((row) => (
               <motion.div key={row.id} variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}>
                 <BankCard row={row} t={t} money={money} displayCurrency={displayCurrency} />
               </motion.div>

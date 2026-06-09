@@ -10,8 +10,11 @@ import { useAuth } from '../../auth/useAuth';
 import { adminService } from '../services/adminService';
 import { toast } from '../../../shared/components/feedback/toastBus';
 import Card from '../../../shared/components/card';
+import { clampNumberInput } from '../../../shared/utils/numberInput';
 import TrackedAssetAdminPanel from './TrackedAssetAdminPanel';
 import NewsSourceAdminPanel from './NewsSourceAdminPanel';
+
+const MAX_SORT_ORDER = 100000;
 
 const INITIAL_FORMS = {
     CRYPTO: { assetCode: '', displayName: '', binanceSymbol: '', sortOrder: 0 },
@@ -64,6 +67,7 @@ function TrackedAssetForm({ type, title, onSaved }) {
             <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <input
                     type="text"
+                    maxLength={32}
                     placeholder={type === 'CRYPTO' ? t('adminTrackedAssets.assetCodeCrypto') : t('adminTrackedAssets.assetCodeOther')}
                     value={form.assetCode}
                     onChange={(e) => setForm(prev => ({ ...prev, assetCode: e.target.value }))}
@@ -71,6 +75,7 @@ function TrackedAssetForm({ type, title, onSaved }) {
                 />
                 <input
                     type="text"
+                    maxLength={128}
                     placeholder={t('adminTrackedAssets.displayNamePlaceholder')}
                     value={form.displayName}
                     onChange={(e) => setForm(prev => ({ ...prev, displayName: e.target.value }))}
@@ -79,6 +84,7 @@ function TrackedAssetForm({ type, title, onSaved }) {
                 {type === 'CRYPTO' && (
                     <input
                         type="text"
+                        maxLength={32}
                         placeholder={t('adminTrackedAssets.binanceSymbolPlaceholder')}
                         value={form.binanceSymbol || ''}
                         onChange={(e) => setForm(prev => ({ ...prev, binanceSymbol: e.target.value }))}
@@ -106,9 +112,12 @@ function TrackedAssetForm({ type, title, onSaved }) {
                 <div className="flex items-center gap-2">
                     <input
                         type="number"
+                        min={0}
+                        max={MAX_SORT_ORDER}
+                        step={1}
                         placeholder={t('adminTrackedAssets.sortPlaceholder')}
                         value={form.sortOrder}
-                        onChange={(e) => setForm(prev => ({ ...prev, sortOrder: e.target.value }))}
+                        onChange={(e) => setForm(prev => ({ ...prev, sortOrder: clampNumberInput(e.target.value, MAX_SORT_ORDER) }))}
                         className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2 text-sm text-fg outline-none focus:border-accent"
                     />
                     <button

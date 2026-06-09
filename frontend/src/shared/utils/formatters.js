@@ -33,6 +33,18 @@ const visibleDecimals = (value, base, cap = 8) => {
     return d;
 };
 
+// Decimal places that keep a price legible across magnitudes without collapsing toward zero. Shared by the
+// chart axis, the crosshair legend, and the metadata/money formatting so a single value never renders three
+// different ways: sub-0.001 (a sub-cent fund NAV in USD, cheap crypto) gets 6 places, sub-0.1 gets 4, and an
+// ordinary price keeps 2.
+export const priceDecimals = (value) => {
+    const n = Math.abs(Number(value));
+    if (!Number.isFinite(n) || n === 0) return 2;
+    if (n < 0.001) return 6;
+    if (n < 0.1) return 4;
+    return 2;
+};
+
 export const formatPrice = (
     price,
     { currency, locale, minDecimals = 2, maxDecimals = 2 } = {},
@@ -75,6 +87,8 @@ export const formatCompactNumber = (number, currency = 'USD') => {
 
 export const formatVolume = (volume) => {
     if (!volume) return 'N/A';
+    if (volume >= 1_000_000_000_000) return `${(volume / 1_000_000_000_000).toFixed(1)}T`;
+    if (volume >= 1_000_000_000) return `${(volume / 1_000_000_000).toFixed(1)}B`;
     if (volume >= 1_000_000) return `${(volume / 1_000_000).toFixed(1)}M`;
     if (volume >= 1_000) return `${(volume / 1_000).toFixed(1)}K`;
     return String(volume);

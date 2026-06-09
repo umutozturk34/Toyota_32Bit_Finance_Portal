@@ -3,6 +3,7 @@ package com.finance.app.analytics.scheduler;
 import com.finance.app.analytics.service.InflationBeaterService;
 import com.finance.app.config.MarketDataInitializer;
 import com.finance.shared.service.TaskTrackingService;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -52,6 +53,7 @@ public class InflationBeaterScheduler {
      * populated DB that init future is already complete, so this proceeds immediately; when init is disabled
      * the bean is absent and we warm right away. {@code @Async} keeps the wait off the startup thread.
      */
+    @WithSpan("beater.warmCacheOnStartup")
     @Async
     @EventListener(ApplicationReadyEvent.class)
     public void warmCacheOnStartup() {

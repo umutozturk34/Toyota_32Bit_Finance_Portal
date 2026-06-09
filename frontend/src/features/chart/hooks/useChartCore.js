@@ -284,8 +284,13 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         const resizeObserver = new ResizeObserver(handleResize);
         resizeObserver.observe(chartContainerRef.current);
         window.addEventListener('resize', handleResize);
+        // Safari mobile fires orientationchange before the layout/visual viewport settle, so resize again on a
+        // delay to pick up the final container size (else the chart stays locked at its pre-rotation dimensions).
+        const handleOrientation = () => { handleResize(); setTimeout(handleResize, 250); };
+        window.addEventListener('orientationchange', handleOrientation);
         return () => {
             window.removeEventListener('resize', handleResize);
+            window.removeEventListener('orientationchange', handleOrientation);
             resizeObserver.disconnect();
             try {
                 chart.timeScale().unsubscribeVisibleTimeRangeChange(handleUpdate);

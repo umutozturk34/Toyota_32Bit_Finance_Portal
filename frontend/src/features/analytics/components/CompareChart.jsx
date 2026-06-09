@@ -92,6 +92,9 @@ function buildOption(scenario, isDark, displayCurrency, isMobile) {
       : {}),
     tooltip: tooltipBase(palette, {
       confine: true,
+      // Render to <body> so the tooltip escapes the card's backdrop-filter stacking context; on Safari it
+      // otherwise renders BEHIND the chart ("arkaya düşüyor"). Chrome is unaffected (ECharts offsets to page).
+      appendToBody: true,
       formatter: (params) => {
         if (!params?.length) return '';
         // Look up EVERY series' value-in-force at the hovered date from its own data, instead of echarts'

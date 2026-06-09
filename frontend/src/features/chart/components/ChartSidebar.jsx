@@ -55,7 +55,7 @@ const ChartSidebar = ({
     // in fullscreen. At lg+ there is no max-h, so flex align-stretch grows it to the chart's full height
     // (normal AND fullscreen) dynamically.
     return (
-        <div className="w-full lg:w-60 shrink-0 border-b lg:border-b-0 lg:border-r border-border-default flex flex-col bg-surface/40 backdrop-blur-md relative z-20 min-h-[260px] max-lg:max-h-[60vh] max-lg:landscape:max-h-[85vh] sm:max-lg:max-h-[55vh] sm:max-lg:landscape:max-h-[80vh] lg:min-h-0">
+        <div className="w-full lg:w-60 shrink-0 border-b lg:border-b-0 lg:border-r border-border-default flex flex-col bg-surface/40 backdrop-blur-md relative z-20 min-h-[200px] max-lg:max-h-[55dvh] max-lg:landscape:max-h-[85dvh] sm:max-lg:max-h-[50dvh] sm:max-lg:landscape:max-h-[80dvh] lg:min-h-0">
             <div className="pointer-events-none absolute inset-y-0 left-0 w-px bg-gradient-to-b from-indigo-400/40 via-fuchsia-400/20 to-transparent" />
             <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-400/20 to-transparent" />
             <div className="flex border-b border-border-default">

@@ -11,9 +11,10 @@ import {
 import { useWidgetDefinitions } from '../../../shared/hooks/useWidgetDefinitions';
 import { newSectionId } from '../sections/sectionRegistry';
 import { REMOVAL_ANIMATION_MS } from '../../../shared/constants/timings';
+import { randomId } from '../../../shared/utils/id';
 
 function newPageId() {
-  return `page-${crypto.randomUUID().slice(0, 6)}`;
+  return `page-${randomId().slice(0, 6)}`;
 }
 
 export function useMarketLayout() {

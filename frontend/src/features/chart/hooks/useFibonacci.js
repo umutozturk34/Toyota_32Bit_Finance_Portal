@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import useChartConfig from './useChartConfig';
+import { randomId } from '../../../shared/utils/id';
 
-const genId = () => `f-${crypto.randomUUID()}`;
+const genId = () => `f-${randomId()}`;
 
 export default function useFibonacci(assetType, assetCode, range, persistEnabled = true) {
     const { config, setField } = useChartConfig(assetType, assetCode, range, persistEnabled);

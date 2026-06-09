@@ -44,7 +44,8 @@ const ChartToolbar = ({
                     : 'chart.toolbar.activeInstruction.dragDraw';
     return (
     <>
-        <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 border-b border-border-default bg-surface/40 overflow-x-auto scrollbar-thin min-h-[44px]">
+        <div className="flex items-stretch border-b border-border-default bg-surface/40 min-h-[44px]">
+          <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 overflow-x-auto scrollbar-thin flex-1 min-w-0">
             <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="shrink-0 p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md border-none cursor-pointer text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent"
@@ -123,7 +124,8 @@ const ChartToolbar = ({
                     <span style={{ opacity: 0.7 }}>({trend.change > 0 ? '+' : ''}{trend.change.toFixed(2)}%)</span>
                 </div>
             )}
-            <div className="shrink-0 flex items-center gap-1.5 ml-auto">
+          </div>
+          <div className="shrink-0 flex items-center gap-1.5 px-1.5 sm:px-2 border-l border-border-default/60">
                 {isAnyToolActive && (
                     <button
                         onClick={cancelAllDrawing}

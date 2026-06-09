@@ -104,7 +104,7 @@ function MoversSectionImpl({ data }) {
           </div>
           <div className="space-y-0.5 overflow-y-auto scrollbar-auto-hide">
             {gainers.length === 0
-              ? <p className="text-[10px] text-fg-subtle px-2 py-3 text-center">{t('moversSection.noData')}</p>
+              ? <p className="text-[10px] text-fg-subtle px-2 py-3 text-center">{t('moversSection.noGainers')}</p>
               : gainers.map((a) => <AssetRow key={a.code} asset={a} color={color} onClick={() => goToAsset(a.code)} />)}
           </div>
         </div>
@@ -118,7 +118,7 @@ function MoversSectionImpl({ data }) {
           </div>
           <div className="space-y-0.5 overflow-y-auto scrollbar-auto-hide">
             {losers.length === 0
-              ? <p className="text-[10px] text-fg-subtle px-2 py-3 text-center">{t('moversSection.noData')}</p>
+              ? <p className="text-[10px] text-fg-subtle px-2 py-3 text-center">{t('moversSection.noLosers')}</p>
               : losers.map((a) => <AssetRow key={a.code} asset={a} color={color} onClick={() => goToAsset(a.code)} />)}
           </div>
         </div>

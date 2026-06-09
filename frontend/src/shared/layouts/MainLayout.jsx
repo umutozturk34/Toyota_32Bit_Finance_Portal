@@ -173,7 +173,7 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-bg-base relative">
+    <div className="flex min-h-screen min-h-[100dvh] bg-bg-base relative">
       {isDark && (
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
           <div className="absolute top-0 left-1/4 w-[600px] h-[400px] rounded-full bg-accent/[0.04] blur-[150px] animate-float-slow" />
@@ -185,7 +185,7 @@ const MainLayout = () => {
         animate={{ width: sidebarWidth }}
         initial={false}
         transition={{ type: 'spring', stiffness: 380, damping: 36, mass: 0.8 }}
-        className="hidden lg:flex flex-col fixed top-0 left-0 h-screen border-r border-border-default z-30 overflow-visible"
+        className="hidden lg:flex flex-col fixed top-0 left-0 h-screen h-[100dvh] border-r border-border-default z-30 overflow-visible"
         style={{
           background: 'var(--sidebar-bg)',
           backdropFilter: 'var(--sidebar-blur)',

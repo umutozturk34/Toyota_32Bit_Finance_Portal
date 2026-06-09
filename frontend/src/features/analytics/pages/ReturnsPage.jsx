@@ -221,18 +221,18 @@ export default function ReturnsPage() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <HeroStat
-              icon={<TrendingUp className="h-4 w-4" />}
+              icon={best && best.returnPct < 0 ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
               label={t('analytics.returns.topGainer')}
-              value={best ? formatPercent(best.returnPct) : '—'}
+              value={best ? <span className={best.returnPct >= 0 ? 'text-success' : 'text-danger'}>{formatPercent(best.returnPct)}</span> : '—'}
               sub={best ? instrumentDisplayName(t, best.type, best.code, best.name) : `—`}
-              accent="#10b981"
+              accent={best && best.returnPct < 0 ? '#ef4444' : '#10b981'}
             />
             <HeroStat
-              icon={<TrendingDown className="h-4 w-4" />}
+              icon={worst && worst.returnPct > 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
               label={t('analytics.returns.topLoser')}
-              value={worst ? formatPercent(worst.returnPct) : '—'}
+              value={worst ? <span className={worst.returnPct >= 0 ? 'text-success' : 'text-danger'}>{formatPercent(worst.returnPct)}</span> : '—'}
               sub={worst ? instrumentDisplayName(t, worst.type, worst.code, worst.name) : `—`}
-              accent="#ef4444"
+              accent={worst && worst.returnPct > 0 ? '#10b981' : '#ef4444'}
             />
             <HeroStat
               icon={<Medal className="h-4 w-4" />}

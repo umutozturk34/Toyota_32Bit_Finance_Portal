@@ -23,15 +23,26 @@ export const changeBg = {
     neutral: 'bg-fg-muted/10',
 };
 
+// Fewest decimals (capped) that keep a small but non-zero magnitude from rounding to a flat zero, so a
+// genuine 0.0001 move is never shown as "0.00". Magnitudes already visible at `base` are returned unchanged.
+const visibleDecimals = (value, base, cap = 8) => {
+    const n = Math.abs(Number(value));
+    if (!Number.isFinite(n) || n === 0) return base;
+    let d = base;
+    while (d < cap && n < 0.5 * 10 ** -d) d++;
+    return d;
+};
+
 export const formatPrice = (
     price,
     { currency, locale, minDecimals = 2, maxDecimals = 2 } = {},
 ) => {
     if (price === null || price === undefined) return 'N/A';
     const resolvedLocale = locale || currentLocaleTag();
+    const effectiveMax = Math.max(maxDecimals, visibleDecimals(price, maxDecimals));
     const opts = {
-        minimumFractionDigits: minDecimals,
-        maximumFractionDigits: maxDecimals,
+        minimumFractionDigits: Math.min(minDecimals, effectiveMax),
+        maximumFractionDigits: effectiveMax,
     };
     if (currency && /^[A-Z]{3}$/.test(String(currency))) {
         opts.style = 'currency';
@@ -83,8 +94,9 @@ export const formatChange = (change, decimals = 4, locale) => {
 
 export const formatPercent = (percent) => {
     if (percent === null || percent === undefined) return 'N/A';
-    const prefix = percent > 0 ? '+' : '';
-    return `${prefix}${percent.toFixed(2)}%`;
+    const n = Number(percent);
+    const prefix = n > 0 ? '+' : '';
+    return `${prefix}${n.toFixed(visibleDecimals(n, 2))}%`;
 };
 
 // Locale-aware percent with magnitude-adaptive precision. Multi-year BIST/crypto returns reach the tens of
@@ -96,7 +108,7 @@ export const formatPercentSmart = (percent) => {
     const n = Number(percent);
     if (!Number.isFinite(n)) return 'N/A';
     const magnitude = Math.abs(n);
-    const digits = magnitude >= 1000 ? 0 : magnitude >= 100 ? 1 : 2;
+    const digits = magnitude >= 1000 ? 0 : magnitude >= 100 ? 1 : visibleDecimals(n, 2);
     const prefix = n > 0 ? '+' : '';
     return `${prefix}${n.toLocaleString(currentLocaleTag(), {
         minimumFractionDigits: digits,
@@ -106,7 +118,7 @@ export const formatPercentSmart = (percent) => {
 
 export const formatPercentAbs = (percent, decimals = 2) => {
     if (percent === null || percent === undefined) return '0.00%';
-    return `${Math.abs(percent).toFixed(decimals)}%`;
+    return `${Math.abs(percent).toFixed(visibleDecimals(percent, decimals))}%`;
 };
 
 export const formatDateTimeShort = (dateString, locale) => {

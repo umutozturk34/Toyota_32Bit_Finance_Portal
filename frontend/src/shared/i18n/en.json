@@ -456,7 +456,8 @@
     "fallback": "Market",
     "gainers": "Gainers",
     "losers": "Losers",
-    "noData": "No data"
+    "noGainers": "No gainers",
+    "noLosers": "No losers"
   },
   "errorBoundary": {
     "eyebrow": "Glitch",
@@ -967,7 +968,7 @@
     },
     "admin": {
       "snapshot": "Snapshot",
-      "candles": "Candles (5y)",
+      "candles": "Candles (5Y)",
       "full": "Full Update",
       "snapshotTitle": "Refresh snapshot data",
       "candlesTitle": "Refresh candle data (may take a while)",
@@ -2294,7 +2295,7 @@
     "compareEmpty": "Search and pick instruments below to compare.",
     "comparePickFirst": "Pick at least 1 instrument",
     "comparePortfolioCta": "Add portfolio",
-    "compareSearchAssets": "Search stocks, crypto, funds, FX, commodities, bonds…",
+    "compareSearchAssets": "Search stocks, crypto, funds, FX, commodities…",
     "compareSearchMixed": "Search assets or macro indicators…",
     "portfolioPickerHeading": "My portfolios",
     "portfolioSeriesHint": "Portfolio line is cumulative return (%, from 0%); ₺ P&L in tooltip",

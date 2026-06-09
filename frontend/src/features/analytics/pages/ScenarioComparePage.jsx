@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Play, AlertCircle, Zap } from 'lucide-react';
+import { Play, Zap } from 'lucide-react';
+import { isValidationError } from '../../../shared/utils/apiError';
+import { clampNumberInput, MAX_MONEY } from '../../../shared/utils/numberInput';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
@@ -115,9 +117,12 @@ export default function ScenarioComparePage() {
                 </span>
                 <input
                   type="number"
+                  min="0"
+                  max="1000000000000"
+                  step="any"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="w-full text-lg font-mono font-bold tabular-nums bg-bg-base border border-border-default/60 rounded-lg pl-9 pr-20 py-2 text-fg focus:border-accent outline-none"
+                  onChange={(e) => setAmount(clampNumberInput(e.target.value, MAX_MONEY))}
+                  className="w-full text-lg font-mono font-bold tabular-nums bg-bg-base border border-border-default/60 rounded-lg pl-9 pr-20 py-2 text-fg focus:border-accent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
                 {humanizeAmount(amount, i18n.language?.startsWith("tr") ? "tr" : "en", t) && (
                   <span className="absolute right-3 text-[11px] font-mono font-semibold text-fg-muted pointer-events-none select-none uppercase tracking-wider">
@@ -166,12 +171,6 @@ export default function ScenarioComparePage() {
         <InstrumentPicker value={instruments} onChange={setInstruments} max={6} />
 
         <div className="flex items-center justify-between flex-wrap gap-3 pt-3 border-t border-border-default/40">
-          {simulation.isError && (
-            <div className="flex items-center gap-2 text-xs text-red-500">
-              <AlertCircle className="h-4 w-4" />
-              {simulation.error?.response?.data?.message || t('analytics.simulationError', { defaultValue: 'Simülasyon başarısız' })}
-            </div>
-          )}
           <motion.button
             type="button"
             onClick={run}
@@ -193,7 +192,7 @@ export default function ScenarioComparePage() {
         />
       )}
 
-      {!scenario && !simulation.isPending && simulation.isError && (
+      {!scenario && !simulation.isPending && simulation.isError && !isValidationError(simulation.error) && (
         <ErrorState
           fullscreen={false}
           message={simulation.error?.response?.data?.message || t('analytics.simulationError', { defaultValue: 'Simülasyon başarısız' })}

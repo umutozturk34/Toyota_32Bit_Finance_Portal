@@ -8,6 +8,8 @@ import com.finance.market.bank.service.BankRatesService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -89,6 +91,22 @@ class BankRatesControllerTest {
         controller.list("   ", BankRateAssetKind.CURRENCY);
 
         verify(service).findByKind(BankRateAssetKind.CURRENCY);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "USD, true",
+            "eur, true",
+            "GRAM_ALTIN, true",
+            "AYAR_22_BILEZIK, true",
+            "CUMHURIYET_ALTINI, true",
+            "ab-cd, false",
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA, false",
+    })
+    void currencyCodePattern_acceptsCurrencyAndGoldCodes_rejectsGarbage(String code, boolean expected) {
+        // The @RequestParam currency pattern must admit gold codes (GRAM_ALTIN...) as well as 3-letter
+        // currencies; a unit call to list() bypasses bean validation, so assert the regex directly.
+        assertThat(java.util.regex.Pattern.matches(BankRatesController.CURRENCY_CODE_PATTERN, code)).isEqualTo(expected);
     }
 
     @Test

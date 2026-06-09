@@ -1,4 +1,5 @@
 import { LayoutGrid, TrendingUp, Newspaper, Bookmark, Trophy, Medal } from 'lucide-react';
+import { randomId } from '../../../shared/utils/id';
 import AssetCardsSection from './AssetCardsSection';
 import MoversSection from './MoversSection';
 import NewsSection from './NewsSection';
@@ -63,5 +64,5 @@ export function definitionFor(kind) {
 
 export function newSectionId(kind) {
   const slug = kind.toLowerCase().replace(/_/g, '-');
-  return `${slug}-${crypto.randomUUID().slice(0, 6)}`;
+  return `${slug}-${randomId().slice(0, 6)}`;
 }

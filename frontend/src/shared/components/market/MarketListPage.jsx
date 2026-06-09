@@ -66,7 +66,11 @@ export default function MarketListPage({
       toast.success(t('marketList.updateStarted'), response.message || successMsg || t('marketList.updateStarted'));
       if (refetchDelay) setTimeout(refetch, refetchDelay);
     } catch (err) {
-      toast.error(t('marketList.updateFailed'), err.response?.data?.message || err.message);
+      // 429 (rate limit / pool busy) is already surfaced by the global api interceptor's rate-limit toast;
+      // showing another here double-toasts the "system busy" message.
+      if (err.response?.status !== 429) {
+        toast.error(t('marketList.updateFailed'), err.response?.data?.message || err.message);
+      }
     } finally {
       setUpdating(prev => ({ ...prev, [key]: false }));
     }

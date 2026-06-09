@@ -54,6 +54,7 @@ import com.finance.market.viop.service.ViopDataService;
 
 
 
+import com.finance.common.market.MarketDataReadiness;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.scheduler.SchedulerPorts;
 import com.finance.shared.service.TaskTrackingService.TaskInfo;
@@ -78,7 +79,7 @@ import java.util.concurrent.Executor;
 @Order(1)
 @ConditionalOnProperty(name = "app.market.init.enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
-public class MarketDataInitializer implements CommandLineRunner {
+public class MarketDataInitializer implements CommandLineRunner, MarketDataReadiness {
 
     private final CryptoRepository cryptoRepository;
     private final CryptoCandleRepository cryptoCandleRepository;
@@ -118,6 +119,13 @@ public class MarketDataInitializer implements CommandLineRunner {
     /** Future that completes when the cold-start data load has finished; already-complete on a populated DB. */
     public CompletableFuture<Void> completion() {
         return completion;
+    }
+
+    /** Ready once the cold-start load has finished successfully (not blocking, unlike {@link #completion()}). */
+    @Override
+    public boolean isReady() {
+        CompletableFuture<Void> current = completion;
+        return current.isDone() && !current.isCompletedExceptionally();
     }
 
     @Override

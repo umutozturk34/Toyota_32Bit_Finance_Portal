@@ -99,6 +99,7 @@ export default function AdminUsersPage() {
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
+            maxLength={64}
             placeholder={t('adminUsers.searchPlaceholder')}
             className="w-full pl-9 pr-3 py-2 rounded-lg border border-border-default bg-bg-elevated text-sm text-fg placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
           />

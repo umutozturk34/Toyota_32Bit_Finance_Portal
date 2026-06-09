@@ -124,9 +124,9 @@
       "1M": "1A",
       "3M": "3A",
       "6M": "6A",
-      "1Y": "1S",
-      "3Y": "3S",
-      "5Y": "5S",
+      "1Y": "1Y",
+      "3Y": "3Y",
+      "5Y": "5Y",
       "ALL": "Tümü"
     },
     "waitingForData": "Grafik verisi bekleniyor...",
@@ -319,7 +319,7 @@
       "FOREX": "Döviz",
       "FUND": "Fon",
       "COMMODITY": "Emtia",
-      "VIOP": "VIOP",
+      "VIOP": "VİOP",
       "DEPOSIT": "Mevduat",
       "BOND": "Tahvil"
     },
@@ -456,7 +456,8 @@
     "fallback": "Piyasa",
     "gainers": "Yükselen",
     "losers": "Düşen",
-    "noData": "Veri yok"
+    "noGainers": "Yükselen yok",
+    "noLosers": "Düşen yok"
   },
   "errorBoundary": {
     "eyebrow": "Bir Aksaklık",
@@ -583,9 +584,9 @@
     "1M": "1A",
     "3M": "3A",
     "6M": "6A",
-    "1Y": "1S",
-    "3Y": "3S",
-    "5Y": "5S",
+    "1Y": "1Y",
+    "3Y": "3Y",
+    "5Y": "5Y",
     "ALL": "Tümü"
   },
   "assetClass": {
@@ -665,7 +666,7 @@
     "tabGold": "Altın",
     "buy": "Alış",
     "sell": "Satış",
-    "spread": "Spread",
+    "spread": "Makas",
     "refresh": "Yenile",
     "searchCurrency": "Ara...",
     "searchBank": "Banka ara...",
@@ -679,6 +680,10 @@
     "emptyHint": "Scheduler en son ne zaman çalıştığı kontrol edilmeli",
     "noData": "Veri yok",
     "bankCount": "{{count}} banka",
+    "sort": "Sırala",
+    "sortBuy": "Alış",
+    "sortSell": "Satış",
+    "sortSpread": "Makas",
     "currency": {
       "USD": "Amerikan Doları",
       "EUR": "Euro",
@@ -967,7 +972,7 @@
     },
     "admin": {
       "snapshot": "Snapshot",
-      "candles": "Candles (5y)",
+      "candles": "Candles (5Y)",
       "full": "Full Update",
       "snapshotTitle": "Snapshot verilerini güncelle",
       "candlesTitle": "Mum verilerini güncelle (uzun sürebilir)",
@@ -1199,7 +1204,8 @@
   "marketAddPosition": {
     "noPortfolioTitle": "Portföy bulunamadı",
     "noPortfolioHint": "Pozisyon ekleyebilmek için önce portföyünüzü oluşturmanız gerekiyor.",
-    "goToPortfolio": "Portföye Git"
+    "goToPortfolio": "Portföye Git",
+    "choosePortfolio": "Portföy seç"
   },
   "positionDelete": {
     "title": "Pozisyonu Sil",
@@ -1399,9 +1405,9 @@
       "rangeOneMonth": "1A",
       "rangeThreeMonths": "3A",
       "rangeSixMonths": "6A",
-      "rangeOneYear": "1S",
-      "rangeThreeYears": "3S",
-      "rangeFiveYears": "5S",
+      "rangeOneYear": "1Y",
+      "rangeThreeYears": "3Y",
+      "rangeFiveYears": "5Y",
       "rangeAll": "Tümü",
       "heading": "Makro Göstergeler",
       "subheading": "TCMB EVDS · haftalık + aylık + günlük",
@@ -1460,7 +1466,8 @@
     "networkError": "Bağlantı kurulamadı. İnternet bağlantınızı kontrol edin.",
     "serverUnavailable": "Sunucu şu anda erişilemiyor. Lütfen biraz sonra tekrar deneyin.",
     "gatewayTimeout": "Sunucu zaman aşımına uğradı. Lütfen tekrar deneyin.",
-    "serverError": "Sunucuda bir hata oluştu. Lütfen tekrar deneyin."
+    "serverError": "Sunucuda bir hata oluştu. Lütfen tekrar deneyin.",
+    "validationFailed": "Lütfen girdilerini kontrol edip tekrar dene."
   },
   "notificationPanel": {
     "title": "Bildirimler",
@@ -2294,7 +2301,7 @@
     "compareEmpty": "Karşılaştırmak için aşağıdan ara ve seç.",
     "comparePickFirst": "En az 1 enstrüman seç",
     "comparePortfolioCta": "Portföyünü ekle",
-    "compareSearchAssets": "Hisse, kripto, fon, döviz, emtia, bono ara…",
+    "compareSearchAssets": "Hisse, kripto, fon, döviz, emtia ara…",
     "compareSearchMixed": "Asset veya makro indikatör ara…",
     "portfolioPickerHeading": "Portföylerim",
     "portfolioSeriesHint": "Portföy çizgisi kümülatif getiri (%, %0'dan); ₺ kâr/zarar tooltip'te",

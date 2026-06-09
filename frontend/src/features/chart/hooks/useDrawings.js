@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useUserChartDrawings, useUpdateUserChartDrawings } from '../../../shared/hooks/useUserChartDrawings';
+import { randomId } from '../../../shared/utils/id';
 
-const genId = () => `d-${crypto.randomUUID()}`;
+const genId = () => `d-${randomId()}`;
 const PERSIST_DEBOUNCE_MS = 300;
 
 function rehydrate(remote) {

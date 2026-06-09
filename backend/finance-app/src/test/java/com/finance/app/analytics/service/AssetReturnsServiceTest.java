@@ -224,6 +224,22 @@ class AssetReturnsServiceTest {
         assertThat(pr.returnPct().doubleValue()).isCloseTo(4.76, within(0.1));
     }
 
+    @Test
+    void shouldPinNearTotalLoss_soItNeverReadsExactlyMinus100() {
+        // Arrange — a near-total loss (1 from 100000 ≈ -99.999%) rounds to -100.00 at 2dp; a still-priced asset
+        // can't truly be down a full 100%, so it must read -99.99% instead of a phantom total wipeout.
+        LocalDate today = LocalDate.now();
+        wireStock("WIPE", List.of(
+                point(today.minusMonths(13), "100000"),
+                point(today, "1")));
+
+        // Act
+        PeriodReturn r = periodOf(service.getReturns(), "WIPE", "1Y");
+
+        // Assert
+        assertThat(r.returnPct()).isEqualByComparingTo("-99.99");
+    }
+
     // --- helpers -------------------------------------------------------------------------------------------
 
     private void wireStock(String code, List<HistoryPoint> series) {

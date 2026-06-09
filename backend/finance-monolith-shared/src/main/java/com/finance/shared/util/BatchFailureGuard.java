@@ -1,6 +1,6 @@
 package com.finance.shared.util;
 
-import com.finance.common.exception.BusinessException;
+import com.finance.common.exception.CriticalApiFailureException;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.List;
@@ -26,7 +26,7 @@ public final class BatchFailureGuard {
      * Aborts the batch when the failure rate exceeds the threshold and the sample reaches
      * {@code minSample}.
      *
-     * @throws com.finance.common.exception.BusinessException tagged {@code CRITICAL_API_FAILURE} when tripped
+     * @throws CriticalApiFailureException tagged {@code CRITICAL_API_FAILURE} when tripped
      */
     public static void check(int successCount, int failCount,
                              List<String> failedItems, String type, int minSample) {
@@ -35,10 +35,9 @@ public final class BatchFailureGuard {
         if (failureRate > FAILURE_THRESHOLD && total >= minSample) {
             log.error("CRITICAL API ERROR: Failure rate {}% exceeded threshold during {} update. Failed: {}",
                     String.format("%.1f", failureRate * 100), type, failedItems);
-            throw new BusinessException(
+            throw new CriticalApiFailureException(
                     String.format("Critical API failure: %d out of %d %s failed (%.1f%%)",
-                            failCount, total, type, failureRate * 100),
-                    "CRITICAL_API_FAILURE");
+                            failCount, total, type, failureRate * 100));
         }
     }
 }

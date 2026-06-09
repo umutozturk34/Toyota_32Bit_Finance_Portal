@@ -11,6 +11,7 @@ public record KeycloakUser(
         String firstName,
         String lastName,
         Boolean enabled,
+        Boolean emailVerified,
         Long createdTimestamp
 ) {
 }

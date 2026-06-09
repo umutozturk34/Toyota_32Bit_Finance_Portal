@@ -19,6 +19,18 @@
     "$resolver": "thread",
     "field": "name"
   },
+  "traceId": {
+    "$resolver": "mdc",
+    "key": "trace_id"
+  },
+  "spanId": {
+    "$resolver": "mdc",
+    "key": "span_id"
+  },
+  "traceFlags": {
+    "$resolver": "mdc",
+    "key": "trace_flags"
+  },
   "body": {
     "$resolver": "message",
     "stringified": true

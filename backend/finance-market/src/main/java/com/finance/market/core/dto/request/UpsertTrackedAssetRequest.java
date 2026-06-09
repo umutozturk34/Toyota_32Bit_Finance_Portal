@@ -2,8 +2,11 @@ package com.finance.market.core.dto.request;
 
 import com.finance.common.model.StockSegment;
 import com.finance.common.model.TrackedAssetType;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -26,10 +29,13 @@ public class UpsertTrackedAssetRequest {
     private TrackedAssetType assetType;
 
     @NotBlank
+    @Size(max = 32)
     private String assetCode;
 
+    @Size(max = 128)
     private String displayName;
 
+    @Size(max = 32)
     private String binanceSymbol;
 
 
@@ -39,5 +45,7 @@ public class UpsertTrackedAssetRequest {
 
     private Boolean compareOnly;
 
+    @Min(0)
+    @Max(100000)
     private Integer sortOrder = 0;
 }

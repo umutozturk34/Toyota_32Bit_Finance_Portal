@@ -119,7 +119,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
             exit={{ opacity: 0, scale: 0.97, y: -6 }}
             transition={PANEL_TRANSITION}
             style={{ background: 'var(--color-bg-deep)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
-            className="absolute right-0 z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] max-h-[calc(100vh-200px)] overflow-y-auto rounded-2xl border border-border-default shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)]"
+            className="absolute right-0 z-50 mt-2 w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-180px)] overflow-y-auto overscroll-contain rounded-2xl border border-border-default shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)]"
           >
             <div className="flex items-center justify-between px-3 pt-3 pb-2">
               <span className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-muted">
@@ -153,7 +153,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
                               if (e.key === 'Enter') submitRename();
                               if (e.key === 'Escape') { setRenameTarget(null); setError(null); }
                             }}
-                            maxLength={64}
+                            maxLength={25}
                             autoComplete="off"
                             spellCheck={false}
                             className="flex-1 min-w-0 rounded-md bg-bg-base/80 border border-border-default px-2.5 py-1.5 text-sm text-fg outline-none focus:border-accent focus:ring-1 focus:ring-accent/40 transition-colors"
@@ -252,7 +252,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
                           if (e.key === 'Enter') submitCreate();
                           if (e.key === 'Escape') { setCreating(false); setNewName(''); setError(null); }
                         }}
-                        maxLength={64}
+                        maxLength={25}
                         className="flex-1 min-w-0 rounded-md bg-bg-base/80 border border-border-default px-2.5 py-1.5 text-sm text-fg placeholder:text-fg-subtle outline-none focus:border-accent focus:ring-1 focus:ring-accent/40 transition-colors"
                       />
                       <button

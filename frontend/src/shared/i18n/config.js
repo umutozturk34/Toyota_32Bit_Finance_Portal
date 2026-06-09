@@ -14,6 +14,14 @@ function persistLanguage(lang) {
   } catch { void 0; }
 }
 
+// Mirror the active language onto <html lang> so CSS text-transform:uppercase applies Turkish casing rules
+// (i → İ, not the dotless I); otherwise an uppercased "Dil" renders as "DIL" instead of "DİL".
+function syncHtmlLang(lang) {
+  try {
+    document.documentElement.lang = String(lang || 'en').startsWith('tr') ? 'tr' : 'en';
+  } catch { void 0; }
+}
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -34,6 +42,11 @@ i18n
     returnNull: false,
   });
 
-i18n.on('languageChanged', persistLanguage);
+i18n.on('languageChanged', (lang) => {
+  persistLanguage(lang);
+  syncHtmlLang(lang);
+});
+
+syncHtmlLang(i18n.language);
 
 export default i18n;

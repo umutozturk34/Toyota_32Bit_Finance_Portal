@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { createChart, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import { calculateSMA, calculateEMA } from '../lib/indicators';
 import { getChartOptions } from '../lib/chartOptions';
+import { priceDecimals } from '../../../shared/utils/formatters';
 import {
     COMPARE_COLORS,
     analyzeTrend,
@@ -81,11 +82,8 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         const priceSamples = candleData.flatMap(c => [c.open, c.high, c.low, c.close,
             c.sellingPrice, c.buyingPrice, c.bulletinPrice].filter(v => v != null && v > 0));
         const minPrice = priceSamples.length ? Math.min(...priceSamples) : 1;
-        const priceFormat = minPrice < 0.001
-            ? { type: 'price', precision: 6, minMove: 0.000001 }
-            : minPrice < 0.1
-                ? { type: 'price', precision: 4, minMove: 0.0001 }
-                : { type: 'price', precision: 2, minMove: 0.01 };
+        const pricePrec = priceDecimals(minPrice);
+        const priceFormat = { type: 'price', precision: pricePrec, minMove: 10 ** -pricePrec };
         if (chartType === 'candle') {
             const candleSeries = chart.addSeries(CandlestickSeries, {
                 upColor: '#26a69a', downColor: '#ef5350',
@@ -284,8 +282,13 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         const resizeObserver = new ResizeObserver(handleResize);
         resizeObserver.observe(chartContainerRef.current);
         window.addEventListener('resize', handleResize);
+        // Safari mobile fires orientationchange before the layout/visual viewport settle, so resize again on a
+        // delay to pick up the final container size (else the chart stays locked at its pre-rotation dimensions).
+        const handleOrientation = () => { handleResize(); setTimeout(handleResize, 250); };
+        window.addEventListener('orientationchange', handleOrientation);
         return () => {
             window.removeEventListener('resize', handleResize);
+            window.removeEventListener('orientationchange', handleOrientation);
             resizeObserver.disconnect();
             try {
                 chart.timeScale().unsubscribeVisibleTimeRangeChange(handleUpdate);

@@ -9,9 +9,11 @@ import com.finance.market.macro.mapper.MacroIndicatorResponseMapper;
 import com.finance.market.macro.model.MacroCategory;
 import com.finance.market.macro.model.MacroIndicator;
 import com.finance.market.macro.service.MacroIndicatorQueryService;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,6 +31,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/macro-indicators")
 @RequiredArgsConstructor
+@Validated
 public class MacroIndicatorController {
 
     private final MacroIndicatorQueryService queryService;
@@ -49,7 +52,7 @@ public class MacroIndicatorController {
     @GetMapping("/{code}/history")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<MacroIndicatorPointResponse>> history(
-            @PathVariable String code,
+            @PathVariable @Size(max = 32) String code,
             @RequestParam(required = false) LocalDate from,
             @RequestParam(required = false) LocalDate to) {
         MacroIndicator indicator = queryService.findByCode(code);

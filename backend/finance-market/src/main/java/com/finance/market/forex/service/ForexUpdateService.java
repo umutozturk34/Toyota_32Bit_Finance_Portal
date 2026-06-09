@@ -63,9 +63,18 @@ public class ForexUpdateService implements MarketRefresher {
      */
     @Override
     public void refreshAll() {
-        List<ForexSerieMetadata> candidates = currencyResolver.resolveActive(
-                evdsClient.fetchDovizSerieList(),
-                evdsClient.fetchEfektifSerieList());
+        List<ForexSerieMetadata> candidates;
+        try {
+            candidates = currencyResolver.resolveActive(
+                    evdsClient.fetchDovizSerieList(),
+                    evdsClient.fetchEfektifSerieList());
+        } catch (ExternalApiException e) {
+            // The serie-list resolution is the one unguarded EVDS call in this otherwise
+            // degrade-gracefully refresh; if it fails (rate limit / transient) skip the run rather than
+            // letting the whole admin task report failed.
+            log.error("Forex serie-list fetch failed, skipping refresh: {}", e.getMessage());
+            return;
+        }
         if (candidates.isEmpty()) {
             log.warn("No active forex currencies returned from EVDS, skipping refresh");
             return;

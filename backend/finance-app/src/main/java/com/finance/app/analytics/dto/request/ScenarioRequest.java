@@ -3,8 +3,11 @@ package com.finance.app.analytics.dto.request;
 import com.finance.app.analytics.dto.AnalyticsInstrument;
 import com.finance.common.model.Currency;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
@@ -17,9 +20,9 @@ import java.util.List;
  * {@code targetCurrency} (TRY when null). {@code endDate} defaults to today.
  */
 public record ScenarioRequest(
-        @NotNull @Positive BigDecimal amount,
-        @NotNull LocalDate startDate,
-        LocalDate endDate,
+        @NotNull @Positive @DecimalMax("1000000000000") @Digits(integer = 15, fraction = 4) BigDecimal amount,
+        @NotNull @PastOrPresent LocalDate startDate,
+        @PastOrPresent LocalDate endDate,
         @NotEmpty @Size(max = 6) @Valid List<AnalyticsInstrument> instruments,
         Currency targetCurrency) {
 

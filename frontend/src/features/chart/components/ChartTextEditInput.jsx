@@ -8,6 +8,7 @@ const ChartTextEditInput = ({ textEditState, isDark, textDoneRef, commitTextEdit
         <input
             autoFocus
             type="text"
+            maxLength={120}
             placeholder={t('chart.textInputPlaceholder')}
             className="absolute outline-none"
             style={{

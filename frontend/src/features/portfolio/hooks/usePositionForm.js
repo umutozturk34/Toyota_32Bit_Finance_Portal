@@ -8,8 +8,9 @@ import { useAddPosition, usePortfolioLimits, useUpdatePosition } from './usePort
 import {
   FRACTIONAL_TYPES, ONE_HOUR_MS, SUCCESS_HOLD_MS, PROCESSING_STEP_DEFS,
   todayInputValue, dateInputToIso, isoToDateInput, buildInitialState,
-  resolveTarget, toYearMonth, buildPriceIndex, resolveNativeCurrency,
+  resolveTarget, toYearMonth, buildPriceIndex, latestPriceAtOrBefore, resolveNativeCurrency,
 } from '../lib/positionFormHelpers';
+import { MAX_MONEY, MAX_QUANTITY } from '../../../shared/utils/numberInput';
 
 export function usePositionForm({ mode, portfolioId, asset, position, onClose, onComplete }) {
   const { t } = useTranslation();
@@ -90,7 +91,7 @@ export function usePositionForm({ mode, portfolioId, asset, position, onClose, o
   const entryLoading = viewLoading;
   const viewPrices = useMemo(() => buildPriceIndex(viewAvailability), [viewAvailability]);
   const highlightedDates = useMemo(() => new Set(viewPrices.keys()), [viewPrices]);
-  const suggestedPriceTry = entryMonth === viewMonth ? viewPrices.get(form.entryDate) : undefined;
+  const suggestedPriceTry = entryMonth === viewMonth ? latestPriceAtOrBefore(viewPrices, form.entryDate) : undefined;
   const suggestedPriceDisplay = useMemo(
     () => tryToDisplay(suggestedPriceTry, form.entryDate),
     [suggestedPriceTry, form.entryDate, tryToDisplay],
@@ -106,7 +107,7 @@ export function usePositionForm({ mode, portfolioId, asset, position, onClose, o
   });
   const exitPrices = useMemo(() => buildPriceIndex(exitAvailability), [exitAvailability]);
   const exitHighlights = useMemo(() => new Set(exitPrices.keys()), [exitPrices]);
-  const exitSuggestedTry = toYearMonth(exitDate) === exitViewMonth ? exitPrices.get(exitDate) : undefined;
+  const exitSuggestedTry = toYearMonth(exitDate) === exitViewMonth ? latestPriceAtOrBefore(exitPrices, exitDate) : undefined;
   const exitSuggestedDisplay = useMemo(
     () => tryToDisplay(exitSuggestedTry, exitDate),
     [exitSuggestedTry, exitDate, tryToDisplay],
@@ -167,13 +168,14 @@ export function usePositionForm({ mode, portfolioId, asset, position, onClose, o
 
   const validate = () => {
     if (!form.entryDate) return t('positionForm.errors.dateRequired');
-    if (!form.entryPrice || Number(form.entryPrice) <= 0) return t('positionForm.errors.priceInvalid');
+    const price = Number(form.entryPrice);
+    if (!form.entryPrice || price <= 0 || price > MAX_MONEY) return t('positionForm.errors.priceInvalid');
     const qty = Number(form.quantity);
-    if (!qty || qty <= 0) return t('positionForm.errors.quantityInvalid');
+    if (!qty || qty <= 0 || qty > MAX_QUANTITY) return t('positionForm.errors.quantityInvalid');
     if (!isFractional && !Number.isInteger(qty)) return t('positionForm.errors.quantityInteger');
     if (closeEnabled) {
       if (!exitDate) return t('positionForm.errors.exitDateRequired', { defaultValue: 'Çıkış tarihi gerekli' });
-      if (!exitPrice || Number(exitPrice) <= 0) return t('positionForm.errors.exitPriceInvalid', { defaultValue: 'Çıkış fiyatı geçersiz' });
+      if (!exitPrice || Number(exitPrice) <= 0 || Number(exitPrice) > MAX_MONEY) return t('positionForm.errors.exitPriceInvalid', { defaultValue: 'Çıkış fiyatı geçersiz' });
       if (new Date(exitDate) < new Date(form.entryDate)) {
         return t('positionForm.errors.exitBeforeEntry', { defaultValue: 'Çıkış tarihi giriş tarihinden önce olamaz' });
       }

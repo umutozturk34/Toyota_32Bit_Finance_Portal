@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-    @Value("${KEYCLOAK_EXTERNAL_URL:http://localhost:8180}")
+    @Value("${KEYCLOAK_EXTERNAL_URL:http://localhost/auth}")
     private String keycloakUrl;
 
     @Bean

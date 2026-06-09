@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { BarChart2, X, Activity } from 'lucide-react';
+import { formatVolume } from '../../../shared/utils/formatters';
 
 const ChartSubPanels = ({
     hasRSI,
@@ -78,9 +79,12 @@ const ChartSubPanels = ({
             {showVolume && (
                 <div className="border-t border-border-default flex-shrink-0">
                     <div className="flex items-center justify-between px-3 py-1.5 bg-surface/40">
-                        <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
+                        <span className="flex flex-wrap items-center gap-1.5 text-xs text-fg-muted font-medium">
                             <BarChart2 className="w-3.5 h-3.5 text-emerald-400" />
                             {t('chart.volume')}
+                            {subValues.volume != null && (
+                                <span className="ml-1 font-mono tabular-nums text-emerald-400">{formatVolume(subValues.volume)}</span>
+                            )}
                         </span>
                         <button
                             onClick={() => setShowVolume(false)}
@@ -95,9 +99,12 @@ const ChartSubPanels = ({
             {isFund && showInvestorCount && (
                 <div className="border-t border-border-default flex-shrink-0">
                     <div className="flex items-center justify-between px-3 py-1.5 bg-surface/40">
-                        <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
+                        <span className="flex flex-wrap items-center gap-1.5 text-xs text-fg-muted font-medium">
                             <Activity className="w-3.5 h-3.5 text-indigo-400" />
                             {t('lightweightChart.investorCount')}
+                            {subValues.investorCount != null && (
+                                <span className="ml-1 font-mono tabular-nums text-indigo-400">{formatVolume(subValues.investorCount)}</span>
+                            )}
                         </span>
                         <button
                             onClick={() => setShowInvestorCount(false)}
@@ -112,9 +119,12 @@ const ChartSubPanels = ({
             {isFund && showPortfolioSize && (
                 <div className="border-t border-border-default flex-shrink-0">
                     <div className="flex items-center justify-between px-3 py-1.5 bg-surface/40">
-                        <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
+                        <span className="flex flex-wrap items-center gap-1.5 text-xs text-fg-muted font-medium">
                             <BarChart2 className="w-3.5 h-3.5 text-emerald-500" />
                             {t('lightweightChart.portfolioSize')}
+                            {subValues.portfolioSize != null && (
+                                <span className="ml-1 font-mono tabular-nums text-emerald-500">{formatVolume(subValues.portfolioSize)}</span>
+                            )}
                         </span>
                         <button
                             onClick={() => setShowPortfolioSize(false)}

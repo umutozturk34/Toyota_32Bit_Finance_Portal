@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createChart, LineSeries, HistogramSeries } from 'lightweight-charts';
 import { calculateRSI, calculateMACD } from '../lib/indicators';
 import { getChartOptions } from '../lib/chartOptions';
-import { chartTimeKey } from '../lib/chartCoreHelpers';
+import { chartTimeKey, toEpochSec, toChartTime } from '../lib/chartCoreHelpers';
 
 // Pad indicator data to the FULL candle set with whitespace ({time} only) for leading/missing bars, so every
 // sub-chart shares the price chart's exact bar indices. The pane sync is index-based (visible LOGICAL range);
@@ -93,16 +93,26 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
     const rsiLookupRef = useRef({ map: new Map(), last: null });
     const macdLookupRef = useRef({ map: new Map(), last: null });
     const signalLookupRef = useRef({ map: new Map(), last: null });
+    const volumeLookupRef = useRef({ map: new Map(), last: null });
+    const investorCountLookupRef = useRef({ map: new Map(), last: null });
+    const portfolioSizeLookupRef = useRef({ map: new Map(), last: null });
 
     // Shared crosshair handler so the values update whether the mouse is over the MAIN chart OR any sub-panel
-    // (it is subscribed to all of them). param.time is looked up in each cached series; off-chart falls back
-    // to the last point. Stable identity so the same reference can be subscribed/unsubscribed per chart.
+    // (it is subscribed to all of them), and on mobile a tap moves the crosshair so the same path shows the
+    // pressed day's value. Each sub-chart keys its series time differently (business-day objects vs epoch
+    // seconds), so a Map keyed by the raw time would miss across panes — normalize every key through
+    // toEpochSec(time) so the hovered day matches regardless of which pane emitted param.time. Off-chart
+    // falls back to each series' last point.
     const applyCrosshair = useCallback((param) => {
-        const t = param?.time;
-        const lookup = (ref) => (t != null ? (ref.current.map.get(t) ?? ref.current.last) : ref.current.last);
+        const key = param?.time != null ? toEpochSec(param.time) : null;
+        const lookup = (ref) => (key != null ? (ref.current.map.get(key) ?? ref.current.last) : ref.current.last);
         setSubValues((s) => {
-            const next = { rsi: lookup(rsiLookupRef), macd: lookup(macdLookupRef), signal: lookup(signalLookupRef) };
-            if (s.rsi === next.rsi && s.macd === next.macd && s.signal === next.signal) return s;
+            const next = {
+                rsi: lookup(rsiLookupRef), macd: lookup(macdLookupRef), signal: lookup(signalLookupRef),
+                volume: lookup(volumeLookupRef), investorCount: lookup(investorCountLookupRef), portfolioSize: lookup(portfolioSizeLookupRef),
+            };
+            if (s.rsi === next.rsi && s.macd === next.macd && s.signal === next.signal
+                && s.volume === next.volume && s.investorCount === next.investorCount && s.portfolioSize === next.portfolioSize) return s;
             return next;
         });
     }, []);
@@ -126,7 +136,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         rsiSeriesRef.current = rsiSeries;
         rsiSeries.setData(padToCandles(rsiData, candleDataRef.current));
         rsiLookupRef.current = {
-            map: new Map(rsiData.map((d) => [d.time, d.value])),
+            map: new Map(rsiData.map((d) => [toEpochSec(d.time), d.value])),
             last: rsiData.length ? rsiData[rsiData.length - 1].value : null,
         };
         setSubValues((s) => ({ ...s, rsi: rsiLookupRef.current.last }));
@@ -176,11 +186,11 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         });
         signalSeries.setData(padToCandles(signal, candleDataRef.current));
         macdLookupRef.current = {
-            map: new Map(macd.map((d) => [d.time, d.value])),
+            map: new Map(macd.map((d) => [toEpochSec(d.time), d.value])),
             last: macd.length ? macd[macd.length - 1].value : null,
         };
         signalLookupRef.current = {
-            map: new Map(signal.map((d) => [d.time, d.value])),
+            map: new Map(signal.map((d) => [toEpochSec(d.time), d.value])),
             last: signal.length ? signal[signal.length - 1].value : null,
         };
         setSubValues((s) => ({ ...s, macd: macdLookupRef.current.last, signal: signalLookupRef.current.last }));
@@ -206,7 +216,13 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         volumeChartRef.current = volChart;
         const volSeries = volChart.addSeries(HistogramSeries, { color: '#26a69a', priceFormat: { type: 'volume' } });
         volSeries.setData(padToCandles(volumeDataRef.current, candleDataRef.current));
+        volumeLookupRef.current = {
+            map: new Map(volumeDataRef.current.map((d) => [toEpochSec(d.time), d.value])),
+            last: volumeDataRef.current.length ? volumeDataRef.current[volumeDataRef.current.length - 1].value : null,
+        };
+        setSubValues((s) => ({ ...s, volume: volumeLookupRef.current.last }));
         syncTimeScales(chartRef.current, volChart);
+        volChart.subscribeCrosshairMove(applyCrosshair); // hovering/tapping the volume pane also updates the values
         return () => cleanupChart(volumeChartRef);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- imperative volume sub-chart create+cleanup; isDark/height retinted by adjacent effects, candle data read via ref
     }, [showVolume, data, isFullscreen]);
@@ -223,18 +239,23 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         cleanupChart(investorCountChartRef);
         const chart = createSubChart(investorCountContainerRef.current, isDark, histogramHeight);
         investorCountChartRef.current = chart;
-        const icData = data.candles
-            .filter(c => c.investorCount != null)
-            .map(c => ({
-                time: new Date(c.candleDate || c.date).getTime() / 1000,
-                value: c.investorCount,
-                color: '#6366f1',
-            }));
+        const icRows = data.candles.filter(c => c.investorCount != null);
+        const icData = icRows.map(c => ({
+            time: new Date(c.candleDate || c.date).getTime() / 1000,
+            value: c.investorCount,
+            color: '#6366f1',
+        }));
         if (icData.length) {
             const series = chart.addSeries(HistogramSeries, { color: '#6366f1', priceFormat: { type: 'volume' } });
             series.setData(icData);
         }
+        investorCountLookupRef.current = {
+            map: new Map(icRows.map((c) => [toEpochSec(toChartTime(c.candleDate || c.date)), Number(c.investorCount)])),
+            last: icRows.length ? Number(icRows[icRows.length - 1].investorCount) : null,
+        };
+        setSubValues((s) => ({ ...s, investorCount: investorCountLookupRef.current.last }));
         syncTimeScales(chartRef.current, chart);
+        chart.subscribeCrosshairMove(applyCrosshair); // hovering/tapping the investor-count pane also updates the values
         return () => cleanupChart(investorCountChartRef);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- imperative investor-count sub-chart create+cleanup; isDark/height retinted by adjacent effects, candle data read via ref
     }, [showInvestorCount, data, isFullscreen]);
@@ -251,18 +272,23 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         cleanupChart(portfolioSizeChartRef);
         const chart = createSubChart(portfolioSizeContainerRef.current, isDark, histogramHeight);
         portfolioSizeChartRef.current = chart;
-        const psData = data.candles
-            .filter(c => c.portfolioSize != null)
-            .map(c => ({
-                time: new Date(c.candleDate || c.date).getTime() / 1000,
-                value: c.portfolioSize,
-                color: '#10b981',
-            }));
+        const psRows = data.candles.filter(c => c.portfolioSize != null);
+        const psData = psRows.map(c => ({
+            time: new Date(c.candleDate || c.date).getTime() / 1000,
+            value: c.portfolioSize,
+            color: '#10b981',
+        }));
         if (psData.length) {
             const series = chart.addSeries(HistogramSeries, { color: '#10b981', priceFormat: { type: 'volume' } });
             series.setData(psData);
         }
+        portfolioSizeLookupRef.current = {
+            map: new Map(psRows.map((c) => [toEpochSec(toChartTime(c.candleDate || c.date)), Number(c.portfolioSize)])),
+            last: psRows.length ? Number(psRows[psRows.length - 1].portfolioSize) : null,
+        };
+        setSubValues((s) => ({ ...s, portfolioSize: portfolioSizeLookupRef.current.last }));
         syncTimeScales(chartRef.current, chart);
+        chart.subscribeCrosshairMove(applyCrosshair); // hovering/tapping the portfolio-size pane also updates the values
         return () => cleanupChart(portfolioSizeChartRef);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- imperative portfolio-size sub-chart create+cleanup; isDark/height retinted by adjacent effects, candle data read via ref
     }, [showPortfolioSize, data, isFullscreen]);

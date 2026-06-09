@@ -11,7 +11,7 @@ import {
 import AddPriceAlertModal from '../components/AddPriceAlertModal';
 import AddWatchlistItemModal from '../components/AddWatchlistItemModal';
 import { toast } from '../../../shared/components/feedback/toastBus';
-import { extractApiError } from '../../../shared/utils/apiError';
+import { toastApiError } from '../../../shared/utils/apiError';
 import Spinner from '../../../shared/components/feedback/Spinner';
 
 export default function AssetActionsBar({ marketType, assetCode, currentPrice, currency }) {
@@ -49,7 +49,7 @@ export default function AssetActionsBar({ marketType, assetCode, currentPrice, c
         toast.success(t('assetActions.addedToFavorites', { code: assetCode }));
       }
     } catch (err) {
-      toast.error(extractApiError(err, t('error.actionFailed')));
+      toastApiError(err, t('error.actionFailed'));
     }
   };
 

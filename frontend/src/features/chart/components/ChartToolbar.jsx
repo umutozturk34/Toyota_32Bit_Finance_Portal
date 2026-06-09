@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { priceDecimals } from '../../../shared/utils/formatters';
 import {
     BarChart2, ChevronUp, ChevronDown, Diamond,
     LineChart, Layers, Crosshair,
@@ -22,15 +23,7 @@ const ChartToolbar = ({
 }) => {
     const { t } = useTranslation();
     const magnetLabel = t(`chart.toolbar.magnet.${magnetMode}`);
-    // Dynamic precision: sub-cent values need more decimals so they don't collapse to "0.00".
-    const pricePrecision = (val) => {
-        const abs = Math.abs(Number(val));
-        if (!Number.isFinite(abs) || abs === 0) return 2;
-        if (abs < 0.001) return 6;
-        if (abs < 0.1) return 4;
-        return 2;
-    };
-    const fmtPrice = (val) => Number(val).toFixed(pricePrecision(val));
+    const fmtPrice = (val) => Number(val).toFixed(priceDecimals(val));
     const activeInstructionKey = activeTool === 'FREEHAND'
         ? 'chart.toolbar.activeInstruction.freehand'
         : (activeTool === 'TEXT' || activeTool === 'ICON')
@@ -44,7 +37,8 @@ const ChartToolbar = ({
                     : 'chart.toolbar.activeInstruction.dragDraw';
     return (
     <>
-        <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 border-b border-border-default bg-surface/40 overflow-x-auto scrollbar-thin min-h-[44px]">
+        <div className="flex items-stretch border-b border-border-default bg-surface/40 min-h-[44px]">
+          <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 overflow-x-auto scrollbar-thin flex-1 min-w-0">
             <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="shrink-0 p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md border-none cursor-pointer text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent"
@@ -123,7 +117,8 @@ const ChartToolbar = ({
                     <span style={{ opacity: 0.7 }}>({trend.change > 0 ? '+' : ''}{trend.change.toFixed(2)}%)</span>
                 </div>
             )}
-            <div className="shrink-0 flex items-center gap-1.5 ml-auto">
+          </div>
+          <div className="shrink-0 flex items-center gap-1.5 px-1.5 sm:px-2 border-l border-border-default/60">
                 {isAnyToolActive && (
                     <button
                         onClick={cancelAllDrawing}
@@ -159,9 +154,9 @@ const ChartToolbar = ({
                     if (isFund && crosshairData.close != null) {
                         return (
                             <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap shrink-0">
-                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.price')} <span className="text-fg">{Number(crosshairData.close).toFixed(4)}</span></span>
+                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.price')} <span className="text-fg">{fmtPrice(crosshairData.close)}</span></span>
                                 {crosshairData.bulletinPrice != null && (
-                                    <span className="text-fg-muted">{t('chart.toolbar.crosshair.bulletin')} <span className="text-fg">{Number(crosshairData.bulletinPrice).toFixed(4)}</span></span>
+                                    <span className="text-fg-muted">{t('chart.toolbar.crosshair.bulletin')} <span className="text-fg">{fmtPrice(crosshairData.bulletinPrice)}</span></span>
                                 )}
                             </div>
                         );

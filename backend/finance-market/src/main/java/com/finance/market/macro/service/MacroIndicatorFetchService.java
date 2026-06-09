@@ -89,8 +89,16 @@ public class MacroIndicatorFetchService {
                 windows.size(), codes.size(), end, start);
         List<EvdsDataResponse> responses = new ArrayList<>();
         for (WindowedFetchPlanner.DateWindow window : windows) {
-            responses.addAll(client.fetchSeriesBatched(
-                    codes, window.start(), window.end(), batchSize));
+            try {
+                responses.addAll(client.fetchSeriesBatched(
+                        codes, window.start(), window.end(), batchSize));
+            } catch (Exception e) {
+                // Tolerate a single window's EVDS failure (rate limit / transient) and keep the windows that
+                // did return: a full refresh spans many windows, so aborting on the first failure would drop
+                // every already-fetched window and fail the whole task even though most data arrived.
+                log.warn("EVDS window fetch failed {}..{} for {} codes — skipping window: {}",
+                        window.start(), window.end(), codes.size(), e.getMessage());
+            }
         }
         return responses;
     }

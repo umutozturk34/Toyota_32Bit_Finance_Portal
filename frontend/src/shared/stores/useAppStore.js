@@ -7,6 +7,7 @@ const useAppStore = create(
       sidebarCollapsed: false,
       cooldowns: JSON.parse(sessionStorage.getItem('cooldowns') || '{}'),
       activeWatchlistId: null,
+      activePortfolioId: null,
       chartSidebarOpen: false,
       chartActiveTab: 'indicators',
       displayCurrency: 'ORIGINAL',
@@ -25,6 +26,8 @@ const useAppStore = create(
 
       setActiveWatchlistId: (id) => set({ activeWatchlistId: id }),
 
+      setActivePortfolioId: (id) => set({ activePortfolioId: id }),
+
       setChartSidebarOpen: (open) => set({ chartSidebarOpen: !!open }),
       setChartActiveTab: (tab) => set({ chartActiveTab: tab }),
     }),
@@ -33,6 +36,7 @@ const useAppStore = create(
       partialize: (state) => ({
         sidebarCollapsed: state.sidebarCollapsed,
         activeWatchlistId: state.activeWatchlistId,
+        activePortfolioId: state.activePortfolioId,
         chartSidebarOpen: state.chartSidebarOpen,
         chartActiveTab: state.chartActiveTab,
         displayCurrency: state.displayCurrency,

@@ -11,8 +11,10 @@ import Card from '../../../shared/components/card';
 import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
 import EmptyState from '../../../shared/components/feedback/EmptyState';
+import { useQuery } from '@tanstack/react-query';
 import { useAssetReturns } from '../hooks/useAnalytics';
 import { instrumentDisplayName } from '../../../shared/utils/instrumentLabel';
+import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
 import { RETURN_PERIODS } from '../constants';
 import { formatPercent, moneyDigits } from '../utils';
 import { assetRoute } from '../../watch/lib/watchConstants';
@@ -21,6 +23,21 @@ import {
 } from '../returnsConstants';
 import HeroStat from '../components/HeroStat';
 import Th from '../components/ReturnsTh';
+
+// The returns endpoint only carries codes/ids; pull proper display names (and crypto logos) from the market
+// endpoint, paginated to completion (page 0, then the remaining pages in parallel) and cached. Crypto is one
+// page; stocks span a few.
+async function fetchAllAssets(type) {
+  const first = await unifiedMarketService.search({ type, page: 0, size: 100 });
+  const content = first?.content ?? [];
+  const total = first?.totalElements ?? content.length;
+  const pages = Math.ceil(total / 100);
+  if (pages <= 1) return content;
+  const rest = await Promise.all(
+    Array.from({ length: pages - 1 }, (_, i) => unifiedMarketService.search({ type, page: i + 1, size: 100 })),
+  );
+  return rest.reduce((acc, r) => acc.concat(r?.content ?? []), content);
+}
 
 export default function ReturnsPage() {
   const { t } = useTranslation();
@@ -54,6 +71,23 @@ export default function ReturnsPage() {
   };
 
   const { data, isLoading, isError, refetch } = useAssetReturns();
+
+  // Crypto (icons + proper names) and stocks (long company/index names) enriched from the market endpoint by
+  // code; forex/commodity already resolve through instrumentDisplayName, funds stay on their code.
+  const { data: cryptoAssets } = useQuery({
+    queryKey: ['returnsAssetMeta', 'CRYPTO'], queryFn: () => fetchAllAssets('CRYPTO'), staleTime: 30 * 60 * 1000,
+  });
+  const { data: stockAssets } = useQuery({
+    queryKey: ['returnsAssetMeta', 'STOCK'], queryFn: () => fetchAllAssets('STOCK'), staleTime: 30 * 60 * 1000,
+  });
+  const assetMeta = useMemo(() => {
+    const m = new Map();
+    for (const a of cryptoAssets ?? []) m.set(`CRYPTO|${a.code}`, a);
+    for (const a of stockAssets ?? []) m.set(`STOCK|${a.code}`, a);
+    return m;
+  }, [cryptoAssets, stockAssets]);
+  const metaFor = (type, code) => assetMeta.get(`${ANALYTICS_TO_MARKET_TYPE[type] || type}|${code}`);
+  const nameFor = (r) => metaFor(r.type, r.code)?.name || instrumentDisplayName(t, r.type, r.code, r.name);
 
   // Money formatted in the SELECTED page currency (₺ suffix for TRY; $/€ prefix otherwise).
   const money = (v) => {
@@ -221,18 +255,18 @@ export default function ReturnsPage() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <HeroStat
-              icon={<TrendingUp className="h-4 w-4" />}
+              icon={best && best.returnPct < 0 ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
               label={t('analytics.returns.topGainer')}
-              value={best ? formatPercent(best.returnPct) : '—'}
-              sub={best ? instrumentDisplayName(t, best.type, best.code, best.name) : `—`}
-              accent="#10b981"
+              value={best ? <span className={best.returnPct >= 0 ? 'text-success' : 'text-danger'}>{formatPercent(best.returnPct)}</span> : '—'}
+              sub={best ? nameFor(best) : `—`}
+              accent={best && best.returnPct < 0 ? '#ef4444' : '#10b981'}
             />
             <HeroStat
-              icon={<TrendingDown className="h-4 w-4" />}
+              icon={worst && worst.returnPct > 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
               label={t('analytics.returns.topLoser')}
-              value={worst ? formatPercent(worst.returnPct) : '—'}
-              sub={worst ? instrumentDisplayName(t, worst.type, worst.code, worst.name) : `—`}
-              accent="#ef4444"
+              value={worst ? <span className={worst.returnPct >= 0 ? 'text-success' : 'text-danger'}>{formatPercent(worst.returnPct)}</span> : '—'}
+              sub={worst ? nameFor(worst) : `—`}
+              accent={worst && worst.returnPct > 0 ? '#10b981' : '#ef4444'}
             />
             <HeroStat
               icon={<Medal className="h-4 w-4" />}
@@ -363,6 +397,7 @@ export default function ReturnsPage() {
                 type="text"
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+                maxLength={64}
                 placeholder={t('analytics.searchAsset', { defaultValue: 'Asset ara — kaçıncı sırada?' })}
                 className="w-full rounded-lg border border-border-default bg-bg-elevated pl-9 pr-3 py-2 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
               />
@@ -393,6 +428,7 @@ export default function ReturnsPage() {
                     const risk = r.riskLevel ? RISK_STYLE[r.riskLevel] : null;
                     const rank = safePage * PAGE_SIZE + idx + 1;
                     const detail = assetRoute(ANALYTICS_TO_MARKET_TYPE[r.type], r.code);
+                    const icon = r.type === 'CRYPTO' ? metaFor(r.type, r.code)?.image : null;
                     return (
                       <tr
                         key={`${r.type}|${r.code}`}
@@ -405,7 +441,8 @@ export default function ReturnsPage() {
                         </td>
                         <td className="py-3 px-2 sm:px-3">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-fg font-semibold">{instrumentDisplayName(t, r.type, r.code, r.name)}</span>
+                            {icon && <img src={icon} alt="" loading="lazy" className="w-5 h-5 rounded-full ring-1 ring-border-default shrink-0" />}
+                            <span className="text-fg font-semibold">{nameFor(r)}</span>
                             <span
                               className="inline-flex items-center text-[10px] font-mono font-semibold tracking-[0.04em] rounded px-1.5 py-0.5"
                               style={{ background: `${badge.color}1f`, color: badge.color, boxShadow: `inset 0 0 0 1px ${badge.color}40` }}

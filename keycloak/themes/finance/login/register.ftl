@@ -15,6 +15,7 @@
             <div class="form-group">
                 <label for="firstName">${msg("firstName")}</label>
                 <input type="text" id="firstName" name="firstName" value="${(register.formData.firstName!'')}"
+                    maxlength="25"
                     placeholder="${msg("firstName")}"
                     aria-invalid="<#if messagesPerField.existsError('firstName')>true</#if>" />
                 <#if messagesPerField.existsError('firstName')>
@@ -25,6 +26,7 @@
             <div class="form-group">
                 <label for="lastName">${msg("lastName")}</label>
                 <input type="text" id="lastName" name="lastName" value="${(register.formData.lastName!'')}"
+                    maxlength="25"
                     placeholder="${msg("lastName")}"
                     aria-invalid="<#if messagesPerField.existsError('lastName')>true</#if>" />
                 <#if messagesPerField.existsError('lastName')>
@@ -34,7 +36,8 @@
 
             <div class="form-group">
                 <label for="email">${msg("email")}</label>
-                <input type="text" id="email" name="email" value="${(register.formData.email!'')}"
+                <input type="email" id="email" name="email" value="${(register.formData.email!'')}"
+                    maxlength="254"
                     autocomplete="email" placeholder="${msg("email")}"
                     aria-invalid="<#if messagesPerField.existsError('email')>true</#if>" />
                 <#if messagesPerField.existsError('email')>
@@ -46,6 +49,7 @@
                 <div class="form-group">
                     <label for="username">${msg("username")}</label>
                     <input type="text" id="username" name="username" value="${(register.formData.username!'')}"
+                        maxlength="25"
                         autocomplete="username" placeholder="${msg("username")}"
                         aria-invalid="<#if messagesPerField.existsError('username')>true</#if>" />
                     <#if messagesPerField.existsError('username')>
@@ -59,6 +63,7 @@
                     <label for="password">${msg("password")}</label>
                     <div class="fp-password-wrap">
                         <input type="password" id="password" name="password" autocomplete="new-password"
+                            maxlength="128"
                             placeholder="${msg("password")}"
                             aria-invalid="<#if messagesPerField.existsError('password','password-confirm')>true</#if>" />
                         <button type="button" class="fp-password-toggle" data-target="password" aria-label="${msg("showPassword")}" tabindex="-1">
@@ -75,6 +80,7 @@
                     <label for="password-confirm">${msg("passwordConfirm")}</label>
                     <div class="fp-password-wrap">
                         <input type="password" id="password-confirm" name="password-confirm"
+                            maxlength="128"
                             placeholder="${msg("passwordConfirm")}"
                             aria-invalid="<#if messagesPerField.existsError('password-confirm')>true</#if>" />
                         <button type="button" class="fp-password-toggle" data-target="password-confirm" aria-label="${msg("showPassword")}" tabindex="-1">

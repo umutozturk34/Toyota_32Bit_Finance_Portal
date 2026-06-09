@@ -1,6 +1,5 @@
 package com.finance.market.forex.service;
 
-import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.service.MarketHistoryProvider;
 import com.finance.market.forex.dto.response.ForexCandleResponse;
@@ -21,7 +20,8 @@ import java.util.List;
 
 /**
  * Serves forex candle history (native TRY rates) for a currency over a preset period or explicit
- * range, validating that the currency exists before querying.
+ * range. A currency with no forex row yet (e.g. cold start before the market-data load) yields an
+ * empty history rather than an error, so callers degrade cleanly instead of failing.
  */
 @Log4j2
 @Service
@@ -51,7 +51,12 @@ public class ForexQueryService implements MarketHistoryProvider {
     private List<ForexCandleResponse> loadCandles(String currencyCode, LocalDateTime from, LocalDateTime to) {
         String normalized = currencyCode.strip().toUpperCase();
         if (!forexRepository.existsById(normalized)) {
-            throw new ResourceNotFoundException("error.market.forexNotFound", normalized);
+            // No forex row yet (cold start before market data loads). A history query with no data is empty,
+            // not a hard 404: throwing here from inside a caller's read transaction — portfolio valuation
+            // fetches USD/EUR for the multi-currency frame — would mark that transaction rollback-only, so the
+            // caught-and-degraded failure still fails the outer commit with UnexpectedRollbackException.
+            log.debug("No forex row for {} yet — returning empty history", normalized);
+            return List.of();
         }
         List<ForexCandle> candles = forexCandleRepository
                 .findByCurrencyCodeAndCandleDateBetweenOrderByCandleDateAsc(normalized, from, to);

@@ -168,6 +168,7 @@ export default function SearchSuggestions({
         <input
           ref={inputRef}
           type="text"
+          maxLength={64}
           value={query}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}

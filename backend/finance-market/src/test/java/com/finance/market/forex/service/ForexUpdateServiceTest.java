@@ -70,6 +70,15 @@ class ForexUpdateServiceTest {
     }
 
     @Test
+    void should_skipRefresh_andNotThrow_when_serieListFetchFails() {
+        when(evdsClient.fetchDovizSerieList())
+                .thenThrow(new com.finance.common.exception.ExternalApiException("EVDS", "rate limited"));
+
+        org.assertj.core.api.Assertions.assertThatCode(() -> service.refreshAll()).doesNotThrowAnyException();
+        verify(snapshotProcessor, never()).applyLatestSnapshot(any(), any());
+    }
+
+    @Test
     void should_abortRefresh_when_snapshotFetchReturnsNull() {
         ForexSerieMetadata usd = meta("USD", true);
         stubResolver(List.of(usd));

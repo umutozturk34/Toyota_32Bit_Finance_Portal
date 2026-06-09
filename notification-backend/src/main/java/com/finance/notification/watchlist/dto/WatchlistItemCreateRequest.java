@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 public record WatchlistItemCreateRequest(
         @NotNull(message = "{validation.watchlist.marketType.required}") MarketType marketType,
         @NotBlank(message = "{validation.watchlist.assetCode.required}") @Size(max = 32, message = "{validation.watchlist.assetCode.maxLen}") String assetCode,
-        @Size(max = 255, message = "{validation.watchlist.note.maxLen}") String note,
+        @Size(max = 50, message = "{validation.watchlist.note.maxLen}") String note,
         @DecimalMin(value = "0", inclusive = true, message = "{validation.watchlist.threshold.nonNegative}")
         @DecimalMax(value = "999.9999", message = "{validation.watchlist.threshold.maxPercent}")
         BigDecimal deltaThreshold

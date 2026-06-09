@@ -1,9 +1,13 @@
 package com.finance.portfolio.derivative.service;
 
 import com.finance.common.exception.BadRequestException;
+import com.finance.common.exception.BusinessException;
+import com.finance.common.exception.MarketDataNotReadyException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.common.market.MarketDataReadiness;
 import com.finance.common.model.Currency;
 import com.finance.market.core.service.CurrencyConverter;
+import com.finance.market.viop.config.ViopProperties;
 import com.finance.market.viop.model.ViopContract;
 import com.finance.market.viop.repository.ViopContractRepository;
 import com.finance.portfolio.derivative.dto.request.CloseDerivativePositionRequest;
@@ -21,6 +25,7 @@ import com.finance.portfolio.repository.PortfolioRepository;
 import com.finance.portfolio.service.PortfolioBackfillService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +56,32 @@ public class DerivativePositionService {
     private final DerivativeSnapshotMaintenance snapshotMaintenance;
     private final DerivativePriceResolver priceResolver;
     private final CurrencyConverter currencyConverter;
+    private final ViopProperties viopProperties;
+
+    // Optional: absent outside the full app context (e.g. unit tests), where the gate is a no-op. When present
+    // (the market-data initializer), blocks opening a position until the cold-start price/FX load has finished.
+    @Autowired(required = false)
+    private MarketDataReadiness marketDataReadiness;
+
+    /**
+     * Rejects an entry date older than the VIOP history window ({@code today − max-history-years}). VIOP candle
+     * data only goes back that far, so an earlier entry has no price/candles to value against — the same
+     * floor the contract chart is clamped to. Mirrors the spot lot's min-entry-date guard.
+     */
+    private void requireEntryWithinViopHistory(LocalDate entryDate) {
+        LocalDate floor = LocalDate.now().minusYears(viopProperties.maxHistoryYears());
+        if (entryDate != null && entryDate.isBefore(floor)) {
+            throw new BusinessException("error.portfolio.lot.entryDateTooOld", floor);
+        }
+    }
+
+    /** @throws MarketDataNotReadyException (HTTP 503) if the cold-start market-data load has not finished yet. */
+    private void requireMarketDataReady() {
+        MarketDataReadiness readiness = marketDataReadiness;
+        if (readiness != null && !readiness.isReady()) {
+            throw new MarketDataNotReadyException("error.market.dataNotReady");
+        }
+    }
 
     private void publishLotChange(Long portfolioId, DerivativePosition position, LocalDate from) {
         if (from == null) return;
@@ -90,6 +121,7 @@ public class DerivativePositionService {
      */
     @Transactional
     public DerivativePositionResponse open(Long portfolioId, String userSub, OpenDerivativePositionRequest request) {
+        requireMarketDataReady();
         Portfolio portfolio = requireOwnedPortfolio(portfolioId, userSub);
         ViopContract contract = contractRepository.findBySymbol(request.contractSymbol())
                 .orElseThrow(() -> new ResourceNotFoundException("error.viop.contractNotFound", request.contractSymbol()));
@@ -102,6 +134,7 @@ public class DerivativePositionService {
         if (contract.getExpiryDate() != null && request.entryDate().isAfter(contract.getExpiryDate())) {
             throw new BadRequestException("error.viop.entryAfterExpiry", request.contractSymbol());
         }
+        requireEntryWithinViopHistory(request.entryDate());
         BigDecimal entryPrice = request.entryPrice() != null
                 ? toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate())
                 : priceResolver.resolveHistoricalPriceTry(contract, request.entryDate());
@@ -269,6 +302,7 @@ public class DerivativePositionService {
         if (contract.getExpiryDate() != null && request.entryDate().isAfter(contract.getExpiryDate())) {
             throw new BadRequestException("error.viop.entryAfterExpiry", contract.getSymbol());
         }
+        requireEntryWithinViopHistory(request.entryDate());
         BigDecimal entryPrice = request.entryPrice() != null
                 ? toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate())
                 : priceResolver.resolveHistoricalPriceTry(contract, request.entryDate());

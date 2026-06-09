@@ -18,6 +18,7 @@
             <div class="form-group">
                 <label for="password-new">${msg("passwordNew")}</label>
                 <input type="password" id="password-new" name="password-new" autofocus autocomplete="new-password"
+                    maxlength="128"
                     placeholder="${msg("passwordNew")}"
                     aria-invalid="<#if messagesPerField.existsError('password','password-confirm')>true</#if>" />
                 <#if messagesPerField.existsError('password')>
@@ -28,6 +29,7 @@
             <div class="form-group">
                 <label for="password-confirm">${msg("passwordConfirm")}</label>
                 <input type="password" id="password-confirm" name="password-confirm" autocomplete="new-password"
+                    maxlength="128"
                     placeholder="${msg("passwordConfirm")}"
                     aria-invalid="<#if messagesPerField.existsError('password-confirm')>true</#if>" />
                 <#if messagesPerField.existsError('password-confirm')>

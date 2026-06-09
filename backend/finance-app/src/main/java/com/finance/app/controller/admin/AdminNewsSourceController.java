@@ -9,6 +9,7 @@ import com.finance.news.service.source.NewsSourceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.List;
 @RequestMapping("/api/v1/admin/news-sources")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
+@Validated
 public class AdminNewsSourceController {
 
     private final NewsSourceService newsSourceService;

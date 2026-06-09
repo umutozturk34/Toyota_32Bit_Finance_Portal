@@ -80,10 +80,10 @@ export default function ConfirmDialog({
               >
                 <Icon className={`h-6 w-6 ${v.iconColor}`} />
               </motion.div>
-              <div className="text-center space-y-1">
-                <p className="text-sm font-semibold text-fg">{titleText}</p>
+              <div className="text-center space-y-1 w-full min-w-0">
+                <p className="text-sm font-semibold text-fg break-words">{titleText}</p>
                 {message && (
-                  <p className="text-xs text-fg-muted leading-relaxed">{message}</p>
+                  <p className="text-xs text-fg-muted leading-relaxed break-words">{message}</p>
                 )}
               </div>
             </div>

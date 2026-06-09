@@ -21,7 +21,7 @@ const Login = () => {
   }, [isAuthenticated, loading, login, navigate]);
 
   return (
-    <div className="flex justify-center items-center min-h-screen">
+    <div className="flex justify-center items-center min-h-screen min-h-[100dvh]">
       <LoadingState />
     </div>
   );

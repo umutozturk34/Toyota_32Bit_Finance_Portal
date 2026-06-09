@@ -8,8 +8,11 @@ import { adminService } from '../services/adminService';
 import { toast } from '../../../shared/components/feedback/toastBus';
 import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
 import Card from '../../../shared/components/card';
+import { clampNumberInput } from '../../../shared/utils/numberInput';
 
 const NEWS_CATEGORY_VALUES = ['', 'CRYPTO', 'BORSA_ISTANBUL', 'BORSA_SIRKETLERI', 'TAHVIL_BONO', 'PARITE', 'EMTIA', 'GENEL_FINANS'];
+
+const MAX_SORT_ORDER = 100000;
 
 const INITIAL_FORM = { name: '', url: '', sourceType: 'RSS', defaultCategory: '', sortOrder: 0 };
 
@@ -53,13 +56,15 @@ function NewsSourceForm({ onSaved }) {
             <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <input
                     type="text"
+                    maxLength={128}
                     placeholder={t('newsSourceAdmin.namePlaceholder')}
                     value={form.name}
                     onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
                     className="rounded-lg border border-border-default bg-bg-base px-3 py-2 text-sm text-fg outline-none focus:border-accent"
                 />
                 <input
-                    type="text"
+                    type="url"
+                    maxLength={1024}
                     placeholder={t('newsSourceAdmin.urlPlaceholder')}
                     value={form.url}
                     onChange={(e) => setForm(prev => ({ ...prev, url: e.target.value }))}
@@ -79,9 +84,12 @@ function NewsSourceForm({ onSaved }) {
                 <div className="flex items-center gap-2">
                     <input
                         type="number"
+                        min={0}
+                        max={MAX_SORT_ORDER}
+                        step={1}
                         placeholder={t('newsSourceAdmin.orderPlaceholder')}
                         value={form.sortOrder}
-                        onChange={(e) => setForm(prev => ({ ...prev, sortOrder: e.target.value }))}
+                        onChange={(e) => setForm(prev => ({ ...prev, sortOrder: clampNumberInput(e.target.value, MAX_SORT_ORDER) }))}
                         className="w-20 rounded-lg border border-border-default bg-bg-base px-3 py-2 text-sm text-fg outline-none focus:border-accent"
                     />
                     <button

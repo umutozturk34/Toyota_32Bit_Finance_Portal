@@ -1,7 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import useChartConfig from './useChartConfig';
+import { randomId } from '../../../shared/utils/id';
 
-const genId = () => `ind-${crypto.randomUUID()}`;
+const genId = () => `ind-${randomId()}`;
 
 // Cap on simultaneously configured indicators — keeps the overlay/sub-panel legible and the toolbar readouts
 // from overflowing. Exported so the panel can disable "add" and surface the same limit in its message.

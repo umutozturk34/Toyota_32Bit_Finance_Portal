@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import useAppStore from '../stores/useAppStore';
 import { useExchangeRates } from './useExchangeRates';
 import { useRateHistory } from './useRateHistory';
-import { formatPrice, currentLocaleTag } from '../utils/formatters';
+import { formatPrice, currentLocaleTag, priceDecimals } from '../utils/formatters';
 
 const SUPPORTED = ['TRY', 'USD', 'EUR'];
 
@@ -55,7 +55,7 @@ export function useMoney() {
       || (rates[normalizedBase] != null && rates[target] != null);
     const effectiveCurrency = ratesReady ? target : normalizedBase;
     const abs = Math.abs(converted);
-    const maxDecimals = opts.maxDecimals ?? (abs < 10 ? 4 : abs < 1000 ? 3 : 2);
+    const maxDecimals = opts.maxDecimals ?? Math.max(priceDecimals(abs), abs < 10 ? 4 : abs < 1000 ? 3 : 2);
     return formatPrice(converted, {
       currency: effectiveCurrency,
       minDecimals: opts.minDecimals ?? 2,

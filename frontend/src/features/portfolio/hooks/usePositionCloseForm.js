@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
-import { ONE_HOUR_MS, toYearMonth, buildPriceIndex } from '../lib/positionFormHelpers';
+import { ONE_HOUR_MS, toYearMonth, buildPriceIndex, latestPriceAtOrBefore } from '../lib/positionFormHelpers';
 
 export const todayIso = () => new Date().toLocaleDateString('sv-SE');
 
@@ -56,7 +56,7 @@ export function usePositionCloseForm({
   const viewPrices = useMemo(() => buildPriceIndex(viewAvailability), [viewAvailability]);
   const highlightedDates = useMemo(() => new Set(viewPrices.keys()), [viewPrices]);
   const dateMonth = useMemo(() => toYearMonth(date), [date]);
-  const historicalPriceTry = dateMonth === viewMonth ? viewPrices.get(date) : undefined;
+  const historicalPriceTry = dateMonth === viewMonth ? latestPriceAtOrBefore(viewPrices, date) : undefined;
   const historicalPriceDisplay = historicalPriceTry != null
     ? Number(convertAt(historicalPriceTry, 'TRY', date, resolvedNative) ?? historicalPriceTry)
     : null;

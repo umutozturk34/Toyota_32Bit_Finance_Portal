@@ -8,10 +8,11 @@ import BaseModal from '../../../shared/components/modal/BaseModal';
 import SearchSuggestions from '../../../shared/components/form/SearchSuggestions';
 import { useCreatePriceAlert } from '../../../shared/hooks/usePriceAlerts';
 import { toast } from '../../../shared/components/feedback/toastBus';
-import { extractApiError } from '../../../shared/utils/apiError';
+import { toastApiError } from '../../../shared/utils/apiError';
 import { currentLocaleTag } from '../../../shared/utils/formatters';
 import { priceCurrencyOf, currencySymbolOf } from '../../../shared/utils/priceCurrency';
 import { commodityLabel } from '../../../shared/utils/commodityName';
+import { clampNumberInput, MAX_MONEY, MAX_PERCENT } from '../../../shared/utils/numberInput';
 
 const DIRECTION_DEFS = [
   { value: 'ABOVE', Icon: ArrowUp, tone: 'success' },
@@ -152,7 +153,7 @@ export default function AddPriceAlertModal({
       toast.success(t('addPriceAlert.created', { code: selectedAsset.code }));
       onClose();
     } catch (err) {
-      toast.error(extractApiError(err, t('addPriceAlert.failed')));
+      toastApiError(err, t('addPriceAlert.failed'));
     }
   };
 
@@ -318,8 +319,9 @@ export default function AddPriceAlertModal({
                 type="number"
                 step={isPercent ? '0.1' : '0.0001'}
                 min="0"
+                max={isPercent ? MAX_PERCENT : MAX_MONEY}
                 value={threshold}
-                onChange={(e) => setThreshold(e.target.value)}
+                onChange={(e) => setThreshold(clampNumberInput(e.target.value, isPercent ? MAX_PERCENT : MAX_MONEY))}
                 placeholder={isPercent ? '5' : (currentPrice != null ? formatLocale(currentPrice) : '100000')}
                 className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 pr-10 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:[-webkit-appearance:none] [&::-webkit-outer-spin-button]:[-webkit-appearance:none] [&::-webkit-inner-spin-button]:[margin:0]"
               />
@@ -350,8 +352,9 @@ export default function AddPriceAlertModal({
                 type="number"
                 step="0.0001"
                 min="0"
+                max={MAX_MONEY}
                 value={referencePrice}
-                onChange={(e) => setReferencePrice(e.target.value)}
+                onChange={(e) => setReferencePrice(clampNumberInput(e.target.value, MAX_MONEY))}
                 placeholder={t('addPriceAlert.referencePlaceholder')}
                 className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:[-webkit-appearance:none] [&::-webkit-outer-spin-button]:[-webkit-appearance:none] [&::-webkit-inner-spin-button]:[margin:0]"
               />

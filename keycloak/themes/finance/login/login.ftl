@@ -19,6 +19,7 @@
                             <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
                         </label>
                         <input tabindex="1" id="username" name="username" value="${(login.username!'')}" type="text" autofocus autocomplete="off"
+                            maxlength="25"
                             aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
                             placeholder="<#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>"
                         />
@@ -34,6 +35,7 @@
                     <label for="password">${msg("password")}</label>
                     <div class="fp-password-wrap">
                         <input tabindex="2" id="password" name="password" type="password" autocomplete="off"
+                            maxlength="128"
                             aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
                             placeholder="${msg("password")}"
                         />

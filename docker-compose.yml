@@ -68,6 +68,7 @@ services:
       OTEL_METRICS_EXPORTER: otlp
       OTEL_TRACES_EXPORTER: otlp
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KEYCLOAK_EXTERNAL_URL: ${VITE_KEYCLOAK_URL:-http://localhost/auth}
     env_file:
       - .env
     depends_on:
@@ -106,6 +107,8 @@ services:
       JWK_SET_URI: http://keycloak:8080/auth/realms/finance-realm/protocol/openid-connect/certs
       KEYCLOAK_BASE_URL: http://keycloak:8080/auth
       KEYCLOAK_REALM: finance-realm
+      KEYCLOAK_EXTERNAL_URL: ${VITE_KEYCLOAK_URL:-http://localhost/auth}.
+      SWAGGER_OAUTH2_REDIRECT: http://localhost:8082/swagger-ui/oauth2-redirect.html
       KEYCLOAK_ADMIN_USER: admin
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost}
@@ -231,7 +234,6 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_BACKCHANNEL: "false"
-      KC_SPI_REALM_DEFAULT_SSL_REQUIRED: NONE
       # SMTP for Keycloak account emails (verify / 2FA / reset) — same vars that drive the app's
       # mail, so one .env switches both from Mailpit to a real provider. Defaults keep Mailpit.
       SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-mailpit}
@@ -243,6 +245,22 @@ services:
       NOTIFICATION_FROM_ADDRESS: ${NOTIFICATION_FROM_ADDRESS:-noreply@finance.com}
       # Public frontend URL — referenced by realm-*.json for redirectUris / webOrigins
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost}
+    # The master realm is created with sslRequired=external and that cannot be overridden by realm
+    # import (startup import runs IGNORE_EXISTING and master always pre-exists) nor by any env/SPI
+    # flag, so the admin console refuses plain-HTTP logins on a local non-TLS gateway. Flip it to
+    # NONE once at runtime: the subshell waits for the server to answer, applies the change (it is
+    # idempotent), while the server itself still runs as PID 1 via exec. It is a harmless no-op on
+    # the HTTPS VDS, where the external policy is already satisfied by TLS.
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        (
+          until /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user "$$KEYCLOAK_ADMIN" --password "$$KEYCLOAK_ADMIN_PASSWORD" >/dev/null 2>&1; do sleep 3; done
+          /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE >/dev/null 2>&1 && echo "[keycloak] master realm sslRequired=NONE applied"
+        ) &
+        exec /opt/keycloak/bin/kc.sh "$$@"
+      - "--"
     command:
       - start-dev
       - --import-realm

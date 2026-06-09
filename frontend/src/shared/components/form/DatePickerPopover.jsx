@@ -106,7 +106,26 @@ export default function DatePickerPopover({
   const grid = useMemo(() => buildGrid(cursor.year, cursor.month), [cursor.year, cursor.month]);
   const outOfRange = (d) => (max && d > max) || (min && d < min);
 
+  // Cap navigation at the min/max bounds so the user can't browse into months/years that are entirely
+  // out of range (otherwise only the day cells are disabled and the calendar still scrolls past the limit).
+  const canGoPrev = (() => {
+    if (!min) return true;
+    const minY = min.getFullYear();
+    if (view === 'day') return cursor.year > minY || (cursor.year === minY && cursor.month > min.getMonth());
+    if (view === 'month') return cursor.year > minY;
+    return cursor.year - 11 > minY;
+  })();
+  const canGoNext = (() => {
+    if (!max) return true;
+    const maxY = max.getFullYear();
+    if (view === 'day') return cursor.year < maxY || (cursor.year === maxY && cursor.month < max.getMonth());
+    if (view === 'month') return cursor.year < maxY;
+    return cursor.year + 12 < maxY;
+  })();
+
   const shift = (delta) => {
+    if (delta < 0 && !canGoPrev) return;
+    if (delta > 0 && !canGoNext) return;
     if (view === 'day') {
       const next = new Date(cursor.year, cursor.month + delta, 1);
       setCursor({ year: next.getFullYear(), month: next.getMonth() });
@@ -159,7 +178,7 @@ export default function DatePickerPopover({
             style={{ backgroundColor: 'var(--color-bg-base, #0f0f17)', boxShadow: '0 12px 40px -8px rgba(0,0,0,0.6)' }}
           >
             <div className="flex items-center justify-between gap-1">
-              <NavBtn onClick={() => shift(-1)} title={PREV_LABEL[view]}>
+              <NavBtn onClick={() => shift(-1)} title={PREV_LABEL[view]} disabled={!canGoPrev}>
                 <ChevronLeft className="h-3.5 w-3.5" />
               </NavBtn>
               <button
@@ -171,7 +190,7 @@ export default function DatePickerPopover({
                 {headerLabel}
                 {loading && <span className="h-1 w-1 rounded-full bg-fg-muted animate-pulse" />}
               </button>
-              <NavBtn onClick={() => shift(1)} title={NEXT_LABEL[view]}>
+              <NavBtn onClick={() => shift(1)} title={NEXT_LABEL[view]} disabled={!canGoNext}>
                 <ChevronRight className="h-3.5 w-3.5" />
               </NavBtn>
             </div>
@@ -262,13 +281,14 @@ export default function DatePickerPopover({
   );
 }
 
-function NavBtn({ onClick, title, children }) {
+function NavBtn({ onClick, title, children, disabled }) {
   return (
     <button
       type="button"
       onClick={onClick}
       title={title}
-      className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
+      disabled={disabled}
+      className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-fg-muted disabled:hover:bg-transparent"
     >
       {children}
     </button>

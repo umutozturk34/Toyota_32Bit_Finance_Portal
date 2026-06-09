@@ -132,10 +132,10 @@ function IdentityForm({ profile, onSaved }) {
   return (
     <form className="space-y-2" onSubmit={handleSubmit}>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <FormField label={t('profile.identity.firstName')} value={firstName} onChange={setFirstName} />
-        <FormField label={t('profile.identity.lastName')} value={lastName} onChange={setLastName} />
+        <FormField label={t('profile.identity.firstName')} value={firstName} onChange={setFirstName} maxLength={25} />
+        <FormField label={t('profile.identity.lastName')} value={lastName} onChange={setLastName} maxLength={25} />
       </div>
-      <FormField label={t('profile.identity.username')} value={username} onChange={setUsername} mono pattern="^[a-zA-Z0-9._-]+$" minLength={3} maxLength={32} required />
+      <FormField label={t('profile.identity.username')} value={username} onChange={setUsername} mono pattern="^[a-zA-Z0-9._-]+$" minLength={3} maxLength={25} required />
       <p className="text-[10px] text-fg-subtle leading-relaxed px-1">
         {t('profile.identity.usernameHint')}
       </p>

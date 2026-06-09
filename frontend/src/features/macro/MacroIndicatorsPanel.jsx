@@ -146,6 +146,7 @@ export default function MacroIndicatorsPanel() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            maxLength={64}
             placeholder={t('marketOverview.macro.searchPlaceholder', { defaultValue: 'Gösterge ara…' })}
             className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-bg-elevated border border-border-default text-xs text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent/60"
           />
@@ -182,7 +183,7 @@ export default function MacroIndicatorsPanel() {
       )}
 
       <AnimatePresence mode="wait" initial={false}>
-        {activeTab === 'all' && (
+        {activeTab === 'all' && !searchQuery.trim() && (
           <motion.div
             key="all"
             initial={{ opacity: 0, y: 6 }}
@@ -212,9 +213,9 @@ export default function MacroIndicatorsPanel() {
           </motion.div>
         )}
 
-        {activeTab !== 'all' && (
+        {(activeTab !== 'all' || searchQuery.trim()) && (
           <motion.div
-            key={activeTab}
+            key={searchQuery.trim() ? 'search' : activeTab}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}

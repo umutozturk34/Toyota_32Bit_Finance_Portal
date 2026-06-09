@@ -6,6 +6,7 @@ import java.time.LocalDate;
 /** Allowed bounds for lot entry (date/price/quantity) surfaced to the UI for client-side validation. */
 public record LotLimitsResponse(
         LocalDate minEntryDate,
+        LocalDate viopMinEntryDate,
         LocalDate maxEntryDate,
         BigDecimal minPriceTry,
         BigDecimal maxPriceTry,

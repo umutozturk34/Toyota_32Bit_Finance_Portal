@@ -29,7 +29,7 @@ public class PortfolioProperties {
     @Getter
     @Setter
     public static class LotLimits {
-        private LocalDate minEntryDate = LocalDate.of(1992, 1, 1);
+        private LocalDate minEntryDate = LocalDate.of(1999, 1, 4);
         private BigDecimal minPriceTry = new BigDecimal("0.0001");
         private BigDecimal maxPriceTry = new BigDecimal("1000000000");
         private BigDecimal minQuantity = new BigDecimal("0.00000001");

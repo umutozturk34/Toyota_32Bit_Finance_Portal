@@ -23,15 +23,38 @@ export const changeBg = {
     neutral: 'bg-fg-muted/10',
 };
 
+// Fewest decimals (capped) that keep a small but non-zero magnitude from rounding to a flat zero, so a
+// genuine 0.0001 move is never shown as "0.00". Magnitudes already visible at `base` are returned unchanged.
+const visibleDecimals = (value, base, cap = 8) => {
+    const n = Math.abs(Number(value));
+    if (!Number.isFinite(n) || n === 0) return base;
+    let d = base;
+    while (d < cap && n < 0.5 * 10 ** -d) d++;
+    return d;
+};
+
+// Decimal places that keep a price legible across magnitudes without collapsing toward zero. Shared by the
+// chart axis, the crosshair legend, and the metadata/money formatting so a single value never renders three
+// different ways: sub-0.001 (a sub-cent fund NAV in USD, cheap crypto) gets 6 places, sub-0.1 gets 4, and an
+// ordinary price keeps 2.
+export const priceDecimals = (value) => {
+    const n = Math.abs(Number(value));
+    if (!Number.isFinite(n) || n === 0) return 2;
+    if (n < 0.001) return 6;
+    if (n < 0.1) return 4;
+    return 2;
+};
+
 export const formatPrice = (
     price,
     { currency, locale, minDecimals = 2, maxDecimals = 2 } = {},
 ) => {
     if (price === null || price === undefined) return 'N/A';
     const resolvedLocale = locale || currentLocaleTag();
+    const effectiveMax = Math.max(maxDecimals, visibleDecimals(price, maxDecimals));
     const opts = {
-        minimumFractionDigits: minDecimals,
-        maximumFractionDigits: maxDecimals,
+        minimumFractionDigits: Math.min(minDecimals, effectiveMax),
+        maximumFractionDigits: effectiveMax,
     };
     if (currency && /^[A-Z]{3}$/.test(String(currency))) {
         opts.style = 'currency';
@@ -64,6 +87,8 @@ export const formatCompactNumber = (number, currency = 'USD') => {
 
 export const formatVolume = (volume) => {
     if (!volume) return 'N/A';
+    if (volume >= 1_000_000_000_000) return `${(volume / 1_000_000_000_000).toFixed(1)}T`;
+    if (volume >= 1_000_000_000) return `${(volume / 1_000_000_000).toFixed(1)}B`;
     if (volume >= 1_000_000) return `${(volume / 1_000_000).toFixed(1)}M`;
     if (volume >= 1_000) return `${(volume / 1_000).toFixed(1)}K`;
     return String(volume);
@@ -83,8 +108,9 @@ export const formatChange = (change, decimals = 4, locale) => {
 
 export const formatPercent = (percent) => {
     if (percent === null || percent === undefined) return 'N/A';
-    const prefix = percent > 0 ? '+' : '';
-    return `${prefix}${percent.toFixed(2)}%`;
+    const n = Number(percent);
+    const prefix = n > 0 ? '+' : '';
+    return `${prefix}${n.toFixed(visibleDecimals(n, 2))}%`;
 };
 
 // Locale-aware percent with magnitude-adaptive precision. Multi-year BIST/crypto returns reach the tens of
@@ -96,7 +122,7 @@ export const formatPercentSmart = (percent) => {
     const n = Number(percent);
     if (!Number.isFinite(n)) return 'N/A';
     const magnitude = Math.abs(n);
-    const digits = magnitude >= 1000 ? 0 : magnitude >= 100 ? 1 : 2;
+    const digits = magnitude >= 1000 ? 0 : magnitude >= 100 ? 1 : visibleDecimals(n, 2);
     const prefix = n > 0 ? '+' : '';
     return `${prefix}${n.toLocaleString(currentLocaleTag(), {
         minimumFractionDigits: digits,
@@ -106,7 +132,7 @@ export const formatPercentSmart = (percent) => {
 
 export const formatPercentAbs = (percent, decimals = 2) => {
     if (percent === null || percent === undefined) return '0.00%';
-    return `${Math.abs(percent).toFixed(decimals)}%`;
+    return `${Math.abs(percent).toFixed(visibleDecimals(percent, decimals))}%`;
 };
 
 export const formatDateTimeShort = (dateString, locale) => {

@@ -210,7 +210,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
     }
 
     return (
-        <Card ref={wrapperRef} variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className={`flex flex-col lg:flex-row !overflow-x-hidden !overflow-y-visible ${isFullscreen ? 'h-screen !rounded-none !overflow-y-auto' : 'min-h-[320px] sm:min-h-[440px] lg:min-h-[560px]'}`}>
+        <Card ref={wrapperRef} variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className={`flex flex-col lg:flex-row !overflow-x-hidden !overflow-y-visible ${isFullscreen ? 'h-[100dvh] !rounded-none !overflow-y-auto' : 'min-h-[320px] sm:min-h-[440px] lg:min-h-[560px]'}`}>
             <button
                 type="button"
                 data-tour="chart-drawing-open"
@@ -314,7 +314,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                 </div>
                 {/* overflow-hidden: clip the chart canvas to its box so a stale fullscreen-height canvas can't
                     inflate the container (or spill over the page) before the resize settles it back down. */}
-                <div className={`relative flex-1 overflow-hidden ${isFullscreen ? 'min-h-0' : 'min-h-[55vh] sm:min-h-[400px] lg:min-h-[420px]'}`}>
+                <div className={`relative flex-1 overflow-hidden ${isFullscreen ? 'min-h-0' : 'min-h-[55dvh] sm:min-h-[400px] lg:min-h-[420px]'}`}>
                     {/* Absolutely positioned, NOT in-flow w-full/h-full. Lightweight-charts sizes this div's
                         canvas via applyOptions(height); handleResize then reads it back from clientHeight. If
                         the div were in-flow with h-full inside this content-sized (min-h, not fixed-height)

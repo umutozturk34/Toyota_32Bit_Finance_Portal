@@ -17,6 +17,7 @@
                     <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
                 </label>
                 <input type="text" id="username" name="username" autofocus
+                    maxlength="25"
                     value="${(auth.attemptedUsername!'')}"
                     placeholder="<#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>"
                     aria-invalid="<#if messagesPerField.existsError('username')>true</#if>" />

@@ -58,6 +58,7 @@ function InitiateForm({ currentEmail, onInitiated }) {
           required
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
+          maxLength={254}
           placeholder={t('emailChange.placeholder')}
           disabled={initiate.isPending}
           className="w-full rounded-lg border border-border-default bg-bg-elevated/80 backdrop-blur-sm pl-9 pr-3 py-2 text-xs text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:bg-bg-elevated focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12),inset_0_1px_0_rgba(255,255,255,0.04)] transition-all disabled:opacity-50"

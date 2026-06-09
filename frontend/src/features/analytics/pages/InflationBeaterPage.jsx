@@ -436,6 +436,7 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
             type="text"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
+            maxLength={64}
             placeholder={t('analytics.searchAsset', { defaultValue: 'Asset ara — kaçıncı sırada?' })}
             className="w-full rounded-lg border border-border-default bg-bg-elevated pl-9 pr-3 py-2 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
           />

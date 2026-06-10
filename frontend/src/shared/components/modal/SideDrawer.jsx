@@ -33,7 +33,7 @@ export default function SideDrawer({
   const closeText = closeLabel ?? t('common.close');
   const sideConfig = SIDES[side] ?? SIDES.right;
   const isMobile = useMediaQuery('(max-width: 639px)');
-  const resolvedWidth = isMobile ? '100vw' : width;
+  const resolvedWidth = isMobile ? '100dvw' : width;
   return (
     <AnimatePresence>
       {open && (
@@ -58,7 +58,7 @@ export default function SideDrawer({
               className,
             )}
           >
-            <header className="flex items-center justify-between px-4 sm:px-5 h-14 landscape:h-12 sm:landscape:h-14 border-b border-border-default shrink-0">
+            <header className="flex items-center justify-between px-4 sm:px-5 h-14 landscape:h-12 sm:landscape:h-14 pt-[env(safe-area-inset-top)] border-b border-border-default shrink-0">
               <div className="flex items-center gap-2 min-w-0">
                 {Icon && <Icon className={cx('h-4 w-4 shrink-0', iconTint)} />}
                 <div className="flex flex-col min-w-0">
@@ -80,7 +80,7 @@ export default function SideDrawer({
               </div>
             </header>
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-auto-hide">{children}</div>
-            {footer && <div className="border-t border-border-default shrink-0">{footer}</div>}
+            {footer && <div className="border-t border-border-default shrink-0 pb-[env(safe-area-inset-bottom)]">{footer}</div>}
           </motion.aside>
         </>
       )}

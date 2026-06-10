@@ -163,7 +163,7 @@ export default function OnboardingGate() {
               exit={{ opacity: 0, scale: 0.96, y: 8 }}
               transition={{ type: 'spring', stiffness: 260, damping: 28 }}
               style={{ width: 'min(560px, calc(100vw - 1.5rem))' }}
-              className="relative max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden rounded-2xl sm:rounded-3xl border border-border-default bg-bg-elevated backdrop-blur-md shadow-2xl shadow-black/20"
+              className="relative max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] overflow-y-auto overflow-x-hidden rounded-2xl sm:rounded-3xl border border-border-default bg-bg-elevated backdrop-blur-md shadow-2xl shadow-black/20"
             >
               <button
                 type="button"

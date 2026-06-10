@@ -134,4 +134,46 @@ class PortfolioSnapshotReaderTest {
 
         assertThat(result.get("user-1").dailyPnlPercent()).isNull();
     }
+
+    @Test
+    void findTodayPerPortfolioForUsers_returnsEmpty_whenInputEmpty() {
+        Map<String, List<PortfolioSnapshotReader.PortfolioLine>> result =
+                reader.findTodayPerPortfolioForUsers(List.of());
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void findTodayPerPortfolioForUsers_invokesJdbcQuery_whenSubsPresent() {
+        reader.findTodayPerPortfolioForUsers(List.of("user-1"));
+
+        verify(jdbcTemplate).query(anyString(),
+                any(PreparedStatementSetter.class), any(RowMapper.class));
+    }
+
+    @Test
+    void findTodayPerPortfolioForUsers_groupsRowsByUserAndComputesPercent() throws java.sql.SQLException {
+        java.sql.ResultSet rs = org.mockito.Mockito.mock(java.sql.ResultSet.class);
+        org.mockito.Mockito.when(rs.getString(1)).thenReturn("user-1");
+        org.mockito.Mockito.when(rs.getLong(2)).thenReturn(7L);
+        org.mockito.Mockito.when(rs.getString(3)).thenReturn("Spot");
+        org.mockito.Mockito.when(rs.getBigDecimal(4)).thenReturn(new java.math.BigDecimal("110"));
+        org.mockito.Mockito.when(rs.getBigDecimal(5)).thenReturn(new java.math.BigDecimal("10"));
+        org.mockito.Mockito.doAnswer(inv -> {
+            RowMapper<?> mapper = inv.getArgument(2);
+            mapper.mapRow(rs, 0);
+            return null;
+        }).when(jdbcTemplate).query(anyString(),
+                any(PreparedStatementSetter.class), any(RowMapper.class));
+
+        Map<String, List<PortfolioSnapshotReader.PortfolioLine>> result =
+                reader.findTodayPerPortfolioForUsers(List.of("user-1"));
+
+        assertThat(result).containsKey("user-1");
+        List<PortfolioSnapshotReader.PortfolioLine> lines = result.get("user-1");
+        assertThat(lines).hasSize(1);
+        assertThat(lines.get(0).name()).isEqualTo("Spot");
+        assertThat(lines.get(0).portfolioId()).isEqualTo(7L);
+        assertThat(lines.get(0).dailyPnlPercent()).isEqualByComparingTo("10");
+    }
 }

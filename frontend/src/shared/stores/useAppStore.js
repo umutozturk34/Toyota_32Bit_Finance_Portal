@@ -11,8 +11,13 @@ const useAppStore = create(
       chartSidebarOpen: false,
       chartActiveTab: 'indicators',
       displayCurrency: 'ORIGINAL',
+      searchOpen: false,
 
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+
+      openSearch: () => set({ searchOpen: true }),
+      closeSearch: () => set({ searchOpen: false }),
+      toggleSearch: () => set((s) => ({ searchOpen: !s.searchOpen })),
 
       setDisplayCurrency: (currency) => set({ displayCurrency: currency }),
 

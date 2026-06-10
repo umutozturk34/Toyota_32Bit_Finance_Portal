@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { ArrowDown, ArrowUp, ArrowUpDown, Banknote, Clock, Coins, DollarSign, RefreshCw, Search, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Banknote, ChevronLeft, ChevronRight, Clock, Coins, DollarSign, RefreshCw, Search, X } from 'lucide-react';
 import { useBankRates, useBankRateCurrencies } from './hooks/useBankRates';
 import Card from '../../shared/components/card';
 import CurrencyMarker from '../../shared/components/currency/CurrencyMarker';
 import Spinner from '../../shared/components/feedback/Spinner';
 import { useMoney } from '../../shared/hooks/useMoney';
+import useWheelToHorizontal from '../../shared/hooks/useWheelToHorizontal';
 import { formatDateTimeShort } from '../../shared/utils/formatters';
 import { commodityVisual } from '../../shared/icons/commodities';
 
@@ -231,6 +232,27 @@ export default function BankRatesPanel() {
   // Keep the selected chip visible in the horizontal strip — otherwise it can sit scrolled off-screen while
   // its rates show below, leaving the strip looking disconnected from the current selection.
   const stripRef = useRef(null);
+  // Let a plain mouse wheel pan the currency strip left/right (otherwise the wheel only scrolls the page).
+  useWheelToHorizontal(stripRef);
+  // Visible left/right scroll buttons for mouse users — shown only when the strip overflows that way.
+  const [arrows, setArrows] = useState({ left: false, right: false });
+  useEffect(() => {
+    const el = stripRef.current;
+    if (!el) return undefined;
+    const update = () => setArrows({
+      left: el.scrollLeft > 4,
+      right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4,
+    });
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    const raf = requestAnimationFrame(update);
+    return () => {
+      el.removeEventListener('scroll', update);
+      ro.disconnect();
+      cancelAnimationFrame(raf);
+    };
+  }, [filteredCurrencies.length, kind]);
   useEffect(() => {
     const activeChip = stripRef.current?.querySelector('[data-active="true"]');
     activeChip?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
@@ -269,7 +291,7 @@ export default function BankRatesPanel() {
             </button>
           </div>
 
-          <div className="relative flex-1 min-w-[140px] sm:flex-none sm:w-56">
+          <div className="relative flex-1 min-w-0 sm:flex-none sm:w-56">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-fg-muted pointer-events-none" />
             <input
               type="text"
@@ -297,24 +319,46 @@ export default function BankRatesPanel() {
           </span>
         </div>
 
-        <div ref={stripRef} className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mb-1">
-          {currenciesLoading && filteredCurrencies.length === 0 && (
-            <div className="flex justify-center py-2 w-full"><Spinner size="sm" /></div>
+        <div className="relative">
+          {arrows.left && (
+            <button
+              type="button"
+              onClick={() => stripRef.current?.scrollBy({ left: -260, behavior: 'smooth' })}
+              aria-label={t('bankRates.scrollLeft', { defaultValue: 'Sola kaydır' })}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center h-7 w-7 rounded-full bg-bg-elevated/95 border border-border-default text-fg-muted hover:text-fg hover:border-accent/50 shadow-md backdrop-blur-sm cursor-pointer transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
           )}
-          {filteredCurrencies.map((code) => (
-            <RateChip
-              key={code}
-              active={currency === code}
-              code={code}
-              label={labelFor(code)}
-              kind={kind}
-              onClick={() => setCurrency(code)}
-            />
-          ))}
-          {filteredCurrencies.length === 0 && !currenciesLoading && (
-            <p className="text-xs text-fg-muted py-2">
-              {currencyQuery ? t('bankRates.noMatch') : t('bankRates.noData')}
-            </p>
+          <div ref={stripRef} className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mb-1">
+            {currenciesLoading && filteredCurrencies.length === 0 && (
+              <div className="flex justify-center py-2 w-full"><Spinner size="sm" /></div>
+            )}
+            {filteredCurrencies.map((code) => (
+              <RateChip
+                key={code}
+                active={currency === code}
+                code={code}
+                label={labelFor(code)}
+                kind={kind}
+                onClick={() => setCurrency(code)}
+              />
+            ))}
+            {filteredCurrencies.length === 0 && !currenciesLoading && (
+              <p className="text-xs text-fg-muted py-2">
+                {currencyQuery ? t('bankRates.noMatch') : t('bankRates.noData')}
+              </p>
+            )}
+          </div>
+          {arrows.right && (
+            <button
+              type="button"
+              onClick={() => stripRef.current?.scrollBy({ left: 260, behavior: 'smooth' })}
+              aria-label={t('bankRates.scrollRight', { defaultValue: 'Sağa kaydır' })}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center h-7 w-7 rounded-full bg-bg-elevated/95 border border-border-default text-fg-muted hover:text-fg hover:border-accent/50 shadow-md backdrop-blur-sm cursor-pointer transition-colors"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
           )}
         </div>
       </Card>

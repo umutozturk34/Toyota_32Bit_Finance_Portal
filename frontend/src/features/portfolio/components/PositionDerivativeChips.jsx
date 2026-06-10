@@ -16,7 +16,7 @@ export default function PositionDerivativeChips({ meta, money, t, localeTag, ent
       </span>
       {meta.contractKind && (
         <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-mono text-fg-muted bg-bg-elevated border border-border-default">
-          {meta.contractKind}
+          {t(`portfolio.derivatives.${String(meta.contractKind).toLowerCase()}`, { defaultValue: meta.contractKind })}
         </span>
       )}
       {meta.contractSize != null && Number(meta.contractSize) !== 1 && (

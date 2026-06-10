@@ -12,7 +12,9 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -48,6 +50,8 @@ public class PortfolioUpdatedHandler implements NotificationHandler {
         if (p.totalValue() != null) templateData.put("totalValue", p.totalValue());
         if (p.dailyPnl() != null) templateData.put("dailyPnl", p.dailyPnl());
         if (p.dailyPnlPercent() != null) templateData.put("dailyPnlPercent", p.dailyPnlPercent());
+        templateData.put("portfolioCount", p.portfolioCount());
+        templateData.put("portfolios", emailRows(p.portfolios()));
         String emailSubject = translator.translate("notif.email.subject", locale, title);
         return new RenderedNotification(
                 title,
@@ -87,5 +91,23 @@ public class PortfolioUpdatedHandler implements NotificationHandler {
         formatter.setMinimumFractionDigits(scale);
         formatter.setMaximumFractionDigits(scale);
         return formatter.format(scaled);
+    }
+
+    /**
+     * Flattens the per-portfolio lines into template maps (name + raw value/P/L) so the email can render each
+     * portfolio as its own themed row; the template formats the numbers and picks up/down colors itself.
+     */
+    private static List<Map<String, Object>> emailRows(List<PortfolioUpdatedPayload.Line> lines) {
+        if (lines == null || lines.isEmpty()) return List.of();
+        List<Map<String, Object>> rows = new ArrayList<>(lines.size());
+        for (PortfolioUpdatedPayload.Line line : lines) {
+            Map<String, Object> row = new HashMap<>();
+            row.put("name", line.name());
+            row.put("totalValue", line.totalValue());
+            row.put("dailyPnl", line.dailyPnl());
+            row.put("dailyPnlPercent", line.dailyPnlPercent());
+            rows.add(row);
+        }
+        return rows;
     }
 }

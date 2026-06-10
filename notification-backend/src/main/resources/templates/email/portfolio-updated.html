@@ -52,6 +52,29 @@
         </tr>
     </table>
 
+    <th:block th:if="${portfolios != null and !portfolios.isEmpty()}">
+        <p th:style="'margin:24px 0 8px;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:' + ${cSubtle} + ';'"
+           th:text="#{appEmail.portfolioUpdated.breakdownLabel}">Your portfolios</p>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+               th:style="'background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:12px;'">
+            <tr th:each="pf,iter : ${portfolios}"
+                th:with="pUp=${pf.dailyPnl != null and pf.dailyPnl >= 0},
+                         pColor=${pf.dailyPnl == null ? cMuted : (pUp ? cSuccess : cDanger)}">
+                <td th:style="|padding:11px 16px;${iter.last ? '' : 'border-bottom:1px solid ' + cBorder + ';'}|">
+                    <span th:style="'font-size:13.5px;font-weight:600;color:' + ${cFg} + ';'" th:text="${pf.name}">Portfolio</span>
+                </td>
+                <td align="right" th:style="|padding:11px 16px;${iter.last ? '' : 'border-bottom:1px solid ' + cBorder + ';'}|">
+                    <span class="num" th:if="${pf.totalValue != null}"
+                          th:style="'font-size:13.5px;font-weight:600;color:' + ${cFg} + ';'"
+                          th:text="'₺ ' + ${#numbers.formatDecimal(pf.totalValue, 1, 2)}">₺ 0,00</span>
+                    <span class="num" th:if="${pf.dailyPnlPercent != null}"
+                          th:style="'display:block;margin-top:2px;font-size:12px;font-weight:600;color:' + ${pColor} + ';'"
+                          th:text="${(pUp ? '▲ +' : '▼ ') + #numbers.formatDecimal(pf.dailyPnlPercent, 1, 2) + '%'}">▲ +0,00%</span>
+                </td>
+            </tr>
+        </table>
+    </th:block>
+
     <table role="presentation" class="cta-wrap-table" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:20px;">
         <tr>
             <td class="cta-cell" th:style="'background:' + ${cAccent} + ';background-image:linear-gradient(135deg,' + ${cAccent} + ' 0%,' + ${cAccentMid} + ' 50%,' + ${cAccent2} + ' 100%);border-radius:10px;box-shadow:0 6px 22px -4px rgba(99,102,241,0.45);'">

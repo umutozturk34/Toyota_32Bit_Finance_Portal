@@ -119,7 +119,9 @@ class PayloadMetadataTest {
     void portfolioUpdatedPayload_toMetadata_includesPnlFields_whenPresent() {
         PortfolioUpdatedPayload payload = new PortfolioUpdatedPayload(
                 new BigDecimal("1000"), new BigDecimal("10"), new BigDecimal("1.0"),
-                2, "scheduler");
+                2, List.of(new PortfolioUpdatedPayload.Line(
+                        7L, "Portföyüm", new BigDecimal("600"), new BigDecimal("6"), new BigDecimal("1.0"))),
+                "scheduler");
 
         Map<String, Object> meta = payload.toMetadata();
 
@@ -128,15 +130,19 @@ class PayloadMetadataTest {
                 .containsEntry("dailyPnlPercent", new BigDecimal("1.0"))
                 .containsEntry("portfolioCount", 2);
         assertThat(payload.type()).isEqualTo(NotificationType.PORTFOLIO_UPDATED);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> rows = (List<Map<String, Object>>) meta.get("portfolios");
+        assertThat(rows).hasSize(1);
+        assertThat(rows.get(0)).containsEntry("name", "Portföyüm").containsEntry("id", 7L);
     }
 
     @Test
     void portfolioUpdatedPayload_omitsNullPnlFields() {
-        PortfolioUpdatedPayload payload = new PortfolioUpdatedPayload(null, null, null, 0, null);
+        PortfolioUpdatedPayload payload = new PortfolioUpdatedPayload(null, null, null, 0, null, null);
 
         Map<String, Object> meta = payload.toMetadata();
 
-        assertThat(meta).doesNotContainKeys("totalValue", "dailyPnl", "dailyPnlPercent");
+        assertThat(meta).doesNotContainKeys("totalValue", "dailyPnl", "dailyPnlPercent", "portfolios");
         assertThat(meta).containsEntry("portfolioCount", 0);
     }
 }

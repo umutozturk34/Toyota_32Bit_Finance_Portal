@@ -5,7 +5,10 @@ const cors = require('cors');
 const puppeteer = require('puppeteer');
 
 const PORT = Number(process.env.PORT) || 8080;
-const IDLE_CLOSE_MS = Number(process.env.PDF_IDLE_CLOSE_MS) || 5 * 60 * 1000;
+// Default to keeping the browser warm forever (0 = never idle-close). Occasional reports are minutes apart, so a
+// 5-minute idle-close meant almost every PDF paid a fresh ~3-5s Chromium cold-launch on the VDS. An idle Chrome
+// with all pages closed costs ~80MB — cheap next to that latency. Set PDF_IDLE_CLOSE_MS>0 to re-enable closing.
+const IDLE_CLOSE_MS = process.env.PDF_IDLE_CLOSE_MS != null ? Number(process.env.PDF_IDLE_CLOSE_MS) : 0;
 const DEFAULT_TIMEOUT_MS = Number(process.env.PDF_RENDER_TIMEOUT_MS) || 20000;
 const BODY_LIMIT = process.env.PDF_BODY_LIMIT || '1mb';
 const MAX_CONCURRENT = Math.max(1, Number(process.env.PDF_MAX_CONCURRENT) || 4);
@@ -18,6 +21,19 @@ const LAUNCH_ARGS = [
   '--disable-setuid-sandbox',
   '--disable-dev-shm-usage',
   '--disable-gpu',
+  // Lean flags: skip work a headless PDF renderer never needs, trimming launch + first-render time.
+  '--no-zygote',
+  '--no-first-run',
+  '--disable-extensions',
+  '--disable-background-networking',
+  '--disable-background-timer-throttling',
+  '--disable-default-apps',
+  '--disable-sync',
+  '--disable-translate',
+  '--mute-audio',
+  '--hide-scrollbars',
+  '--metrics-recording-only',
+  '--disable-features=Translate,BackForwardCache,AcceptCHFrame',
 ];
 
 const DEFAULT_PDF_OPTIONS = {

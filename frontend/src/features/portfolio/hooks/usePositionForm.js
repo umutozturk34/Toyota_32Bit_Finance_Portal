@@ -10,7 +10,7 @@ import {
   todayInputValue, dateInputToIso, isoToDateInput, buildInitialState,
   resolveTarget, toYearMonth, buildPriceIndex, latestPriceAtOrBefore, resolveNativeCurrency,
 } from '../lib/positionFormHelpers';
-import { MAX_MONEY, MAX_QUANTITY } from '../../../shared/utils/numberInput';
+import { MAX_MONEY, MAX_QUANTITY, PRICE_DECIMALS, QUANTITY_DECIMALS, clampNumberInput, sanitizeNumberInput } from '../../../shared/utils/numberInput';
 
 export function usePositionForm({ mode, portfolioId, asset, position, onClose, onComplete }) {
   const { t } = useTranslation();
@@ -148,14 +148,20 @@ export function usePositionForm({ mode, portfolioId, asset, position, onClose, o
   };
 
   const handlePriceChange = (e) => {
-    setForm((prev) => ({ ...prev, entryPrice: e.target.value }));
+    // Cap magnitude (≤ MAX_MONEY) and decimal places (≤4, the price column scale) as the user types, so a
+    // value the backend @DecimalMax/@Digits would reject can't be entered in the first place.
+    setForm((prev) => ({ ...prev, entryPrice: sanitizeNumberInput(e.target.value, MAX_MONEY, PRICE_DECIMALS) }));
     setPriceTouched(true);
     setError(null);
   };
 
   const handleQuantityChange = (e) => {
     const raw = e.target.value;
-    const value = isFractional ? raw : raw.replace(/[.,]/g, '');
+    // Fractional assets keep ≤8 decimals (quantity column scale); share-based ones stay integer. Both cap at
+    // MAX_QUANTITY, mirroring the backend bounds.
+    const value = isFractional
+      ? sanitizeNumberInput(raw, MAX_QUANTITY, QUANTITY_DECIMALS)
+      : clampNumberInput(raw.replace(/[.,]/g, ''), MAX_QUANTITY);
     setForm((prev) => ({ ...prev, quantity: value }));
     setError(null);
   };

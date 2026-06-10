@@ -106,7 +106,18 @@ class DerivativeSnapshotAssembler {
         // today still nets to ~0 — the open leg's offsetting move is summed alongside it via findLatestRowsPerAsset
         // (the close-day skip was an obsolete workaround from before that multi-row-per-asset sum existed).
         LocalDate snapDate = batchTimestamp.toLocalDate();
-        if (position.getEntryDate() != null && position.getEntryDate().equals(snapDate)) return DailyDelta.EMPTY;
+        if (position.getEntryDate() != null && position.getEntryDate().equals(snapDate)) {
+            // ENTRY DAY: no prior-day row to measure a market move against. Anchor the daily to the ENTRY PRICE so
+            // Günlük K/Z = the direction-aware gain since the open (= the position's P&L = (current − entry) × size ×
+            // lots), NOT 0 and NOT the full notional booked against a phantom zero prior. unitPrice and entryPrice
+            // share the same (today's) FX on a same-day open, so the per-currency frames derived from this TRY
+            // amount stay correct. This is the lot's own move from entry to the snapshot day's price — not lifetime.
+            BigDecimal entryDayPnl = m.pnl().setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+            BigDecimal entryDayPct = m.totalCost() != null && m.totalCost().signum() > 0
+                    ? entryDayPnl.multiply(HUNDRED).divide(m.totalCost(), MoneyScale.PRICE, RoundingMode.HALF_UP)
+                    : null;
+            return new DailyDelta(entryDayPnl, entryDayPct);
+        }
         String code = position.getViopContract().getSymbol();
         PortfolioAssetDailySnapshot prior = priorOverride != null
                 ? priorOverride

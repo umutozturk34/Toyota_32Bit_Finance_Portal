@@ -5,7 +5,7 @@ import { Outlet, Link, useLocation, useNavigationType } from 'react-router-dom';
 import { useAuth } from '../../features/auth/useAuth';
 import { useTheme } from '../context/useTheme';
 import useAppStore from '../stores/useAppStore';
-import { TrendingUp, Shield, Menu, FolderOpen } from 'lucide-react';
+import { TrendingUp, Shield, Menu, FolderOpen, Search } from 'lucide-react';
 import {
   PiHouseDuotone, PiChartLineUpDuotone, PiTrendUpDuotone, PiCurrencyBtcDuotone,
   PiCurrencyDollarSimpleDuotone, PiBriefcaseDuotone, PiDiamondDuotone, PiBankDuotone,
@@ -24,6 +24,7 @@ import useNavigationStore from '../stores/useNavigationStore';
 import OnboardingGate from '../../features/onboarding/OnboardingGate';
 import KeycloakActionToast from '../../features/auth/components/KeycloakActionToast';
 import SidebarContent from './SidebarContent';
+import CommandPalette from '../components/modal/CommandPalette';
 
 const baseNavStructure = [
   { kind: 'item', to: '/market', labelKey: 'nav.overview', Icon: PiHouseDuotone },
@@ -73,6 +74,8 @@ const MainLayout = () => {
   const location = useLocation();
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
+  const openSearch = useAppStore((s) => s.openSearch);
+  const toggleSearch = useAppStore((s) => s.toggleSearch);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(() => {
@@ -114,6 +117,20 @@ const MainLayout = () => {
     }
     lastFullPathRef.current = next;
   }, [location.pathname, location.search, navType, setOriginInStore]);
+
+  // Global search shortcut — bound to BOTH Cmd+K (macOS) and Ctrl+K (Windows/Linux) so it works on every
+  // platform, not just Apple keyboards. The visible trigger (sidebar pill / mobile top-bar icon) is the
+  // primary affordance; this is the power-user accelerator.
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        toggleSearch();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [toggleSearch]);
 
   const navStructure = useMemo(() => (
     hasRole('ADMIN') ? [...baseNavStructure, adminGroup] : baseNavStructure
@@ -167,6 +184,7 @@ const MainLayout = () => {
     setNotificationsOpen,
     setSettingsOpen,
     setProfileOpen,
+    openSearch: () => { setMobileOpen(false); openSearch(); },
     unreadCount,
     user,
     logout,
@@ -204,7 +222,7 @@ const MainLayout = () => {
       <div className="hidden lg:block shrink-0" style={{ width: spacerWidth }} />
 
       <div
-        className={`lg:hidden fixed top-0 left-0 right-0 z-40 h-12 flex items-center justify-between px-3 border-b border-border-default ${blurCls}`}
+        className={`lg:hidden fixed top-0 left-0 right-0 z-40 h-[calc(3rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] flex items-center justify-between px-3 border-b border-border-default ${blurCls}`}
         style={{
           background: 'var(--sidebar-bg)',
           backdropFilter: 'var(--sidebar-blur)',
@@ -225,7 +243,13 @@ const MainLayout = () => {
           </span>
           <span className="text-sm font-bold text-fg font-display">Finance</span>
         </Link>
-        <div className="w-8" />
+        <button
+          onClick={openSearch}
+          aria-label={t('nav.search')}
+          className="flex items-center justify-center w-8 h-8 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
+        >
+          <Search size={18} />
+        </button>
       </div>
 
       <AnimatePresence>
@@ -245,7 +269,7 @@ const MainLayout = () => {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
-              className="lg:hidden fixed top-0 left-0 bottom-0 z-50 w-[82vw] max-w-[16rem] border-r border-border-default"
+              className="lg:hidden fixed top-0 left-0 bottom-0 z-50 w-[82vw] max-w-[16rem] border-r pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] border-border-default"
               style={{
                 background: 'var(--sidebar-bg)',
                 backdropFilter: 'var(--sidebar-blur)',
@@ -260,7 +284,7 @@ const MainLayout = () => {
 
       <div className={`flex-1 flex flex-col min-w-0 relative overflow-x-hidden ${blurCls}`}>
         <main className="flex-1 w-full">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:py-6 pt-16 lg:pt-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:py-6 pt-[calc(4rem+env(safe-area-inset-top))] lg:pt-6">
             <Outlet />
           </div>
         </main>
@@ -278,6 +302,7 @@ const MainLayout = () => {
       <SettingsSidebar isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <ProfileDrawer isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
       <NotificationPanel isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+      <CommandPalette />
       <OnboardingGate />
       <KeycloakActionToast />
     </div>

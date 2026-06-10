@@ -123,19 +123,22 @@
            page-break-inside on each row do its job and keeps every lot visible. */
         .pos-card { overflow: visible; }
         .pos-card .card-body { overflow: visible; }
-        .pos-table { width: 100%; border-collapse: collapse; }
+        /* table-layout:fixed + an explicit colgroup pins the 9 columns to the A4 content width (the card uses
+           overflow:visible for page-breaks, so a nowrap table would otherwise spill its full intrinsic width off
+           the right page edge). overflow:hidden + ellipsis keeps any over-long cell from bleeding into its neighbour. */
+        .pos-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         .pos-table th {
-            font-size: 8.5px; font-weight: 700; letter-spacing: 0.2px;
+            font-size: 8px; font-weight: 700; letter-spacing: 0.2px;
             color: [[${palette.subtle}]];
-            padding: 0 6px 10px; text-align: left;
+            padding: 0 4px 10px; text-align: left;
             border-bottom: 1px solid [[${palette.border}]];
-            white-space: nowrap;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .pos-table th.r { text-align: right; }
         .pos-table td {
-            font-size: 10.5px; color: [[${palette.fg}]];
-            padding: 7px 6px; border-bottom: 1px solid [[${palette.border}]];
-            white-space: nowrap;
+            font-size: 9.5px; color: [[${palette.fg}]];
+            padding: 7px 4px; border-bottom: 1px solid [[${palette.border}]];
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .pos-table td.r { text-align: right; }
         .pos-table td.asset { white-space: normal; }
@@ -381,6 +384,11 @@
            th:text="#{pdf.positions.empty}">No positions</p>
 
         <table class="pos-table" th:if="${positions != null and not positions.isEmpty()}">
+            <colgroup>
+                <col style="width:19%"/><col style="width:9%"/><col style="width:9%"/>
+                <col style="width:11%"/><col style="width:11%"/><col style="width:10%"/>
+                <col style="width:10%"/><col style="width:11%"/><col style="width:10%"/>
+            </colgroup>
             <thead>
                 <tr>
                     <th th:text="#{pdf.col.code}">ASSET</th>

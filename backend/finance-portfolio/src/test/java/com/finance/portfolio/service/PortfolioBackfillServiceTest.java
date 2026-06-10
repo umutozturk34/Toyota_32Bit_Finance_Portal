@@ -227,7 +227,8 @@ class PortfolioBackfillServiceTest {
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(pos));
         when(assetPricingPort.getPricesTry(any()))
                 .thenReturn(Map.of(new AssetPricingPort.AssetKey(MarketType.STOCK, "THYAO.IS"), new BigDecimal("55")));
-        when(calculator.buildAggregatedAssetSnapshot(any(), any(), any(), any(), any(), any(), any(), any()))
+        // THYAO was entered TODAY → snapshotToday anchors its daily to the entry price via a synthetic prior.
+        when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
         when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
 
@@ -331,16 +332,23 @@ class PortfolioBackfillServiceTest {
                 new AssetPricingPort.AssetKey(MarketType.FUND, "FIL"), new BigDecimal("3.5")));
         when(calculator.buildAggregatedAssetSnapshot(any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
+        when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(mockAssetSnapshot());
         when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockDailySnapshot());
 
         service.snapshotToday(PORTFOLIO_ID);
 
         verify(assetSnapshotRepository).saveAll(argThat(c -> ((java.util.Collection<?>) c).size() == 2));
+        // The older lot (BLH, entered 10 days ago) uses the real prior-day lookup.
         verify(calculator).buildAggregatedAssetSnapshot(any(), eq(AssetType.FUND), eq("BLH"),
                 any(), any(), any(), any(), any());
-        verify(calculator).buildAggregatedAssetSnapshot(any(), eq(AssetType.FUND), eq("FIL"),
-                any(), any(), any(), any(), any());
+        // The lot added TODAY (FIL) is anchored to its ENTRY PRICE (3.4) via a synthetic prior, so its daily K/Z
+        // is (current − entry) × qty instead of the full value booked against a phantom zero prior.
+        verify(calculator).buildAggregatedAssetSnapshotWithPrior(any(), eq(AssetType.FUND), eq("FIL"),
+                any(), any(), any(), any(), any(),
+                argThat(prior -> prior != null && prior.getUnitPriceTry() != null
+                        && prior.getUnitPriceTry().compareTo(new BigDecimal("3.4")) == 0));
     }
 
     @Test

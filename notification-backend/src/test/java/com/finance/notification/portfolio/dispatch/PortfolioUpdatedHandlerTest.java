@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,7 +57,7 @@ class PortfolioUpdatedHandlerTest {
     @Test
     void render_choosesMorningTitle_whenSourceMorning() {
         PortfolioUpdatedPayload payload = new PortfolioUpdatedPayload(
-                new BigDecimal("10000"), new BigDecimal("100"), new BigDecimal("1.0"), 1, "morning");
+                new BigDecimal("10000"), new BigDecimal("100"), new BigDecimal("1.0"), 1, List.of(), "morning");
         NotificationRequest req = NotificationRequest.of("u", payload);
 
         RenderedNotification result = handler.render(req, Locale.ENGLISH);
@@ -67,7 +68,7 @@ class PortfolioUpdatedHandlerTest {
     @Test
     void render_choosesEveningTitle_whenSourceEvening() {
         PortfolioUpdatedPayload payload = new PortfolioUpdatedPayload(
-                new BigDecimal("10000"), new BigDecimal("100"), new BigDecimal("1.0"), 1, "evening");
+                new BigDecimal("10000"), new BigDecimal("100"), new BigDecimal("1.0"), 1, List.of(), "evening");
         NotificationRequest req = NotificationRequest.of("u", payload);
 
         RenderedNotification result = handler.render(req, Locale.ENGLISH);
@@ -78,7 +79,7 @@ class PortfolioUpdatedHandlerTest {
     @Test
     void render_choosesGenericTitle_whenSourceMissing() {
         PortfolioUpdatedPayload payload = new PortfolioUpdatedPayload(
-                new BigDecimal("10000"), new BigDecimal("100"), new BigDecimal("1.0"), 1, null);
+                new BigDecimal("10000"), new BigDecimal("100"), new BigDecimal("1.0"), 1, List.of(), null);
         NotificationRequest req = NotificationRequest.of("u", payload);
 
         RenderedNotification result = handler.render(req, Locale.ENGLISH);
@@ -89,7 +90,7 @@ class PortfolioUpdatedHandlerTest {
     @Test
     void render_usesSnapshotOnlyBody_whenTotalValueMissing() {
         PortfolioUpdatedPayload payload = new PortfolioUpdatedPayload(
-                null, null, null, 1, "morning");
+                null, null, null, 1, List.of(), "morning");
         NotificationRequest req = NotificationRequest.of("u", payload);
 
         RenderedNotification result = handler.render(req, Locale.ENGLISH);
@@ -100,7 +101,7 @@ class PortfolioUpdatedHandlerTest {
     @Test
     void render_usesValueOnlyBody_whenPnlMissing() {
         PortfolioUpdatedPayload payload = new PortfolioUpdatedPayload(
-                new BigDecimal("12345.67"), null, null, 1, "morning");
+                new BigDecimal("12345.67"), null, null, 1, List.of(), "morning");
         NotificationRequest req = NotificationRequest.of("u", payload);
 
         RenderedNotification result = handler.render(req, Locale.ENGLISH);
@@ -111,7 +112,7 @@ class PortfolioUpdatedHandlerTest {
     @Test
     void render_usesFullBody_whenPnlPresent() {
         PortfolioUpdatedPayload payload = new PortfolioUpdatedPayload(
-                new BigDecimal("12345.67"), new BigDecimal("-100"), new BigDecimal("-1.5"), 1, "morning");
+                new BigDecimal("12345.67"), new BigDecimal("-100"), new BigDecimal("-1.5"), 1, List.of(), "morning");
         NotificationRequest req = NotificationRequest.of("u", payload);
 
         RenderedNotification result = handler.render(req, Locale.ENGLISH);

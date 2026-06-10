@@ -6,7 +6,7 @@ import com.finance.notification.core.dispatch.NotificationFanoutService.FanoutRe
 import com.finance.notification.core.dispatch.payload.PortfolioUpdatedPayload;
 import com.finance.notification.core.model.NotificationPreference;
 import com.finance.notification.core.repository.NotificationPreferenceRepository;
-import com.finance.notification.portfolio.PortfolioSnapshotReader.AggregatedSnapshot;
+import com.finance.notification.portfolio.PortfolioSnapshotReader.PortfolioLine;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -14,6 +14,9 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -83,14 +86,39 @@ public class PortfolioUpdatedListener {
     private Map<String, PortfolioUpdatedPayload> buildPayloads(List<NotificationPreference> page, String source) {
         Set<String> subs = new HashSet<>(page.size());
         for (NotificationPreference pref : page) subs.add(pref.getUserSub());
-        Map<String, AggregatedSnapshot> aggregates = snapshotReader.findTodayAggregateForUsers(subs);
+        Map<String, List<PortfolioLine>> perPortfolio = snapshotReader.findTodayPerPortfolioForUsers(subs);
         Map<String, PortfolioUpdatedPayload> payloads = new HashMap<>(page.size());
         for (NotificationPreference pref : page) {
-            AggregatedSnapshot snap = aggregates.get(pref.getUserSub());
-            if (snap == null || snap.totalValue() == null || snap.totalValue().signum() <= 0) continue;
-            payloads.put(pref.getUserSub(), new PortfolioUpdatedPayload(
-                    snap.totalValue(), snap.dailyPnl(), snap.dailyPnlPercent(), snap.portfolioCount(), source));
+            PortfolioUpdatedPayload payload = buildUserPayload(perPortfolio.get(pref.getUserSub()), source);
+            if (payload != null) payloads.put(pref.getUserSub(), payload);
         }
         return payloads;
+    }
+
+    /**
+     * Builds one summary payload that lists each of the user's portfolios separately (name + own value + daily
+     * P/L), plus a roll-up header. Returns null — so the user is skipped — when they have no portfolios or their
+     * combined value is non-positive (empty/zero), preserving the previous "skip empty portfolios" behavior.
+     */
+    private static PortfolioUpdatedPayload buildUserPayload(List<PortfolioLine> lines, String source) {
+        if (lines == null || lines.isEmpty()) return null;
+        BigDecimal total = BigDecimal.ZERO;
+        BigDecimal pnl = BigDecimal.ZERO;
+        List<PortfolioUpdatedPayload.Line> rows = new ArrayList<>(lines.size());
+        for (PortfolioLine line : lines) {
+            if (line.totalValue() != null) total = total.add(line.totalValue());
+            if (line.dailyPnl() != null) pnl = pnl.add(line.dailyPnl());
+            rows.add(new PortfolioUpdatedPayload.Line(
+                    line.portfolioId(), line.name(), line.totalValue(), line.dailyPnl(), line.dailyPnlPercent()));
+        }
+        if (total.signum() <= 0) return null;
+        return new PortfolioUpdatedPayload(total, pnl, aggregatePercent(total, pnl), rows.size(), rows, source);
+    }
+
+    /** Roll-up daily P/L percent against the prior total (total minus P/L); null when that base is zero. */
+    private static BigDecimal aggregatePercent(BigDecimal total, BigDecimal pnl) {
+        BigDecimal previous = total.subtract(pnl);
+        if (previous.signum() == 0) return null;
+        return pnl.divide(previous, 6, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
     }
 }

@@ -15,3 +15,24 @@ export function clampNumberInput(raw, max) {
   if (!Number.isFinite(n)) return raw;
   return n > max ? String(max) : raw;
 }
+
+// Decimal-place bounds mirroring the persisted entity scale / backend @Digits: prices keep 4 fraction
+// digits, quantities 8. Keeps the typed value from exceeding what the server would accept.
+export const PRICE_DECIMALS = 8;
+export const QUANTITY_DECIMALS = 8;
+
+// Trim a controlled numeric input's fractional tail to maxFraction digits (mirrors @Digits). Leaves an
+// in-progress "1." or a plain integer untouched so typing stays fluid; only cuts once the tail is too long.
+export function clampDecimals(raw, maxFraction) {
+  if (raw === '' || raw == null) return raw;
+  const s = String(raw);
+  const dot = s.indexOf('.');
+  if (dot < 0) return s;
+  if (s.length - dot - 1 <= maxFraction) return s;
+  return s.slice(0, dot + 1 + maxFraction);
+}
+
+// One-shot sanitizer for money/quantity inputs: cap the magnitude AND the decimal places at once.
+export function sanitizeNumberInput(raw, max, maxFraction) {
+  return clampDecimals(clampNumberInput(raw, max), maxFraction);
+}

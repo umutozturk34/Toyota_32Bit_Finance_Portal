@@ -19,13 +19,13 @@ import java.time.LocalDate;
  * Supplying close fields opens the position already closed.
  */
 public record OpenDerivativePositionRequest(
-        @NotBlank @Size(max = 32) String contractSymbol,
+        @NotBlank @Size(max = 32) @Pattern(regexp = "^[A-Za-z0-9._=-]{1,32}$") String contractSymbol,
         @NotNull DerivativeDirection direction,
         @NotNull @PastOrPresent LocalDate entryDate,
-        @DecimalMin(value = "0", inclusive = true) @DecimalMax("1000000000000") @Digits(integer = 15, fraction = 4) BigDecimal entryPrice,
+        @DecimalMin(value = "0", inclusive = true) @DecimalMax("1000000000000") @Digits(integer = 15, fraction = 8) BigDecimal entryPrice,
         @NotNull @DecimalMin(value = "0", inclusive = false) @DecimalMax("1000000000") @Digits(integer = 12, fraction = 4) BigDecimal quantityLot,
         @PastOrPresent LocalDate closeDate,
-        @DecimalMin(value = "0", inclusive = true) @DecimalMax("1000000000000") @Digits(integer = 15, fraction = 4) BigDecimal closePrice,
+        @DecimalMin(value = "0", inclusive = true) @DecimalMax("1000000000000") @Digits(integer = 15, fraction = 8) BigDecimal closePrice,
         @Pattern(regexp = "^[A-Z]{3}$") String priceCurrency
 ) {
     public OpenDerivativePositionRequest(String contractSymbol, DerivativeDirection direction,

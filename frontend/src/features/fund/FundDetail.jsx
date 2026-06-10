@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LineChart, ExternalLink, ChevronUp, ChevronDown } from 'lucide-react';
+import { LineChart, ExternalLink, PieChart, ChevronRight } from 'lucide-react';
 import { fundService } from './services/fundService';
-import { formatVolume, getChangeClass, changeColors, formatPercentAbs } from '../../shared/utils/formatters';
+import { formatVolume } from '../../shared/utils/formatters';
 import { useMoney } from '../../shared/hooks/useMoney';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
+import BaseModal from '../../shared/components/modal/BaseModal';
 import RiskBadge from '../../shared/components/asset/RiskBadge';
 import AllocationPie from './components/AllocationPie';
 import ReturnsList from './components/ReturnsList';
@@ -24,26 +26,15 @@ function FundHeader({ asset }) {
   );
 }
 
+// Price/change/bulletin now live in the chart Data Window; this strip keeps only the fund classification the
+// Data Window does not carry (type, category, rank, market share, portfolio, investor, ISIN, KAP).
 function FundMetadata({ asset }) {
   const { t } = useTranslation();
-  const { format: money, formatCompact: moneyCompact } = useMoney();
+  const { formatCompact: moneyCompact } = useMoney();
   const meta = asset.metadata || {};
-  const cls = getChangeClass(asset.changePercent);
   return (
     <div className="space-y-3">
       <MetadataTiles tiles={[
-        { label: t('marketDetail.priceLabel'), value: money(asset.price) },
-        asset.changePercent != null && {
-          label: t('marketDetail.changeLabel'),
-          color: changeColors[cls],
-          value: (
-            <span className="flex items-center gap-0.5">
-              {asset.changePercent > 0 ? <ChevronUp className="h-3 w-3" /> : asset.changePercent < 0 ? <ChevronDown className="h-3 w-3" /> : null}
-              {formatPercentAbs(asset.changePercent)}
-            </span>
-          ),
-        },
-        meta.fundType === 'BYF' && meta.bulletinPrice != null && { label: t('marketDetail.fund.exchange'), value: money(meta.bulletinPrice) },
         {
           label: t('marketDetail.fund.fundType'),
           value: (
@@ -78,20 +69,55 @@ function FundMetadata({ asset }) {
   );
 }
 
-function FundSidebar({ asset }) {
+// Sits under the Data Window in the chart's right column: a single trigger that opens the fund's risk,
+// allocation and returns in a modal — keeps the right column short instead of a long scroll.
+function FundDetailCard({ asset }) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
   const meta = asset?.metadata || {};
   const allocations = meta.allocations || [];
   return (
     <>
-      {meta.riskValue != null && (
-        <div className="rounded-xl border border-border-default bg-surface/40 p-3 flex items-center justify-between">
-          <span className="text-xs font-medium text-fg-muted">{t('marketDetail.fund.riskLabel')}</span>
-          <RiskBadge value={meta.riskValue} size="lg" />
+      <button
+        type="button"
+        data-tour="fund-detail-card"
+        onClick={() => setOpen(true)}
+        className="w-full flex items-center justify-between gap-2 rounded-xl border border-border-default bg-surface/40 px-3 py-2.5 text-sm font-medium text-fg hover:border-accent/40 hover:bg-accent/5 transition-colors cursor-pointer"
+      >
+        <span className="inline-flex items-center gap-2">
+          <PieChart className="h-4 w-4 text-accent" />
+          {t('marketDetail.fund.viewDetail')}
+        </span>
+        <ChevronRight className="h-4 w-4 text-fg-muted shrink-0" />
+      </button>
+      {/* Hidden close target so the onboarding tour can dismiss the modal after the allocation step. */}
+      <button
+        type="button"
+        data-tour-close="fund-detail"
+        aria-hidden="true"
+        tabIndex={-1}
+        onClick={() => setOpen(false)}
+        style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}
+      />
+      <BaseModal
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        icon={LineChart}
+        title={asset.code}
+        subtitle={t('marketDetail.fund.detailTitle')}
+        size="lg"
+      >
+        <div className="space-y-3 overflow-x-hidden">
+          {meta.riskValue != null && (
+            <div className="rounded-xl border border-border-default bg-surface/40 p-3 flex items-center justify-between">
+              <span className="text-xs font-medium text-fg-muted">{t('marketDetail.fund.riskLabel')}</span>
+              <RiskBadge value={meta.riskValue} size="lg" />
+            </div>
+          )}
+          <AllocationPie allocations={allocations} />
+          <ReturnsList metadata={meta} />
         </div>
-      )}
-      <AllocationPie allocations={allocations} />
-      <ReturnsList metadata={meta} />
+      </BaseModal>
     </>
   );
 }
@@ -108,10 +134,9 @@ export default function FundDetail() {
       fetchAsset={() => fundService.getByCode(code)}
       fetchHistory={(_, range) => fundService.getHistory(code, range)}
       backRoute="/funds"
-      dataTour="fund-detail-card"
       renderHeader={(asset) => <FundHeader asset={asset} />}
       renderMetadata={(asset) => <FundMetadata asset={asset} />}
-      renderSidebar={(asset) => <FundSidebar asset={asset} />}
+      renderSidebar={(asset) => <FundDetailCard asset={asset} />}
       getBuyProps={(asset) => ({
         assetType: 'FUND',
         assetCode: asset.code || code,

@@ -12,6 +12,7 @@ spring:
       - classpath:config/market-hours.yaml
       - classpath:config/slot.yaml
       - classpath:config/api.yaml
+      - classpath:config/management.yaml
 
 app:
   pdf:

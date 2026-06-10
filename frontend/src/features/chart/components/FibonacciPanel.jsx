@@ -1,10 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Triangle, GitBranch, Trash2 } from 'lucide-react';
-const FIB_TOOL_TYPES = [
-    { id: 'RETRACEMENT', labelKey: 'chart.fibonacci.tools.retracement', Icon: Triangle, color: '#ec4899' },
-    { id: 'EXTENSION', labelKey: 'chart.fibonacci.tools.extension', Icon: GitBranch, color: '#f97316' },
-];
+import { Triangle, Trash2 } from 'lucide-react';
+import { FIB_TOOLS } from '../lib/drawingTools';
+
+const FIB_BY_ID = Object.fromEntries(FIB_TOOLS.map((tool) => [tool.id, tool]));
+const FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.618];
+
 const FibonacciPanel = ({
     onHighlight,
     activeFibTool,
@@ -17,9 +18,8 @@ const FibonacciPanel = ({
     const { t } = useTranslation();
     return (
         <div className="space-y-1.5">
-            {}
             <div className="space-y-1">
-                {FIB_TOOL_TYPES.map(({ id, labelKey, Icon, color }) => {
+                {FIB_TOOLS.map(({ id, labelKey, Icon, color }) => {
                     const isActive = activeFibTool === id;
                     return (
                         <button
@@ -39,7 +39,7 @@ const FibonacciPanel = ({
                     );
                 })}
             </div>
-            {}
+
             {activeFibTool && (
                 <div className="flex items-center justify-between px-2 py-1 rounded-md bg-[rgba(236,72,153,0.08)] border border-[rgba(236,72,153,0.15)]">
                     <span className="text-[10px] text-[#ec4899]">
@@ -53,23 +53,19 @@ const FibonacciPanel = ({
                     </button>
                 </div>
             )}
-            {}
+
             <div className="flex flex-wrap gap-x-2 gap-y-0 px-1">
-                {[0, 0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.618].map(level => (
+                {FIB_LEVELS.map(level => (
                     <span
                         key={level}
                         className="text-[9px] font-mono"
-                        style={{
-                            color: level === 0.5 || level === 0.618
-                                ? '#ec4899'
-                                : 'var(--color-fg-subtle)',
-                        }}
+                        style={{ color: level === 0.5 || level === 0.618 ? '#ec4899' : 'var(--color-fg-subtle)' }}
                     >
                         {(level * 100).toFixed(level === 0 || level === 0.5 || level === 1 ? 0 : 1)}%
                     </span>
                 ))}
             </div>
-            {}
+
             {fibTools.length > 0 && (
                 <div className="space-y-0.5 pt-1 border-t border-border-default">
                     <div className="flex items-center justify-between px-1">
@@ -78,35 +74,38 @@ const FibonacciPanel = ({
                         </span>
                         <button
                             onClick={clearFibTools}
-                            className="text-[10px] text-[#ef4444] hover:text-[#f87171] bg-transparent border-none cursor-pointer px-1 py-0.5 rounded hover:bg-[rgba(239,68,68,0.1)] transition-colors"
+                            className="text-[10px] text-danger hover:text-danger bg-transparent border-none cursor-pointer px-1 py-0.5 rounded hover:bg-danger/10 transition-colors"
                         >
                             {t('chart.fibonacci.clear')}
                         </button>
                     </div>
-                    <div className="max-h-44 overflow-y-auto scrollbar-auto-hide space-y-0.5 pr-0.5">
+                    <div className="max-h-44 overflow-y-auto overscroll-contain scrollbar-auto-hide space-y-0.5 pr-0.5">
                         {fibTools.map((f, idx) => {
-                            const tool = FIB_TOOL_TYPES.find(toolDef => toolDef.id === f.type);
+                            const tool = FIB_BY_ID[f.type];
                             const ToolIcon = tool?.Icon || Triangle;
                             return (
-                                <button
+                                <div
                                     key={f.id}
-                                    type="button"
-                                    onClick={() => onHighlight?.(f.id)}
-                                    className="group w-full flex items-center gap-2 px-2 py-0.5 rounded-md hover:bg-surface transition-colors border-none bg-transparent text-left cursor-pointer"
+                                    className="group w-full flex items-center gap-1.5 px-1.5 py-0.5 rounded-md hover:bg-surface transition-colors"
                                 >
-                                    <span className="text-[9px] font-mono text-fg-subtle tabular-nums w-5 text-right shrink-0">#{idx + 1}</span>
-                                    <ToolIcon className="w-3 h-3 shrink-0" style={{ color: tool?.color }} />
-                                    <span className="text-[11px] text-fg-muted flex-1 truncate">{tool?.labelKey ? t(tool.labelKey) : ''}</span>
-                                    <span
-                                        role="button"
-                                        tabIndex={0}
-                                        onClick={(e) => { e.stopPropagation(); removeFibTool(f.id); }}
-                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); removeFibTool(f.id); } }}
-                                        className="opacity-0 group-hover:opacity-100 p-0.5 border-none bg-transparent cursor-pointer text-fg-muted hover:text-[#ef4444] transition-all"
+                                    <button
+                                        type="button"
+                                        onClick={() => onHighlight?.(f.id)}
+                                        className="flex items-center gap-2 flex-1 min-w-0 border-none bg-transparent text-left cursor-pointer"
+                                    >
+                                        <span className="text-[9px] font-mono text-fg-subtle tabular-nums w-5 text-right shrink-0">#{idx + 1}</span>
+                                        <ToolIcon className="w-3 h-3 shrink-0" style={{ color: tool?.color }} />
+                                        <span className="text-[11px] text-fg-muted flex-1 truncate">{tool?.labelKey ? t(tool.labelKey) : ''}</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeFibTool(f.id)}
+                                        title={t('chart.fibonacci.clear')}
+                                        className="opacity-0 group-hover:opacity-100 p-0.5 border-none bg-transparent cursor-pointer text-fg-muted hover:text-danger transition-all shrink-0"
                                     >
                                         <Trash2 className="w-3 h-3" />
-                                    </span>
-                                </button>
+                                    </button>
+                                </div>
                             );
                         })}
                     </div>

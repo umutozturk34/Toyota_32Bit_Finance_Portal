@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { priceDecimals } from '../../../shared/utils/formatters';
+import { TOOL_LABEL_KEYS } from '../lib/drawingTools';
 import {
     BarChart2, ChevronUp, ChevronDown, Diamond,
     LineChart, Layers, Crosshair,
@@ -11,9 +11,7 @@ const ChartToolbar = ({
     isDark, sidebarOpen, setSidebarOpen,
     chartType, setChartType,
     magnetMode, setMagnetMode,
-    symbol, trend, crosshairData, overlayLast,
-    assetType,
-    indicators, drawings,
+    symbol, trend,
     isAnyToolActive, activeTool, activeFibTool,
     cancelAllDrawing,
     allowCandle = true,
@@ -23,7 +21,6 @@ const ChartToolbar = ({
 }) => {
     const { t } = useTranslation();
     const magnetLabel = t(`chart.toolbar.magnet.${magnetMode}`);
-    const fmtPrice = (val) => Number(val).toFixed(priceDecimals(val));
     const activeInstructionKey = activeTool === 'FREEHAND'
         ? 'chart.toolbar.activeInstruction.freehand'
         : (activeTool === 'TEXT' || activeTool === 'ICON')
@@ -143,93 +140,14 @@ const ChartToolbar = ({
                 </button>
             </div>
         </div>
-        {/* Readouts row: OHLC / price + indicator values + drawings count. ALWAYS rendered with a fixed height
-            and single-line (nowrap + horizontal scroll) — its presence/height must NOT depend on crosshairData,
-            otherwise hovering the chart top edge toggled the row, shifted the chart down, dropped the crosshair,
-            and re-toggled in an infinite flicker loop. A stable strip keeps OHLC visible on mobile too. */}
-        <div className="flex items-center gap-3 px-2 sm:px-3 py-1.5 border-b border-border-default bg-surface/25 overflow-x-auto scrollbar-thin text-[11px] font-mono min-h-[30px]">
-                {crosshairData && (() => {
-                    const isFund = assetType === 'FUND';
-                    const isForex = assetType === 'FOREX';
-                    if (isFund && crosshairData.close != null) {
-                        return (
-                            <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap shrink-0">
-                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.price')} <span className="text-fg">{fmtPrice(crosshairData.close)}</span></span>
-                                {crosshairData.bulletinPrice != null && (
-                                    <span className="text-fg-muted">{t('chart.toolbar.crosshair.bulletin')} <span className="text-fg">{fmtPrice(crosshairData.bulletinPrice)}</span></span>
-                                )}
-                            </div>
-                        );
-                    }
-                    if (isForex && crosshairData.sellingPrice != null) {
-                        return (
-                            <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap shrink-0">
-                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.sell')} <span className="text-fg">{Number(crosshairData.sellingPrice).toFixed(4)}</span></span>
-                                {crosshairData.buyingPrice != null && (
-                                    <span className="text-fg-muted">{t('chart.toolbar.crosshair.buy')} <span className="text-fg">{Number(crosshairData.buyingPrice).toFixed(4)}</span></span>
-                                )}
-                                {crosshairData.effectiveBuyingPrice != null && (
-                                    <span className="text-fg-muted">{t('chart.toolbar.crosshair.effBuy')} <span className="text-fg">{Number(crosshairData.effectiveBuyingPrice).toFixed(4)}</span></span>
-                                )}
-                                {crosshairData.effectiveSellingPrice != null && (
-                                    <span className="text-fg-muted">{t('chart.toolbar.crosshair.effSell')} <span className="text-fg">{Number(crosshairData.effectiveSellingPrice).toFixed(4)}</span></span>
-                                )}
-                            </div>
-                        );
-                    }
-                    if (crosshairData.open != null) {
-                        return (
-                            <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap shrink-0">
-                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.open')} <span className="text-fg">{fmtPrice(crosshairData.open)}</span></span>
-                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.high')} <span className="text-[#10b981]">{fmtPrice(crosshairData.high)}</span></span>
-                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.low')} <span className="text-[#ef4444]">{fmtPrice(crosshairData.low)}</span></span>
-                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.close')} <span style={{ color: Number(crosshairData.close) >= Number(crosshairData.open) ? '#10b981' : '#ef4444' }}>{fmtPrice(crosshairData.close)}</span></span>
-                                {crosshairData.compares?.map((c) => (
-                                    <span key={c.symbol} className="text-fg-muted flex items-center gap-1">
-                                        <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />
-                                        {c.symbol} <span style={{ color: c.color }}>{fmtPrice(c.value)}</span>
-                                    </span>
-                                ))}
-                            </div>
-                        );
-                    }
-                    if (crosshairData.compares?.length > 0) {
-                        return (
-                            <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap shrink-0">
-                                {crosshairData.compares.map((c) => (
-                                    <span key={c.symbol} className="text-fg-muted flex items-center gap-1">
-                                        <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />
-                                        {c.symbol} <span style={{ color: c.color }}>{fmtPrice(c.value)}</span>
-                                    </span>
-                                ))}
-                            </div>
-                        );
-                    }
-                    return null;
-                })()}
-                {indicators.filter(i => i.visible && i.type !== 'RSI').map(ind => {
-                    // SMA/EMA value at the crosshair (falls back to the latest point when idle); MACD has no
-                    // overlay value here (its line lives in the sub-panel), so it shows the label only.
-                    const v = crosshairData?.overlays?.[ind.id] ?? overlayLast?.[ind.id];
-                    return (
-                        <span key={ind.id} className="flex items-center gap-1 whitespace-nowrap font-medium" style={{ color: ind.color }}>
-                            <span className="w-1.5 h-1.5 rounded-full" style={{ background: ind.color }} />
-                            {ind.type} {ind.period}
-                            {v != null && <span className="tabular-nums">{fmtPrice(v)}</span>}
-                        </span>
-                    );
-                })}
-                {drawings.length > 0 && (
-                    <span className="text-fg-subtle font-medium px-2 py-0.5 rounded-full bg-surface border border-border-default whitespace-nowrap">
-                        {t('chart.toolbar.drawingsCount', { count: drawings.length })}
-                    </span>
-                )}
-        </div>
+        {/* The overlay-indicator + OHLC readout now lives entirely in the on-chart top-left legend, so the old
+            standalone indicator/drawings strip is gone — it duplicated SMA/EMA values and ate a whole row above
+            the chart (worse on mobile). Drawings stay visible on the chart and in the "Çizimlerim" sidebar tab. */}
         {isAnyToolActive && (
             <div className="flex items-center justify-between px-3 py-1.5 bg-accent/10 border-b border-[rgba(94,106,210,0.15)]">
                 <span className="flex items-center gap-1.5 text-[11px] text-accent">
                     <Crosshair className="w-3.5 h-3.5 text-accent" />
-                    {t('chart.toolbar.active')}: <strong className="text-fg">{activeTool || activeFibTool}</strong>
+                    {t('chart.toolbar.active')}: <strong className="text-fg">{TOOL_LABEL_KEYS[activeTool || activeFibTool] ? t(TOOL_LABEL_KEYS[activeTool || activeFibTool]) : (activeTool || activeFibTool)}</strong>
                     <span className="text-fg-subtle">
                         {t(activeInstructionKey)}
                     </span>

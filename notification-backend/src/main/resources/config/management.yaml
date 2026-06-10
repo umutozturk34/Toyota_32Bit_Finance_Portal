@@ -9,16 +9,16 @@ management:
   # Micrometer metrics -> OTel Collector (OTLP/HTTP) -> Data Prepper -> OpenSearch.
   # The OTel java agent already emits jvm/http/db/kafka over OTLP/gRPC, so Micrometer
   # here only ADDS the gaps (system/process/disk/uptime/logback/executor + custom
-  # meters). The binders the agent already covers are disabled to avoid duplicate
-  # metric streams landing in the same name/value index. service.name is pinned to the
-  # agent's value so Data Prepper routes both sources into finance-metrics.
+  # meters like mail.outbox). The binders the agent already covers are disabled to
+  # avoid duplicate metric streams. service.name matches the agent so Data Prepper
+  # routes both sources into notification-metrics.
   otlp:
     metrics:
       export:
         url: http://otel-collector:4318/v1/metrics
         step: 30s
         resource-attributes:
-          "service.name": finance-backend
+          "service.name": finance-notification
           "service.namespace": finance-portal
           "deployment.environment": production
   metrics:

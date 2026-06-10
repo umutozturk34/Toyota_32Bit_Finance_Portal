@@ -4,12 +4,12 @@ import { createMagnetManager } from '../lib/magnetManager';
 
 const useDrawingInteraction = ({
     canvasOverlayRef,
-    isDark,
     addDrawing, cancelTool,
     addFibTool, cancelFibTool,
     activeTool, activeFibTool,
     magnetMode,
     selectedIcon, iconSize,
+    drawingColor = '#5E6AD2',
     candleDataRef, data, symbol,
     renderDrawingsRef,
     selectTool, selectFibTool,
@@ -54,16 +54,19 @@ const useDrawingInteraction = ({
 
     const commitTextEdit = useCallback((content) => {
         if (!textEditState) return;
+        // TEXT glyph colour is intentionally NOT the active drawingColor: the renderer paints it theme-aware
+        // (light glyph on dark / dark on light) so a label stays legible on its box regardless of the line
+        // colour. Omitting `color` lets that themed fallback win — an arbitrary line colour (e.g. yellow on the
+        // near-white light box) would be unreadable.
         addDrawing({
             type: 'TEXT',
             time: textEditState.time,
             price: textEditState.price,
             content: content || 'Text',
             priceFontHeight: textEditState.priceFontHeight,
-            color: isDark ? '#EDEDEF' : '#0f172a',
         });
         setTextEditState(null);
-    }, [textEditState, addDrawing, isDark]);
+    }, [textEditState, addDrawing]);
 
     const cancelTextEdit = useCallback(() => {
         setTextEditState(null);
@@ -117,7 +120,10 @@ const useDrawingInteraction = ({
 
     const handleMouseDown = (e) => {
         if (!isAnyToolActive) return;
-        e.preventDefault();
+        // Touch scroll-vs-draw is actually prevented by the overlay's touch-action:none (React 19 delegates touch
+        // listeners as passive, so preventDefault is a no-op there); guard on cancelable to avoid the WebKit/Blink
+        // "Unable to preventDefault inside passive event listener" warning while still working for mouse.
+        if (e.cancelable) e.preventDefault();
         const pos = getMousePos(e);
         if (!pos) return;
 
@@ -157,7 +163,7 @@ const useDrawingInteraction = ({
                     type: activeTool,
                     time: coords.time,
                     price: coords.price,
-                    color: activeTool === 'HORIZONTAL_LINE' ? '#f59e0b' : '#06b6d4',
+                    color: drawingColor,
                 });
             }
             cancelTool();
@@ -238,7 +244,7 @@ const useDrawingInteraction = ({
             const fc = freehandCanvasRef.current;
             if (fc) {
                 const fctx = fc.getContext('2d');
-                fctx.strokeStyle = '#10b981';
+                fctx.strokeStyle = drawingColor;
                 fctx.lineWidth = 2;
                 fctx.lineCap = 'round';
                 fctx.lineJoin = 'round';
@@ -262,7 +268,7 @@ const useDrawingInteraction = ({
             const chartPoints = freehandPointsRef.current
                 .map(p => { const c = pixelToChartCoords(p.x, p.y); return c ? { time: c.time, price: c.price } : null; })
                 .filter(Boolean);
-            if (chartPoints.length > 1) addDrawing({ type: 'FREEHAND', points: chartPoints, color: '#10b981' });
+            if (chartPoints.length > 1) addDrawing({ type: 'FREEHAND', points: chartPoints, color: drawingColor });
             freehandPointsRef.current = [];
             const fc = freehandCanvasRef.current;
             if (fc) { const fctx = fc.getContext('2d'); fctx.clearRect(0, 0, fc.width, fc.height); }
@@ -274,7 +280,7 @@ const useDrawingInteraction = ({
                     type: 'TREND_LINE',
                     startTime: sc.time, startPrice: sc.price,
                     endTime: ec.time, endPrice: ec.price,
-                    color: '#5E6AD2',
+                    color: drawingColor,
                 });
             }
         }
@@ -295,7 +301,7 @@ const useDrawingInteraction = ({
             const chartPoints = freehandPointsRef.current
                 .map(p => { const c = pixelToChartCoords(p.x, p.y); return c ? { time: c.time, price: c.price } : null; })
                 .filter(Boolean);
-            if (chartPoints.length > 1) addDrawing({ type: 'FREEHAND', points: chartPoints, color: '#10b981' });
+            if (chartPoints.length > 1) addDrawing({ type: 'FREEHAND', points: chartPoints, color: drawingColor });
             freehandPointsRef.current = [];
             const fc = freehandCanvasRef.current;
             if (fc) { const fctx = fc.getContext('2d'); fctx.clearRect(0, 0, fc.width, fc.height); }

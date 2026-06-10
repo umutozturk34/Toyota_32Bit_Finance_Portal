@@ -330,6 +330,33 @@ button {
   background: var(--scrollbar-thumb-hover);
 }
 
+/* Fully hide the scrollbar while keeping the element scrollable (used by horizontal chip strips). */
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Thin styled scrollbar (Tailwind v4 here has no scrollbar plugin, so define it explicitly). */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
 *:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
@@ -727,4 +754,22 @@ button {
   max-height: none !important;
   width: 100dvw !important;
   height: 100dvh !important;
+  /* A full-viewport backdrop-blur on a phone tanks the drawing-canvas frame rate, and it's pointless over an
+     opaque bg — disable it while enlarged. Respect the notch / home indicator. */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding-top: env(safe-area-inset-top) !important;
+  padding-bottom: env(safe-area-inset-bottom) !important;
+}
+
+/* Native fullscreen: the chart Card's translucent `bg-bg-elevated` (light mode = rgba white .72) would let the
+   browser's black fullscreen backdrop show through, greying the whole card. Force an opaque themed background
+   (and a matching backdrop) so light mode stays light when enlarged; drop the costly blur too. */
+:fullscreen {
+  background: var(--color-bg-base) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+:fullscreen::backdrop {
+  background: var(--color-bg-base);
 }

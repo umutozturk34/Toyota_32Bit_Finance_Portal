@@ -108,9 +108,44 @@
     "home": "Home"
   },
   "chart": {
+    "dataWindow": {
+      "title": "Lens",
+      "detailsToggle": "Lens details",
+      "collapse": "Collapse",
+      "close": "Close",
+      "prevClose": "Prev close",
+      "sectionPerformance": "Performance",
+      "sectionRisk": "Risk & Volatility",
+      "sectionDetail": "Day Detail",
+      "periodReturn": "Period return",
+      "drawdown": "Max drawdown",
+      "range": "Range",
+      "streak": "Streak",
+      "streakUnit": "d",
+      "smaDistance": "vs SMA{{n}}",
+      "volatility": "Volatility (σ)",
+      "atr": "Avg range (ATR)",
+      "risk": "Risk",
+      "riskLow": "Low",
+      "riskMedium": "Medium",
+      "riskHigh": "High",
+      "spread": "Spread",
+      "volume": "Volume",
+      "avgShort": "avg",
+      "hovering": "Selected day — values to that day",
+      "idleHint": "Showing latest — hover the chart"
+    },
+    "toolRail": {
+      "select": "Select / cursor",
+      "color": "Color",
+      "custom": "Custom",
+      "emoji": "Emoji",
+      "undo": "Undo",
+      "clear": "Clear all"
+    },
     "tabs": {
       "indicators": "Indicators",
-      "drawings": "Draw",
+      "drawings": "My Drawings",
       "fibonacci": "Fibonacci"
     },
     "legend": {
@@ -139,6 +174,7 @@
       "hide": "Hide",
       "show": "Show",
       "edit": "Edit",
+      "confirm": "Confirm",
       "remove": "Remove",
       "error": {
         "max": "At most {{max}} indicators can be added",
@@ -173,6 +209,7 @@
       },
       "selectIcon": "Select Icon",
       "size": "Size",
+      "empty": "No drawings yet — use the tools on the left to start.",
       "drawingsCount": "Drawings ({{count}})",
       "undo": "Undo",
       "clearAll": "Clear All",
@@ -222,10 +259,10 @@
         "buy": "Buy",
         "effBuy": "Banknote Buy",
         "effSell": "Banknote Sell",
-        "open": "O",
-        "high": "H",
-        "low": "L",
-        "close": "C"
+        "open": "Open",
+        "high": "High",
+        "low": "Low",
+        "close": "Close"
       },
       "vs": "vs",
       "trend": {
@@ -1253,6 +1290,8 @@
       "riskLabel": "Risk",
       "marketShareLabel": "Market Share",
       "kapLinkLabel": "Open in KAP",
+      "viewDetail": "View Fund Details",
+      "detailTitle": "Fund Details",
       "allocationTitle": "Asset Allocation",
       "allocationEmpty": "No allocation data",
       "allocationOther": "Other",

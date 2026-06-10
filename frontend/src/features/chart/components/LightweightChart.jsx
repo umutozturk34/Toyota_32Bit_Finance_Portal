@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useEffect, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    LineChart, Activity, PenTool, Triangle, Calendar,
+    LineChart, Calendar, ChevronDown, ChevronUp, ScanSearch,
 } from 'lucide-react';
 import { useTheme } from '../../../shared/context/useTheme';
 import useAppStore from '../../../shared/stores/useAppStore';
@@ -12,112 +12,30 @@ import useFibonacci from '../hooks/useFibonacci';
 import useChartCore from '../hooks/useChartCore';
 import useSubCharts from '../hooks/useSubCharts';
 import useChartDrawing from '../hooks/useChartDrawing';
+import useFullscreenMode from '../hooks/useFullscreenMode';
+import useHighlightAnimation from '../hooks/useHighlightAnimation';
 import ChartToolbar from './ChartToolbar';
+import ChartToolRail from './ChartToolRail';
 import ChartSidebar from './ChartSidebar';
 import ChartSubPanels from './ChartSubPanels';
+import DataWindowPanel from './DataWindowPanel';
 import ChartTextEditInput from './ChartTextEditInput';
+import { DEFAULT_DRAWING_COLOR } from '../lib/drawingTools';
+import { TABS, TIME_RANGES_FULL, TIME_RANGES_VIOP } from '../lib/chartConstants';
 import Card from '../../../shared/components/card';
 
-const TABS = [
-    { id: 'indicators', labelKey: 'chart.tabs.indicators', Icon: Activity },
-    { id: 'drawings', labelKey: 'chart.tabs.drawings', Icon: PenTool },
-    { id: 'fibonacci', labelKey: 'chart.tabs.fibonacci', Icon: Triangle },
-];
-
-const TIME_RANGES_FULL = [
-    { id: '1W', labelKey: 'chart.range.1W', months: 0 },
-    { id: '1M', labelKey: 'chart.range.1M', months: 1 },
-    { id: '3M', labelKey: 'chart.range.3M', months: 3 },
-    { id: '6M', labelKey: 'chart.range.6M', months: 6 },
-    { id: '1Y', labelKey: 'chart.range.1Y', months: 12 },
-    { id: '3Y', labelKey: 'chart.range.3Y', months: 36 },
-    { id: '5Y', labelKey: 'chart.range.5Y', months: 60 },
-    { id: 'ALL', labelKey: 'chart.range.ALL', months: 0 },
-];
-
-const TIME_RANGES_VIOP = TIME_RANGES_FULL.filter(({ id }) => id !== '5Y' && id !== 'ALL');
-
-const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [], timeRange = '1Y', onTimeRangeChange, showSecondaryLines = true, onToggleSecondaryLines }) => {
+const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [], timeRange = '1Y', onTimeRangeChange, showSecondaryLines = true, onToggleSecondaryLines, sidebar = null }) => {
     const compareSymbol = compareDatas.length > 0 ? compareDatas.map(c => c.symbol).join(',') : null;
     const TIME_RANGES = assetType === 'VIOP' ? TIME_RANGES_VIOP : TIME_RANGES_FULL;
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { isDark } = useTheme();
     const renderDrawingsRef = useRef(null);
     const textDoneRef = useRef(false);
-    const wrapperRef = useRef(null);
-    const [isFullscreen, setIsFullscreen] = useState(false);
-    const [highlight, setHighlight] = useState(null);
-
-    const triggerHighlight = useCallback((kind, id) => {
-        if (!id) return;
-        setHighlight({ kind, id, startMs: Date.now() });
-    }, []);
-
-    const highlightDrawing = useCallback((id) => triggerHighlight('drawing', id), [triggerHighlight]);
-    const highlightFib = useCallback((id) => triggerHighlight('fib', id), [triggerHighlight]);
-
-    useEffect(() => {
-        if (!highlight) return undefined;
-        const DURATION = 2200;
-        let raf;
-        const tick = () => {
-            const elapsed = Date.now() - highlight.startMs;
-            renderDrawingsRef.current?.();
-            if (elapsed > DURATION) {
-                setHighlight(null);
-                return;
-            }
-            raf = requestAnimationFrame(tick);
-        };
-        raf = requestAnimationFrame(tick);
-        return () => cancelAnimationFrame(raf);
-    }, [highlight]);
-
-    useEffect(() => {
-        const onChange = () => setIsFullscreen(document.fullscreenElement === wrapperRef.current);
-        document.addEventListener('fullscreenchange', onChange);
-        return () => document.removeEventListener('fullscreenchange', onChange);
-    }, []);
-
-    // Entering/exiting fullscreen swaps the container's height class, but the transition settles asynchronously
-    // (native fullscreen even has a browser animation), so a single early nudge fired before the layout settled
-    // and the chart kept its fullscreen height after exit ("büyüttükten sonra büyük kalıyor"). Re-dispatch a
-    // resize across the transition window so the LAST one reads the settled container size; the chart area's
-    // overflow-hidden keeps the canvas from inflating the box in the meantime.
-    useEffect(() => {
-        const fire = () => window.dispatchEvent(new Event('resize'));
-        const raf = requestAnimationFrame(() => requestAnimationFrame(fire));
-        const t1 = setTimeout(fire, 130);
-        const t2 = setTimeout(fire, 380);
-        return () => { cancelAnimationFrame(raf); clearTimeout(t1); clearTimeout(t2); };
-    }, [isFullscreen]);
-
-    const toggleFullscreen = useCallback(() => {
-        const wrapper = wrapperRef.current;
-        if (!wrapper) return;
-        // Already in the CSS fallback (a prior native request rejected) → just drop it; never re-attempt
-        // native, which would otherwise make the exit click try to ENTER fullscreen again (stuck enlarged).
-        if (wrapper.classList.contains('chart-pseudo-fullscreen')) {
-            wrapper.classList.remove('chart-pseudo-fullscreen');
-            setIsFullscreen(false);
-            return;
-        }
-        const nativeSupported = typeof wrapper.requestFullscreen === 'function'
-            && typeof document.exitFullscreen === 'function';
-        if (nativeSupported) {
-            if (document.fullscreenElement === wrapper) {
-                document.exitFullscreen?.();
-            } else {
-                wrapper.requestFullscreen?.().catch(() => {
-                    wrapper.classList.add('chart-pseudo-fullscreen');
-                    setIsFullscreen(true);
-                });
-            }
-            return;
-        }
-        wrapper.classList.add('chart-pseudo-fullscreen');
-        setIsFullscreen(true);
-    }, []);
+    const { isFullscreen, toggleFullscreen, wrapperRef } = useFullscreenMode();
+    const { highlight, highlightDrawing, highlightFib } = useHighlightAnimation(renderDrawingsRef);
+    // The whole Lens (top summary strip + right analytics panel) is collapsible — CLOSED by default so the chart
+    // leads, while the always-on top-left legend covers OHLC + indicators. Open it for the full analytics cockpit.
+    const [lensOpen, setLensOpen] = useState(false);
 
     const isFund = assetType === 'FUND';
     const isForex = assetType === 'FOREX';
@@ -128,6 +46,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
 
     const sidebarOpen = useAppStore((s) => s.chartSidebarOpen);
     const setSidebarOpen = useAppStore((s) => s.setChartSidebarOpen);
+    const displayCurrency = useAppStore((s) => s.displayCurrency) || 'TRY';
     const activeTab = useAppStore((s) => s.chartActiveTab);
     const setActiveTab = useAppStore((s) => s.setChartActiveTab);
 
@@ -139,12 +58,14 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
     const iconSize = config?.iconSize ?? 22;
     const showInvestorCount = config?.showInvestorCount ?? false;
     const showPortfolioSize = config?.showPortfolioSize ?? false;
+    const drawingColor = config?.drawingColor ?? DEFAULT_DRAWING_COLOR;
 
     const setShowVolume = useCallback((v) => setField('showVolume', typeof v === 'function' ? v(showVolume) : v), [setField, showVolume]);
     const setChartType = useCallback((v) => setField('chartType', v), [setField]);
     const setMagnetMode = useCallback((v) => setField('magnetMode', v), [setField]);
     const setSelectedIcon = useCallback((v) => setField('selectedIcon', v), [setField]);
     const setIconSize = useCallback((v) => setField('iconSize', typeof v === 'function' ? v(iconSize) : v), [setField, iconSize]);
+    const setDrawingColor = useCallback((v) => setField('drawingColor', v), [setField]);
     const setShowInvestorCount = useCallback((v) => setField('showInvestorCount', typeof v === 'function' ? v(showInvestorCount) : v), [setField, showInvestorCount]);
     const setShowPortfolioSize = useCallback((v) => setField('showPortfolioSize', typeof v === 'function' ? v(showPortfolioSize) : v), [setField, showPortfolioSize]);
 
@@ -154,7 +75,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
         isFund && data?.candles?.some(c => c.portfolioSize != null && Number(c.portfolioSize) > 0), [data, isFund]);
 
     const { indicators, addIndicator, removeIndicator, updateIndicator, toggleIndicator } = useIndicators(assetType, symbol, timeRange, !compareSymbol);
-    const { drawings, activeTool, addDrawing, removeDrawing, undoDrawing, clearDrawings, selectTool, cancelTool } = useDrawings(assetType, symbol, timeRange, !compareSymbol);
+    const { drawings, activeTool, addDrawing, removeDrawing, updateDrawing, undoDrawing, clearDrawings, selectTool, cancelTool } = useDrawings(assetType, symbol, timeRange, !compareSymbol);
     const { fibTools, activeFibTool, addFibTool, removeFibTool, clearFibTools, selectFibTool, cancelFibTool } = useFibonacci(assetType, symbol, timeRange, !compareSymbol);
 
     const filteredIndicators = useMemo(() => {
@@ -190,7 +111,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
         drawings, addDrawing, cancelTool,
         fibTools: showFibTab ? fibTools : [], addFibTool, cancelFibTool,
         activeTool, activeFibTool: showFibTab ? activeFibTool : null,
-        magnetMode, selectedIcon, iconSize,
+        magnetMode, selectedIcon, iconSize, drawingColor,
         data: data, symbol, renderDrawingsRef,
         selectTool, selectFibTool,
         highlight,
@@ -209,8 +130,66 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
         );
     }
 
+    // On-chart hover legend (TradingView-style): the hovered day's OHLC/price + every OPEN overlay indicator's
+    // value at that point + open sub-charts' (RSI/MACD) values. Shown only while a crosshair is active so the
+    // chart stays clean when idle.
+    const hoverLocale = i18n.language?.startsWith('tr') ? 'tr-TR' : 'en-US';
+    const hoverSym = { TRY: '₺', USD: '$', EUR: '€' }[displayCurrency] || '';
+    const fmtHover = (v) => (v == null ? '—' : `${hoverSym}${Number(v).toLocaleString(hoverLocale, { maximumFractionDigits: Math.abs(v) < 10 ? 4 : 2 })}`);
+    // The legend reads the hovered candle, else falls back to the latest — so OHLC + indicators are ALWAYS shown.
+    const lastCandle = data?.candles?.length ? data.candles[data.candles.length - 1] : null;
+    const legendCandle = crosshairData?.index != null ? data?.candles?.[crosshairData.index] : lastCandle;
+    const legendDate = legendCandle ? new Date(legendCandle.candleDate || legendCandle.date).toLocaleDateString(hoverLocale, { day: '2-digit', month: 'short', year: 'numeric' }) : null;
+    const legendVals = crosshairData || (lastCandle ? {
+        open: Number(lastCandle.open ?? lastCandle.close ?? lastCandle.price ?? 0),
+        high: Number(lastCandle.high ?? lastCandle.close ?? lastCandle.price ?? 0),
+        low: Number(lastCandle.low ?? lastCandle.close ?? lastCandle.price ?? 0),
+        close: Number(lastCandle.close ?? lastCandle.price ?? lastCandle.sellingPrice ?? 0),
+        // Forex legs + fund bulletin price so the IDLE legend (latest candle) shows the same per-type prices the
+        // Lens does — not just on hover. null when absent so the per-field render guards below stay off.
+        sellingPrice: lastCandle.sellingPrice != null ? Number(lastCandle.sellingPrice) : null,
+        buyingPrice: lastCandle.buyingPrice != null ? Number(lastCandle.buyingPrice) : null,
+        effectiveSellingPrice: lastCandle.effectiveSellingPrice != null ? Number(lastCandle.effectiveSellingPrice) : null,
+        effectiveBuyingPrice: lastCandle.effectiveBuyingPrice != null ? Number(lastCandle.effectiveBuyingPrice) : null,
+        bulletinPrice: lastCandle.bulletinPrice != null ? Number(lastCandle.bulletinPrice) : null,
+        changePercent: null,
+        overlays: overlayLast,
+    } : null);
+    const legendOverlayInds = filteredIndicators.filter((i) => i.visible && (i.type === 'SMA' || i.type === 'EMA') && legendVals?.overlays?.[i.id] != null);
+    // Forex shows its bid/ask + banknote (effective) legs in place of the generic price; funds add bulletin price.
+    // Field-presence driven (mirrors DataWindowPanel) so no per-asset-type branching leaks into the view.
+    const legendHasForexLegs = legendVals?.sellingPrice != null && legendVals?.buyingPrice != null;
+
     return (
-        <Card ref={wrapperRef} variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className={`flex flex-col lg:flex-row !overflow-x-hidden !overflow-y-visible ${isFullscreen ? 'h-[100dvh] !rounded-none !overflow-y-auto' : 'min-h-[320px] sm:min-h-[440px] lg:min-h-[560px]'}`}>
+        <div className="space-y-2 sm:space-y-3">
+        {data?.candles?.length > 0 && !isFullscreen && (
+            lensOpen ? (
+                <Card variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className="relative !overflow-hidden">
+                    <DataWindowPanel candles={data.candles} hover={crosshairData} assetType={assetType} variant="summary" />
+                    <button
+                        type="button"
+                        onClick={() => setLensOpen(false)}
+                        title={t('chart.dataWindow.collapse')}
+                        className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-md border-none bg-transparent text-fg-muted hover:text-fg hover:bg-surface transition-colors cursor-pointer"
+                    >
+                        <ChevronUp className="h-4 w-4" />
+                    </button>
+                </Card>
+            ) : (
+                <button
+                    type="button"
+                    onClick={() => setLensOpen(true)}
+                    className="w-full flex items-center justify-between gap-2 rounded-xl border border-border-default bg-surface/40 backdrop-blur px-4 py-2 cursor-pointer hover:bg-surface/60 transition-colors"
+                >
+                    <span className="inline-flex items-center gap-1.5 text-xs font-display font-bold uppercase tracking-[0.16em] text-fg-muted">
+                        <ScanSearch className="h-4 w-4 text-accent" />
+                        {t('chart.dataWindow.title')}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-fg-muted" />
+                </button>
+            )
+        )}
+        <Card ref={wrapperRef} variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className={`flex flex-col lg:flex-row !overflow-x-hidden !overflow-y-visible ${isFullscreen ? 'h-[100dvh] !rounded-none !overflow-y-auto' : 'min-h-[300px] sm:min-h-[380px] lg:min-h-[480px]'}`}>
             <button
                 type="button"
                 data-tour="chart-drawing-open"
@@ -227,11 +206,29 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                 onClick={() => { setSidebarOpen(false); }}
                 style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}
             />
+            <ChartToolRail
+                activeTool={activeTool}
+                activeFibTool={showFibTab ? activeFibTool : null}
+                isAnyToolActive={isAnyToolActive}
+                onSelectTool={handleSelectTool}
+                onSelectFibTool={handleSelectFibTool}
+                onCancelAll={cancelAllDrawing}
+                showFib={showFibTab}
+                drawingColor={drawingColor}
+                setDrawingColor={setDrawingColor}
+                selectedIcon={selectedIcon}
+                setSelectedIcon={setSelectedIcon}
+                iconSize={iconSize}
+                setIconSize={setIconSize}
+                drawingsCount={drawings.length}
+                onUndo={undoDrawing}
+                onClear={clearDrawings}
+            />
             {sidebarOpen && (
                 <ChartSidebar
                     tabs={TABS}
-                    showFibTab={showFibTab}
-                    activeTab={activeTab}
+                    showFibTab={false}
+                    activeTab={activeTab === 'drawings' ? 'drawings' : 'indicators'}
                     setActiveTab={setActiveTab}
                     isFund={isFund}
                     isForex={isForex}
@@ -246,6 +243,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                     cancelTool={cancelTool}
                     drawings={drawings}
                     removeDrawing={removeDrawing}
+                    updateDrawing={updateDrawing}
                     undoDrawing={undoDrawing}
                     clearDrawings={clearDrawings}
                     selectedIcon={selectedIcon}
@@ -272,7 +270,8 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                     setShowPortfolioSize={setShowPortfolioSize}
                 />
             )}
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className={`relative flex flex-1 min-w-0 flex-col ${isFullscreen ? 'xl:flex-row' : 'xl:block'}`}>
+            <div className={`flex-1 flex flex-col min-w-0 ${isFullscreen ? '' : (lensOpen ? 'xl:mr-[340px]' : '')}`}>
                 <ChartToolbar
                     isDark={isDark}
                     sidebarOpen={sidebarOpen}
@@ -314,7 +313,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                 </div>
                 {/* overflow-hidden: clip the chart canvas to its box so a stale fullscreen-height canvas can't
                     inflate the container (or spill over the page) before the resize settles it back down. */}
-                <div className={`relative flex-1 overflow-hidden ${isFullscreen ? 'min-h-0' : 'min-h-[55dvh] sm:min-h-[400px] lg:min-h-[420px]'}`}>
+                <div className={`relative flex-1 overflow-hidden ${isFullscreen ? 'min-h-0' : 'min-h-[40dvh] sm:min-h-[330px] lg:min-h-[350px] xl:min-h-[440px]'}`}>
                     {/* Absolutely positioned, NOT in-flow w-full/h-full. Lightweight-charts sizes this div's
                         canvas via applyOptions(height); handleResize then reads it back from clientHeight. If
                         the div were in-flow with h-full inside this content-sized (min-h, not fixed-height)
@@ -331,6 +330,9 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                             zIndex: isAnyToolActive ? 10 : 1,
                             pointerEvents: isAnyToolActive ? 'auto' : 'none',
                             touchAction: isAnyToolActive ? 'none' : 'auto',
+                            userSelect: 'none',
+                            WebkitUserSelect: 'none',
+                            WebkitTouchCallout: 'none',
                         }}
                         onMouseDown={handleMouseDown}
                         onMouseMove={handleMouseMove}
@@ -346,6 +348,51 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                         className="absolute inset-0 w-full h-full pointer-events-none"
                         style={{ zIndex: 11 }}
                     />
+                    {legendVals && (
+                        <div className="absolute left-2 top-2 z-[12] pointer-events-none max-w-[calc(100%-1rem)] rounded-md border border-border-default bg-bg-base/85 backdrop-blur-sm px-2.5 py-1.5 shadow-lg">
+                            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 font-mono text-[10px] leading-tight">
+                                {legendDate && <span className="text-fg-subtle">{legendDate}</span>}
+                                {allowCandle && chartType === 'candle' ? (
+                                    <>
+                                        <span className="text-fg-subtle">O <span className="text-fg">{fmtHover(legendVals.open)}</span></span>
+                                        <span className="text-fg-subtle">H <span className="text-success">{fmtHover(legendVals.high)}</span></span>
+                                        <span className="text-fg-subtle">L <span className="text-danger">{fmtHover(legendVals.low)}</span></span>
+                                        <span className="text-fg-subtle">C <span className="text-fg">{fmtHover(legendVals.close)}</span></span>
+                                    </>
+                                ) : legendHasForexLegs ? (
+                                    <>
+                                        <span className="text-fg-subtle">{t('chart.toolbar.crosshair.sell')} <span className="text-fg">{fmtHover(legendVals.sellingPrice)}</span></span>
+                                        <span className="text-fg-subtle">{t('chart.toolbar.crosshair.buy')} <span className="text-fg">{fmtHover(legendVals.buyingPrice)}</span></span>
+                                        {legendVals.effectiveSellingPrice != null && legendVals.effectiveSellingPrice !== legendVals.sellingPrice && (
+                                            <span className="text-fg-subtle">{t('chart.toolbar.crosshair.effSell')} <span className="text-fg">{fmtHover(legendVals.effectiveSellingPrice)}</span></span>
+                                        )}
+                                        {legendVals.effectiveBuyingPrice != null && legendVals.effectiveBuyingPrice !== legendVals.buyingPrice && (
+                                            <span className="text-fg-subtle">{t('chart.toolbar.crosshair.effBuy')} <span className="text-fg">{fmtHover(legendVals.effectiveBuyingPrice)}</span></span>
+                                        )}
+                                    </>
+                                ) : (
+                                    <span className="text-fg-subtle">{t('chart.legend.price')} <span className="text-fg">{fmtHover(legendVals.close)}</span></span>
+                                )}
+                                {legendVals.bulletinPrice != null && (
+                                    <span className="text-fg-subtle">{t('chart.toolbar.crosshair.bulletin')} <span className="text-fg">{fmtHover(legendVals.bulletinPrice)}</span></span>
+                                )}
+                                {legendVals.changePercent != null && (
+                                    <span className={legendVals.changePercent >= 0 ? 'text-success' : 'text-danger'}>
+                                        {legendVals.changePercent >= 0 ? '+' : ''}{legendVals.changePercent.toFixed(2)}%
+                                    </span>
+                                )}
+                                {legendOverlayInds.map((ind) => (
+                                    <span key={ind.id} style={{ color: ind.color }}>{ind.type}{ind.period} {fmtHover(legendVals.overlays[ind.id])}</span>
+                                ))}
+                                {hasRSI && subValues?.rsi != null && (
+                                    <span className="text-fg-muted">RSI <span className="text-fg">{Number(subValues.rsi).toFixed(2)}</span></span>
+                                )}
+                                {hasMACD && subValues?.macd != null && (
+                                    <span className="text-fg-muted">MACD <span className="text-fg">{Number(subValues.macd).toFixed(2)}</span>{subValues.signal != null && <> · <span className="text-fg">{Number(subValues.signal).toFixed(2)}</span></>}</span>
+                                )}
+                            </div>
+                        </div>
+                    )}
                     <ChartTextEditInput
                         textEditState={textEditState}
                         isDark={isDark}
@@ -377,7 +424,21 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                 />
 
             </div>
+            {lensOpen && (data?.candles?.length > 0 || sidebar) && (
+                <div className={`w-full border-t border-border-default overscroll-contain xl:w-[340px] xl:shrink-0 xl:border-t-0 xl:border-l xl:overflow-y-auto scrollbar-thin ${isFullscreen ? '' : 'xl:absolute xl:inset-y-0 xl:right-0'}`}>
+                    {data?.candles?.length > 0 && (
+                        <DataWindowPanel candles={data.candles} hover={crosshairData} assetType={assetType} variant="analytics" />
+                    )}
+                    {sidebar && (
+                        <div className={`p-3 sm:p-4 space-y-3 ${data?.candles?.length > 0 ? 'border-t border-border-default' : ''}`}>
+                            {sidebar}
+                        </div>
+                    )}
+                </div>
+            )}
+            </div>
         </Card>
+        </div>
     );
 };
 

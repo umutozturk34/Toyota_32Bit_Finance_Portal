@@ -225,11 +225,14 @@ services:
       KC_DB_PASSWORD: ${DB_PASSWORD}
       KC_PROXY: edge
       KC_HTTP_RELATIVE_PATH: /auth
-      # Frontend URL Keycloak announces in redirect_uri / iss / issuer — must match the
-      # public origin browsers see. Falls back to localhost for local dev; on VDS set
-      # VITE_KEYCLOAK_URL=https://your-domain/auth in .env so login redirects come back
-      # to the real host instead of localhost.
-      KC_HOSTNAME_URL: ${VITE_KEYCLOAK_URL:-http://localhost/auth}
+      # NO global fixed hostname. A fixed KC_HOSTNAME_URL applies to EVERY realm and OVERRIDES the per-realm
+      # frontend URL — but we need them to differ: end users (finance-realm) must see the public gateway, while the
+      # admin console (master realm) must stay on the localhost-bound port and never touch the gateway. So Keycloak
+      # runs with a dynamic hostname (KC_PROXY=edge honours the gateway's X-Forwarded-* headers) and each realm's
+      # frontend URL is pinned individually via kcadm in the entrypoint below. These two plain vars carry the
+      # values; on the VDS set VITE_KEYCLOAK_URL=https://your-domain/auth so finance-realm announces the real host.
+      PUBLIC_AUTH_URL: ${VITE_KEYCLOAK_URL:-http://localhost/auth}
+      ADMIN_AUTH_URL: ${ADMIN_AUTH_URL:-http://localhost:8180/auth}
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
@@ -258,6 +261,12 @@ services:
         (
           until /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user "$$KEYCLOAK_ADMIN" --password "$$KEYCLOAK_ADMIN_PASSWORD" >/dev/null 2>&1; do sleep 3; done
           /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE >/dev/null 2>&1 && echo "[keycloak] master realm sslRequired=NONE applied"
+          # Pin each realm's frontend URL so they announce DIFFERENT hosts (there is no global hostname now): the
+          # admin console (master) authenticates against the localhost-bound port — so its OIDC authServerUrl and
+          # the openid-connect 3p-cookies iframe stay same-origin (localhost:8180) and the gateway never proxies
+          # admin. End users (finance-realm) keep the public gateway URL for login redirects / token issuer.
+          /opt/keycloak/bin/kcadm.sh update realms/master -s "attributes.frontendUrl=$$ADMIN_AUTH_URL" >/dev/null 2>&1 && echo "[keycloak] master frontendUrl=$$ADMIN_AUTH_URL"
+          /opt/keycloak/bin/kcadm.sh update realms/finance-realm -s "attributes.frontendUrl=$$PUBLIC_AUTH_URL" >/dev/null 2>&1 && echo "[keycloak] finance-realm frontendUrl=$$PUBLIC_AUTH_URL"
         ) &
         exec /opt/keycloak/bin/kc.sh "$$@"
       - "--"
@@ -398,6 +407,8 @@ services:
     environment:
       - OPENSEARCH_USERNAME=${OPENSEARCH_USERNAME}
       - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
+    expose:
+      - "21891"
     depends_on:
       kafka:
         condition: service_healthy
@@ -410,9 +421,9 @@ services:
 
 # --- OpenTelemetry Collector ---
   otel-collector:
-    # PINNED (was :latest — the floating tag is the root cause; it silently drifted to 0.152.0 whose ES
-    # exporter emits dynamic_templates OpenSearch 2.19.1 rejects with 400). Pin to a pre-break version that
-    # still speaks OpenSearch's bulk dialect, so metrics flow again with the unchanged ecs config.
+    # PINNED (was :latest — the floating tag silently drifted to a build whose exporter broke ingestion).
+    # Metrics now go via Data Prepper (otlp/dataprepper exporter), so the old ES-exporter + nginx proxy path
+    # is gone; traces still use the opensearch exporter, so keep the pin until traces are verified newer.
     image: otel/opentelemetry-collector-contrib:0.145.0
     container_name: otel-collector
     volumes:
@@ -423,6 +434,7 @@ services:
       - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
     expose:
       - "4317"
+      - "4318"
     networks:
       - finance-network
     depends_on:
@@ -430,6 +442,8 @@ services:
         condition: service_started
       opensearch-init:
         condition: service_completed_successfully
+      data-prepper:
+        condition: service_started
 
   # --- OpenSearch Init (ISM + Dashboards) ---
   opensearch-init:
@@ -463,18 +477,6 @@ services:
       - opensearch_data:/usr/share/opensearch/data
     networks:
       - finance-network
-
-  # nginx proxy adding X-Elastic-Product header for go-elasticsearch v8 client
-  opensearch-proxy:
-    image: nginx:alpine
-    container_name: opensearch-proxy
-    restart: unless-stopped
-    volumes:
-      - ./opensearch-proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    networks:
-      - finance-network
-    depends_on:
-      - opensearch
 
   # --- OpenSearch Dashboards (Görsel Panel) ---
   opensearch-dashboards:

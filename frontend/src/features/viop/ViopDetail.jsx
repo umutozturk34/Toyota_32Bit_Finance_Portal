@@ -1,8 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronUp, ChevronDown } from 'lucide-react';
 import { viopService } from './services/viopService';
-import { getChangeClass, changeColors, formatPrice, formatPercentAbs } from '../../shared/utils/formatters';
+import { formatPrice } from '../../shared/utils/formatters';
 import { useMoney } from '../../shared/hooks/useMoney';
 import { viopQuoteCurrency } from '../../shared/utils/priceCurrency';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
@@ -32,27 +31,17 @@ function ViopHeader({ asset }) {
   );
 }
 
+// Last price/change now live in the chart Data Window; this strip keeps only the contract specification the
+// Data Window does not carry (underlying, expiry, size, margin, strike, etc.).
 function ViopMetadata({ asset }) {
   const { t } = useTranslation();
   const { format: money } = useMoney();
   const meta = asset.metadata || {};
-  const cls = getChangeClass(asset.changePercent);
   const localeTag = t('common.localeTag');
   const isOption = meta.kind === 'OPTION';
   const currency = viopQuoteCurrency(asset.code);
   return (
     <MetadataTiles tiles={[
-      { label: t('viop.lastPrice'), value: asset.price != null ? money(asset.price, currency) : t('viop.noPrice') },
-      asset.changePercent != null && {
-        label: t('marketDetail.forex.delta24h', 'Değişim'),
-        color: changeColors[cls],
-        value: (
-          <span className="flex items-center gap-0.5">
-            {asset.changePercent > 0 ? <ChevronUp className="h-3 w-3" /> : asset.changePercent < 0 ? <ChevronDown className="h-3 w-3" /> : null}
-            {formatPercentAbs(asset.changePercent)}
-          </span>
-        ),
-      },
       { label: t('viop.underlying'), value: meta.underlying || '—' },
       { label: t('viop.expiry'), value: formatExpiry(meta.expiryDate, localeTag) },
       meta.contractSize != null && { label: t('viop.contractSize'), value: fmt(meta.contractSize) },

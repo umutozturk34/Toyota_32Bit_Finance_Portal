@@ -1,4 +1,4 @@
-import { CrosshairMode, LineStyle } from 'lightweight-charts';
+import { ColorType, CrosshairMode, LineStyle } from 'lightweight-charts';
 
 export const getChartOptions = (isDark) => ({
     // No autoSize: lightweight-charts' autoSize would OWN sizing and ignore applyOptions(width/height), which
@@ -8,7 +8,13 @@ export const getChartOptions = (isDark) => ({
     // default (autoSize off) is correct. (createChart also passes autoSize:false explicitly for clarity.)
     layout: {
         attributionLogo: false,
-        background: { color: isDark ? '#050506' : '#ffffff' },
+        // Subtle vertical gradient tinted toward the app's indigo/violet accent (--color-accent #6366f1 /
+        // --color-accent-secondary #a78bfa) so the plot reads as part of the site's purple identity rather than a
+        // neutral navy box. Dark: deep indigo→near-black violet; light: faint violet wash. Kept low-saturation so
+        // candles/lines stay high-contrast.
+        background: isDark
+            ? { type: ColorType.VerticalGradient, topColor: '#0e0e14', bottomColor: '#08080c' }
+            : { type: ColorType.VerticalGradient, topColor: '#f2f6fb', bottomColor: '#e8edf5' },
         textColor: isDark ? '#7a7a85' : '#6b7280',
     },
     grid: {

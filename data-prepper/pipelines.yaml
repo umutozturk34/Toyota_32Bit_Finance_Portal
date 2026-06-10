@@ -47,3 +47,37 @@ notification-log-pipeline:
         insecure: true
         index: "notification-logs"
         index_type: custom
+
+# Metrics: collector exports OTLP here; Data Prepper flattens the OTLP metric
+# stream (with histogram bucket expansion) and writes the native name/value shape
+# straight to OpenSearch, routing per serviceName. Replaces the old collector
+# elasticsearch-exporter + nginx X-Elastic-Product proxy path.
+metrics-pipeline:
+  source:
+    otel_metrics_source:
+      ssl: false
+      port: 21891
+  processor:
+    - otel_metrics:
+        calculate_histogram_buckets: true
+        calculate_exponential_histogram_buckets: true
+  route:
+    - finance-route: '/serviceName == "finance-backend"'
+    - notification-route: '/serviceName == "finance-notification"'
+  sink:
+    - opensearch:
+        hosts: ["https://opensearch:9200"]
+        username: "${OPENSEARCH_USERNAME}"
+        password: "${OPENSEARCH_PASSWORD}"
+        insecure: true
+        index: "finance-metrics"
+        index_type: custom
+        routes: ["finance-route"]
+    - opensearch:
+        hosts: ["https://opensearch:9200"]
+        username: "${OPENSEARCH_USERNAME}"
+        password: "${OPENSEARCH_PASSWORD}"
+        insecure: true
+        index: "notification-metrics"
+        index_type: custom
+        routes: ["notification-route"]

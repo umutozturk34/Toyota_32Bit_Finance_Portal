@@ -2,6 +2,8 @@ package com.finance.app.config;
 
 import com.finance.shared.service.TaskTrackingService;
 
+import io.opentelemetry.instrumentation.annotations.WithSpan;
+
 import com.finance.market.stock.repository.StockRepository;
 
 import com.finance.market.stock.service.StockDataService;
@@ -129,6 +131,7 @@ public class MarketDataInitializer implements CommandLineRunner, MarketDataReadi
     }
 
     @Override
+    @WithSpan("market-data.coldStartInit")
     public void run(String... args) {
         // Cold-start fetch, throttled into small concurrent groups so a fresh empty database doesn't
         // fire every provider at once and peg the CPU. Independent asset classes run two at a time;

@@ -45,6 +45,22 @@
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-otlp</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-opentelemetry</artifactId>
+		</dependency>
+		<!-- @WithSpan: lets span-less background/@Async/startup code (cold-start init, beater warm) open an OTel
+		     span so its logs carry trace_id like the request/Kafka paths. Annotation only; the attached OTel
+		     javaagent provides the behavior at runtime. -->
+		<dependency>
+			<groupId>io.opentelemetry.instrumentation</groupId>
+			<artifactId>opentelemetry-instrumentation-annotations</artifactId>
+			<version>2.11.0</version>
+		</dependency>
+		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>2.8.8</version>

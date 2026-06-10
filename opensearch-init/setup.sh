@@ -158,121 +158,35 @@ os_api -X PUT "$OS_URL/_index_template/finance-metrics-template" \
   "template": {
     "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
     "mappings": {
+      "dynamic_templates": [
+        { "metric_attrs_keyword":   { "path_match": "metric.attributes.*",   "match_mapping_type": "string", "mapping": { "type": "keyword", "ignore_above": 1024 } } },
+        { "resource_attrs_keyword": { "path_match": "resource.attributes.*", "match_mapping_type": "string", "mapping": { "type": "keyword", "ignore_above": 1024 } } }
+      ],
       "properties": {
-        "@timestamp":                         { "type": "date" },
-        "dropped":                            { "type": "boolean" },
-        "service": {
+        "name":                   { "type": "keyword" },
+        "value":                  { "type": "double" },
+        "kind":                   { "type": "keyword" },
+        "unit":                   { "type": "keyword" },
+        "description":            { "type": "keyword", "ignore_above": 1024 },
+        "serviceName":            { "type": "keyword" },
+        "time":                   { "type": "date" },
+        "startTime":              { "type": "date" },
+        "aggregationTemporality": { "type": "keyword" },
+        "isMonotonic":            { "type": "boolean" },
+        "flags":                  { "type": "integer" },
+        "schemaUrl":              { "type": "keyword", "ignore_above": 256 },
+        "sum":                    { "type": "double" },
+        "count":                  { "type": "long" },
+        "min":                    { "type": "double" },
+        "max":                    { "type": "double" },
+        "bucketCounts":           { "type": "long" },
+        "bucketCountsList":       { "type": "long" },
+        "explicitBounds":         { "type": "double" },
+        "explicitBoundsCount":    { "type": "integer" },
+        "instrumentationScope": {
           "properties": {
-            "name":                           { "type": "keyword" },
-            "namespace":                      { "type": "keyword" },
-            "environment":                    { "type": "keyword" },
-            "version":                        { "type": "keyword" }
-          }
-        },
-        "host": {
-          "properties": {
-            "name":                           { "type": "keyword" },
-            "hostname":                       { "type": "keyword" },
-            "architecture":                   { "type": "keyword" }
-          }
-        },
-        "container": {
-          "properties": {
-            "id":                             { "type": "keyword" }
-          }
-        },
-        "jvm": {
-          "properties": {
-            "cpu": {
-              "properties": {
-                "count":                      { "type": "integer" },
-                "recent_utilization":         { "type": "float" },
-                "time":                       { "type": "float" }
-              }
-            },
-            "memory": {
-              "properties": {
-                "committed":                  { "type": "long" },
-                "used":                       { "type": "long" },
-                "limit":                      { "type": "long" },
-                "used_after_last_gc":         { "type": "long" },
-                "type":                       { "type": "keyword" },
-                "pool": {
-                  "properties": {
-                    "name":                   { "type": "keyword" }
-                  }
-                }
-              }
-            },
-            "gc": {
-              "properties": {
-                "action":                     { "type": "keyword" },
-                "name":                       { "type": "keyword" }
-              }
-            },
-            "thread": {
-              "properties": {
-                "count":                      { "type": "long" },
-                "daemon":                     { "type": "boolean" },
-                "state":                      { "type": "keyword" }
-              }
-            },
-            "class": {
-              "properties": {
-                "count":                      { "type": "long" },
-                "loaded":                     { "type": "long" },
-                "unloaded":                   { "type": "long" }
-              }
-            }
-          }
-        },
-        "http": {
-          "properties": {
-            "request": {
-              "properties": {
-                "method":                     { "type": "keyword" }
-              }
-            },
-            "response": {
-              "properties": {
-                "status_code":                { "type": "integer" }
-              }
-            },
-            "route":                          { "type": "keyword" },
-            "server": {
-              "properties": {
-                "request": {
-                  "properties": {
-                    "duration": {
-                      "properties": {
-                        "counts":             { "type": "long" },
-                        "values":             { "type": "float" }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "db": {
-          "properties": {
-            "client": {
-              "properties": {
-                "connections": {
-                  "properties": {
-                    "max":                    { "type": "long" },
-                    "usage":                  { "type": "long" },
-                    "pending_requests":       { "type": "long" },
-                    "idle": {
-                      "properties": {
-                        "min":                { "type": "long" }
-                      }
-                    }
-                  }
-                }
-              }
-            }
+            "name":    { "type": "keyword", "ignore_above": 256 },
+            "version": { "type": "keyword", "ignore_above": 64 }
           }
         }
       }
@@ -348,35 +262,35 @@ os_api -X PUT "$OS_URL/_index_template/notification-metrics-template" \
   "template": {
     "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
     "mappings": {
+      "dynamic_templates": [
+        { "metric_attrs_keyword":   { "path_match": "metric.attributes.*",   "match_mapping_type": "string", "mapping": { "type": "keyword", "ignore_above": 1024 } } },
+        { "resource_attrs_keyword": { "path_match": "resource.attributes.*", "match_mapping_type": "string", "mapping": { "type": "keyword", "ignore_above": 1024 } } }
+      ],
       "properties": {
-        "@timestamp":                         { "type": "date" },
-        "service": {
+        "name":                   { "type": "keyword" },
+        "value":                  { "type": "double" },
+        "kind":                   { "type": "keyword" },
+        "unit":                   { "type": "keyword" },
+        "description":            { "type": "keyword", "ignore_above": 1024 },
+        "serviceName":            { "type": "keyword" },
+        "time":                   { "type": "date" },
+        "startTime":              { "type": "date" },
+        "aggregationTemporality": { "type": "keyword" },
+        "isMonotonic":            { "type": "boolean" },
+        "flags":                  { "type": "integer" },
+        "schemaUrl":              { "type": "keyword", "ignore_above": 256 },
+        "sum":                    { "type": "double" },
+        "count":                  { "type": "long" },
+        "min":                    { "type": "double" },
+        "max":                    { "type": "double" },
+        "bucketCounts":           { "type": "long" },
+        "bucketCountsList":       { "type": "long" },
+        "explicitBounds":         { "type": "double" },
+        "explicitBoundsCount":    { "type": "integer" },
+        "instrumentationScope": {
           "properties": {
-            "name":                           { "type": "keyword" },
-            "namespace":                      { "type": "keyword" },
-            "environment":                    { "type": "keyword" }
-          }
-        },
-        "jvm": {
-          "properties": {
-            "cpu": {
-              "properties": {
-                "count":                      { "type": "integer" },
-                "recent_utilization":         { "type": "float" }
-              }
-            },
-            "memory": {
-              "properties": {
-                "used":                       { "type": "long" },
-                "type":                       { "type": "keyword" }
-              }
-            },
-            "thread": {
-              "properties": {
-                "count":                      { "type": "long" },
-                "state":                      { "type": "keyword" }
-              }
-            }
+            "name":    { "type": "keyword", "ignore_above": 256 },
+            "version": { "type": "keyword", "ignore_above": 64 }
           }
         }
       }
@@ -515,10 +429,10 @@ dash_line() {
   # ─── INDEX PATTERNS ───
   ip_line_traces "finance-traces"      "finance-traces*"       "endTime"
   ip_line        "finance-logs"        "finance-logs*"         "@timestamp"
-  ip_line        "finance-metrics"     "finance-metrics*"      "@timestamp"
+  ip_line        "finance-metrics"     "finance-metrics*"      "time"
   ip_line_traces "notification-traces" "notification-traces*"  "endTime"
   ip_line        "notification-logs"   "notification-logs*"    "@timestamp"
-  ip_line        "notification-metrics" "notification-metrics*" "@timestamp"
+  ip_line        "notification-metrics" "notification-metrics*" "time"
 
   # ─── EXECUTIVE DASHBOARD CHARTS ───
 
@@ -569,15 +483,15 @@ dash_line() {
 
   # 4.1 CPU Usage Trend — area, avg(jvm.cpu.recent_utilization). Value is 0-1 ratio.
   viz_legacy_area_time "viz-met-cpu" "Metrics - CPU Usage" \
-    "finance-metrics" "@timestamp" "avg" "jvm.cpu.recent_utilization" "CPU (0-1)" "" 5 ""
+    "finance-metrics" "time" "avg" "value" "CPU usage" "" 5 'name:"system.cpu.usage"'
 
   # 4.2 Memory Usage — area, sum(jvm.memory.used) for heap (bytes)
   viz_legacy_area_time "viz-met-mem" "Metrics - Memory Usage" \
-    "finance-metrics" "@timestamp" "sum" "jvm.memory.used" "Heap Bytes" "" 5 "jvm.memory.type:heap"
+    "finance-metrics" "time" "sum" "value" "Memory bytes" "metric.attributes.jvm@memory@type" 5 'name:"jvm.memory.used"'
 
   # 4.3 HTTP Requests — line, count over time, filtered for request counter docs
-  viz_legacy_line_count_time "viz-met-reqcount" "Metrics - Request Count" \
-    "finance-metrics" "@timestamp" "Requests" "http.server.request.duration.counts:*"
+  viz_legacy_area_time "viz-met-reqcount" "Metrics - Request Throughput" \
+    "finance-metrics" "time" "sum" "count" "Requests" "" 5 'name:"http.server.request.duration"'
 
   # 4.4 Error Rate Trend — line of error count on traces (filter:Error)
   viz_legacy_line_count_time "viz-met-errrate" "Metrics - Error Rate Trend" \
@@ -598,15 +512,15 @@ dash_line() {
 
   # 5.1 DB Connection Pool Health — three avg metrics (active/pending/max) on shared time axis
   jq -nc --arg id "viz-integ-dbpool" --arg title "Integration - DB Connection Pool" --arg idx "finance-metrics" \
-    '{"type":"visualization","id":$id,"attributes":{"title":$title,"visState":({"title":$title,"type":"line","params":{"type":"line","grid":{"categoryLines":false},"categoryAxes":[{"id":"CategoryAxis-1","type":"category","position":"bottom","show":true,"scale":{"type":"linear"},"labels":{"show":true,"filter":true,"truncate":100},"title":{}}],"valueAxes":[{"id":"ValueAxis-1","name":"LeftAxis-1","type":"value","position":"left","show":true,"scale":{"type":"linear","mode":"normal"},"labels":{"show":true,"rotate":0,"filter":false,"truncate":100},"title":{"text":"Connections"}}],"seriesParams":[{"show":true,"type":"line","mode":"normal","data":{"label":"Active","id":"1"},"valueAxis":"ValueAxis-1","drawLinesBetweenPoints":true,"lineWidth":2,"interpolate":"linear","showCircles":true},{"show":true,"type":"line","mode":"normal","data":{"label":"Pending","id":"3"},"valueAxis":"ValueAxis-1","drawLinesBetweenPoints":true,"lineWidth":2,"interpolate":"linear","showCircles":true},{"show":true,"type":"line","mode":"normal","data":{"label":"Max","id":"4"},"valueAxis":"ValueAxis-1","drawLinesBetweenPoints":true,"lineWidth":2,"interpolate":"linear","showCircles":true}],"addTooltip":true,"addLegend":true,"legendPosition":"right","times":[],"addTimeMarker":false,"thresholdLine":{"show":false}},"aggs":[{"id":"1","enabled":true,"type":"avg","schema":"metric","params":{"field":"db.client.connections.usage","customLabel":"Active"}},{"id":"3","enabled":true,"type":"avg","schema":"metric","params":{"field":"db.client.connections.pending_requests","customLabel":"Pending"}},{"id":"4","enabled":true,"type":"avg","schema":"metric","params":{"field":"db.client.connections.max","customLabel":"Max"}},{"id":"2","enabled":true,"type":"date_histogram","schema":"segment","params":{"field":"@timestamp","useNormalizedOpenSearchInterval":true,"interval":"auto","drop_partials":false,"min_doc_count":1}}]}|tostring),"uiStateJSON":"{}","description":"","kibanaSavedObjectMeta":{"searchSourceJSON":({"index":$idx,"query":{"query":"","language":"kuery"},"filter":[]}|tostring)}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":$idx}]}'
+    '{"type":"visualization","id":$id,"attributes":{"title":$title,"visState":({"title":$title,"type":"line","params":{"type":"line","grid":{"categoryLines":false},"categoryAxes":[{"id":"CategoryAxis-1","type":"category","position":"bottom","show":true,"scale":{"type":"linear"},"labels":{"show":true,"filter":true,"truncate":100},"title":{}}],"valueAxes":[{"id":"ValueAxis-1","name":"LeftAxis-1","type":"value","position":"left","show":true,"scale":{"type":"linear","mode":"normal"},"labels":{"show":true,"rotate":0,"filter":false,"truncate":100},"title":{"text":"Connections"}}],"seriesParams":[{"show":true,"type":"line","mode":"normal","data":{"label":"Connections","id":"1"},"valueAxis":"ValueAxis-1","drawLinesBetweenPoints":true,"lineWidth":2,"interpolate":"linear","showCircles":true}],"addTooltip":true,"addLegend":true,"legendPosition":"right","times":[],"addTimeMarker":false,"thresholdLine":{"show":false}},"aggs":[{"id":"1","enabled":true,"type":"avg","schema":"metric","params":{"field":"value","customLabel":"Connections"}},{"id":"2","enabled":true,"type":"date_histogram","schema":"segment","params":{"field":"time","useNormalizedOpenSearchInterval":true,"interval":"auto","drop_partials":false,"min_doc_count":1}},{"id":"3","enabled":true,"type":"filters","schema":"group","params":{"filters":[{"input":{"query":"name:\"db.client.connections.usage\"","language":"kuery"},"label":"Active"},{"input":{"query":"name:\"db.client.connections.max\"","language":"kuery"},"label":"Max"},{"input":{"query":"name:\"db.client.connections.pending_requests\"","language":"kuery"},"label":"Pending"}]}}]}|tostring),"uiStateJSON":"{}","description":"","kibanaSavedObjectMeta":{"searchSourceJSON":({"index":$idx,"query":{"query":"","language":"kuery"},"filter":[]}|tostring)}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":$idx}]}'
 
   # 5.2 JVM Thread State Distribution — donut by jvm.thread.state, sum(jvm.thread.count)
   jq -nc --arg id "viz-integ-threads" --arg title "Integration - Thread States" --arg idx "finance-metrics" \
-    '{"type":"visualization","id":$id,"attributes":{"title":$title,"visState":({"title":$title,"type":"pie","params":{"type":"pie","addTooltip":true,"addLegend":true,"legendPosition":"right","isDonut":true,"labels":{"show":true,"values":true,"last_level":true,"truncate":100,"valuesFormat":"percent","percentDecimals":1}},"aggs":[{"id":"1","enabled":true,"type":"sum","schema":"metric","params":{"field":"jvm.thread.count","customLabel":"Threads"}},{"id":"2","enabled":true,"type":"terms","schema":"segment","params":{"field":"jvm.thread.state","orderBy":"1","order":"desc","size":10,"otherBucket":false,"missingBucket":false}}]}|tostring),"uiStateJSON":"{}","description":"","kibanaSavedObjectMeta":{"searchSourceJSON":({"index":$idx,"query":{"query":"","language":"kuery"},"filter":[]}|tostring)}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":$idx}]}'
+    '{"type":"visualization","id":$id,"attributes":{"title":$title,"visState":({"title":$title,"type":"pie","params":{"type":"pie","addTooltip":true,"addLegend":true,"legendPosition":"right","isDonut":true,"labels":{"show":true,"values":true,"last_level":true,"truncate":100,"valuesFormat":"percent","percentDecimals":1}},"aggs":[{"id":"1","enabled":true,"type":"sum","schema":"metric","params":{"field":"value","customLabel":"Threads"}},{"id":"2","enabled":true,"type":"terms","schema":"segment","params":{"field":"metric.attributes.jvm@thread@state","orderBy":"1","order":"desc","size":10,"otherBucket":false,"missingBucket":false}}]}|tostring),"uiStateJSON":"{}","description":"","kibanaSavedObjectMeta":{"searchSourceJSON":({"index":$idx,"query":{"query":"name:\"jvm.thread.count\"","language":"kuery"},"filter":[]}|tostring)}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":$idx}]}'
 
   # 5.3 HTTP Server Request Duration Over Time — area avg(http.server.request.duration.values), label seconds
-  viz_legacy_area_time "viz-integ-httplat" "Integration - HTTP Latency Trend" \
-    "finance-metrics" "@timestamp" "avg" "http.server.request.duration.values" "Avg seconds" "" 5 ""
+  viz_legacy_area_time "viz-integ-httplat" "Integration - Executor Pools (active)" \
+    "finance-metrics" "time" "avg" "value" "Active threads" "metric.attributes.name" 5 'name:"executor.active"'
 
   # 5th dashboard with 3 panels
   dash_line "otel-integ-dashboard" "5. Integration & DB Health" "viz-integ-dbpool" "viz-integ-threads" "viz-integ-httplat"
@@ -653,15 +567,15 @@ dash_line() {
 
   # N4.1 Notification CPU — area, avg(jvm.cpu.recent_utilization). Value is 0-1 ratio.
   viz_legacy_area_time "viz-notif-met-cpu" "Notification Metrics - CPU Usage" \
-    "notification-metrics" "@timestamp" "avg" "jvm.cpu.recent_utilization" "CPU (0-1)" "" 5 ""
+    "notification-metrics" "time" "avg" "value" "CPU usage" "" 5 'name:"system.cpu.usage"'
 
   # N4.2 Notification Memory — area, sum(jvm.memory.used) for heap (bytes)
   viz_legacy_area_time "viz-notif-met-mem" "Notification Metrics - Memory Usage" \
-    "notification-metrics" "@timestamp" "sum" "jvm.memory.used" "Heap Bytes" "" 5 "jvm.memory.type:heap"
+    "notification-metrics" "time" "sum" "value" "Memory bytes" "metric.attributes.jvm@memory@type" 5 'name:"jvm.memory.used"'
 
   # N4.3 Notification Request Count — line, count over time, filtered for request counter docs
-  viz_legacy_line_count_time "viz-notif-met-reqcount" "Notification Metrics - Request Count" \
-    "notification-metrics" "@timestamp" "Requests" "http.server.request.duration.counts:*"
+  viz_legacy_area_time "viz-notif-met-reqcount" "Notification Metrics - Request Throughput" \
+    "notification-metrics" "time" "sum" "count" "Requests" "" 5 'name:"http.server.request.duration"'
 
   # N4.4 Notification Error Rate Trend — line of error count on traces (filter:Error)
   viz_legacy_line_count_time "viz-notif-met-errrate" "Notification Metrics - Error Rate Trend" \
@@ -718,8 +632,9 @@ if [ "$SUCCESS" = "true" ]; then
   echo "Index pattern field listleri guncelleniyor..."
   for pat_id in finance-traces finance-logs finance-metrics notification-traces notification-logs notification-metrics; do
     case "$pat_id" in
-      finance-traces|notification-traces) _tf="endTime" ;;
-      *)                                  _tf="@timestamp" ;;
+      finance-traces|notification-traces)   _tf="endTime" ;;
+      finance-metrics|notification-metrics) _tf="time" ;;
+      *)                                    _tf="@timestamp" ;;
     esac
 
     # Trace patterns retain a duration_ms scripted field so APM viz can

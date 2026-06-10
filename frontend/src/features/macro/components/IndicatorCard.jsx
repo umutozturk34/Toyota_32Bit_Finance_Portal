@@ -32,6 +32,12 @@ export default function IndicatorCard({ indicator, onOpen, dense = false }) {
   const localeTag = t('common.localeTag');
   const label = t(`marketOverview.macro.${indicator.label}`, { defaultValue: indicator.label });
   const formattedValue = formatValue(indicator.lastValue, indicator.unit, localeTag);
+  // Inflation indicators store a cumulative INDEX level (which only ever rises); the figure users expect
+  // is the derived year-over-year rate, so lead with that and keep the raw index + monthly rate secondary.
+  const showInflationRate = indicator.category === 'INFLATION' && indicator.yoyChangePct != null;
+  const primaryValue = showInflationRate
+    ? formatValue(indicator.yoyChangePct, 'PERCENT', localeTag)
+    : formattedValue;
   const formattedDate = formatDate(indicator.lastDate, localeTag);
   const changeText = changeBadgeText(change, indicator.unit);
   const freqLabel = t(`marketOverview.macro.enum.${indicator.frequency}`,
@@ -78,8 +84,22 @@ export default function IndicatorCard({ indicator, onOpen, dense = false }) {
       </div>
 
       <p className={`pl-2 font-bold font-mono tabular-nums text-fg leading-none ${dense ? 'text-lg' : 'text-2xl'}`}>
-        {formattedValue}
+        {primaryValue}
+        {showInflationRate && (
+          <span className="ml-1.5 align-middle text-[10px] font-medium text-fg-subtle">
+            {t('marketOverview.macro.yoy')}
+          </span>
+        )}
       </p>
+
+      {showInflationRate && (
+        <p className="pl-2 -mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] font-mono text-fg-subtle">
+          <span>{t('marketOverview.macro.index')}: {formattedValue}</span>
+          {indicator.momChangePct != null && (
+            <span>{t('marketOverview.macro.mom')}: {formatValue(indicator.momChangePct, 'PERCENT', localeTag)}</span>
+          )}
+        </p>
+      )}
 
       <div className="pl-2">
         <IndicatorSparkline code={indicator.code} color={theme.accent} points={points} />

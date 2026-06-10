@@ -64,7 +64,7 @@ export default function ScenarioRankingTable({ scenario }) {
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle">
-                          {row.instrument.type}
+                          {t(`assets.labels.${row.instrument.type}`, { defaultValue: row.instrument.type })}
                         </span>
                         {row.partial && (
                           <span

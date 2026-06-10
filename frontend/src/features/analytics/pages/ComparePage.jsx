@@ -34,6 +34,7 @@ import {
   displayLabel,
   nativeCurrencyFor,
   compoundRateSeries,
+  deriveRateSeries,
 } from '../lib/compareSeriesUtils';
 import { buildBackTarget } from '../lib/compareNav';
 import { MAX_COMPARE, MODES } from '../lib/compareConstants';
@@ -307,15 +308,14 @@ export default function ComparePage() {
   // A "rate-vs-rate" compare (every selected series is a PERCENT-unit rate/deposit) can be read two ways: as
   // the actual rate LEVEL over time (how interest rose/fell) or as a cumulative growth index. Only then do the
   // series share one % axis; mixing an asset or a CPI-index series forces the normalized % view.
-  // Deposits are ALWAYS interest rates (PERCENT) — treat MACRO_DEPOSIT as eligible directly rather than
-  // looking it up in macroUnitByCode (the macro-indicator list the map is built from may not include every
-  // deposit tenor, which otherwise hid the level/cumulative toggle for a deposit-vs-deposit compare). Only
-  // MACRO_RATE needs the unit check, since it can be a PERCENT rate (toggle) or an INDEX level (no toggle).
+  // Eligible when EVERY selected series is a macro rate/inflation series (deposits, policy/reference rates,
+  // and CPI/PPI/index-rates) — i.e. no assets or portfolio. Each can be expressed as an annual rate, so the
+  // "Yıllık" mode is meaningful and stays like-for-like: rate series show their raw annual %, index series
+  // show their derived YoY %. (Mixing an asset forces the normalized cumulative view — no annual toggle.)
   const homogeneousRates = useMemo(
     () => selected.length >= 2 && selected.every((s) =>
-      s.type === 'MACRO_DEPOSIT'
-      || (s.type === 'MACRO_RATE' && macroUnitByCode[s.code] === 'PERCENT')),
-    [selected, macroUnitByCode],
+      s.type === 'MACRO_DEPOSIT' || s.type === 'MACRO_RATE' || s.type === 'MACRO_INFLATION'),
+    [selected],
   );
   // Default to Cumulative: a deposit/rate compare's meaningful headline is the compounded growth (a rising
   // curve), not the raw annual-rate LEVEL (which dips when the rate itself falls and reads as "money going
@@ -340,12 +340,28 @@ export default function ComparePage() {
       // explodes the value, so index-unit rates follow the price path (raw levels, normalized from
       // baseline). Mirrors backend ScenarioService.shouldCompound: compound only when unit == PERCENT.
       const macroUnit = macroUnitByCode[ind.code];
+      // An index-unit macro series (CPI/PPI, or an INDEX-unit MACRO_RATE like the TLREF Index) is a
+      // cumulative level; in annual (level) mode it becomes its derived YoY rate so it shares the % axis
+      // with the raw annual rates. PERCENT rates are already annual, so they stay raw in annual mode.
+      const isIndexLevel = ind.type === 'MACRO_INFLATION'
+        || (ind.type === 'MACRO_RATE' && macroUnit === 'INDEX');
       const compound = !levelMode && (ind.type === 'MACRO_DEPOSIT'
         || (ind.type === 'MACRO_RATE' && macroUnit === 'PERCENT'));
-      const points = compound ? compoundRateSeries(raw, fillUntil) : raw;
+      let points;
+      if (levelMode && isIndexLevel) {
+        points = deriveRateSeries(raw, 'yoy');
+      } else if (compound) {
+        points = compoundRateSeries(raw, fillUntil);
+      } else {
+        points = raw;
+      }
       return {
         indicator: { ...ind, displayName: displayLabel(t, ind, macroLabelByCode) },
         points,
+        // Carry the actual compound decision so downstream steps (FX conversion, start-point
+        // interpolation) treat a compounded growth-index (money) differently from a raw level
+        // (index-unit rate / step series) — never re-derive intent from the type alone.
+        compounded: compound,
         color: colorFor(ind, idx),
       };
     }),
@@ -420,11 +436,14 @@ export default function ComparePage() {
             return { ...p, value: cpVal ?? p.value, pnlTry: cpPnl ?? p.pnlTry };
           });
         }
-      } else if (!levelMode && !isRateLike(s.indicator.type) && !originalView && native !== targetCurrency) {
-        // !levelMode guard: in LEVEL mode the plotted value is the raw annual interest-rate PERCENTAGE
-        // (compound is off), and a rate level is currency-agnostic — FX-converting it would render a 50%
-        // TRY deposit rate as ~1.5% beside an unconverted USD deposit. Cumulative mode is unaffected: there
-        // the value is the compounded growth-index (money), which is correctly FX-converted per-date.
+      } else if (!levelMode && !isRateLike(s.indicator.type)
+          && (!isMacro(s.indicator.type) || s.compounded) && !originalView && native !== targetCurrency) {
+        // FX-convert only genuine monetary values: asset prices, and compounded macro growth-indices
+        // (deposits / PERCENT-unit rates). A macro series left UNCOMPOUNDED is a currency-agnostic LEVEL —
+        // a raw interest-rate % OR an index-unit rate like the BIST TLREF Index (~6022) — so the
+        // (!isMacro || s.compounded) clause keeps it out of FX conversion (multiplying a level by an FX
+        // ratio is meaningless). !levelMode also excludes raw rate percentages. Cumulative compounded
+        // series stay correctly FX-converted per-date.
         pts = pts.map((p) => {
           const converted = convertBetween(p.value, native, targetCurrency, p.date);
           return { ...p, value: converted ?? p.value };
@@ -458,7 +477,10 @@ export default function ComparePage() {
         if (idx > 0 && pts[idx] && pts[idx].date !== commonStartDate) {
           const p0 = pts[idx - 1];
           const p1 = pts[idx];
-          const compounded = !levelMode && isMacro(s.indicator.type) && !isRateLike(s.indicator.type);
+          // Geometric interpolation is exact ONLY for a compounded growth-index (constant rate between
+          // publishes). A non-compounded level (index-unit rate like TLREF Index, or a step series) must be
+          // flat-carried — so reuse the real compound flag instead of inferring it from the type.
+          const compounded = s.compounded;
           let baseVal = Number(p0.value);
           const v0 = Number(p0.value);
           const v1 = Number(p1.value);
@@ -711,7 +733,7 @@ export default function ComparePage() {
                   : 'text-fg-muted hover:text-fg'
               }`}
             >
-              {t('analytics.compareLevel', { defaultValue: 'Seviye' })}
+              {t('analytics.compareAnnual', { defaultValue: 'Yıllık' })}
             </button>
             <button
               type="button"
@@ -730,8 +752,8 @@ export default function ComparePage() {
         {levelMode && (
           <div className="flex items-center gap-2 text-[10px] font-mono text-fg-subtle italic">
             <Info className="h-3 w-3" />
-            {t('analytics.levelHintCompare', {
-              defaultValue: 'Oran seviyesi gösteriliyor — kümülatif büyüme için "Kümülatif"e geç',
+            {t('analytics.annualHintCompare', {
+              defaultValue: 'Yıllık oran gösteriliyor (endeksler için YoY değişim) — bileşik büyüme için Kümülatif\'e geç',
             })}
           </div>
         )}

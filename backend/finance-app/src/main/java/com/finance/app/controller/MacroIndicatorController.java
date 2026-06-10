@@ -5,10 +5,10 @@ import com.finance.common.i18n.Translator;
 import com.finance.market.macro.config.MacroProperties;
 import com.finance.market.macro.dto.response.MacroIndicatorPointResponse;
 import com.finance.market.macro.dto.response.MacroIndicatorResponse;
-import com.finance.market.macro.mapper.MacroIndicatorResponseMapper;
 import com.finance.market.macro.model.MacroCategory;
 import com.finance.market.macro.model.MacroIndicator;
 import com.finance.market.macro.service.MacroIndicatorQueryService;
+import com.finance.market.macro.service.MacroIndicatorResponseAssembler;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -35,7 +35,7 @@ import java.util.List;
 public class MacroIndicatorController {
 
     private final MacroIndicatorQueryService queryService;
-    private final MacroIndicatorResponseMapper mapper;
+    private final MacroIndicatorResponseAssembler assembler;
     private final Translator translator;
     private final MacroProperties macroProperties;
 
@@ -46,7 +46,7 @@ public class MacroIndicatorController {
             @RequestParam(required = false, defaultValue = "false") boolean prominentOnly) {
         List<MacroIndicator> indicators = resolveList(category, prominentOnly);
         return ApiResponse.success(translator.translate("api.macro.retrieved"),
-                mapper.toResponses(indicators));
+                assembler.toResponses(indicators));
     }
 
     @GetMapping("/{code}/history")
@@ -60,7 +60,7 @@ public class MacroIndicatorController {
         LocalDate effectiveFrom = from == null
                 ? effectiveTo.minusYears(macroProperties.defaultHistoryYears()) : from;
         return ApiResponse.success(translator.translate("api.macro.historyRetrieved"),
-                mapper.toPointResponses(queryService.history(indicator, effectiveFrom, effectiveTo)));
+                assembler.toPointResponses(queryService.history(indicator, effectiveFrom, effectiveTo)));
     }
 
     private List<MacroIndicator> resolveList(MacroCategory category, boolean prominentOnly) {

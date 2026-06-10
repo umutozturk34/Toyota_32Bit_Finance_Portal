@@ -297,6 +297,36 @@ export function backFillToWindowStart(points, windowStart) {
   return [{ date: windowStart, value: anchor.value, _backfilled: true }, ...inWindow];
 }
 
+// Derive a YoY ('yoy') or MoM ('mom') RATE series (%) from a cumulative INDEX series:
+// rate(t) = value(t) / value(t − span) − 1. Inflation/PPI/index-rates are stored as an ever-rising
+// cumulative index, so this is what users read as the actual annual/monthly rate. The base is matched by
+// nearest-earlier date within a tolerance (handles month-length drift); points without a usable base are
+// skipped, so the caller must include ~12 months of history before the window start for full coverage.
+export function deriveRateSeries(points, view) {
+  if (!points || points.length === 0) return [];
+  const sorted = [...points].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const months = view === 'mom' ? 1 : 12;
+  const tolDays = view === 'mom' ? 16 : 25;
+  const out = [];
+  for (let i = 0; i < sorted.length; i += 1) {
+    const cur = Number(sorted[i].value);
+    if (!Number.isFinite(cur)) continue;
+    const target = new Date(sorted[i].date);
+    target.setMonth(target.getMonth() - months);
+    let base = null;
+    let bestDiff = Infinity;
+    for (let j = i - 1; j >= 0; j -= 1) {
+      const diff = Math.abs((new Date(sorted[j].date).getTime() - target.getTime()) / 86_400_000);
+      if (diff < bestDiff) { bestDiff = diff; base = sorted[j]; }
+    }
+    if (!base || bestDiff > tolDays) continue;
+    const baseV = Number(base.value);
+    if (!Number.isFinite(baseV) || baseV <= 0) continue;
+    out.push({ date: sorted[i].date, value: (cur / baseV - 1) * 100 });
+  }
+  return out;
+}
+
 export function forwardFillDaily(points, fromIso, toIso) {
   if (!points || points.length === 0) return points;
   const sorted = [...points].sort((a, b) => String(a.date).localeCompare(String(b.date)));

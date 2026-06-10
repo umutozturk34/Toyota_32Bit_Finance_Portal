@@ -22,6 +22,8 @@ import java.time.LocalDate;
  * @param prominent whether the indicator is highlighted in summary/featured views
  * @param lastValue most recent observed value, or {@code null} if no observation exists yet
  * @param lastDate  date of the most recent observation, or {@code null} if none exists yet
+ * @param yoyChangePct derived year-over-year % change for index-based inflation indicators, else {@code null}
+ * @param momChangePct derived month-over-month % change for index-based inflation indicators, else {@code null}
  */
 public record MacroIndicatorResponse(
         String code,
@@ -33,5 +35,17 @@ public record MacroIndicatorResponse(
         DepositMaturity maturity,
         boolean prominent,
         BigDecimal lastValue,
-        LocalDate lastDate
-) { }
+        LocalDate lastDate,
+        BigDecimal yoyChangePct,
+        BigDecimal momChangePct
+) {
+    /**
+     * Returns a copy carrying the derived inflation rates. Inflation indicators are stored as a cumulative
+     * INDEX level (which only ever rises), so the headline year-over-year and month-over-month rates are
+     * derived from the series rather than persisted; non-inflation indicators leave both {@code null}.
+     */
+    public MacroIndicatorResponse withInflationRates(BigDecimal yoyChangePct, BigDecimal momChangePct) {
+        return new MacroIndicatorResponse(code, label, category, unit, frequency, currency, maturity,
+                prominent, lastValue, lastDate, yoyChangePct, momChangePct);
+    }
+}

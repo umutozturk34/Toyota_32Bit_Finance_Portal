@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueries } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import BaseModal from '../../../shared/components/modal/BaseModal';
 import Spinner from '../../../shared/components/feedback/Spinner';
 import {
   backFillToWindowStart,
+  deriveRateSeries,
   fetchSeries,
   forwardFillToToday,
   rangeBounds,
@@ -20,6 +21,17 @@ import { buildOption, colorFor, normalizeSelected } from './indicatorHistoryUtil
 import InfoBar from './IndicatorHistoryInfoBar';
 import StatBlock from './IndicatorHistoryStatBlock';
 
+// Inflation / PPI are stored as a cumulative INDEX (it only ever rises); offer a derived RATE view so the
+// chart can show the year-over-year / month-over-month change at each date — the figure users actually read
+// as "inflation" — instead of only the index level.
+const RATE_VIEWS = [
+  { id: 'index', labelKey: 'viewIndex' },
+  { id: 'yoy', labelKey: 'viewYoy' },
+  { id: 'mom', labelKey: 'viewMom' },
+];
+// A YoY point needs the index ~12 months earlier; widen the fetch by that much (plus slack) so the rate
+// line covers the whole selected range. The display is still trimmed to the window via backFillToWindowStart.
+const RATE_LOOKBACK_DAYS = 400;
 
 export default function IndicatorHistoryModal({ indicator, onClose }) {
   const { t } = useTranslation();
@@ -29,15 +41,30 @@ export default function IndicatorHistoryModal({ indicator, onClose }) {
     () => (indicator ? [normalizeSelected(indicator)] : []),
     [indicator]
   );
+  const primary = selected[0] || null;
   const [rangeId, setRangeId] = useChartRange();
+  const [view, setView] = useState('index');
 
   const range = useMemo(() => RANGES.find((r) => r.id === rangeId) || RANGES[2], [rangeId]);
   const bounds = useMemo(() => rangeBounds(range.days), [range]);
+  // Always fetch with the rate lookback so toggling Index↔Rate never refetches; for the index view the
+  // extra left history is collapsed to a single anchor at the window start, leaving it visually unchanged.
+  const fetchBounds = useMemo(() => {
+    const d = new Date(bounds.from);
+    d.setDate(d.getDate() - RATE_LOOKBACK_DAYS);
+    return { from: d.toISOString().slice(0, 10), to: bounds.to };
+  }, [bounds]);
+
+  // Only an index-based inflation/PPI series can be turned into a rate; rate-type indicators stay as-is.
+  const isInflationIndex = primary?.unit === 'INDEX'
+    && (primary?.category === 'INFLATION' || primary?.type === 'MACRO_INFLATION');
+  const activeView = isInflationIndex ? view : 'index';
+  const displayUnit = activeView === 'index' ? primary?.unit : 'PERCENT';
 
   const queries = useQueries({
     queries: selected.map((s) => ({
-      queryKey: ['compare-history', s.type, s.code, bounds.from, bounds.to],
-      queryFn: () => fetchSeries(s, bounds),
+      queryKey: ['compare-history', s.type, s.code, fetchBounds.from, fetchBounds.to],
+      queryFn: () => fetchSeries(s, fetchBounds),
       enabled: !!s.code,
       staleTime: 5 * 60 * 1000,
     })),
@@ -56,18 +83,16 @@ export default function IndicatorHistoryModal({ indicator, onClose }) {
 
   const seriesData = useMemo(() => {
     return rawSeriesData.map((s) => {
-      let pts = s.points || [];
-      // Anchor the line at the window start so it doesn't appear to float in mid-chart.
-      pts = backFillToWindowStart(pts, bounds.from);
-      // Skip per-day forward-fill (would smear April's reading across every day in May,
-      // making tooltips show April's value as if recorded daily). But DO add one synthetic
-      // point at today carrying the last real value — between publication dates the
-      // reading is officially still in force, so the line should visibly extend to "now"
-      // rather than ending mid-chart at the last publish date.
+      const source = activeView === 'index'
+        ? (s.points || [])
+        : deriveRateSeries(s.points || [], activeView);
+      // Anchor the line at the window start so it doesn't float in mid-chart; extend the last reading to
+      // today since it stays officially in force between publication dates.
+      let pts = backFillToWindowStart(source, bounds.from);
       pts = forwardFillToToday(pts);
-      return { ...s, points: pts };
+      return { ...s, indicator: { ...s.indicator, unit: displayUnit }, points: pts };
     });
-  }, [rawSeriesData, bounds.from]);
+  }, [rawSeriesData, bounds.from, activeView, displayUnit]);
 
   const localeTag = t('common.localeTag');
   const option = useMemo(
@@ -76,7 +101,15 @@ export default function IndicatorHistoryModal({ indicator, onClose }) {
   );
 
   const stats = useMemo(() => computeStats(seriesData[0]?.points || []), [seriesData]);
-  const primary = selected[0];
+  // The "Last" reading: the index's official cached latest, or — in a rate view — the most recent derived point.
+  const rateLast = useMemo(() => {
+    if (activeView === 'index') return null;
+    const pts = deriveRateSeries(rawSeriesData[0]?.points || [], activeView);
+    return pts.length ? pts[pts.length - 1] : null;
+  }, [rawSeriesData, activeView]);
+  const lastValue = activeView === 'index' ? primary?.lastValue : rateLast?.value;
+  const lastDate = activeView === 'index' ? primary?.lastDate : rateLast?.date;
+
   const primaryAccent = primary ? colorFor(primary) : '#6366f1';
   const label = primary
     ? t(`marketOverview.macro.${primary.label}`, { defaultValue: primary.name })
@@ -133,29 +166,50 @@ export default function IndicatorHistoryModal({ indicator, onClose }) {
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={openCompare}
-            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-mono font-semibold text-accent hover:text-fg border border-accent/40 hover:border-accent/70 bg-accent/8 hover:bg-accent/15 transition-colors cursor-pointer"
-            title={t('marketOverview.macro.compareCta', { defaultValue: 'Karşılaştırma sayfasında aç' })}
-          >
-            <GitCompareArrows className="h-3 w-3" />
-            {t('marketOverview.macro.compareCta', { defaultValue: 'Karşılaştır' })}
-          </button>
+          <div className="flex items-center gap-2">
+            {isInflationIndex && (
+              <div className="inline-flex items-center rounded-md border border-border-default overflow-hidden">
+                {RATE_VIEWS.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => setView(v.id)}
+                    className={`text-[11px] font-mono font-semibold px-2.5 py-1 border-none cursor-pointer transition-colors ${
+                      view === v.id ? 'text-fg' : 'text-fg-muted hover:text-fg'
+                    }`}
+                    style={view === v.id ? { background: `${primaryAccent}22`, boxShadow: `inset 0 0 0 1px ${primaryAccent}66` } : {}}
+                  >
+                    {v.id === 'index'
+                      ? t('marketOverview.macro.viewIndex')
+                      : `${t(`marketOverview.macro.${v.labelKey}`)} %`}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={openCompare}
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-mono font-semibold text-accent hover:text-fg border border-accent/40 hover:border-accent/70 bg-accent/8 hover:bg-accent/15 transition-colors cursor-pointer"
+              title={t('marketOverview.macro.compareCta', { defaultValue: 'Karşılaştırma sayfasında aç' })}
+            >
+              <GitCompareArrows className="h-3 w-3" />
+              {t('marketOverview.macro.compareCta', { defaultValue: 'Karşılaştır' })}
+            </button>
+          </div>
         </div>
 
-        {stats && primary?.unit && (
+        {stats && displayUnit && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <StatBlock label={t('marketOverview.macro.statLast', { defaultValue: 'Last' })}
-              value={formatValue(primary?.lastValue, primary?.unit, t('common.localeTag'))}
-              sub={formatDate(primary?.lastDate, t('common.localeTag'))}
+              value={formatValue(lastValue, displayUnit, localeTag)}
+              sub={formatDate(lastDate, localeTag)}
               accent={primaryAccent} highlight />
             <StatBlock label={t('marketOverview.macro.statMin', { defaultValue: 'Min' })}
-              value={formatValue(stats.min, primary?.unit, t('common.localeTag'))} />
+              value={formatValue(stats.min, displayUnit, localeTag)} />
             <StatBlock label={t('marketOverview.macro.statMax', { defaultValue: 'Max' })}
-              value={formatValue(stats.max, primary?.unit, t('common.localeTag'))} />
+              value={formatValue(stats.max, displayUnit, localeTag)} />
             <StatBlock label={t('marketOverview.macro.statAvg', { defaultValue: 'Avg' })}
-              value={formatValue(stats.avg, primary?.unit, t('common.localeTag'))}
+              value={formatValue(stats.avg, displayUnit, localeTag)}
               sub={`${stats.count} ${t('marketOverview.macro.points', { defaultValue: 'puan' })}`} />
           </div>
         )}

@@ -3,6 +3,7 @@ package com.finance.market.core.service;
 import com.finance.market.core.dto.response.TrackedAssetResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.market.core.mapper.TrackedAssetMapper;
+import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAsset;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.common.repository.TrackedAssetRepository;
@@ -15,11 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Read side for the tracked-asset catalogue: listing, search/sort, code lookups (cache-backed),
@@ -110,17 +109,21 @@ public class TrackedAssetQueryService {
         return codeCache.getEnabled(type);
     }
 
-    /** Code-to-curated-display-name map (insertion-ordered) for assets that have a non-blank name. */
+    /** Code-to-curated-display-name map (insertion-ordered) for assets that have a non-blank name; cache-backed. */
     public Map<String, String> getDisplayNameMap(TrackedAssetType type) {
-        return trackedAssetRepository.findByAssetTypeOrderBySortOrderAscAssetCodeAsc(type)
-                .stream()
-                .filter(asset -> asset.getDisplayName() != null && !asset.getDisplayName().isBlank())
-                .collect(Collectors.toMap(
-                        TrackedAsset::getAssetCode,
-                        TrackedAsset::getDisplayName,
-                        (first, second) -> second,
-                        LinkedHashMap::new
-                ));
+        return codeCache.getDisplayNames(type);
+    }
+
+    /**
+     * The admin-curated display name for a market asset, or {@code null} when the market type is not curated
+     * here or no name is set. Lets callers overlay the curated name on top of the provider's own name.
+     */
+    public String curatedDisplayName(MarketType marketType, String code) {
+        TrackedAssetType type = TrackedAssetType.fromMarketType(marketType);
+        if (type == null || code == null || code.isBlank()) {
+            return null;
+        }
+        return codeCache.getDisplayNames(type).get(type.normalizeCode(code));
     }
 
     /** Binance trading symbol mapped to a CoinGecko id, used to fetch klines for that coin. */

@@ -14,6 +14,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -160,6 +162,16 @@ class TrackedAssetAdminServiceTest {
         runAfterCommit();
 
         verify(commandService).updateSortOrders(eq(TrackedAssetType.STOCK), eq(req.getItems()));
+        verify(marketUpdatePort).onMarketDataUpdated(TrackedAssetType.STOCK.marketType());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void setEnabled_invokesCommandService_andRefreshesPage_afterCommit(boolean enabled) {
+        service.setEnabled(TrackedAssetType.STOCK, "AAPL", enabled);
+        runAfterCommit();
+
+        verify(commandService).setEnabled(TrackedAssetType.STOCK, "AAPL", enabled);
         verify(marketUpdatePort).onMarketDataUpdated(TrackedAssetType.STOCK.marketType());
     }
 }

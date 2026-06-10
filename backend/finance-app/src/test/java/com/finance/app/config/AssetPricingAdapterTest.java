@@ -7,6 +7,7 @@ import com.finance.market.crypto.model.Crypto;
 import com.finance.common.model.MarketType;
 import com.finance.shared.service.AssetPricingPort.AssetMeta;
 import com.finance.market.core.cache.MarketCacheService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 import com.finance.market.crypto.repository.CryptoCandleRepository;
 import com.finance.market.crypto.service.assetpricing.CryptoPricingStrategy;
 import com.finance.market.forex.repository.ForexCandleRepository;
@@ -39,6 +40,7 @@ class AssetPricingAdapterTest {
     @Mock private ForexCandleRepository forexCandleRepository;
     @Mock private FundCandleRepository fundCandleRepository;
     @Mock private com.finance.market.core.service.ExchangeRateProvider exchangeRateProvider;
+    @Mock private TrackedAssetQueryService trackedAssetQueryService;
 
     private AssetPricingAdapter adapter;
 
@@ -49,7 +51,7 @@ class AssetPricingAdapterTest {
             new StockPricingStrategy(stockCacheService, stockCandleRepository),
             new ForexPricingStrategy(forexCacheService, forexCandleRepository),
             new FundPricingStrategy(fundCacheService, fundCandleRepository)
-        ));
+        ), trackedAssetQueryService);
     }
 
     private Crypto cryptoWith(String priceTry) {
@@ -163,5 +165,32 @@ class AssetPricingAdapterTest {
 
         assertThat(meta.name()).isNull();
         assertThat(meta.image()).isNull();
+    }
+
+    @Test
+    void getAssetMetaOverlaysCuratedNameWhenSetKeepingProviderImage() {
+        Crypto crypto = new Crypto();
+        crypto.setName("Bitcoin");
+        crypto.setImage("https://example.com/btc.png");
+        when(cryptoCacheService.getSnapshot("bitcoin")).thenReturn(crypto);
+        when(trackedAssetQueryService.curatedDisplayName(MarketType.CRYPTO, "bitcoin")).thenReturn("Satoshi Coin");
+
+        AssetMeta meta = adapter.getAssetMeta(MarketType.CRYPTO, "bitcoin");
+
+        assertThat(meta.name()).isEqualTo("Satoshi Coin");
+        assertThat(meta.image()).isEqualTo("https://example.com/btc.png");
+    }
+
+    @Test
+    void getBundleOverlaysCuratedNameOntoProviderMeta() {
+        Crypto crypto = new Crypto();
+        crypto.setName("Bitcoin");
+        crypto.setCurrentPriceTry(new BigDecimal("100.0000"));
+        when(cryptoCacheService.getSnapshot("bitcoin")).thenReturn(crypto);
+        when(trackedAssetQueryService.curatedDisplayName(MarketType.CRYPTO, "bitcoin")).thenReturn("Satoshi Coin");
+
+        var bundle = adapter.getBundle(MarketType.CRYPTO, "bitcoin");
+
+        assertThat(bundle.meta().name()).isEqualTo("Satoshi Coin");
     }
 }

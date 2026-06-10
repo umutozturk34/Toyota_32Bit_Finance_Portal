@@ -1,6 +1,7 @@
 package com.finance.market.core.service;
 
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAsset;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.common.repository.TrackedAssetRepository;
@@ -168,16 +169,40 @@ class TrackedAssetQueryServiceTest {
     }
 
     @Test
-    void getDisplayNameMap_filtersBlankNames_andPreservesOrder() {
-        TrackedAsset withName = asset("bitcoin", "Bitcoin", null);
-        TrackedAsset withoutName = asset("ethereum", "  ", null);
-        when(trackedAssetRepository.findByAssetTypeOrderBySortOrderAscAssetCodeAsc(TrackedAssetType.CRYPTO))
-                .thenReturn(List.of(withName, withoutName));
+    void getDisplayNameMap_delegatesToCache() {
+        when(codeCache.getDisplayNames(TrackedAssetType.CRYPTO))
+                .thenReturn(Map.of("bitcoin", "Bitcoin"));
 
         Map<String, String> result = service.getDisplayNameMap(TrackedAssetType.CRYPTO);
 
-        assertThat(result).containsOnlyKeys("bitcoin");
         assertThat(result).containsEntry("bitcoin", "Bitcoin");
+    }
+
+    @Test
+    void curatedDisplayName_returnsCuratedName_whenPresent() {
+        when(codeCache.getDisplayNames(TrackedAssetType.CRYPTO))
+                .thenReturn(Map.of("bitcoin", "Bitcoin"));
+
+        String name = service.curatedDisplayName(MarketType.CRYPTO, "BITCOIN");
+
+        assertThat(name).isEqualTo("Bitcoin");
+    }
+
+    @Test
+    void curatedDisplayName_returnsNull_whenNoCuratedNameSet() {
+        when(codeCache.getDisplayNames(TrackedAssetType.CRYPTO)).thenReturn(Map.of());
+
+        String name = service.curatedDisplayName(MarketType.CRYPTO, "bitcoin");
+
+        assertThat(name).isNull();
+    }
+
+    @Test
+    void curatedDisplayName_returnsNull_whenCodeBlank() {
+        String name = service.curatedDisplayName(MarketType.CRYPTO, "  ");
+
+        assertThat(name).isNull();
+        verify(codeCache, never()).getDisplayNames(any());
     }
 
     @Test

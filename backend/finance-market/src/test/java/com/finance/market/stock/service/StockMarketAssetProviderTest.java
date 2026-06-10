@@ -67,6 +67,44 @@ class StockMarketAssetProviderTest {
         assertThat(result).isSameAs(expected);
     }
 
+    @Test
+    void getByCodeIfEnabled_returnsResponse_whenCodeEnabled() {
+        Stock stock = Stock.builder().build();
+        MarketAssetResponse expected = response("AKBNK");
+        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.STOCK)).thenReturn(List.of("AKBNK"));
+        when(cacheService.getSnapshot("AKBNK")).thenReturn(stock);
+        when(mapper.toMarketAssetResponses(List.of(stock))).thenReturn(List.of(expected));
+
+        MarketAssetResponse result = provider.getByCodeIfEnabled("AKBNK");
+
+        assertThat(result).isSameAs(expected);
+    }
+
+    @Test
+    void getByCodeIfEnabled_returnsNull_whenCodeDisabled() {
+        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.STOCK)).thenReturn(List.of("THYAO"));
+
+        assertThat(provider.getByCodeIfEnabled("AKBNK")).isNull();
+    }
+
+    @Test
+    void getByCodeIfEnabled_normalizesCode_beforeEnabledCheck() {
+        Stock stock = Stock.builder().build();
+        MarketAssetResponse expected = response("AKBNK");
+        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.STOCK)).thenReturn(List.of("AKBNK"));
+        when(cacheService.getSnapshot("AKBNK")).thenReturn(stock);
+        when(mapper.toMarketAssetResponses(List.of(stock))).thenReturn(List.of(expected));
+
+        MarketAssetResponse result = provider.getByCodeIfEnabled("akbnk");
+
+        assertThat(result).isSameAs(expected);
+    }
+
+    @Test
+    void getByCodeIfEnabled_returnsNull_whenCodeBlank() {
+        assertThat(provider.getByCodeIfEnabled("  ")).isNull();
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void search_appliesSegmentFilter_whenSegmentProvided() {

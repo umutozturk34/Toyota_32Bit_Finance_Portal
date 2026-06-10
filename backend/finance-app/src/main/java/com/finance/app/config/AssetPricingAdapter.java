@@ -2,6 +2,7 @@ package com.finance.app.config;
 
 import com.finance.common.model.MarketType;
 import com.finance.shared.service.AssetPricingPort;
+import com.finance.market.core.service.TrackedAssetQueryService;
 import com.finance.market.core.service.assetpricing.AssetPricingStrategy;
 import com.finance.shared.util.EnumDispatcher;
 import lombok.extern.log4j.Log4j2;
@@ -14,8 +15,10 @@ import java.util.function.Function;
 
 /**
  * Wires the cross-module {@link AssetPricingPort} to per-{@link MarketType} pricing strategies, dispatching
- * spot/exit price, metadata and bundle lookups by type. Unknown types and downstream failures degrade to a
- * null/empty fallback (logged) rather than propagating, so portfolio valuation stays resilient.
+ * spot/exit price, metadata and bundle lookups by type. Asset metadata is overlaid with the admin-curated
+ * tracked-asset display name when one is set (so portfolio and other consumers show the curated name rather
+ * than the raw provider name). Unknown types and downstream failures degrade to a null/empty fallback
+ * (logged) rather than propagating, so portfolio valuation stays resilient.
  */
 @Log4j2
 @Component
@@ -24,9 +27,12 @@ public class AssetPricingAdapter implements AssetPricingPort {
     private static final AssetMeta EMPTY_META = new AssetMeta(null, null);
 
     private final Map<MarketType, AssetPricingStrategy> strategies;
+    private final TrackedAssetQueryService trackedAssetQueryService;
 
-    public AssetPricingAdapter(List<AssetPricingStrategy> strategyList) {
+    public AssetPricingAdapter(List<AssetPricingStrategy> strategyList,
+                               TrackedAssetQueryService trackedAssetQueryService) {
         this.strategies = EnumDispatcher.from(MarketType.class, strategyList, AssetPricingStrategy::marketType);
+        this.trackedAssetQueryService = trackedAssetQueryService;
     }
 
     @Override
@@ -41,13 +47,15 @@ public class AssetPricingAdapter implements AssetPricingPort {
 
     @Override
     public AssetMeta getAssetMeta(MarketType type, String assetCode) {
-        return dispatch(type, assetCode, "metadata", EMPTY_META, strategy -> strategy.getAssetMeta(assetCode));
+        AssetMeta meta = dispatch(type, assetCode, "metadata", EMPTY_META, strategy -> strategy.getAssetMeta(assetCode));
+        return withCuratedName(type, assetCode, meta);
     }
 
     @Override
     public PriceBundle getBundle(MarketType type, String assetCode) {
-        return dispatch(type, assetCode, "bundle", new PriceBundle(null, EMPTY_META),
+        PriceBundle bundle = dispatch(type, assetCode, "bundle", new PriceBundle(null, EMPTY_META),
                 strategy -> strategy.getBundle(assetCode));
+        return new PriceBundle(bundle.price(), withCuratedName(type, assetCode, bundle.meta()));
     }
 
     @Override
@@ -58,11 +66,24 @@ public class AssetPricingAdapter implements AssetPricingPort {
             return new PriceBundle(null, EMPTY_META);
         }
         try {
-            return new PriceBundle(strategy.getExitPriceTry(assetCode), strategy.getAssetMeta(assetCode));
+            return new PriceBundle(strategy.getExitPriceTry(assetCode),
+                    withCuratedName(type, assetCode, strategy.getAssetMeta(assetCode)));
         } catch (Exception e) {
             log.warn("Failed to get exitBundle for {}:{} - {}", type, assetCode, e.getMessage());
             return new PriceBundle(null, EMPTY_META);
         }
+    }
+
+    /**
+     * Overlays the admin-curated tracked-asset display name onto a strategy-derived meta when one is set,
+     * mirroring the override the market list/detail responses already apply — so portfolio rows and every
+     * other {@link AssetMeta} consumer show the curated name rather than the raw provider name. Untracked
+     * types or assets with no curated name keep the provider name.
+     */
+    private AssetMeta withCuratedName(MarketType type, String assetCode, AssetMeta meta) {
+        AssetMeta base = meta != null ? meta : EMPTY_META;
+        String curated = trackedAssetQueryService.curatedDisplayName(type, assetCode);
+        return (curated != null && !curated.isBlank()) ? new AssetMeta(curated, base.image()) : base;
     }
 
     private <T> T dispatch(MarketType type, String assetCode, String label, T fallback,

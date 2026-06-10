@@ -42,7 +42,7 @@ function SortableChip({ id, code, type, onRemove }) {
         <GripVertical className="h-3 w-3 opacity-60" />
       </button>
       <span>{code.replace('.IS', '')}</span>
-      <span className="text-[8px] text-accent/80 ml-0.5 normal-case tracking-wider">{type}</span>
+      <span className="text-[8px] text-accent/80 ml-0.5 normal-case tracking-wider">{t(`assets.labels.${type}`, { defaultValue: type })}</span>
       <button
         type="button"
         onClick={onRemove}

@@ -83,6 +83,19 @@ public enum TrackedAssetType {
         return marketType;
     }
 
+    /** The tracked-asset type backing a {@link MarketType}, or {@code null} for market types that are not curated here. */
+    public static TrackedAssetType fromMarketType(MarketType marketType) {
+        if (marketType == null) {
+            return null;
+        }
+        for (TrackedAssetType type : values()) {
+            if (type.marketType == marketType) {
+                return type;
+            }
+        }
+        return null;
+    }
+
     /**
      * Canonicalizes a raw asset code for this type, throwing
      * {@link com.finance.common.exception.BadRequestException} when blank.

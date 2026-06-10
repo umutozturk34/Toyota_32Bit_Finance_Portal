@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/** Admin-only API to list, upsert, reorder and delete tracked-asset registry entries. */
+/** Admin-only API to list, upsert, reorder, enable/disable and delete tracked-asset registry entries. */
 @RestController
 @RequestMapping("/api/v1/admin/tracked-assets")
 @RequiredArgsConstructor
@@ -66,6 +66,16 @@ public class AdminTrackedAssetController {
     ) {
         trackedAssetAdminService.updateSortOrders(request);
         return ApiResponse.success(translator.translate("api.trackedAsset.orderUpdated"), null);
+    }
+
+    @PatchMapping("/{type}/{code}/enabled")
+    public ApiResponse<Void> setEnabled(
+            @PathVariable TrackedAssetType type,
+            @PathVariable String code,
+            @RequestParam boolean enabled
+    ) {
+        trackedAssetAdminService.setEnabled(type, code, enabled);
+        return ApiResponse.success(translator.translate("api.trackedAsset.statusUpdated"), null);
     }
 
     @DeleteMapping("/{type}/{code}")

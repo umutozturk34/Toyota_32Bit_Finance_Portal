@@ -38,6 +38,12 @@ class TrackedAssetCodeCacheTest {
         return a;
     }
 
+    private TrackedAsset named(String code, String displayName) {
+        TrackedAsset a = asset(code);
+        a.setDisplayName(displayName);
+        return a;
+    }
+
     @Test
     void should_loadCodesFromRepository_when_getCalledFirstTime() {
         // Arrange
@@ -133,6 +139,52 @@ class TrackedAssetCodeCacheTest {
 
         // Assert
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void should_loadDisplayNames_filteringBlankAndNull_when_getDisplayNamesCalled() {
+        // Arrange
+        when(repository.findByAssetTypeOrderBySortOrderAscAssetCodeAsc(TrackedAssetType.CRYPTO))
+                .thenReturn(List.of(named("bitcoin", "Bitcoin"), named("ethereum", "  "), named("ripple", null)));
+
+        // Act
+        var result = cache.getDisplayNames(TrackedAssetType.CRYPTO);
+
+        // Assert
+        assertThat(result).containsOnlyKeys("bitcoin");
+        assertThat(result).containsEntry("bitcoin", "Bitcoin");
+    }
+
+    @Test
+    void should_useCachedDisplayNames_when_getDisplayNamesCalledTwice() {
+        // Arrange
+        when(repository.findByAssetTypeOrderBySortOrderAscAssetCodeAsc(TrackedAssetType.CRYPTO))
+                .thenReturn(List.of(named("bitcoin", "Bitcoin")));
+
+        // Act
+        cache.getDisplayNames(TrackedAssetType.CRYPTO);
+        var second = cache.getDisplayNames(TrackedAssetType.CRYPTO);
+
+        // Assert
+        assertThat(second).containsEntry("bitcoin", "Bitcoin");
+        verify(repository, times(1))
+                .findByAssetTypeOrderBySortOrderAscAssetCodeAsc(TrackedAssetType.CRYPTO);
+    }
+
+    @Test
+    void should_reloadDisplayNames_when_invalidatedThenFetched() {
+        // Arrange
+        when(repository.findByAssetTypeOrderBySortOrderAscAssetCodeAsc(TrackedAssetType.CRYPTO))
+                .thenReturn(List.of(named("bitcoin", "Bitcoin")));
+
+        // Act
+        cache.getDisplayNames(TrackedAssetType.CRYPTO);
+        cache.invalidate(TrackedAssetType.CRYPTO);
+        cache.getDisplayNames(TrackedAssetType.CRYPTO);
+
+        // Assert
+        verify(repository, times(2))
+                .findByAssetTypeOrderBySortOrderAscAssetCodeAsc(TrackedAssetType.CRYPTO);
     }
 
     @Test

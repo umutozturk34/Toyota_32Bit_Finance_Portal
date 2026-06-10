@@ -27,6 +27,26 @@ class TrackedAssetTypeTest {
 
     @ParameterizedTest
     @CsvSource({
+            "CRYPTO,    CRYPTO",
+            "STOCK,     STOCK",
+            "FUND,      FUND",
+            "COMMODITY, COMMODITY",
+            "FOREX,     FOREX",
+            "VIOP,      VIOP"
+    })
+    void fromMarketTypeResolvesEachTrackedMarketType(MarketType market, TrackedAssetType expected) {
+        assertThat(TrackedAssetType.fromMarketType(market)).isEqualTo(expected);
+    }
+
+    @Test
+    void fromMarketTypeReturnsNull_whenMarketTypeUntrackedOrNull() {
+        assertThat(TrackedAssetType.fromMarketType(MarketType.BOND)).isNull();
+        assertThat(TrackedAssetType.fromMarketType(MarketType.MACRO_INFLATION)).isNull();
+        assertThat(TrackedAssetType.fromMarketType(null)).isNull();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
             "CRYPTO,    bitcoin,          bitcoin",
             "CRYPTO,    BITCOIN,          bitcoin",
             "CRYPTO,    '  ETH  ',        eth",

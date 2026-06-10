@@ -72,8 +72,11 @@ const cleanupChart = (chartRef) => {
 };
 
 const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, rsiIndicator, hasMACD, macdIndicator, showVolume, data, showInvestorCount, showPortfolioSize, isFullscreen = false }) => {
-    const indicatorHeight = isFullscreen ? 110 : 150;
-    const histogramHeight = isFullscreen ? 95 : 120;
+    // Shorter sub-panes on small/short phones so an open RSI+MACD+volume stack doesn't crush the main chart
+    // (a ~667px-tall phone can't spare 3×150px). Desktop heights unchanged.
+    const compact = typeof window !== 'undefined' && window.innerHeight < 720;
+    const indicatorHeight = isFullscreen ? 110 : (compact ? 96 : 150);
+    const histogramHeight = isFullscreen ? 95 : (compact ? 74 : 120);
     const rsiChartRef = useRef(null);
     const rsiContainerRef = useRef(null);
     const rsiSeriesRef = useRef(null);

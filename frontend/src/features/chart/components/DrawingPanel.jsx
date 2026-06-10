@@ -78,7 +78,7 @@ const DrawingPanel = ({
                             </button>
                             {d.type !== 'ICON' && d.type !== 'TEXT' && (
                                 <label
-                                    className="relative inline-flex h-5 w-5 shrink-0 items-center justify-center cursor-pointer"
+                                    className="relative inline-flex h-5 w-5 shrink-0 items-center justify-center cursor-pointer overflow-hidden"
                                     title={t('chart.toolRail.color')}
                                 >
                                     <span className="h-3.5 w-3.5 rounded-full border border-border-strong" style={{ background: d.color || tool?.color }} />
@@ -86,17 +86,17 @@ const DrawingPanel = ({
                                         type="color"
                                         value={d.color || tool?.color || '#5E6AD2'}
                                         onChange={(e) => updateDrawing?.(d.id, { color: e.target.value })}
-                                        className="absolute inset-0 cursor-pointer opacity-0"
+                                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                                     />
                                 </label>
                             )}
                             <button
                                 type="button"
-                                onClick={() => removeDrawing(d.id)}
+                                onClick={() => removeDrawing?.(d.id)}
                                 title={t('chart.drawingPanel.clearAll')}
-                                className="opacity-0 group-hover:opacity-100 p-0.5 border-none bg-transparent cursor-pointer text-fg-muted hover:text-danger transition-all shrink-0"
+                                className="p-1 border-none bg-transparent cursor-pointer text-fg-muted hover:text-danger transition-colors shrink-0"
                             >
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-3.5 h-3.5" />
                             </button>
                         </div>
                     );
@@ -122,9 +122,9 @@ const DrawingPanel = ({
                                 type="button"
                                 onClick={() => removeFibTool?.(f.id)}
                                 title={t('chart.drawingPanel.clearAll')}
-                                className="opacity-0 group-hover:opacity-100 p-0.5 border-none bg-transparent cursor-pointer text-fg-muted hover:text-danger transition-all shrink-0"
+                                className="p-1 border-none bg-transparent cursor-pointer text-fg-muted hover:text-danger transition-colors shrink-0"
                             >
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-3.5 h-3.5" />
                             </button>
                         </div>
                     );

@@ -296,7 +296,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                     isFullscreen={isFullscreen}
                     onToggleFullscreen={toggleFullscreen}
                 />
-                <div className="flex items-center gap-1 flex-wrap sm:flex-nowrap px-2 sm:px-3 py-1.5 border-b border-border-default bg-surface/40 sm:overflow-x-auto scrollbar-thin">
+                <div className="flex items-center gap-1 flex-nowrap overflow-x-auto px-2 sm:px-3 py-1.5 border-b border-border-default bg-surface/40 scrollbar-thin">
                     <Calendar className="w-3 h-3 mr-1 text-fg-subtle shrink-0" />
                     {TIME_RANGES.map(({ id, labelKey }) => {
                         const isActive = timeRange === id;
@@ -313,7 +313,13 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                 </div>
                 {/* overflow-hidden: clip the chart canvas to its box so a stale fullscreen-height canvas can't
                     inflate the container (or spill over the page) before the resize settles it back down. */}
-                <div className={`relative flex-1 overflow-hidden ${isFullscreen ? 'min-h-0' : 'min-h-[40dvh] sm:min-h-[330px] lg:min-h-[350px] xl:min-h-[440px]'}`}>
+                <div className={`relative flex-1 overflow-hidden ${isFullscreen
+                    ? 'min-h-0'
+                    : (hasRSI || hasMACD || (showVolumeToggle && showVolume) || (isFund && (showInvestorCount || showPortfolioSize))
+                        // Sub-charts (RSI/MACD/volume…) take some of the MAIN chart's height instead of only stacking
+                        // below it, so opening them doesn't push the page far down — the user barely has to scroll.
+                        ? 'min-h-[30dvh] sm:min-h-[250px] lg:min-h-[265px] xl:min-h-[300px]'
+                        : 'min-h-[40dvh] sm:min-h-[330px] lg:min-h-[350px] xl:min-h-[440px]')}`}>
                     {/* Absolutely positioned, NOT in-flow w-full/h-full. Lightweight-charts sizes this div's
                         canvas via applyOptions(height); handleResize then reads it back from clientHeight. If
                         the div were in-flow with h-full inside this content-sized (min-h, not fixed-height)
@@ -349,8 +355,8 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                         style={{ zIndex: 11 }}
                     />
                     {legendVals && (
-                        <div className="absolute left-2 top-2 z-[12] pointer-events-none max-w-[calc(100%-1rem)] rounded-md border border-border-default bg-bg-base/85 backdrop-blur-sm px-2.5 py-1.5 shadow-lg">
-                            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 font-mono text-[10px] leading-tight">
+                        <div className="absolute left-1 top-1 sm:left-2 sm:top-2 z-[12] pointer-events-none max-w-[calc(100%-0.5rem)] sm:max-w-[calc(100%-1rem)] rounded-md border border-border-default bg-bg-base/85 backdrop-blur-sm px-1.5 sm:px-2.5 py-1 sm:py-1.5 shadow-lg">
+                            <div className="flex flex-wrap items-center gap-x-1.5 sm:gap-x-2.5 gap-y-0 sm:gap-y-0.5 font-mono text-[9px] sm:text-[10px] leading-tight">
                                 {legendDate && <span className="text-fg-subtle">{legendDate}</span>}
                                 {allowCandle && chartType === 'candle' ? (
                                     <>
@@ -385,10 +391,12 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                                     <span key={ind.id} style={{ color: ind.color }}>{ind.type}{ind.period} {fmtHover(legendVals.overlays[ind.id])}</span>
                                 ))}
                                 {hasRSI && subValues?.rsi != null && (
-                                    <span className="text-fg-muted">RSI <span className="text-fg">{Number(subValues.rsi).toFixed(2)}</span></span>
+                                    <span style={{ color: rsiIndicator?.color || '#e91e63' }}>RSI {Number(subValues.rsi).toFixed(2)}</span>
                                 )}
                                 {hasMACD && subValues?.macd != null && (
-                                    <span className="text-fg-muted">MACD <span className="text-fg">{Number(subValues.macd).toFixed(2)}</span>{subValues.signal != null && <> · <span className="text-fg">{Number(subValues.signal).toFixed(2)}</span></>}</span>
+                                    // Colour each MACD value with its own line colour (MACD line vs signal) so the
+                                    // readout matches the sub-chart — signal '#f59e0b' mirrors useSubCharts.
+                                    <span className="text-fg-subtle">MACD <span style={{ color: macdIndicator?.color || '#06b6d4' }}>{Number(subValues.macd).toFixed(2)}</span>{subValues.signal != null && <> · <span style={{ color: '#f59e0b' }}>{Number(subValues.signal).toFixed(2)}</span></>}</span>
                                 )}
                             </div>
                         </div>
@@ -425,7 +433,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
 
             </div>
             {lensOpen && (data?.candles?.length > 0 || sidebar) && (
-                <div className={`w-full border-t border-border-default overscroll-contain xl:w-[340px] xl:shrink-0 xl:border-t-0 xl:border-l xl:overflow-y-auto scrollbar-thin ${isFullscreen ? '' : 'xl:absolute xl:inset-y-0 xl:right-0'}`}>
+                <div className={`w-full border-t border-border-default overscroll-contain max-h-[60dvh] overflow-y-auto scrollbar-thin xl:max-h-none xl:w-[340px] xl:shrink-0 xl:border-t-0 xl:border-l xl:overflow-y-auto ${isFullscreen ? '' : 'xl:absolute xl:inset-y-0 xl:right-0'}`}>
                     {data?.candles?.length > 0 && (
                         <DataWindowPanel candles={data.candles} hover={crosshairData} assetType={assetType} variant="analytics" />
                     )}

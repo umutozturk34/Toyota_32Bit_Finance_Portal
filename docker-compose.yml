@@ -398,6 +398,8 @@ services:
     environment:
       - OPENSEARCH_USERNAME=${OPENSEARCH_USERNAME}
       - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
+    expose:
+      - "21891"
     depends_on:
       kafka:
         condition: service_healthy
@@ -410,9 +412,9 @@ services:
 
 # --- OpenTelemetry Collector ---
   otel-collector:
-    # PINNED (was :latest — the floating tag is the root cause; it silently drifted to 0.152.0 whose ES
-    # exporter emits dynamic_templates OpenSearch 2.19.1 rejects with 400). Pin to a pre-break version that
-    # still speaks OpenSearch's bulk dialect, so metrics flow again with the unchanged ecs config.
+    # PINNED (was :latest — the floating tag silently drifted to a build whose exporter broke ingestion).
+    # Metrics now go via Data Prepper (otlp/dataprepper exporter), so the old ES-exporter + nginx proxy path
+    # is gone; traces still use the opensearch exporter, so keep the pin until traces are verified newer.
     image: otel/opentelemetry-collector-contrib:0.145.0
     container_name: otel-collector
     volumes:
@@ -423,6 +425,7 @@ services:
       - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
     expose:
       - "4317"
+      - "4318"
     networks:
       - finance-network
     depends_on:
@@ -430,6 +433,8 @@ services:
         condition: service_started
       opensearch-init:
         condition: service_completed_successfully
+      data-prepper:
+        condition: service_started
 
   # --- OpenSearch Init (ISM + Dashboards) ---
   opensearch-init:
@@ -463,18 +468,6 @@ services:
       - opensearch_data:/usr/share/opensearch/data
     networks:
       - finance-network
-
-  # nginx proxy adding X-Elastic-Product header for go-elasticsearch v8 client
-  opensearch-proxy:
-    image: nginx:alpine
-    container_name: opensearch-proxy
-    restart: unless-stopped
-    volumes:
-      - ./opensearch-proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    networks:
-      - finance-network
-    depends_on:
-      - opensearch
 
   # --- OpenSearch Dashboards (Görsel Panel) ---
   opensearch-dashboards:

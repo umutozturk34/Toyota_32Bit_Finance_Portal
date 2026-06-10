@@ -26,6 +26,8 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
     const volumeDataRef = useRef([]);
     const overlayMetaRef = useRef(new Map());
     const hoveredOverlayRef = useRef(null);
+    // A clicked day stays "pinned" (its data survives the cursor leaving) until clicked again or the chart rebuilds.
+    const pinnedRef = useRef(null);
     const trend = useMemo(() => {
         if (!data?.candles?.length) return null;
         const candleData = data.candles.map(c => ({
@@ -48,6 +50,10 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         indicatorSeriesRef.current = {};
         overlayMetaRef.current.clear();
         hoveredOverlayRef.current = null;
+        pinnedRef.current = null;
+        // Clear stale hover when the chart rebuilds (asset/range/currency change); this also nulls the host
+        // page's lifted hover via onHover, so the analysis card and legend never show the prior dataset's day.
+        setCrosshairData(null);
         const chart = createChart(chartContainerRef.current, {
             ...getChartOptions(isDark),
             // autoSize is forced OFF here (getChartOptions sets it true): with autoSize, lightweight-charts
@@ -192,19 +198,12 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             window.scrollTo(0, scrollY);
             try { chart.timeScale().fitContent(); } catch { void 0; }
         });
-        const handleCrosshairMove = (param) => {
-            if (renderDrawingsRef.current) renderDrawingsRef.current();
-            if (!param || !param.time) {
-                setCrosshairData(null);
-                if (hoveredOverlayRef.current) {
-                    for (const [s, m] of overlayMetaRef.current) {
-                        try { s.applyOptions({ color: m.color, lineWidth: 2 }); } catch { void 0; }
-                    }
-                    hoveredOverlayRef.current = null;
-                }
-                return;
-            }
-            const cd = candleDataRef.current.find(c => chartTimeEqual(c.time, param.time));
+        // Builds the readout for a crosshair param (hover OR click); returns null off-data.
+        const buildCrosshairData = (param) => {
+            if (!param || !param.time) return null;
+            const cdIndex = candleDataRef.current.findIndex(c => chartTimeEqual(c.time, param.time));
+            const cd = cdIndex >= 0 ? candleDataRef.current[cdIndex] : null;
+            if (!cd) return null;
             const compareInfo = compareDataAtKeyRef.current;
             const compares = [];
             if (compareInfo.symbols.length > 0) {
@@ -215,23 +214,49 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                     if (pt) compares.push({ symbol, value: pt.value, color });
                 }
             }
-            // Each overlay's value at the hovered point, keyed by indicator id, so the toolbar legend shows
-            // SMA/EMA at the crosshair instead of only the latest point.
             const overlayVals = {};
             for (const [series, meta] of overlayMetaRef.current) {
                 const sd = param.seriesData?.get(series);
                 const v = sd?.value ?? sd?.close;
                 if (v != null && meta.id) overlayVals[meta.id] = v;
             }
-            if (cd) setCrosshairData({
+            const prevClose = cdIndex > 0 ? candleDataRef.current[cdIndex - 1].close : null;
+            const changeValue = (cd.close != null && prevClose != null) ? Number(cd.close) - Number(prevClose) : null;
+            const changePercent = (changeValue != null && Number(prevClose) !== 0) ? (changeValue / Number(prevClose)) * 100 : null;
+            return {
                 open: cd.open, high: cd.high, low: cd.low, close: cd.close,
                 sellingPrice: cd.sellingPrice, buyingPrice: cd.buyingPrice,
                 effectiveBuyingPrice: cd.effectiveBuyingPrice, effectiveSellingPrice: cd.effectiveSellingPrice,
                 bulletinPrice: cd.bulletinPrice,
                 time: cd.time,
+                index: cdIndex,
+                changeValue, changePercent,
                 compares: compares.length > 0 ? compares : undefined,
                 overlays: Object.keys(overlayVals).length > 0 ? overlayVals : undefined,
-            });
+            };
+        };
+        // Click pins a day: its readout survives the cursor leaving instead of snapping back to the latest.
+        // Clicking the same day again unpins. Hovering still shows the live day; leaving restores the pin.
+        const handleChartClick = (param) => {
+            const built = buildCrosshairData(param);
+            if (!built) return;
+            pinnedRef.current = (pinnedRef.current && pinnedRef.current.index === built.index) ? null : built;
+            setCrosshairData(pinnedRef.current || built);
+        };
+        const handleCrosshairMove = (param) => {
+            if (renderDrawingsRef.current) renderDrawingsRef.current();
+            if (!param || !param.time) {
+                setCrosshairData(pinnedRef.current);
+                if (hoveredOverlayRef.current) {
+                    for (const [s, m] of overlayMetaRef.current) {
+                        try { s.applyOptions({ color: m.color, lineWidth: 2 }); } catch { void 0; }
+                    }
+                    hoveredOverlayRef.current = null;
+                }
+                return;
+            }
+            const built = buildCrosshairData(param);
+            if (built) setCrosshairData(built);
             const overlays = overlayMetaRef.current;
             if (overlays.size > 0 && param.point) {
                 const mouseY = param.point.y;
@@ -267,6 +292,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         chart.timeScale().subscribeVisibleTimeRangeChange(handleUpdate);
         chart.timeScale().subscribeVisibleLogicalRangeChange(handleUpdate);
         chart.subscribeCrosshairMove(handleCrosshairMove);
+        chart.subscribeClick(handleChartClick);
         const handleResize = () => {
             if (chartContainerRef.current && chart) {
                 chart.applyOptions({
@@ -294,6 +320,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 chart.timeScale().unsubscribeVisibleTimeRangeChange(handleUpdate);
                 chart.timeScale().unsubscribeVisibleLogicalRangeChange(handleUpdate);
                 chart.unsubscribeCrosshairMove(handleCrosshairMove);
+                chart.unsubscribeClick(handleChartClick);
             } catch { void 0; }
             if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
         };

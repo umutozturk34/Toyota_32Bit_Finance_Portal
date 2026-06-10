@@ -87,6 +87,12 @@ export default function useDrawings(assetType, assetCode, range, persistEnabled 
     setDrawings((prev) => prev.filter((d) => d.id !== id));
   }, []);
 
+  // Post-hoc edit of one drawing (e.g. recolour from the objects list). Persistence follows via the same
+  // debounced full-array PUT as add/remove, since the backend stores the drawings array as one opaque blob.
+  const updateDrawing = useCallback((id, patch) => {
+    setDrawings((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
+  }, []);
+
   const undoDrawing = useCallback(() => {
     setDrawings((prev) => prev.slice(0, -1));
   }, []);
@@ -109,6 +115,7 @@ export default function useDrawings(assetType, assetCode, range, persistEnabled 
     activeTool,
     addDrawing,
     removeDrawing,
+    updateDrawing,
     undoDrawing,
     clearDrawings,
     selectTool,

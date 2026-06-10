@@ -18,17 +18,11 @@ const ChartSidebar = ({
     removeIndicator,
     updateIndicator,
     toggleIndicator,
-    activeTool,
-    handleSelectTool,
-    cancelTool,
     drawings,
     removeDrawing,
+    updateDrawing,
     undoDrawing,
     clearDrawings,
-    selectedIcon,
-    setSelectedIcon,
-    iconSize,
-    setIconSize,
     highlightDrawing,
     activeFibTool,
     handleSelectFibTool,
@@ -55,7 +49,7 @@ const ChartSidebar = ({
     // in fullscreen. At lg+ there is no max-h, so flex align-stretch grows it to the chart's full height
     // (normal AND fullscreen) dynamically.
     return (
-        <div className="w-full lg:w-60 shrink-0 border-b lg:border-b-0 lg:border-r border-border-default flex flex-col bg-surface/40 backdrop-blur-md relative z-20 min-h-[200px] max-lg:max-h-[55dvh] max-lg:landscape:max-h-[85dvh] sm:max-lg:max-h-[50dvh] sm:max-lg:landscape:max-h-[80dvh] lg:min-h-0">
+        <div className="w-full lg:w-56 shrink-0 border-b lg:border-b-0 lg:border-r border-border-default flex flex-col bg-surface/40 backdrop-blur-md relative z-20 min-h-[180px] max-lg:max-h-[42dvh] max-lg:landscape:max-h-[85dvh] sm:max-lg:max-h-[40dvh] sm:max-lg:landscape:max-h-[80dvh] lg:min-h-0">
             <div className="pointer-events-none absolute inset-y-0 left-0 w-px bg-gradient-to-b from-indigo-400/40 via-fuchsia-400/20 to-transparent" />
             <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-400/20 to-transparent" />
             <div className="flex border-b border-border-default">
@@ -76,7 +70,7 @@ const ChartSidebar = ({
                     );
                 })}
             </div>
-            <div className="flex-1 overflow-y-auto p-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border-default [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-border-hover" style={{ scrollbarWidth: 'thin' }}>
+            <div className="flex-1 overflow-y-auto overscroll-contain p-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border-default [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-border-hover" style={{ scrollbarWidth: 'thin' }}>
                 {activeTab === 'indicators' && (
                     <IndicatorPanel
                         indicators={indicators}
@@ -89,18 +83,16 @@ const ChartSidebar = ({
                 )}
                 {activeTab === 'drawings' && (
                     <DrawingPanel
-                        activeTool={activeTool}
-                        selectTool={handleSelectTool}
-                        cancelTool={cancelTool}
                         drawings={drawings}
                         removeDrawing={removeDrawing}
+                        updateDrawing={updateDrawing}
                         undoDrawing={undoDrawing}
                         clearDrawings={clearDrawings}
-                        selectedIcon={selectedIcon}
-                        setSelectedIcon={setSelectedIcon}
-                        iconSize={iconSize}
-                        setIconSize={setIconSize}
                         onHighlight={highlightDrawing}
+                        fibTools={fibTools}
+                        removeFibTool={removeFibTool}
+                        clearFibTools={clearFibTools}
+                        onHighlightFib={highlightFib}
                     />
                 )}
                 {activeTab === 'fibonacci' && (

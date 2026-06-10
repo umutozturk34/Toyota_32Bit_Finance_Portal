@@ -99,7 +99,7 @@ export default function AssetDetailPage({
   dataTour,
 }) {
   const { t } = useTranslation();
-  const { convertAt } = useRateHistory();
+  const { convertAt, resolveTarget } = useRateHistory();
   const goBack = useNavigationBack(backRoute);
   const navigate = useNavigate();
   const resolvedLoading = loadingMessage ?? t('marketDetail.loading');
@@ -129,10 +129,16 @@ export default function AssetDetailPage({
   const transform = TRANSFORM_MAP[assetType] || transformCandles;
   const naturalCurrency = naturalCurrencyFor(assetType, asset, assetCode);
   const baseCurrency = naturalCurrency;
-  const chartData = useMemo(
-    () => convertCandleSet(transform(filteredHistoryRaw), convertAt, baseCurrency, naturalCurrency),
-    [filteredHistoryRaw, transform, convertAt, baseCurrency, naturalCurrency],
-  );
+  const transformedData = useMemo(() => transform(filteredHistoryRaw), [transform, filteredHistoryRaw]);
+  const convertTarget = useMemo(() => resolveTarget(baseCurrency, naturalCurrency), [resolveTarget, baseCurrency, naturalCurrency]);
+  const chartData = useMemo(() => {
+    // No-op currency case (display === natural, e.g. TRY for BIST/forex): skip the per-candle FX map entirely. It
+    // would only spread thousands of identical candles, and — crucially — returning the SAME array reference means
+    // the chart is NOT re-rendered/re-setData a second time when the FX rate history loads afterwards. Real
+    // (cross-currency) conversions still run as before.
+    if (!convertTarget || convertTarget === baseCurrency) return transformedData;
+    return convertCandleSet(transformedData, convertAt, baseCurrency, naturalCurrency);
+  }, [transformedData, convertTarget, baseCurrency, naturalCurrency, convertAt]);
 
   if (isLoading) return <LoadingState message={resolvedLoading} />;
   if (error || !asset) {
@@ -213,38 +219,25 @@ export default function AssetDetailPage({
         </div>
       </motion.div>
 
-      {renderMetadata(asset)}
+      {renderMetadata && renderMetadata(asset)}
 
-      {renderSidebar ? (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div data-tour="detail-chart" className="min-w-0">
-            <LightweightChart
-              data={chartData}
-              symbol={assetCode}
-              assetType={chartAssetType || assetType}
-              timeRange={effectiveRange}
-              onTimeRangeChange={setTimeRange}
-              showSecondaryLines={showSecondaryLines}
-              onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
-            />
-          </div>
-          <aside className="lg:sticky lg:top-4 lg:self-start space-y-3">
-            {renderSidebar(asset)}
-          </aside>
-        </div>
-      ) : (
-        <div data-tour="detail-chart">
-          <LightweightChart
-            data={chartData}
-            symbol={assetCode}
-            assetType={chartAssetType || assetType}
-            timeRange={effectiveRange}
-            onTimeRangeChange={setTimeRange}
-            showSecondaryLines={showSecondaryLines}
-            onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
-          />
-        </div>
+      {/* Asset-specific extra (e.g. the fund's "Fon Detayını Görüntüle" card) sits ABOVE the chart so it's always
+          visible — it used to be passed into the chart's Lens, which is collapsed by default and hid it. */}
+      {renderSidebar && (
+        <div data-tour="detail-sidebar">{renderSidebar(asset)}</div>
       )}
+
+      <div data-tour="detail-chart">
+        <LightweightChart
+          data={chartData}
+          symbol={assetCode}
+          assetType={chartAssetType || assetType}
+          timeRange={effectiveRange}
+          onTimeRangeChange={setTimeRange}
+          showSecondaryLines={showSecondaryLines}
+          onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
+        />
+      </div>
 
       {buyOpen && buyProps && (
         <BuyModalComponent

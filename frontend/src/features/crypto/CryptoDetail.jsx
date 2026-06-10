@@ -1,9 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
 import { cryptoService } from './services/cryptoService';
-import { getChangeClass, changeColors, formatCompactNumber, formatPercentAbs, formatPriceUSD, formatPriceTRY } from '../../shared/utils/formatters';
-import { useMoney } from '../../shared/hooks/useMoney';
+import { formatCompactNumber } from '../../shared/utils/formatters';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
 
@@ -26,37 +24,13 @@ function CryptoHeader({ asset }) {
   );
 }
 
+// Price/change/volume now live in the chart Data Window; this strip keeps only the market-level figures the
+// Data Window does not carry (market cap + 24h traded volume).
 function CryptoMetadata({ asset }) {
   const { t } = useTranslation();
-  const { format: money, currency: displayCurrency } = useMoney();
   const meta = asset.metadata || {};
-  const cls = getChangeClass(asset.changePercent);
-  const usd = meta.currentPriceUsd;
-  // Crypto is globally USD-priced: the TRY price stays a FIXED local reference, while the USD price is
-  // shown in the user's selected display currency (USD->display via TRY; there is no direct USD<->EUR rate).
-  const convertTarget = displayCurrency === 'ORIGINAL' || !displayCurrency ? 'USD' : displayCurrency;
-  const convertLabel = convertTarget === 'USD'
-    ? t('marketDetail.crypto.priceUsd')
-    : t('marketDetail.commodity.price', { currency: convertTarget, defaultValue: `Price (${convertTarget})` });
-  // Suppressed in TRY display — it would just duplicate the fixed TRY price tile.
-  const convertedTile = convertTarget !== 'TRY' && usd != null
-    ? { label: convertLabel, value: money(usd, 'USD') }
-    : null;
   return (
     <MetadataTiles tiles={[
-      convertedTile,
-      { label: t('marketDetail.crypto.priceTry'), value: formatPriceTRY(asset.price) },
-      {
-        label: t('marketDetail.crypto.change24h'),
-        color: changeColors[cls],
-        value: (
-          <span className="flex items-center gap-0.5">
-            {asset.changePercent > 0 ? <ArrowUpRight className="h-3 w-3" /> : asset.changePercent < 0 ? <ArrowDownRight className="h-3 w-3" /> : null}
-            {formatPercentAbs(asset.changePercent)}
-          </span>
-        ),
-      },
-      { label: t('marketDetail.crypto.changeAmountUsd'), value: formatPriceUSD(asset.changeAmount), color: changeColors[cls] },
       { label: t('market.crypto.marketCapLabel'), value: formatCompactNumber(meta.marketCap, 'USD') },
       { label: t('marketDetail.crypto.volume24h'), value: formatCompactNumber(meta.totalVolume) },
     ]} />

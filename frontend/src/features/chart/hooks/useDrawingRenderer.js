@@ -6,6 +6,7 @@ const useDrawingRenderer = ({
     canvasOverlayRef,
     chartRef, candleSeriesRef,
     isDark,
+    drawingColor = '#5E6AD2',
     drawings, fibTools,
     isDrawing, startPoint, currentPoint,
     activeTool, activeFibTool,
@@ -189,7 +190,7 @@ const useDrawingRenderer = ({
         });
 
         if (isDrawing && startPoint && currentPoint && activeTool && activeTool !== 'FREEHAND') {
-            ctx.strokeStyle = '#5E6AD2';
+            ctx.strokeStyle = drawingColor;
             ctx.lineWidth = 2;
             ctx.setLineDash([3, 3]);
             if (activeTool === 'TREND_LINE') {
@@ -237,7 +238,7 @@ const useDrawingRenderer = ({
             drawSnapIndicator(ctx, mgr.getSnap(), { width: rect.width, height: rect.height });
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- imperative canvas redraw; only stable refs/inline helpers omitted, every reactive drawing-state value is listed
-    }, [drawings, fibTools, isDrawing, startPoint, currentPoint, activeTool, activeFibTool, chartCoordsToPixel, pixelToChartCoords, isDark, highlight]);
+    }, [drawings, fibTools, isDrawing, startPoint, currentPoint, activeTool, activeFibTool, chartCoordsToPixel, pixelToChartCoords, isDark, drawingColor, highlight]);
 
     return { renderDrawings };
 };

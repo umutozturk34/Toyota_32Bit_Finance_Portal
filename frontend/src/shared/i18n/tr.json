@@ -108,9 +108,44 @@
     "home": "Ana Sayfa"
   },
   "chart": {
+    "dataWindow": {
+      "title": "Mercek",
+      "detailsToggle": "Lens detayları",
+      "collapse": "Daralt",
+      "close": "Kapanış",
+      "prevClose": "Önceki kapanış",
+      "sectionPerformance": "Performans",
+      "sectionRisk": "Risk & Oynaklık",
+      "sectionDetail": "Gün Detayı",
+      "periodReturn": "Dönem getirisi",
+      "drawdown": "Maks. düşüş",
+      "range": "Aralık",
+      "streak": "Seri",
+      "streakUnit": "gün",
+      "smaDistance": "SMA{{n}} farkı",
+      "volatility": "Oynaklık (σ)",
+      "atr": "Ort. bant (ATR)",
+      "risk": "Risk",
+      "riskLow": "Düşük",
+      "riskMedium": "Orta",
+      "riskHigh": "Yüksek",
+      "spread": "Makas",
+      "volume": "Hacim",
+      "avgShort": "Ort.",
+      "hovering": "Seçili gün — değerler o güne göre",
+      "idleHint": "Son gün gösteriliyor — grafikte gez"
+    },
+    "toolRail": {
+      "select": "Seç / imleç",
+      "color": "Renk",
+      "custom": "Özel",
+      "emoji": "Emoji",
+      "undo": "Geri al",
+      "clear": "Tümünü temizle"
+    },
     "tabs": {
       "indicators": "Göstergeler",
-      "drawings": "Çizim",
+      "drawings": "Çizimlerim",
       "fibonacci": "Fibonacci"
     },
     "legend": {
@@ -139,6 +174,7 @@
       "hide": "Gizle",
       "show": "Göster",
       "edit": "Düzenle",
+      "confirm": "Onayla",
       "remove": "Kaldır",
       "error": {
         "max": "En fazla {{max}} indikatör eklenebilir",
@@ -173,6 +209,7 @@
       },
       "selectIcon": "İkon Seç",
       "size": "Boyut",
+      "empty": "Henüz çizim yok — soldaki araçlarla çizmeye başla.",
       "drawingsCount": "Çizimler ({{count}})",
       "undo": "Geri Al",
       "clearAll": "Tümünü Temizle",
@@ -222,10 +259,10 @@
         "buy": "Alış",
         "effBuy": "Ef. Alış",
         "effSell": "Ef. Satış",
-        "open": "A",
-        "high": "Y",
-        "low": "D",
-        "close": "K"
+        "open": "Açılış",
+        "high": "Yüksek",
+        "low": "Düşük",
+        "close": "Kapanış"
       },
       "vs": "vs",
       "trend": {
@@ -1253,6 +1290,8 @@
       "riskLabel": "Risk",
       "marketShareLabel": "Pazar Payı",
       "kapLinkLabel": "KAP'ta aç",
+      "viewDetail": "Fon Detayını Görüntüle",
+      "detailTitle": "Fon Detayı",
       "allocationTitle": "Varlık Dağılımı",
       "allocationEmpty": "Dağılım verisi yok",
       "allocationOther": "Diğer",

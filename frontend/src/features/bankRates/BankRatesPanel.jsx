@@ -297,7 +297,7 @@ export default function BankRatesPanel() {
           </span>
         </div>
 
-        <div ref={stripRef} className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin pb-1 -mb-1">
+        <div ref={stripRef} className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mb-1">
           {currenciesLoading && filteredCurrencies.length === 0 && (
             <div className="flex justify-center py-2 w-full"><Spinner size="sm" /></div>
           )}

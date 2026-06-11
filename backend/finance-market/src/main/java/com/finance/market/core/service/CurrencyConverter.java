@@ -1,12 +1,15 @@
 package com.finance.market.core.service;
 
 import com.finance.common.model.Currency;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +31,20 @@ public class CurrencyConverter {
 
     private final FxRateProvider fxRateProvider;
 
+    // A historical FX rate for a (pair, date) is immutable, so memoizing it collapses the millions of
+    // identical per-date lookups the analytics warm-up makes — every asset shares the same trading days,
+    // and the same days recur across every benchmark/period — into one provider hit per (pair, date). The
+    // 10-minute TTL bounds staleness for today's still-moving rate; past dates never change.
+    private final Cache<String, Optional<BigDecimal>> rateCache = Caffeine.newBuilder()
+            .expireAfterWrite(Duration.ofMinutes(10))
+            .maximumSize(100_000)
+            .build();
+
+    private Optional<BigDecimal> cachedRate(Currency from, Currency to, LocalDate date) {
+        return rateCache.get(from.name() + '|' + to.name() + '|' + date,
+                k -> fxRateProvider.rateAt(from, to, date));
+    }
+
     /**
      * Converts a single amount at the given date.
      *
@@ -40,7 +57,7 @@ public class CurrencyConverter {
         if (from == to) {
             return amount;
         }
-        Optional<BigDecimal> rate = fxRateProvider.rateAt(from, to, date);
+        Optional<BigDecimal> rate = cachedRate(from, to, date);
         if (rate.isEmpty()) {
             throw new FxRateUnavailableException(from, to, date);
         }
@@ -61,7 +78,7 @@ public class CurrencyConverter {
         if (from == to) {
             return BigDecimal.ONE;
         }
-        return fxRateProvider.rateAt(from, to, date)
+        return cachedRate(from, to, date)
                 .orElseThrow(() -> new FxRateUnavailableException(from, to, date));
     }
 
@@ -83,7 +100,7 @@ public class CurrencyConverter {
             LocalDate date = entry.getKey();
             BigDecimal value = entry.getValue();
             if (date == null || value == null) continue;
-            Optional<BigDecimal> rate = fxRateProvider.rateAt(from, to, date);
+            Optional<BigDecimal> rate = cachedRate(from, to, date);
             if (rate.isEmpty()) {
                 log.debug("Skipping {} -> {} conversion on {} (no rate)", from, to, date);
                 continue;

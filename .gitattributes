@@ -1,0 +1,16 @@
+# Normalize line endings. Shell scripts run inside Linux containers, so they
+# MUST stay LF even when checked out on Windows (core.autocrlf=true would
+# otherwise rewrite them to CRLF and break `set -e`, shebangs, etc.).
+* text=auto
+
+# Files executed in Linux containers — force LF regardless of platform.
+*.sh    text eol=lf
+*.bash  text eol=lf
+entrypoint.sh text eol=lf
+Dockerfile    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+
+# Windows-only scripts keep CRLF.
+*.bat   text eol=crlf
+*.cmd   text eol=crlf

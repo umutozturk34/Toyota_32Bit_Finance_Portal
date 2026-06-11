@@ -116,6 +116,22 @@ class InflationBeaterServiceTest {
     }
 
     @Test
+    void shouldSimulateUniverseOncePerPeriodCurrencyAcrossBenchmarks() {
+        // Two different benchmarks over the same period+currency must share ONE universe simulation
+        // (the structural win): the second rank reuses the cached universe instead of re-simulating it.
+        wireInflationBenchmark(new BigDecimal("20"));
+        when(scenarioService.simulate(any())).thenReturn(new ScenarioResponse(
+                new BigDecimal("10000"), LocalDate.now().minusYears(1), LocalDate.now(),
+                new BigDecimal("20"), null,
+                List.of(buildSeries(AnalyticsInstrumentType.SPOT, "A", new BigDecimal("50")))));
+
+        service.rank("1Y", "TP.GENENDEKS.T1");
+        service.rank("1Y", "TP.TUFE1YI.T1");
+
+        verify(scenarioService).simulate(any());
+    }
+
+    @Test
     void shouldUseRequestedPeriodWindow() {
         wireInflationBenchmark(new BigDecimal("12"));
         when(scenarioService.simulate(any())).thenReturn(new ScenarioResponse(
@@ -152,7 +168,9 @@ class InflationBeaterServiceTest {
     @Test
     void shouldUseRateBenchmarkFromScenarioSeries() {
         MacroIndicator policyRate = mock(MacroIndicator.class);
-        when(policyRate.getCategory()).thenReturn(MacroCategory.RATES);
+        // getCategory is only consulted on the RATES "simulate-alone" path; here the benchmark is present in
+        // the mocked universe series, so its return is read straight from there — make the stub optional.
+        lenient().when(policyRate.getCategory()).thenReturn(MacroCategory.RATES);
         when(policyRate.getUnit()).thenReturn(MacroUnit.PERCENT);
         lenient().when(policyRate.getLabel()).thenReturn("policyRate");
         when(macroQueryService.findByCode("TP.POLICY")).thenReturn(policyRate);

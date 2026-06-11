@@ -1,17 +1,19 @@
 .PHONY: up down build rebuild deploy-common logs ps clean help demo empty reset
 
-# Cross-platform shell setup. Native Windows (cmd) has no /bin/bash, cp or /dev/null; the everyday
-# targets are plain `docker compose` calls that run in any shell. Only the .env bootstrap (file copy)
-# and the maintainer-only deploy-common (bash) need OS-specific handling.
+# Cross-platform shell + file-copy. On Windows, GNU Make has no /bin/bash or ⁠ cp ⁠,
+# so use cmd.exe and ⁠ copy ⁠; on Unix use bash and ⁠ cp ⁠.
 ifeq ($(OS),Windows_NT)
-SHELL := cmd.exe
-.SHELLFLAGS := /c
-COPY := copy /Y
+  SHELL := cmd.exe
+  .SHELLFLAGS := /c
+  COPY := copy /Y
+  DEVNULL := NUL
 else
-SHELL := /bin/bash
-COPY := cp
-export GITHUB_TOKEN := $(shell gh auth token 2>/dev/null)
+  SHELL := /bin/bash
+  COPY := cp -f
+  DEVNULL := /dev/null
 endif
+
+export GITHUB_TOKEN := $(shell gh auth token 2>$(DEVNULL))
 
 help:
 	@echo "Finance Portal — common targets:"
@@ -46,11 +48,7 @@ down:
 # Maintainer / CI only: publish finance-common to GitHub Packages. Local runs never need this —
 # the images build finance-common from source, so this exists only to share the artifact.
 # Skips when finance-common source hasn't changed since the last successful publish — the
-# fingerprint is kept in `.common-deployed-hash` (gitignored).
-ifeq ($(OS),Windows_NT)
-deploy-common:
-	@echo deploy-common is maintainer-only and needs bash - run it from Git Bash or WSL.
-else
+# fingerprint is kept in ⁠ .common-deployed-hash ⁠ (gitignored).
 deploy-common:
 	@if [ -z "$(GITHUB_TOKEN)" ]; then \
 		echo "ERROR: GITHUB_TOKEN unavailable. Run: gh auth refresh -s write:packages,read:packages"; \
@@ -63,7 +61,6 @@ deploy-common:
 		echo "→ Deploying finance-common to GitHub Packages..."; \
 		(cd finance-common && mvn -B deploy -DskipTests) && printf '%s' "$$hash" > .common-deployed-hash && echo "→ finance-common $$hash published"; \
 	fi
-endif
 
 logs:
 	docker compose logs -f $(SERVICE)
@@ -76,7 +73,7 @@ clean:
 
 # --- Clone-and-run targets (seeded demo vs empty DB; same tokenless source build) ---
 .env:
-	@$(COPY) .env.example .env
+	@$(COPY) .env.example .env >$(DEVNULL)
 	@echo .env created from .env.example - add API keys there for data.
 
 demo: .env

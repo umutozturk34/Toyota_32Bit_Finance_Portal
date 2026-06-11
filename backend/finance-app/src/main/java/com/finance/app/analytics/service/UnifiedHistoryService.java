@@ -9,11 +9,14 @@ import com.finance.market.core.service.HistoricalPricingPort;
 import com.finance.market.macro.model.MacroIndicator;
 import com.finance.market.macro.model.MacroIndicatorPoint;
 import com.finance.market.macro.service.MacroIndicatorQueryService;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +36,33 @@ public class UnifiedHistoryService {
     private final MacroIndicatorQueryService macroQueryService;
     private final BondRateHistoryRepository bondRateHistoryRepository;
 
+    // Short-lived memo of (instrument, window) → series. The beater/returns warm-up asks for the SAME
+    // (asset, from, to) once per benchmark × currency (the raw series is currency-independent), so without
+    // this every one of the ~120 (period × benchmark) combinations re-fetches and re-FX-converts the whole
+    // universe — the dominant cost of the 10-minute warm. The 10-minute TTL is long enough to span a warm
+    // run yet short enough that intraday requests stay fresh; a daily warm runs on a naturally-cold cache
+    // (nothing queried for hours) so it always reflects the evening refresh. Empty results are never
+    // retained, so a transient source failure is retried rather than pinned for the TTL.
+    private final Cache<String, List<HistoryPoint>> seriesCache = Caffeine.newBuilder()
+            .expireAfterWrite(Duration.ofMinutes(10))
+            .maximumSize(6_000)
+            .build();
+
     public List<HistoryPoint> getSeries(AnalyticsInstrument instrument, LocalDate from, LocalDate to) {
+        String key = instrument.type() + "|" + instrument.code() + "|" + from + "|" + to;
+        List<HistoryPoint> series = seriesCache.get(key, k -> computeSeries(instrument, from, to));
+        if (series.isEmpty()) {
+            seriesCache.invalidate(key);
+        }
+        return series;
+    }
+
+    /** Drops all memoized series (e.g. after a market-data refresh) so the next fetch reloads from source. */
+    public void clearCache() {
+        seriesCache.invalidateAll();
+    }
+
+    private List<HistoryPoint> computeSeries(AnalyticsInstrument instrument, LocalDate from, LocalDate to) {
         if (instrument.type().isMarketBacked()) {
             return marketSeries(instrument, from, to);
         }

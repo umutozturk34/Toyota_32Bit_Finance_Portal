@@ -24,6 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,6 +44,25 @@ class AnalyticsPriceSeriesProviderDefaultTest {
 
     private static HistoryPoint point(LocalDate date, String value) {
         return new HistoryPoint(date, new BigDecimal(value));
+    }
+
+    @Test
+    void shouldMemoizeFetchForSameInstrumentWindowAndTarget() {
+        // Arrange
+        AnalyticsPriceSeriesProvider.Default provider = newProvider(true, true);
+        AnalyticsInstrument instrument = new AnalyticsInstrument(AnalyticsInstrumentType.SPOT, "AAA");
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate to = LocalDate.of(2024, 6, 1);
+        when(historyService.getSeries(any(), any(), any()))
+                .thenReturn(List.of(point(LocalDate.of(2024, 3, 1), "100")));
+        when(nativeCurrencyResolver.resolveNativeCurrency(eq(MarketType.STOCK), eq("AAA"))).thenReturn(Currency.TRY);
+
+        // Act
+        provider.fetch(instrument, from, to, Currency.TRY);
+        provider.fetch(instrument, from, to, Currency.TRY);
+
+        // Assert
+        verify(historyService, times(1)).getSeries(any(), any(), any());
     }
 
     @Test

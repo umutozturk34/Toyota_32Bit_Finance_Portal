@@ -4,8 +4,11 @@ import com.finance.common.exception.BusinessException;
 import com.finance.portfolio.config.PortfolioProperties.LotLimits;
 import com.finance.portfolio.dto.request.PositionRequest;
 import com.finance.portfolio.dto.request.PositionSellRequest;
+import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.PortfolioPosition;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -167,5 +170,106 @@ class PortfolioValidatorTest {
         assertThatThrownBy(() -> PortfolioValidator.validateSell(pos, req))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("error.portfolio.sell.dateInFuture");
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "STOCK,     10",
+            "STOCK,     600",
+            "FUND,      5",
+            "CRYPTO,    0.5",
+            "FOREX,     100.25",
+            "COMMODITY, 2.5"
+    })
+    void shouldAcceptWholeUnit_whenQuantityValidForType(AssetType type, BigDecimal qty) {
+        assertThatCode(() -> PortfolioValidator.validateWholeUnit(type, qty)).doesNotThrowAnyException();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "STOCK, 12.5",
+            "STOCK, 0.0001",
+            "FUND,  1.5"
+    })
+    void shouldThrow_whenShareAssetQuantityIsFractional(AssetType type, BigDecimal qty) {
+        assertThatThrownBy(() -> PortfolioValidator.validateWholeUnit(type, qty))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.lot.wholeUnitRequired");
+    }
+
+    @Test
+    void shouldSkipWholeUnit_whenTypeIsNull() {
+        assertThatCode(() -> PortfolioValidator.validateWholeUnit(null, new BigDecimal("12.5")))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldThrow_whenPartialSellOfShareAssetIsFractional() {
+        PortfolioPosition pos = PortfolioPosition.builder()
+                .assetType(AssetType.STOCK)
+                .quantity(new BigDecimal("25"))
+                .entryDate(LocalDateTime.now().minusDays(10))
+                .build();
+        PositionSellRequest req = new PositionSellRequest(new BigDecimal("12.5"),
+                new BigDecimal("100"), LocalDateTime.now().minusDays(1));
+
+        assertThatThrownBy(() -> PortfolioValidator.validateSell(pos, req))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.sell.wholeUnitRequired");
+    }
+
+    @Test
+    void shouldAcceptFullClose_whenShareAssetQuantityIsFractional() {
+        PortfolioPosition pos = PortfolioPosition.builder()
+                .assetType(AssetType.STOCK)
+                .quantity(new BigDecimal("12.5"))
+                .entryDate(LocalDateTime.now().minusDays(10))
+                .build();
+        PositionSellRequest req = new PositionSellRequest(new BigDecimal("12.5"),
+                new BigDecimal("100"), LocalDateTime.now().minusDays(1));
+
+        assertThatCode(() -> PortfolioValidator.validateSell(pos, req)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldAcceptPartialSell_whenShareAssetQuantityIsWhole() {
+        PortfolioPosition pos = PortfolioPosition.builder()
+                .assetType(AssetType.STOCK)
+                .quantity(new BigDecimal("25"))
+                .entryDate(LocalDateTime.now().minusDays(10))
+                .build();
+        PositionSellRequest req = new PositionSellRequest(new BigDecimal("10"),
+                new BigDecimal("100"), LocalDateTime.now().minusDays(1));
+
+        assertThatCode(() -> PortfolioValidator.validateSell(pos, req)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldThrow_whenPartialSellLeavesFractionalRemainder() {
+        // A legacy 10.5-share lot: selling a whole 10 would leave a fractional 0.5 — only a full close is allowed.
+        PortfolioPosition pos = PortfolioPosition.builder()
+                .assetType(AssetType.STOCK)
+                .quantity(new BigDecimal("10.5"))
+                .entryDate(LocalDateTime.now().minusDays(10))
+                .build();
+        PositionSellRequest req = new PositionSellRequest(new BigDecimal("10"),
+                new BigDecimal("100"), LocalDateTime.now().minusDays(1));
+
+        assertThatThrownBy(() -> PortfolioValidator.validateSell(pos, req))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.sell.wholeUnitRequired");
+    }
+
+    @Test
+    void shouldAcceptFractionalPartialSell_whenAssetIsFractionalType() {
+        PortfolioPosition pos = PortfolioPosition.builder()
+                .assetType(AssetType.CRYPTO)
+                .quantity(new BigDecimal("2"))
+                .entryDate(LocalDateTime.now().minusDays(10))
+                .build();
+        PositionSellRequest req = new PositionSellRequest(new BigDecimal("0.5"),
+                new BigDecimal("100"), LocalDateTime.now().minusDays(1));
+
+        assertThatCode(() -> PortfolioValidator.validateSell(pos, req)).doesNotThrowAnyException();
     }
 }

@@ -23,8 +23,9 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Wires the cross-module {@link HistoricalPricingPort} to the market module's per-type history providers,
@@ -91,9 +92,9 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
             log.warn("Forex provider missing — series stays in {}", nativeCurrency);
             return nativeSeries;
         }
-        Map<LocalDate, BigDecimal> rates = indexByDate(
+        NavigableMap<LocalDate, BigDecimal> rates = new TreeMap<>(indexByDate(
                 forexProvider.getHistoryInRange(nativeCurrency.name(),
-                        from.minusDays(rateLookbackDays), to));
+                        from.minusDays(rateLookbackDays), to)));
         if (rates.isEmpty()) {
             log.warn("{} rates empty for {}..{} — series stays in {}", nativeCurrency, from, to, nativeCurrency);
             return nativeSeries;
@@ -108,16 +109,17 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
     }
 
     /**
-     * Most recent FX rate on or before {@code target}, walking back up to the lookback window. Never uses
-     * a future/today rate for a past date; returns null if none found within the window.
+     * Most recent FX rate on or before {@code target} within the lookback window. Never uses a future/today
+     * rate for a past date; returns null if the nearest prior rate is older than the lookback window. Uses
+     * {@link NavigableMap#floorEntry} (O(log n)) instead of walking back day-by-day — the warm-up converts
+     * thousands of points per asset, so the per-point cost dominated the run.
      */
-    private BigDecimal closestPriorRate(Map<LocalDate, BigDecimal> rates, LocalDate target) {
-        return Stream.iterate(target, d -> d.minusDays(1))
-                .limit(rateLookbackDays + 1L)
-                .map(rates::get)
-                .filter(r -> r != null)
-                .findFirst()
-                .orElse(null);
+    private BigDecimal closestPriorRate(NavigableMap<LocalDate, BigDecimal> rates, LocalDate target) {
+        Map.Entry<LocalDate, BigDecimal> floor = rates.floorEntry(target);
+        if (floor == null || floor.getKey().isBefore(target.minusDays(rateLookbackDays))) {
+            return null;
+        }
+        return floor.getValue();
     }
 
     private static Map<LocalDate, BigDecimal> indexByDate(List<?> candles) {

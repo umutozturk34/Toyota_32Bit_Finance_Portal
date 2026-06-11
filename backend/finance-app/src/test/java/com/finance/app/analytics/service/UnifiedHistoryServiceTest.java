@@ -25,6 +25,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -97,6 +99,33 @@ class UnifiedHistoryServiceTest {
         List<HistoryPoint> result = service.getSeries(instrument, LocalDate.now().minusDays(30), LocalDate.now());
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldMemoizeRepeatedSeriesFetchForSameWindow() {
+        AnalyticsInstrument instrument = new AnalyticsInstrument(AnalyticsInstrumentType.SPOT, "THYAO.IS");
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate to = LocalDate.of(2024, 6, 1);
+        when(historicalPricingPort.getPriceSeries(MarketType.STOCK, "THYAO.IS", from, to))
+                .thenReturn(Map.of(LocalDate.of(2024, 3, 1), new BigDecimal("200")));
+
+        service.getSeries(instrument, from, to);
+        service.getSeries(instrument, from, to);
+
+        verify(historicalPricingPort, times(1)).getPriceSeries(MarketType.STOCK, "THYAO.IS", from, to);
+    }
+
+    @Test
+    void shouldNotCacheEmptySeriesSoTransientFailuresRetry() {
+        AnalyticsInstrument instrument = new AnalyticsInstrument(AnalyticsInstrumentType.SPOT, "THYAO.IS");
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate to = LocalDate.of(2024, 6, 1);
+        when(historicalPricingPort.getPriceSeries(MarketType.STOCK, "THYAO.IS", from, to)).thenReturn(Map.of());
+
+        service.getSeries(instrument, from, to);
+        service.getSeries(instrument, from, to);
+
+        verify(historicalPricingPort, times(2)).getPriceSeries(MarketType.STOCK, "THYAO.IS", from, to);
     }
 
     @Test

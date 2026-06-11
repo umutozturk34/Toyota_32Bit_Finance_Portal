@@ -16,6 +16,8 @@ import java.util.SortedMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -94,6 +96,17 @@ class CurrencyConverterTest {
 
         assertThatThrownBy(() -> converter.rateAt(Currency.USD, Currency.EUR, date))
                 .isInstanceOf(FxRateUnavailableException.class);
+    }
+
+    @Test
+    void rateAtMemoizesRepeatedLookupsForSamePairAndDate() {
+        LocalDate date = LocalDate.of(2024, 5, 1);
+        when(provider.rateAt(Currency.USD, Currency.TRY, date)).thenReturn(Optional.of(new BigDecimal("32.5")));
+
+        converter.rateAt(Currency.USD, Currency.TRY, date);
+        converter.rateAt(Currency.USD, Currency.TRY, date);
+
+        verify(provider, times(1)).rateAt(Currency.USD, Currency.TRY, date);
     }
 
     @Test

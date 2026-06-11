@@ -4,6 +4,7 @@ import com.finance.common.exception.BusinessException;
 import com.finance.portfolio.config.PortfolioProperties.LotLimits;
 import com.finance.portfolio.dto.request.PositionRequest;
 import com.finance.portfolio.dto.request.PositionSellRequest;
+import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.PortfolioPosition;
 import lombok.extern.log4j.Log4j2;
 
@@ -41,6 +42,22 @@ final class PortfolioValidator {
         }
     }
 
+    /**
+     * Enforces whole-unit quantities for share-based classes (stocks, funds): a fractional quantity such
+     * as 12.5 shares is rejected. Crypto/forex/commodity are fractional and pass through; a null type
+     * (unresolved tracked asset) is skipped. Call AFTER the asset type is known.
+     */
+    static void validateWholeUnit(AssetType assetType, BigDecimal quantity) {
+        if (assetType != null && assetType.isWholeUnitOnly() && !isWholeNumber(quantity)) {
+            throw new BusinessException("error.portfolio.lot.wholeUnitRequired");
+        }
+    }
+
+    /** True when the value has no fractional part (e.g. 10, 10.0, 600 are whole; 12.5, 0.0001 are not). */
+    private static boolean isWholeNumber(BigDecimal value) {
+        return value != null && value.stripTrailingZeros().scale() <= 0;
+    }
+
     /** Validates a TRY-converted lot price against the configured TRY bounds (call AFTER currency conversion). */
     static void validatePriceTry(BigDecimal priceTry, LotLimits limits) {
         if (priceTry == null) return;
@@ -65,8 +82,19 @@ final class PortfolioValidator {
 
     /** Validates a sell: quantity not above the held amount, exit date not before entry and not in the future. */
     static void validateSell(PortfolioPosition position, PositionSellRequest request) {
-        if (request.quantity().compareTo(position.getQuantity()) > 0) {
+        BigDecimal sellQty = request.quantity();
+        if (sellQty.compareTo(position.getQuantity()) > 0) {
             throw new BusinessException("error.portfolio.sell.quantityExceedsPosition");
+        }
+        // For share-based assets a partial sell must leave both a whole sold amount AND a whole remaining
+        // amount, so a lot can never be split into a fractional piece (e.g. 12.5 of 25, or 10 of a legacy
+        // 10.5 leaving 0.5). A full close is always allowed — it lets a legacy fractional lot be cleared
+        // out entirely rather than trapped.
+        AssetType type = position.getAssetType();
+        boolean fullClose = sellQty.compareTo(position.getQuantity()) == 0;
+        boolean leavesWhole = isWholeNumber(sellQty) && isWholeNumber(position.getQuantity().subtract(sellQty));
+        if (type != null && type.isWholeUnitOnly() && !fullClose && !leavesWhole) {
+            throw new BusinessException("error.portfolio.sell.wholeUnitRequired");
         }
         validateExit(position.getEntryDate().toLocalDate(), request.exitDate().toLocalDate());
     }

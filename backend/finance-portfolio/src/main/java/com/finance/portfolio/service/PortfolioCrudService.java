@@ -120,6 +120,7 @@ public class PortfolioCrudService {
         PortfolioValidator.validateLot(request, portfolioProperties.getLotLimits());
         AssetType assetType = EnumParser.parseOrBadRequest(AssetType.class,
                 request.assetType().toUpperCase(), "enum.field.assetType");
+        PortfolioValidator.validateWholeUnit(assetType, request.quantity());
         // Convert + validate the TRY price before the tracked-asset lookup: bounds are TRY, so the check
         // must run on the converted value, and doing it first fails fast on a bad price before any DB hit.
         BigDecimal entryPriceTry = toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate());
@@ -152,6 +153,11 @@ public class PortfolioCrudService {
     public PositionResponse updatePosition(Long portfolioId, Long positionId, String userSub, PositionRequest request) {
         PortfolioValidator.validateLot(request, portfolioProperties.getLotLimits());
         PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
+        // Only enforce whole units when the quantity is actually being changed, so an edit that merely
+        // adjusts the date/price of a legacy fractional share lot isn't blocked by the new rule.
+        if (request.quantity() != null && request.quantity().compareTo(position.getQuantity()) != 0) {
+            PortfolioValidator.validateWholeUnit(position.getAssetType(), request.quantity());
+        }
         LocalDateTime previousEntry = position.getEntryDate();
         BigDecimal entryPriceTry = toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate());
         PortfolioValidator.validatePriceTry(entryPriceTry, portfolioProperties.getLotLimits());

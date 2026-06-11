@@ -24,6 +24,15 @@ public enum AssetType {
         return marketType;
     }
 
+    /**
+     * Whether this class trades in whole units (adet): true for stocks and funds, which cannot be held
+     * fractionally. Crypto/forex/commodity are fractional, and VIOP lots are sized by the derivative flow,
+     * so they are excluded. Mirrors the frontend {@code FRACTIONAL_TYPES} distinction.
+     */
+    public boolean isWholeUnitOnly() {
+        return this == STOCK || this == FUND;
+    }
+
     /** Reverse lookup from a market type; null when no asset class maps to it. */
     public static AssetType fromMarketType(MarketType marketType) {
         for (AssetType type : values()) {

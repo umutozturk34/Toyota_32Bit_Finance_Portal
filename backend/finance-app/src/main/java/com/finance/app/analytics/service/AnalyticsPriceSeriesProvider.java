@@ -8,11 +8,14 @@ import com.finance.common.model.MarketType;
 import com.finance.market.core.service.AssetNativeCurrencyResolver;
 import com.finance.market.core.service.CurrencyConverter;
 import com.finance.market.core.service.FxRateUnavailableException;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -40,14 +43,36 @@ public interface AnalyticsPriceSeriesProvider {
         @Autowired(required = false)
         private CurrencyConverter currencyConverter;
 
+        // The framed series (raw history + per-date FX to the target) is deterministic for a given
+        // (instrument, window, target), so memoizing it lets the warm-up reuse one USD/EUR-framed universe
+        // across every benchmark of that currency instead of rebuilding the per-date FX map per benchmark —
+        // the step that kept the inflation-beater warm slow even after the raw-history cache.
+        private final Cache<String, PricedSeries> pricedCache = Caffeine.newBuilder()
+                .expireAfterWrite(Duration.ofMinutes(10))
+                .maximumSize(256)
+                .build();
+
         public Default(UnifiedHistoryService historyService) {
             this.historyService = historyService;
         }
 
         @Override
         public PricedSeries fetch(AnalyticsInstrument instrument, LocalDate from, LocalDate to, Currency target) {
-            List<HistoryPoint> raw = historyService.getSeries(instrument, from, to);
             Currency effectiveTarget = target != null ? target : Currency.TRY;
+            String key = instrument.type() + "|" + instrument.code() + "|" + from + "|" + to + "|" + effectiveTarget;
+            PricedSeries cached = pricedCache.getIfPresent(key);
+            if (cached != null) {
+                return cached;
+            }
+            PricedSeries result = computeFetch(instrument, from, to, effectiveTarget);
+            if (!result.isEmpty()) {
+                pricedCache.put(key, result);
+            }
+            return result;
+        }
+
+        private PricedSeries computeFetch(AnalyticsInstrument instrument, LocalDate from, LocalDate to, Currency effectiveTarget) {
+            List<HistoryPoint> raw = historyService.getSeries(instrument, from, to);
             Currency nativeCurrency = resolveNative(instrument);
 
             if (raw == null || raw.isEmpty()) {

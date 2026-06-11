@@ -55,8 +55,8 @@ class AssetCardsWidgetProviderTest {
     void should_resolveExplicitCodes_when_configCarriesAssetReferences() throws Exception {
         JsonNode config = objectMapper.readTree("""
                 {"assetCodes":[{"type":"STOCK","code":"XU100.IS"},{"type":"CRYPTO","code":"BTC"}]}""");
-        when(stockProvider.getByCode("XU100.IS")).thenReturn(stub(MarketType.STOCK, "XU100.IS"));
-        when(cryptoProvider.getByCode("BTC")).thenReturn(stub(MarketType.CRYPTO, "BTC"));
+        when(stockProvider.getByCodeIfEnabled("XU100.IS")).thenReturn(stub(MarketType.STOCK, "XU100.IS"));
+        when(cryptoProvider.getByCodeIfEnabled("BTC")).thenReturn(stub(MarketType.CRYPTO, "BTC"));
 
         AssetCardsData data = provider.fetch("user-1", new WidgetSection("a-1", WidgetKind.ASSET_CARDS, 0, config));
 
@@ -70,7 +70,7 @@ class AssetCardsWidgetProviderTest {
         for (AssetCardsWidgetProvider.AssetReference ref : defaults.defaultAssetReferences()) {
             MarketAssetProvider p = ref.type() == MarketType.STOCK ? stockProvider
                     : ref.type() == MarketType.CRYPTO ? cryptoProvider : null;
-            if (p != null) when(p.getByCode(ref.code())).thenReturn(stub(ref.type(), ref.code()));
+            if (p != null) when(p.getByCodeIfEnabled(ref.code())).thenReturn(stub(ref.type(), ref.code()));
         }
 
         AssetCardsData data = provider.fetch("user-1", new WidgetSection("a-1", WidgetKind.ASSET_CARDS, 0, config));
@@ -91,7 +91,7 @@ class AssetCardsWidgetProviderTest {
     void should_skipUnknownType_when_referenceTypeHasNoProvider() throws Exception {
         JsonNode config = objectMapper.readTree("""
                 {"assetCodes":[{"type":"FOREX","code":"USD"},{"type":"STOCK","code":"XU100.IS"}]}""");
-        when(stockProvider.getByCode("XU100.IS")).thenReturn(stub(MarketType.STOCK, "XU100.IS"));
+        when(stockProvider.getByCodeIfEnabled("XU100.IS")).thenReturn(stub(MarketType.STOCK, "XU100.IS"));
 
         AssetCardsData data = provider.fetch("user-1", new WidgetSection("a-1", WidgetKind.ASSET_CARDS, 0, config));
 
@@ -102,9 +102,9 @@ class AssetCardsWidgetProviderTest {
     void should_skipMissingCode_when_providerThrowsResourceNotFound() throws Exception {
         JsonNode config = objectMapper.readTree("""
                 {"assetCodes":[{"type":"STOCK","code":"DEAD.IS"},{"type":"STOCK","code":"XU100.IS"}]}""");
-        when(stockProvider.getByCode("DEAD.IS"))
+        when(stockProvider.getByCodeIfEnabled("DEAD.IS"))
                 .thenThrow(new ResourceNotFoundException("not found"));
-        when(stockProvider.getByCode("XU100.IS")).thenReturn(stub(MarketType.STOCK, "XU100.IS"));
+        when(stockProvider.getByCodeIfEnabled("XU100.IS")).thenReturn(stub(MarketType.STOCK, "XU100.IS"));
 
         AssetCardsData data = provider.fetch("user-1", new WidgetSection("a-1", WidgetKind.ASSET_CARDS, 0, config));
 
@@ -119,7 +119,7 @@ class AssetCardsWidgetProviderTest {
         AssetCardsData data = provider.fetch("user-1", new WidgetSection("a-1", WidgetKind.ASSET_CARDS, 0, config));
 
         assertThat(data.items()).isEmpty();
-        verify(stockProvider, never()).getByCode(anyString());
+        verify(stockProvider, never()).getByCodeIfEnabled(anyString());
     }
 
     @Test
@@ -131,7 +131,7 @@ class AssetCardsWidgetProviderTest {
         }
         json.append("]}");
         JsonNode config = objectMapper.readTree(json.toString());
-        when(stockProvider.getByCode(anyString())).thenAnswer(inv -> stub(MarketType.STOCK, inv.getArgument(0)));
+        when(stockProvider.getByCodeIfEnabled(anyString())).thenAnswer(inv -> stub(MarketType.STOCK, inv.getArgument(0)));
 
         AssetCardsData data = provider.fetch("user-1", new WidgetSection("a-1", WidgetKind.ASSET_CARDS, 0, config));
 

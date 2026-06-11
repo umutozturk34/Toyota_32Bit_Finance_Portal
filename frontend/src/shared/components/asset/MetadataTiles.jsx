@@ -9,7 +9,7 @@ export default function MetadataTiles({ tiles = [] }) {
       variants={cardVariants}
       initial="hidden"
       animate="show"
-      className="overflow-hidden rounded-xl border border-border-default bg-bg-elevated grid grid-cols-2 min-[480px]:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8"
+      className="overflow-hidden rounded-xl border border-border-default bg-bg-elevated grid grid-cols-2 min-[480px]:grid-cols-[repeat(auto-fit,minmax(150px,1fr))]"
     >
       {valid.map((t) => (
         <div

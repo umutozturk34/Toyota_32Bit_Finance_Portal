@@ -23,7 +23,10 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.finance.portfolio.model.MoneyScale;
+
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -223,9 +226,25 @@ public class PortfolioBackfillService {
                 PortfolioPosition first = entry.getValue().get(0);
                 BigDecimal totalQty = BackfillBatchCollector.sumField(entry.getValue(), PortfolioPosition::getQuantity);
                 BigDecimal totalCost = BackfillBatchCollector.sumField(entry.getValue(), PortfolioPosition::entryValue);
-                batch.add(calculator.buildAggregatedAssetSnapshot(
-                        portfolioId, first.getAssetType(), first.getAssetCode(), first.getTrackedAsset(),
-                        ts, totalQty, totalCost, price));
+                // A lot dated TODAY has no prior-day snapshot to measure a daily market move against; the closest
+                // prior row (or a phantom zero row) would book the WHOLE current value as today's K/Z. Anchor the
+                // daily to the ENTRY PRICE instead, so today's K/Z = (current − entry) × qty (the gain since today's
+                // purchase). Both legs are valued at today's price/FX (entry == today), so the per-currency frames
+                // derived from this TRY daily stay correct. Older/mixed lots keep the real prior-day lookup.
+                boolean allEnteredToday = entry.getValue().stream().allMatch(
+                        p -> p.getEntryDate() != null && p.getEntryDate().toLocalDate().equals(today));
+                if (allEnteredToday && totalQty != null && totalQty.signum() > 0 && totalCost != null) {
+                    BigDecimal entryUnitPriceTry = totalCost.divide(totalQty, MoneyScale.PRICE, RoundingMode.HALF_UP);
+                    PortfolioAssetDailySnapshot entryPrior = PortfolioAssetDailySnapshot.builder()
+                            .quantity(totalQty).unitPriceTry(entryUnitPriceTry).build();
+                    batch.add(calculator.buildAggregatedAssetSnapshotWithPrior(
+                            portfolioId, first.getAssetType(), first.getAssetCode(), first.getTrackedAsset(),
+                            ts, totalQty, totalCost, price, entryPrior));
+                } else {
+                    batch.add(calculator.buildAggregatedAssetSnapshot(
+                            portfolioId, first.getAssetType(), first.getAssetCode(), first.getTrackedAsset(),
+                            ts, totalQty, totalCost, price));
+                }
             }
             if (!batch.isEmpty()) assetSnapshotRepository.saveAll(batch);
         }

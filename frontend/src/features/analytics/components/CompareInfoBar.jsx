@@ -60,9 +60,10 @@ export default function CompareInfoBar({ selected, targetCurrency, commonStartDa
             formattedLast = pct != null ? `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%` : '—';
             headlineIsPct = true;
           } else if (isRateLike(ind.type)) {
-            // Math.max(2, …) keeps the usual 2 decimals at normal magnitude while a sub-cent rate-like
-            // level borrows extra precision so it never collapses to a flat "0".
-            formattedLast = ind.type === 'BOND' || isMacro(ind.type)
+            // BOND carries a yield percentage, so it prints with a % sign. CPI/PPI (MACRO_INFLATION) reaching
+            // here is a cumulative INDEX level (2003=100, e.g. ~4.028), not a rate — show it as a plain value,
+            // never "%4028". Math.max(2, …) keeps 2 decimals normally while a sub-cent level borrows precision.
+            formattedLast = ind.type === 'BOND'
               ? `%${Number(lastValue).toFixed(2)}`
               : Number(lastValue).toLocaleString('tr-TR', { maximumFractionDigits: Math.max(2, moneyDigits(Number(lastValue))) });
           } else {

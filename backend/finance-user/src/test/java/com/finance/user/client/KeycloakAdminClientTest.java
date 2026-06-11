@@ -59,7 +59,7 @@ class KeycloakAdminClientTest {
 
     private KeycloakAdminClient client;
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
         KeycloakAdminProperties properties = new KeycloakAdminProperties();
@@ -67,10 +67,10 @@ class KeycloakAdminClientTest {
         client = new KeycloakAdminClient(webClient, properties, tokenManager, translator);
         lenient().when(tokenManager.getToken()).thenReturn("token-123");
 
-        lenient().when(webClient.get()).thenReturn((WebClient.RequestHeadersUriSpec) getUriSpec);
-        lenient().when(getUriSpec.uri(any(Function.class))).thenReturn((WebClient.RequestHeadersSpec) getHeadersSpec);
-        lenient().when(getUriSpec.uri(any(String.class), any(Object[].class))).thenReturn((WebClient.RequestHeadersSpec) getHeadersSpec);
-        lenient().when(getHeadersSpec.header(any(String.class), any(String[].class))).thenReturn((WebClient.RequestHeadersSpec) getHeadersSpec);
+        lenient().doReturn(getUriSpec).when(webClient).get();
+        lenient().doReturn(getHeadersSpec).when(getUriSpec).uri(any(Function.class));
+        lenient().doReturn(getHeadersSpec).when(getUriSpec).uri(any(String.class), any(Object[].class));
+        lenient().doReturn(getHeadersSpec).when(getHeadersSpec).header(any(String.class), any(String[].class));
         lenient().when(getHeadersSpec.retrieve()).thenReturn(getResponseSpec);
 
         lenient().when(webClient.put()).thenReturn(putUriSpec);
@@ -78,13 +78,13 @@ class KeycloakAdminClientTest {
         lenient().when(putUriSpec.uri(any(Function.class))).thenReturn(putBodySpec);
         lenient().when(putBodySpec.header(any(String.class), any(String[].class))).thenReturn(putBodySpec);
         lenient().when(putBodySpec.contentType(any())).thenReturn(putBodySpec);
-        lenient().when(putBodySpec.bodyValue(any())).thenReturn((WebClient.RequestHeadersSpec) putHeadersSpec);
+        lenient().doReturn(putHeadersSpec).when(putBodySpec).bodyValue(any());
         lenient().when(putHeadersSpec.retrieve()).thenReturn(putResponseSpec);
         lenient().when(putResponseSpec.toBodilessEntity()).thenReturn(Mono.empty());
 
-        lenient().when(webClient.delete()).thenReturn((WebClient.RequestHeadersUriSpec) deleteUriSpec);
-        lenient().when(deleteUriSpec.uri(any(String.class), any(Object[].class))).thenReturn((WebClient.RequestHeadersSpec) deleteHeadersSpec);
-        lenient().when(deleteHeadersSpec.header(any(String.class), any(String[].class))).thenReturn((WebClient.RequestHeadersSpec) deleteHeadersSpec);
+        lenient().doReturn(deleteUriSpec).when(webClient).delete();
+        lenient().doReturn(deleteHeadersSpec).when(deleteUriSpec).uri(any(String.class), any(Object[].class));
+        lenient().doReturn(deleteHeadersSpec).when(deleteHeadersSpec).header(any(String.class), any(String[].class));
         lenient().when(deleteHeadersSpec.retrieve()).thenReturn(deleteResponseSpec);
         lenient().when(deleteResponseSpec.toBodilessEntity()).thenReturn(Mono.empty());
     }
@@ -386,7 +386,7 @@ class KeycloakAdminClientTest {
     }
 
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     void listUsers_buildsUriWithSearchParam_whenSearchProvided() {
         // Arrange
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();
@@ -409,7 +409,7 @@ class KeycloakAdminClientTest {
     }
 
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     void countUsers_buildsUriWithSearchParam_whenSearchProvided() {
         // Arrange
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();
@@ -432,7 +432,7 @@ class KeycloakAdminClientTest {
     }
 
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     void countUsers_buildsUriWithoutSearchParam_whenSearchBlank() {
         // Arrange
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();
@@ -454,7 +454,7 @@ class KeycloakAdminClientTest {
     }
 
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     void sendActionsEmail_buildsUriWithQueryParams() {
         // Arrange
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();
@@ -701,7 +701,7 @@ class KeycloakAdminClientTest {
     }
 
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     void ensureClientRedirectUris_buildsUriWithClientIdQueryParam() {
         // Arrange
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();

@@ -7,9 +7,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,10 +45,29 @@ public class PortfolioSnapshotReader {
             GROUP BY latest.user_sub
             """;
 
+    // Same "latest snapshot per portfolio today" set as the aggregate query, but WITHOUT the GROUP BY SUM — it
+    // keeps each portfolio as its own row (with its name) so the summary can list portfolios separately.
+    private static final String BULK_PER_PORTFOLIO_QUERY = """
+            SELECT DISTINCT ON (s.portfolio_id)
+                   p.user_sub,
+                   s.portfolio_id,
+                   p.name              AS portfolio_name,
+                   s.total_value_try,
+                   s.daily_pnl_try
+            FROM portfolio_daily_snapshots s
+            JOIN portfolios p ON p.id = s.portfolio_id
+            WHERE p.user_sub = ANY(?)
+              AND s.snapshot_date = CURRENT_DATE
+            ORDER BY s.portfolio_id, s.created_at DESC
+            """;
+
     private final JdbcTemplate jdbcTemplate;
 
     /** A user's portfolios rolled up: total value, daily P/L (amount and percent) and portfolio count. */
     public record AggregatedSnapshot(BigDecimal totalValue, BigDecimal dailyPnl, BigDecimal dailyPnlPercent, int portfolioCount) {}
+
+    /** One portfolio's latest snapshot for today: its id, name, value and daily P/L (amount + percent). */
+    public record PortfolioLine(Long portfolioId, String name, BigDecimal totalValue, BigDecimal dailyPnl, BigDecimal dailyPnlPercent) {}
 
     @Transactional(readOnly = true)
     public Map<String, AggregatedSnapshot> findTodayAggregateForUsers(Collection<String> userSubs) {
@@ -61,6 +82,28 @@ public class PortfolioSnapshotReader {
                 (rs, n) -> {
                     AggregatedSnapshot snap = mapRow(rs.getBigDecimal(2), rs.getBigDecimal(3), rs.getInt(4));
                     if (snap != null) result.put(rs.getString(1), snap);
+                    return null;
+                });
+        return result;
+    }
+
+    /** Each user's portfolios for today as separate rows (not summed), keyed by user, for per-portfolio summaries. */
+    @Transactional(readOnly = true)
+    public Map<String, List<PortfolioLine>> findTodayPerPortfolioForUsers(Collection<String> userSubs) {
+        Set<String> subs = new HashSet<>();
+        for (String sub : userSubs) {
+            if (sub != null && !sub.isBlank()) subs.add(sub);
+        }
+        if (subs.isEmpty()) return Map.of();
+        Map<String, List<PortfolioLine>> result = new HashMap<>(subs.size());
+        jdbcTemplate.query(BULK_PER_PORTFOLIO_QUERY,
+                ps -> ps.setArray(1, ps.getConnection().createArrayOf("text", subs.toArray())),
+                (rs, n) -> {
+                    BigDecimal total = rs.getBigDecimal(4);
+                    BigDecimal pnl = rs.getBigDecimal(5);
+                    PortfolioLine line = new PortfolioLine(
+                            rs.getLong(2), rs.getString(3), total, pnl, computePercent(total, pnl));
+                    result.computeIfAbsent(rs.getString(1), k -> new ArrayList<>()).add(line);
                     return null;
                 });
         return result;

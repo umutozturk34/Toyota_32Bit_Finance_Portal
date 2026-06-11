@@ -6,9 +6,10 @@ function rawKind(type, levelMode) {
   // sits on the same % axis as CPI/deposit and is directly comparable to inflation. The tooltip / info-bar
   // additionally surface its cumulative TL P&L (carried per-point as pnlTry) — "% to compare, ₺ to feel it".
   if (type === 'PORTFOLIO') return 'portfolio';
-  // Level mode (homogeneous rate-vs-rate compare): rates are NOT compounded — they are plotted at their
-  // actual % level, so format them as a rate (%X.XX) rather than a growth-index number.
-  if (levelMode && (type === 'MACRO_RATE' || type === 'MACRO_DEPOSIT')) return 'rate';
+  // Annual ("Yıllık"/level) mode for a homogeneous macro compare: rate series are plotted at their actual
+  // annual % level and index series (CPI/PPI/index-rate) as their derived YoY % — both are annual rates, so
+  // format them as a rate (%X.XX) rather than a growth-index number.
+  if (levelMode && (type === 'MACRO_RATE' || type === 'MACRO_DEPOSIT' || type === 'MACRO_INFLATION')) return 'rate';
   // Deposits AND policy/reference rates (MACRO_RATE) are compounded into a cumulative growth index (a
   // multiplier), not a rate or a currency value, so their plotted value formats as a plain index number.
   if (type === 'MACRO_INFLATION' || type === 'MACRO_DEPOSIT' || type === 'MACRO_RATE') return 'index';

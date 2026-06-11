@@ -62,13 +62,14 @@ export default function BenchmarkPicker({ value, onChange, options, t, defaultLa
       .map((g) => ({
         ...g,
         items: g.items.filter((opt) => {
+          const localized = labelOf(opt, t).toLowerCase();
           const lbl = (opt.label || '').toLowerCase();
           const code = (opt.code || '').toLowerCase();
-          return lbl.includes(q) || code.includes(q);
+          return localized.includes(q) || lbl.includes(q) || code.includes(q);
         }),
       }))
       .filter((g) => g.items.length > 0);
-  }, [grouped, search]);
+  }, [grouped, search, t]);
 
   const flatItems = useMemo(
     () => filtered.flatMap((g) => g.items.map((opt) => ({ opt, accent: g.accent }))),
@@ -196,7 +197,7 @@ export default function BenchmarkPicker({ value, onChange, options, t, defaultLa
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute z-[80] mt-2 left-0 w-[min(360px,calc(100vw-32px))] max-w-[calc(100vw-32px)] max-h-[480px] rounded-2xl border border-border-default overflow-hidden flex flex-col"
+            className="absolute z-[80] mt-2 left-0 w-[min(360px,calc(100vw-32px))] max-w-[calc(100vw-32px)] max-h-[min(480px,80dvh)] rounded-2xl border border-border-default overflow-hidden flex flex-col"
             style={{
               background: 'var(--color-bg-deep)',
               backdropFilter: 'blur(20px)',

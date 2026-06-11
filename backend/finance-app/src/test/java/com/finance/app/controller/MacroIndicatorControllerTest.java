@@ -4,7 +4,6 @@ import com.finance.common.dto.ApiResponse;
 import com.finance.common.i18n.Translator;
 import com.finance.market.macro.dto.response.MacroIndicatorPointResponse;
 import com.finance.market.macro.dto.response.MacroIndicatorResponse;
-import com.finance.market.macro.mapper.MacroIndicatorResponseMapper;
 import com.finance.market.macro.model.DepositMaturity;
 import com.finance.market.macro.model.MacroCategory;
 import com.finance.market.macro.model.MacroFrequency;
@@ -12,6 +11,7 @@ import com.finance.market.macro.model.MacroIndicator;
 import com.finance.market.macro.model.MacroIndicatorPoint;
 import com.finance.market.macro.model.MacroUnit;
 import com.finance.market.macro.service.MacroIndicatorQueryService;
+import com.finance.market.macro.service.MacroIndicatorResponseAssembler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
 class MacroIndicatorControllerTest {
 
     @Mock private MacroIndicatorQueryService queryService;
-    @Mock private MacroIndicatorResponseMapper mapper;
+    @Mock private MacroIndicatorResponseAssembler assembler;
     @Mock private Translator translator;
     @Mock private MacroIndicator indicator;
     @Mock private MacroIndicatorPoint point;
@@ -47,14 +47,14 @@ class MacroIndicatorControllerTest {
         com.finance.market.macro.config.MacroProperties macroProperties =
                 new com.finance.market.macro.config.MacroProperties(
                         java.time.LocalDate.of(1995, 1, 1), 25, 1000, null, null, java.util.List.of());
-        controller = new MacroIndicatorController(queryService, mapper, translator, macroProperties);
+        controller = new MacroIndicatorController(queryService, assembler, translator, macroProperties);
         when(translator.translate(anyString())).thenAnswer(inv -> inv.getArgument(0));
     }
 
     private MacroIndicatorResponse response(String code) {
         return new MacroIndicatorResponse(code, "Label", MacroCategory.RATES,
                 MacroUnit.PERCENT, MacroFrequency.DAILY, "TRY",
-                DepositMaturity.M1, false, new BigDecimal("12.5"), LocalDate.now());
+                DepositMaturity.M1, false, new BigDecimal("12.5"), LocalDate.now(), null, null);
     }
 
     @Test
@@ -62,7 +62,7 @@ class MacroIndicatorControllerTest {
         List<MacroIndicator> models = List.of(indicator);
         List<MacroIndicatorResponse> responses = List.of(response("PROM"));
         when(queryService.listProminent()).thenReturn(models);
-        when(mapper.toResponses(models)).thenReturn(responses);
+        when(assembler.toResponses(models)).thenReturn(responses);
 
         ApiResponse<List<MacroIndicatorResponse>> result = controller.list(null, true);
 
@@ -78,7 +78,7 @@ class MacroIndicatorControllerTest {
         List<MacroIndicator> models = List.of(indicator);
         List<MacroIndicatorResponse> responses = List.of(response("CAT"));
         when(queryService.listByCategory(MacroCategory.INFLATION)).thenReturn(models);
-        when(mapper.toResponses(models)).thenReturn(responses);
+        when(assembler.toResponses(models)).thenReturn(responses);
 
         ApiResponse<List<MacroIndicatorResponse>> result = controller.list(MacroCategory.INFLATION, false);
 
@@ -93,7 +93,7 @@ class MacroIndicatorControllerTest {
         List<MacroIndicator> models = List.of(indicator);
         List<MacroIndicatorResponse> responses = List.of(response("ALL"));
         when(queryService.listAll()).thenReturn(models);
-        when(mapper.toResponses(models)).thenReturn(responses);
+        when(assembler.toResponses(models)).thenReturn(responses);
 
         ApiResponse<List<MacroIndicatorResponse>> result = controller.list(null, false);
 
@@ -106,7 +106,7 @@ class MacroIndicatorControllerTest {
     void shouldPreferProminent_whenBothCategoryAndProminentOnlyProvided() {
         List<MacroIndicator> models = List.of(indicator);
         when(queryService.listProminent()).thenReturn(models);
-        when(mapper.toResponses(models)).thenReturn(List.of(response("P")));
+        when(assembler.toResponses(models)).thenReturn(List.of(response("P")));
 
         controller.list(MacroCategory.RATES, true);
 
@@ -124,7 +124,7 @@ class MacroIndicatorControllerTest {
                 List.of(new MacroIndicatorPointResponse(LocalDate.now(), new BigDecimal("1.23")));
         when(queryService.findByCode("CPI")).thenReturn(indicator);
         when(queryService.history(indicator, from, to)).thenReturn(points);
-        when(mapper.toPointResponses(points)).thenReturn(pointResponses);
+        when(assembler.toPointResponses(points)).thenReturn(pointResponses);
 
         ApiResponse<List<MacroIndicatorPointResponse>> result = controller.history("CPI", from, to);
 
@@ -139,7 +139,7 @@ class MacroIndicatorControllerTest {
         LocalDate expectedFrom = to.minusYears(5);
         when(queryService.findByCode("CPI")).thenReturn(indicator);
         when(queryService.history(indicator, expectedFrom, to)).thenReturn(List.of());
-        when(mapper.toPointResponses(List.of())).thenReturn(List.of());
+        when(assembler.toPointResponses(List.of())).thenReturn(List.of());
 
         controller.history("CPI", null, to);
 
@@ -154,7 +154,7 @@ class MacroIndicatorControllerTest {
                 org.mockito.ArgumentMatchers.eq(from),
                 org.mockito.ArgumentMatchers.any(LocalDate.class)))
                 .thenReturn(List.of());
-        when(mapper.toPointResponses(List.of())).thenReturn(List.of());
+        when(assembler.toPointResponses(List.of())).thenReturn(List.of());
 
         controller.history("CPI", from, null);
 
@@ -171,7 +171,7 @@ class MacroIndicatorControllerTest {
                 org.mockito.ArgumentMatchers.any(LocalDate.class),
                 org.mockito.ArgumentMatchers.any(LocalDate.class)))
                 .thenReturn(List.of());
-        when(mapper.toPointResponses(List.of())).thenReturn(List.of());
+        when(assembler.toPointResponses(List.of())).thenReturn(List.of());
 
         controller.history("CPI", null, null);
 

@@ -28,6 +28,24 @@ processors:
         value: finance-portal
         action: upsert
 
+  # Auto-detect host/OS resource attributes so every metric & span carries them as fields. Without this,
+  # docs only had service.name/namespace/environment — os.type, os.description, host.name and host.arch
+  # were missing. override:false keeps any attribute a source already set.
+  resourcedetection:
+    detectors: [env, system]
+    timeout: 5s
+    override: false
+    system:
+      resource_attributes:
+        os.type:
+          enabled: true
+        os.description:
+          enabled: true
+        host.name:
+          enabled: true
+        host.arch:
+          enabled: true
+
   filter/health:
     error_mode: ignore
     traces:
@@ -105,7 +123,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [memory_limiter, filter/health, resource, transform/traces, batch]
+      processors: [memory_limiter, resourcedetection, filter/health, resource, transform/traces, batch]
       exporters: [routing/traces]
     traces/finance:
       receivers: [routing/traces]
@@ -116,5 +134,5 @@ service:
 
     metrics:
       receivers: [otlp]
-      processors: [memory_limiter, filter/metrics, resource, cumulativetodelta, batch]
+      processors: [memory_limiter, resourcedetection, filter/metrics, resource, cumulativetodelta, batch]
       exporters: [otlp/dataprepper]

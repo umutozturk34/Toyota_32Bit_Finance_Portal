@@ -45,7 +45,7 @@ export default function BaseModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className={`relative w-full ${SIZE_CLASSES[size] ?? SIZE_CLASSES.sm} max-h-[90vh] max-h-[90dvh] landscape:max-h-[92dvh] rounded-2xl border border-border-default modal-panel p-4 landscape:p-3 sm:p-6 sm:landscape:p-5 overflow-hidden flex flex-col`}
+            className={`relative w-full ${SIZE_CLASSES[size] ?? SIZE_CLASSES.sm} max-h-[90vh] max-h-[90dvh] landscape:max-h-[92dvh] rounded-2xl border border-border-default modal-panel p-4 landscape:p-3 sm:p-6 sm:landscape:p-5 pb-[max(1rem,env(safe-area-inset-bottom))] overflow-hidden flex flex-col`}
           >
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
             <div className="flex items-center justify-between mb-4 landscape:mb-3 sm:mb-5 sm:landscape:mb-3 shrink-0">

@@ -11,10 +11,8 @@ import Card from '../../../shared/components/card';
 import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
 import EmptyState from '../../../shared/components/feedback/EmptyState';
-import { useQuery } from '@tanstack/react-query';
-import { useAssetReturns } from '../hooks/useAnalytics';
+import { useAssetReturns, useAssetDisplayMeta } from '../hooks/useAnalytics';
 import { instrumentDisplayName } from '../../../shared/utils/instrumentLabel';
-import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
 import { RETURN_PERIODS } from '../constants';
 import { formatPercent, moneyDigits } from '../utils';
 import { assetRoute } from '../../watch/lib/watchConstants';
@@ -23,21 +21,6 @@ import {
 } from '../returnsConstants';
 import HeroStat from '../components/HeroStat';
 import Th from '../components/ReturnsTh';
-
-// The returns endpoint only carries codes/ids; pull proper display names (and crypto logos) from the market
-// endpoint, paginated to completion (page 0, then the remaining pages in parallel) and cached. Crypto is one
-// page; stocks span a few.
-async function fetchAllAssets(type) {
-  const first = await unifiedMarketService.search({ type, page: 0, size: 100 });
-  const content = first?.content ?? [];
-  const total = first?.totalElements ?? content.length;
-  const pages = Math.ceil(total / 100);
-  if (pages <= 1) return content;
-  const rest = await Promise.all(
-    Array.from({ length: pages - 1 }, (_, i) => unifiedMarketService.search({ type, page: i + 1, size: 100 })),
-  );
-  return rest.reduce((acc, r) => acc.concat(r?.content ?? []), content);
-}
 
 export default function ReturnsPage() {
   const { t } = useTranslation();
@@ -74,19 +57,7 @@ export default function ReturnsPage() {
 
   // Crypto (icons + proper names) and stocks (long company/index names) enriched from the market endpoint by
   // code; forex/commodity already resolve through instrumentDisplayName, funds stay on their code.
-  const { data: cryptoAssets } = useQuery({
-    queryKey: ['returnsAssetMeta', 'CRYPTO'], queryFn: () => fetchAllAssets('CRYPTO'), staleTime: 30 * 60 * 1000,
-  });
-  const { data: stockAssets } = useQuery({
-    queryKey: ['returnsAssetMeta', 'STOCK'], queryFn: () => fetchAllAssets('STOCK'), staleTime: 30 * 60 * 1000,
-  });
-  const assetMeta = useMemo(() => {
-    const m = new Map();
-    for (const a of cryptoAssets ?? []) m.set(`CRYPTO|${a.code}`, a);
-    for (const a of stockAssets ?? []) m.set(`STOCK|${a.code}`, a);
-    return m;
-  }, [cryptoAssets, stockAssets]);
-  const metaFor = (type, code) => assetMeta.get(`${ANALYTICS_TO_MARKET_TYPE[type] || type}|${code}`);
+  const metaFor = useAssetDisplayMeta();
   const nameFor = (r) => metaFor(r.type, r.code)?.name || instrumentDisplayName(t, r.type, r.code, r.name);
 
   // Money formatted in the SELECTED page currency (₺ suffix for TRY; $/€ prefix otherwise).

@@ -1,9 +1,15 @@
 import { Link } from 'react-router-dom';
 import {
   TrendingUp, LogOut, Activity, Settings, Bell, User as UserIcon,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Search,
 } from 'lucide-react';
 import SidebarNav from './SidebarNav';
+
+// The ⌘/Ctrl modifier is platform-specific — show the Apple key on macOS/iOS and "Ctrl" elsewhere, since
+// this is a general (non-Apple) web app. Resolved once at module load (client-only Vite bundle).
+const IS_MAC = typeof navigator !== 'undefined'
+  && /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || '');
+const SEARCH_HINT = IS_MAC ? '⌘K' : 'Ctrl K';
 
 const SidebarContent = ({
   isMobile = false,
@@ -19,6 +25,7 @@ const SidebarContent = ({
   setNotificationsOpen,
   setSettingsOpen,
   setProfileOpen,
+  openSearch,
   unreadCount,
   user,
   logout,
@@ -47,6 +54,31 @@ const SidebarContent = ({
           {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
       )}
+    </div>
+
+    <div className="px-2 pt-2 pb-1 shrink-0">
+      <button
+        type="button"
+        onClick={openSearch}
+        data-tour="global-search"
+        title={collapsed && !isMobile ? t('nav.search') : undefined}
+        aria-label={t('nav.search')}
+        className={`w-full group flex items-center rounded-lg border transition-all duration-150 cursor-pointer ${
+          collapsed && !isMobile
+            ? 'justify-center px-0 py-2 border-transparent text-fg-muted hover:text-fg hover:bg-surface'
+            : 'gap-2.5 px-3 py-2 border-border-default bg-surface/60 text-fg-subtle hover:text-fg hover:border-accent/40 hover:bg-accent/5'
+        }`}
+      >
+        <Search size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
+        {(!collapsed || isMobile) && (
+          <>
+            <span className="flex-1 text-left text-[13px] font-medium">{t('searchSuggestions.openLabel')}</span>
+            <span className="shrink-0 rounded border border-border-default bg-bg-elevated px-1.5 py-0.5 text-[10px] font-mono text-fg-subtle">
+              {SEARCH_HINT}
+            </span>
+          </>
+        )}
+      </button>
     </div>
 
     <SidebarNav

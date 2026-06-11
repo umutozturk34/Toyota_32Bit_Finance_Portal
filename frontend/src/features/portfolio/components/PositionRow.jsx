@@ -182,26 +182,26 @@ export default function PositionRow({ pos, pending, elapsed, selected, onToggleS
         </div>
         <div className="flex justify-start gap-1">
           {showEdit && (
-            <button onClick={(e) => { e.stopPropagation(); editClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')}>
+            <button onClick={(e) => { e.stopPropagation(); editClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')}>
               <Pencil className="h-3 w-3" />
             </button>
           )}
           {showSellButton && (
-            <button onClick={(e) => { e.stopPropagation(); sellClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.sell.title', 'Sell')}>
+            <button onClick={(e) => { e.stopPropagation(); sellClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.sell.title', 'Sell')}>
               <ShoppingBag className="h-3 w-3" />
             </button>
           )}
           {showReopenButton && (
-            <button onClick={(e) => { e.stopPropagation(); reopenClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.reopen.title', 'Reopen')}>
+            <button onClick={(e) => { e.stopPropagation(); reopenClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.reopen.title', 'Reopen')}>
               <RotateCcw className="h-3 w-3" />
             </button>
           )}
           {showCloseButton && (
-            <button onClick={(e) => { e.stopPropagation(); closeClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')}>
+            <button onClick={(e) => { e.stopPropagation(); closeClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')}>
               <XCircle className="h-3 w-3" />
             </button>
           )}
-          <button onClick={(e) => { e.stopPropagation(); deleteClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer" aria-label={t('common.delete')}>
+          <button onClick={(e) => { e.stopPropagation(); deleteClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer" aria-label={t('common.delete')}>
             <Trash2 className="h-3 w-3" />
           </button>
         </div>
@@ -241,26 +241,26 @@ export default function PositionRow({ pos, pending, elapsed, selected, onToggleS
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
             <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>{formatPercent(shownPnlPct)}</span>
             {showEdit && (
-              <button onClick={(e) => { e.stopPropagation(); editClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')}>
+              <button onClick={(e) => { e.stopPropagation(); editClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')}>
                 <Pencil className="h-3 w-3" />
               </button>
             )}
             {showSellButton && (
-              <button onClick={(e) => { e.stopPropagation(); sellClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.sell.title', 'Sell')}>
+              <button onClick={(e) => { e.stopPropagation(); sellClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.sell.title', 'Sell')}>
                 <ShoppingBag className="h-3 w-3" />
               </button>
             )}
             {showReopenButton && (
-              <button onClick={(e) => { e.stopPropagation(); reopenClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.reopen.title', 'Reopen')}>
+              <button onClick={(e) => { e.stopPropagation(); reopenClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.reopen.title', 'Reopen')}>
                 <RotateCcw className="h-3 w-3" />
               </button>
             )}
             {showCloseButton && (
-              <button onClick={(e) => { e.stopPropagation(); closeClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')}>
+              <button onClick={(e) => { e.stopPropagation(); closeClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')}>
                 <XCircle className="h-3 w-3" />
               </button>
             )}
-            <button onClick={(e) => { e.stopPropagation(); deleteClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer" aria-label={t('common.delete')}>
+            <button onClick={(e) => { e.stopPropagation(); deleteClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer" aria-label={t('common.delete')}>
               <Trash2 className="h-3 w-3" />
             </button>
           </div>

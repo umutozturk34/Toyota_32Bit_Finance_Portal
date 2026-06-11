@@ -217,7 +217,7 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
               WebkitBackdropFilter: 'blur(20px)',
               zIndex: 1000,
             }}
-            className="rounded-2xl border border-border-default min-w-[260px] overflow-hidden"
+            className="rounded-2xl border border-border-default min-w-[260px] max-w-[calc(100vw-1rem)] overflow-hidden"
           >
             <div className="h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
             <div className="px-4 pt-3 pb-2.5 flex items-center gap-2 border-b border-border-default/40">

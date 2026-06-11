@@ -99,6 +99,25 @@ public class TrackedAssetCommandService {
     }
 
     /**
+     * Soft enable/disable: flips the {@code enabled} flag in place instead of removing the row. A disabled
+     * asset drops out of the public (enabled-only) code cache yet stays in the registry, so it survives the
+     * discovery re-runs that {@link #autoTrack} performs — autoTrack is a no-op for an already-tracked code,
+     * so it never resurrects a disabled asset back to enabled. Hard delete, by contrast, would be re-added on
+     * the next discovery sweep.
+     *
+     * @throws ResourceNotFoundException if no asset of that type and code is tracked
+     */
+    public void setEnabled(TrackedAssetType type, String assetCode, boolean enabled) {
+        String normalizedCode = type.normalizeCode(assetCode);
+        TrackedAsset entity = trackedAssetRepository
+                .findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode)
+                .orElseThrow(() -> new ResourceNotFoundException("error.trackedAsset.notFound", type, normalizedCode));
+        entity.setEnabled(enabled);
+        trackedAssetRepository.save(entity);
+        codeCache.invalidate(type);
+    }
+
+    /**
      * Reorders tracked assets by applying each item's sort order in one batch; no-op on empty input.
      *
      * @throws ResourceNotFoundException if any referenced asset code is not tracked

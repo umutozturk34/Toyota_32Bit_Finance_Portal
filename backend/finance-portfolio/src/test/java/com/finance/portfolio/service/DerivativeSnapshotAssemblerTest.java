@@ -311,4 +311,23 @@ class DerivativeSnapshotAssemblerTest {
         assertThat(result.getDailyPnlTry()).isNull();
         assertThat(result.getDailyPnlPercent()).isNull();
     }
+
+    @Test
+    void shouldAnchorDailyToEntryPrice_whenOpenedOnSnapshotDay() {
+        ViopContract c = contract("XU030F", "10", "TRY");
+        DerivativePosition openedToday = DerivativePosition.builder()
+                .viopContract(c).direction(DerivativeDirection.LONG)
+                .entryDate(BATCH_TS.toLocalDate())   // opened ON the snapshot day → no prior to measure against
+                .entryPrice(new BigDecimal("100"))
+                .quantityLot(new BigDecimal("2"))
+                .build();
+
+        PortfolioAssetDailySnapshot result = assembler.buildAt(
+                PORTFOLIO_ID, openedToday, BATCH_TS, new BigDecimal("110"), null, null);
+
+        // Daily K/Z = gain since entry = (110 − 100) × size(10) × lots(2) = 200; NOT 0 and NOT the full notional
+        // (2200) booked against a phantom zero prior. Percent = 200 / cost(100×10×2 = 2000) = 10%.
+        assertThat(result.getDailyPnlTry()).isEqualByComparingTo("200");
+        assertThat(result.getDailyPnlPercent()).isEqualByComparingTo("10");
+    }
 }

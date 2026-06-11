@@ -7,8 +7,8 @@ import com.finance.common.model.MarketType;
 import java.util.List;
 
 /**
- * Read-side facade for one market: code lookup, paged search/count, and top movers. Implementations
- * are dispatched by {@link #getType()} so callers stay market-agnostic.
+ * Read-side facade for one market: code lookup (plain and enabled-aware), paged search/count, and top
+ * movers. Implementations are dispatched by {@link #getType()} so callers stay market-agnostic.
  */
 public interface MarketAssetProvider {
 
@@ -16,6 +16,15 @@ public interface MarketAssetProvider {
     MarketType getType();
 
     MarketAssetResponse getByCode(String code);
+
+    /**
+     * Like {@link #getByCode(String)} but honours the tracked-asset enabled flag: returns {@code null} for an
+     * admin-disabled asset so discovery surfaces (e.g. the asset-cards widget) hide it, while {@link #getByCode}
+     * stays unfiltered for direct detail lookups. Defaults to {@link #getByCode} for markets with no enabled notion.
+     */
+    default MarketAssetResponse getByCodeIfEnabled(String code) {
+        return getByCode(code);
+    }
 
     List<MarketAssetResponse> search(String searchTerm, MarketAssetFilters filters, String sortBy, String direction, int page, int size);
 

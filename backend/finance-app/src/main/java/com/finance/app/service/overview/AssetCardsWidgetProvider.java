@@ -19,8 +19,8 @@ import java.util.Optional;
 
 /**
  * Provides the ASSET_CARDS widget: resolves the section's configured asset references (or the defaults) to
- * live market snapshots, capped at the configured max items. Unknown types and not-found codes are skipped
- * so a partial config still renders.
+ * live market snapshots, capped at the configured max items. Unknown types, not-found codes and admin-disabled
+ * assets (resolved via the enabled-aware lookup) are skipped so a partial config still renders.
  */
 @Log4j2
 @Component
@@ -69,7 +69,9 @@ public class AssetCardsWidgetProvider implements OverviewWidgetProvider {
             return Optional.empty();
         }
         try {
-            return Optional.ofNullable(provider.getByCode(ref.code()));
+            // Enabled-aware lookup: a disabled tracked asset resolves to null here so the cards hide it,
+            // matching the list/search/movers paths, while direct detail lookups keep using getByCode.
+            return Optional.ofNullable(provider.getByCodeIfEnabled(ref.code()));
         } catch (ResourceNotFoundException ex) {
             log.debug("AssetCardsWidget skip — code={} not found in {}", ref.code(), ref.type());
             return Optional.empty();

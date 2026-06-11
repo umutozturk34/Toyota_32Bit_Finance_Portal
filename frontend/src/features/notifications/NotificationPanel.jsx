@@ -84,8 +84,12 @@ function useAutoMarkRead(ref, isUnread, onRead) {
 }
 
 function NotificationRow({ item, onRead, onDelete }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language?.startsWith('tr') ? 'tr-TR' : 'en-US';
   const relativeTime = useRelativeTime();
+  const portfolioLines = item.type === 'PORTFOLIO_UPDATED' && Array.isArray(item.metadata?.portfolios)
+    ? item.metadata.portfolios
+    : null;
   const meta = TYPE_META[item.type] ?? TYPE_META.SYSTEM;
   const { Icon, labelKey, tint } = meta;
   const label = t(labelKey);
@@ -121,6 +125,27 @@ function NotificationRow({ item, onRead, onDelete }) {
           </div>
           <h3 className="text-[13px] font-semibold text-fg break-words line-clamp-2">{item.title}</h3>
           <p className="text-xs text-fg-muted leading-relaxed mt-0.5 break-words">{item.body}</p>
+          {portfolioLines && portfolioLines.length > 0 && (
+            <ul className="mt-2 space-y-1">
+              {portfolioLines.map((pf) => {
+                const pct = pf.dailyPnlPercent != null ? Number(pf.dailyPnlPercent) : null;
+                const up = pct != null && pct >= 0;
+                return (
+                  <li key={pf.id ?? pf.name} className="flex items-center justify-between gap-2 rounded-md bg-surface/60 px-2 py-1 min-w-0">
+                    <span className="text-[11px] font-medium text-fg truncate min-w-0">{pf.name}</span>
+                    <span className="flex items-center gap-1.5 shrink-0 font-mono tabular-nums text-[11px]">
+                      {pf.totalValue != null && (
+                        <span className="text-fg-muted">₺{Number(pf.totalValue).toLocaleString(locale, { maximumFractionDigits: 0 })}</span>
+                      )}
+                      {pct != null && (
+                        <span className={up ? 'text-success' : 'text-danger'}>{up ? '+' : ''}{pct.toFixed(2)}%</span>
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       </div>
 

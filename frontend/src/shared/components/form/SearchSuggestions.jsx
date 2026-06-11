@@ -52,6 +52,8 @@ export default function SearchSuggestions({
   filterType,
   variant = 'default',
   secondaryAction,
+  autoFocus = false,
+  onAfterSelect,
 }) {
   const { t } = useTranslation();
   const { format: money } = useMoney();
@@ -89,6 +91,14 @@ export default function SearchSuggestions({
     timerRef.current = setTimeout(() => setDebouncedQuery(trimmedQuery), 250);
     return () => clearTimeout(timerRef.current);
   }, [trimmedQuery, tooShort]);
+
+  // Command-palette usage: focus the input on mount so the user can type immediately without a second
+  // click. Programmatic focus fires the input's onFocus, which opens the recent-searches panel — so we
+  // deliberately do NOT setOpen here (that would be a setState-in-effect). Hero/page usage leaves it off.
+  useEffect(() => {
+    if (!autoFocus) return;
+    inputRef.current?.focus();
+  }, [autoFocus]);
 
   const { containerRef, suggestions, activeIndex, setActiveIndex, isFetching, buildKeyDown } = useSearchSuggestions({
     query: debouncedQuery,
@@ -130,11 +140,13 @@ export default function SearchSuggestions({
     }
     if (!navigateOnSelect) return;
     if (MACRO_TYPES.has(asset.type)) {
+      // Macro picks open an in-place preview (rendered below); keep any hosting palette open for it.
       setMacroPreviewCode(asset.code);
       return;
     }
     navigate(assetRoute(asset));
-  }, [onSelect, navigateOnSelect, navigate, trackRecent]);
+    onAfterSelect?.();
+  }, [onSelect, navigateOnSelect, navigate, trackRecent, onAfterSelect]);
 
   const handleRecentSelect = useCallback((item) => {
     setQuery('');
@@ -145,7 +157,8 @@ export default function SearchSuggestions({
       return;
     }
     navigate(assetRoute(item));
-  }, [onSelect, navigate]);
+    onAfterSelect?.();
+  }, [onSelect, navigate, onAfterSelect]);
 
   const handleEscape = useCallback(() => {
     setOpen(false);

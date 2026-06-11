@@ -165,12 +165,12 @@ buckets. **PostgreSQL** is one instance with two databases — the app and Keycl
 the schema. A one-shot **db-migrator** (Flyway) applies the SQL migrations against it before the
 backends start.
 
-**Observability**: an OpenTelemetry agent in each backend ships traces to the **OTel Collector**;
-application logs travel Kafka → **Data Prepper** → **OpenSearch**, and you read both in OpenSearch
-Dashboards. A one-shot **opensearch-init** bootstraps the index templates after OpenSearch is up, and
-a small **opensearch-proxy** (Nginx) injects the `X-Elastic-Product` header that Data Prepper's
-client expects. **Mailpit** is the dev SMTP catcher — outgoing mail lands in its inbox instead of a
-real provider.
+**Observability**: an OpenTelemetry agent in each backend ships traces **and** metrics to the **OTel
+Collector**, which sends traces straight to **OpenSearch** and routes metrics through **Data Prepper**
+(Micrometer OTLP → collector → Data Prepper → OpenSearch); application logs travel Kafka → **Data
+Prepper** → **OpenSearch**. You read all three in OpenSearch Dashboards. A one-shot **opensearch-init**
+bootstraps the index templates and dashboards after OpenSearch is up. **Mailpit** is the dev SMTP
+catcher — outgoing mail lands in its inbox instead of a real provider.
 
 **SonarQube** (the `sonarqube` scanner plus its own `sonar-db` Postgres) is the self-hosted
 code-quality server. It sits behind a Compose `profiles:` flag, so it starts only when explicitly

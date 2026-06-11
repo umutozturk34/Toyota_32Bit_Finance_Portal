@@ -53,7 +53,7 @@ export default function ToastContainer() {
   return createPortal(
     <div
       style={{ isolation: 'isolate' }}
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-md pointer-events-none"
+      className="fixed top-[max(1rem,env(safe-area-inset-top))] left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-md pointer-events-none"
     >
       <AnimatePresence>
         {items.map((item) => (

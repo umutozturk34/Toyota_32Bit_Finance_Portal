@@ -17,6 +17,7 @@ function shortLabel(item) {
 }
 
 function ItemRow({ item, color, onClick }) {
+  const { t } = useTranslation();
   const { format: money } = useMoney();
   const cls = getChangeClass(item.changePercent);
   return (
@@ -39,7 +40,7 @@ function ItemRow({ item, color, onClick }) {
         <span className="font-display text-[12px] font-semibold text-fg truncate group-hover:text-accent transition-colors leading-tight">
           {shortLabel(item)}
         </span>
-        <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-fg-subtle leading-tight">{item.marketType}</span>
+        <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-fg-subtle leading-tight">{t(`assets.labels.${item.marketType}`, { defaultValue: item.marketType })}</span>
       </div>
       <div className="flex flex-col items-end shrink-0">
         <span className="font-mono text-[12px] font-bold text-fg tabular-nums leading-tight">{money(item.price, priceCurrencyOf(item))}</span>

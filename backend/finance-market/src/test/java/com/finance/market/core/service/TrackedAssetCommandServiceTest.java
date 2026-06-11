@@ -13,6 +13,8 @@ import com.finance.market.core.mapper.TrackedAssetMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -195,6 +197,35 @@ class TrackedAssetCommandServiceTest {
 
         assertThatThrownBy(() -> service.delete(TrackedAssetType.CRYPTO, "missing"))
                 .isInstanceOf(ResourceNotFoundException.class);
+        verify(codeCache, never()).invalidate(any());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true, false", "false, true"})
+    void setEnabled_flipsFlagInPlace_andInvalidatesCache(boolean initial, boolean target) {
+        TrackedAsset entity = TrackedAsset.builder()
+                .assetType(TrackedAssetType.CRYPTO)
+                .assetCode("bitcoin")
+                .enabled(initial)
+                .build();
+        when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TrackedAssetType.CRYPTO, "bitcoin"))
+                .thenReturn(Optional.of(entity));
+
+        service.setEnabled(TrackedAssetType.CRYPTO, "bitcoin", target);
+
+        assertThat(entity.isEnabled()).isEqualTo(target);
+        verify(trackedAssetRepository).save(entity);
+        verify(codeCache).invalidate(TrackedAssetType.CRYPTO);
+    }
+
+    @Test
+    void setEnabled_raises_whenAssetMissing() {
+        when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(eq(TrackedAssetType.CRYPTO), any()))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.setEnabled(TrackedAssetType.CRYPTO, "missing", false))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verify(trackedAssetRepository, never()).save(any());
         verify(codeCache, never()).invalidate(any());
     }
 

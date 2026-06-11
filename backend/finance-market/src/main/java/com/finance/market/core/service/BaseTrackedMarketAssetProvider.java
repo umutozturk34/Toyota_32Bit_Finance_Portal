@@ -81,6 +81,13 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
     }
 
     @Override
+    public MarketAssetResponse getByCodeIfEnabled(String code) {
+        if (code == null || code.isBlank()) return null;
+        String normalizedCode = trackedAssetType().normalizeCode(code);
+        return enabledCodes().contains(normalizedCode) ? getByCode(normalizedCode) : null;
+    }
+
+    @Override
     public List<MarketAssetResponse> search(String searchTerm, MarketAssetFilters filters,
                                             String sortBy, String direction, int page, int size) {
         Set<String> enabledCodes = enabledCodes();

@@ -8,13 +8,12 @@ export const getChartOptions = (isDark) => ({
     // default (autoSize off) is correct. (createChart also passes autoSize:false explicitly for clarity.)
     layout: {
         attributionLogo: false,
-        // Subtle vertical gradient tinted toward the app's indigo/violet accent (--color-accent #6366f1 /
-        // --color-accent-secondary #a78bfa) so the plot reads as part of the site's purple identity rather than a
-        // neutral navy box. Dark: deep indigo→near-black violet; light: faint violet wash. Kept low-saturation so
-        // candles/lines stay high-contrast.
+        // Flat, crisp plot background — no vertical gradient (the gradient darkened the lower half and read as a
+        // muddy "shadow"). Dark is a clean near-black (NOT pure #000, so candles/grid keep depth); light is a
+        // clean off-white, both a touch off the card so the plot still reads as its own surface.
         background: isDark
-            ? { type: ColorType.VerticalGradient, topColor: '#0e0e14', bottomColor: '#08080c' }
-            : { type: ColorType.VerticalGradient, topColor: '#f2f6fb', bottomColor: '#e8edf5' },
+            ? { type: ColorType.Solid, color: '#0e0e14' }
+            : { type: ColorType.Solid, color: '#f4f7fb' },
         textColor: isDark ? '#7a7a85' : '#6b7280',
     },
     grid: {

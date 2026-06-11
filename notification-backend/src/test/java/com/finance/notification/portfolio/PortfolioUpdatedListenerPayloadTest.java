@@ -6,7 +6,7 @@ import com.finance.notification.core.dispatch.NotificationFanoutService.FanoutRe
 import com.finance.notification.core.dispatch.payload.PortfolioUpdatedPayload;
 import com.finance.notification.core.model.NotificationPreference;
 import com.finance.notification.core.repository.NotificationPreferenceRepository;
-import com.finance.notification.portfolio.PortfolioSnapshotReader.AggregatedSnapshot;
+import com.finance.notification.portfolio.PortfolioSnapshotReader.PortfolioLine;
 import com.github.benmanes.caffeine.cache.Cache;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,12 +28,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Exercises the private {@code buildPayloads} resolver by capturing the page-payload function passed
- * to {@code fanoutBulk} and invoking it directly, asserting that users with a positive snapshot
- * value get a payload while zero/null-value and missing-snapshot users are skipped.
+ * Exercises the private {@code buildPayloads} resolver by capturing the page-payload function passed to
+ * {@code fanoutBulk} and invoking it directly: each user's portfolios are listed separately (name + status) under
+ * a rolled-up header, while users with no portfolios or a non-positive combined value are skipped.
  */
 @ExtendWith(MockitoExtension.class)
 class PortfolioUpdatedListenerPayloadTest {
@@ -41,7 +42,6 @@ class PortfolioUpdatedListenerPayloadTest {
     @Mock private NotificationFanoutService fanoutService;
     @Mock private NotificationPreferenceRepository preferences;
     @Mock private PortfolioSnapshotReader snapshotReader;
-    @SuppressWarnings("unchecked")
     @Mock private Cache<String, Boolean> processedEventIds;
     @Mock private Acknowledgment ack;
 
@@ -60,34 +60,35 @@ class PortfolioUpdatedListenerPayloadTest {
     }
 
     @Test
-    void should_buildPayloadsOnlyForUsersWithPositiveValue_when_resolverInvoked() {
+    void should_listEachPortfolioSeparatelyAndSkipEmpty_when_resolverInvoked() {
         when(processedEventIds.getIfPresent("evt-1")).thenReturn(null);
         when(fanoutService.fanoutBulk(anyString(), any(), any())).thenReturn(new FanoutResult(1, 0));
         NotificationPreference positive = pref("positive-user");
         NotificationPreference zero = pref("zero-user");
-        NotificationPreference nullValue = pref("null-value-user");
         NotificationPreference missing = pref("missing-user");
-        when(snapshotReader.findTodayAggregateForUsers(
-                eq(Set.of("positive-user", "zero-user", "null-value-user", "missing-user"))))
+        when(snapshotReader.findTodayPerPortfolioForUsers(
+                eq(Set.of("positive-user", "zero-user", "missing-user"))))
                 .thenReturn(Map.of(
-                        "positive-user", new AggregatedSnapshot(
-                                new BigDecimal("1000"), new BigDecimal("50"), new BigDecimal("5"), 2),
-                        "zero-user", new AggregatedSnapshot(
-                                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 1),
-                        "null-value-user", new AggregatedSnapshot(
-                                null, null, null, 1)));
+                        "positive-user", List.of(
+                                new PortfolioLine(1L, "Spot", new BigDecimal("600"), new BigDecimal("30"), new BigDecimal("5")),
+                                new PortfolioLine(2L, "VIOP", new BigDecimal("400"), new BigDecimal("20"), new BigDecimal("5"))),
+                        "zero-user", List.of(
+                                new PortfolioLine(3L, "Empty", BigDecimal.ZERO, BigDecimal.ZERO, null))));
 
         listener.onPortfolioUpdated(new PortfolioUpdatedEvent("evt-1", OffsetDateTime.now(), "scheduler"), ack);
 
-        org.mockito.Mockito.verify(fanoutService)
-                .fanoutBulk(anyString(), any(), resolverCaptor.capture());
+        verify(fanoutService).fanoutBulk(anyString(), any(), resolverCaptor.capture());
         Map<String, PortfolioUpdatedPayload> payloads =
-                resolverCaptor.getValue().apply(List.of(positive, zero, nullValue, missing));
+                resolverCaptor.getValue().apply(List.of(positive, zero, missing));
 
         assertThat(payloads).containsOnlyKeys("positive-user");
         PortfolioUpdatedPayload payload = payloads.get("positive-user");
         assertThat(payload.totalValue()).isEqualByComparingTo("1000");
+        assertThat(payload.dailyPnl()).isEqualByComparingTo("50");
         assertThat(payload.portfolioCount()).isEqualTo(2);
         assertThat(payload.source()).isEqualTo("scheduler");
+        assertThat(payload.portfolios())
+                .extracting(PortfolioUpdatedPayload.Line::name)
+                .containsExactly("Spot", "VIOP");
     }
 }

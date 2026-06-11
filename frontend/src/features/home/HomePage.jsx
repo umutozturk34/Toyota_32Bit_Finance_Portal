@@ -45,7 +45,7 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-bg-base relative overflow-hidden">
-      <div className="fixed top-5 right-5 z-50 flex items-center gap-2">
+      <div className="fixed top-[max(1.25rem,env(safe-area-inset-top))] right-[max(1.25rem,env(safe-area-inset-right))] z-50 flex items-center gap-2">
         <div className="inline-flex items-center gap-0.5 rounded-lg border border-border-default bg-bg-elevated backdrop-blur-md p-0.5">
           {LANGS.map((lang) => {
             const active = lang === activeLang;

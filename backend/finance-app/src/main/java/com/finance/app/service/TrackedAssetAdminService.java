@@ -22,9 +22,9 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.util.Optional;
 
 /**
- * Admin commands for the tracked-asset registry (upsert/delete/reorder). Validates new assets exist
- * before persisting, and schedules side effects (data refresh, cache clear, default-page refresh) only
- * {@code afterCommit} so they never run against an uncommitted or rolled-back change.
+ * Admin commands for the tracked-asset registry (upsert/delete/reorder/enable-disable). Validates new
+ * assets exist before persisting, and schedules side effects (data refresh, cache clear, default-page
+ * refresh) only {@code afterCommit} so they never run against an uncommitted or rolled-back change.
  */
 @Service
 @Log4j2
@@ -102,6 +102,22 @@ public class TrackedAssetAdminService {
             @Override
             public void afterCommit() {
                 refreshDefaultPage(request.getAssetType());
+            }
+        });
+    }
+
+    /**
+     * Soft enable/disable of a tracked asset. Refreshes the type's default page {@code afterCommit} so the
+     * asset appears in (enable) or drops out of (disable) the public listings without a delete — and without
+     * being resurrected by the next discovery sweep.
+     */
+    @Transactional
+    public void setEnabled(TrackedAssetType type, String code, boolean enabled) {
+        trackedAssetCommandService.setEnabled(type, code, enabled);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                refreshDefaultPage(type);
             }
         });
     }

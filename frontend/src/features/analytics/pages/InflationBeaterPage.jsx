@@ -7,7 +7,7 @@ import { TrendingUp, TrendingDown, Trophy, Search, ChevronLeft, ChevronRight, Gi
 import Card from '../../../shared/components/card';
 import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
-import { useInflationBeaters } from '../hooks/useAnalytics';
+import { useInflationBeaters, useAssetDisplayMeta } from '../hooks/useAnalytics';
 import { useMacroIndicators } from '../../macro/hooks/useMacroIndicators';
 import { instrumentDisplayName } from '../../../shared/utils/instrumentLabel';
 import BenchmarkPicker from '../components/BenchmarkPicker';
@@ -254,6 +254,11 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
                    sortKey, sortDir, onToggleSort, onReset }) {
   const indexedEntries = useMemo(() => data.entries || [], [data.entries]);
   const totalCount = indexedEntries.length;
+  // Crypto logos + proper names (e.g. "Bitcoin" instead of the bare code) enriched from the market catalogue,
+  // shared with the Returns page; forex/commodity resolve through instrumentDisplayName, funds stay on code.
+  const metaFor = useAssetDisplayMeta();
+  const nameFor = (entry) => metaFor(entry.type, entry.code)?.name
+    || instrumentDisplayName(t, entry.type, entry.code, entry.name);
   const isDefaultView = sortKey === 'rank' && sortDir === 'asc'
     && verdictFilter === 'all' && typeFilter.size === 0 && !search.trim();
   const winRate = totalCount > 0 ? Math.round((data.beatingCount / totalCount) * 100) : 0;
@@ -480,20 +485,30 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
                   <td className="py-3 px-2 sm:px-3">
                     {(() => {
                       const badge = TYPE_BADGE[entry.type] || { label: entry.type, color: '#6366f1' };
-                      // Colored initials avatar, matching the overview Beaters widget rows (which had it while
-                      // this page didn't) — gives each asset the same at-a-glance visual identity in both places.
+                      // Crypto shows its CoinGecko logo (same as the Returns page); everything else keeps the
+                      // colored initials avatar so each asset still has an at-a-glance visual identity.
+                      const icon = entry.type === 'CRYPTO' ? metaFor(entry.type, entry.code)?.image : null;
                       const initials = (entry.code || '').replace('.IS', '').slice(0, 2).toUpperCase();
                       return (
                         <>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span
-                              className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold text-white shadow-sm"
-                              style={{ backgroundColor: badge.color }}
-                              aria-hidden
-                            >
-                              {initials}
-                            </span>
-                            <span className="text-fg font-semibold">{instrumentDisplayName(t, entry.type, entry.code, entry.name)}</span>
+                            {icon ? (
+                              <img
+                                src={icon}
+                                alt=""
+                                loading="lazy"
+                                className="w-6 h-6 rounded-full ring-1 ring-border-default shrink-0"
+                              />
+                            ) : (
+                              <span
+                                className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold text-white shadow-sm"
+                                style={{ backgroundColor: badge.color }}
+                                aria-hidden
+                              >
+                                {initials}
+                              </span>
+                            )}
+                            <span className="text-fg font-semibold">{nameFor(entry)}</span>
                             <span
                               className="inline-flex items-center text-[10px] font-mono font-semibold tracking-[0.04em] rounded px-1.5 py-0.5"
                               style={{ background: `${badge.color}1f`, color: badge.color, boxShadow: `inset 0 0 0 1px ${badge.color}40` }}

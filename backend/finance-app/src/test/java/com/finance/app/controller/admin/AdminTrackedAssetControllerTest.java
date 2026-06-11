@@ -92,4 +92,13 @@ class AdminTrackedAssetControllerTest {
         assertThat(response.isSuccess()).isTrue();
         verify(trackedAssetAdminService).delete(TrackedAssetType.STOCK, "THYAO.IS");
     }
+
+    @Test
+    void setEnabled_invokesAdminService_withTypeCodeAndFlag() {
+        ApiResponse<Void> response =
+                controller.setEnabled(TrackedAssetType.STOCK, "THYAO.IS", false);
+
+        assertThat(response.isSuccess()).isTrue();
+        verify(trackedAssetAdminService).setEnabled(TrackedAssetType.STOCK, "THYAO.IS", false);
+    }
 }

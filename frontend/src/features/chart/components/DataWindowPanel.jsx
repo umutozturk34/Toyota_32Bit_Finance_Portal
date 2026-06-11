@@ -88,8 +88,8 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
   // ─── Top summary strip: brand/date · CLOSE hero · range (stretches to fill) ───
   if (variant === 'summary') {
     return (
-      <div className="flex items-center gap-4 sm:gap-6 px-3 sm:px-4 py-2.5 overflow-x-auto scrollbar-hide overscroll-x-contain">
-        <div className="shrink-0 flex flex-col justify-center gap-1 w-[88px]">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 px-3 sm:px-4 py-2.5 overflow-x-auto scrollbar-hide overscroll-x-contain">
+        <div className="shrink-0 flex flex-col justify-center gap-1 w-full sm:w-[88px]">
           <span className="inline-flex items-center gap-1.5 text-xs font-display font-bold uppercase tracking-[0.16em] text-fg leading-none">
             <ScanSearch className="h-4 w-4 text-accent" />
             {t('chart.dataWindow.title')}
@@ -100,7 +100,7 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
           </span>
         </div>
 
-        <div className="shrink-0 w-[208px] overflow-hidden flex flex-col justify-center gap-1 pl-3 sm:pl-4 border-l border-border-default/60" style={{ boxShadow: `inset 2px 0 0 ${toneAccent(a.daily?.percent)}` }}>
+        <div className="shrink-0 w-full sm:w-[208px] overflow-hidden flex flex-col justify-center gap-1 pt-2 pl-0 sm:pt-0 sm:pl-4 border-t sm:border-t-0 sm:border-l border-border-default/60" style={{ boxShadow: `inset 2px 0 0 ${toneAccent(a.daily?.percent)}` }}>
           <span className="text-[9px] font-mono uppercase tracking-wider text-fg-subtle leading-none">{t('chart.dataWindow.close')}</span>
           {/* justify-between pins the % badge to the block's RIGHT edge and the price to the LEFT edge, so hovering
               a different day (a wider/narrower value) never slides them: the price grows from a fixed left, the
@@ -131,7 +131,7 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
         </div>
 
         {a.hiLo?.positionPct != null && (
-          <div className="shrink-0 w-36 sm:w-48 pl-3 sm:pl-4 border-l border-border-default/60">
+          <div className="shrink-0 w-full sm:w-36 lg:w-48 pt-2 pl-0 sm:pt-0 sm:pl-4 border-t sm:border-t-0 sm:border-l border-border-default/60">
             <PositionBar pct={a.hiLo.positionPct} lowLabel={money(a.hiLo.low)} highLabel={money(a.hiLo.high)} />
           </div>
         )}

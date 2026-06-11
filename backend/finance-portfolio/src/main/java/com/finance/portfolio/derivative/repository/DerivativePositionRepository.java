@@ -17,9 +17,13 @@ public interface DerivativePositionRepository extends JpaRepository<DerivativePo
     @Query("select dp from DerivativePosition dp where dp.portfolio.id = :portfolioId and dp.closeDate is null")
     List<DerivativePosition> findOpenByPortfolio(@Param("portfolioId") Long portfolioId);
 
-    /** Open positions whose contract has already expired before {@code today} (candidates for auto-close). */
+    /**
+     * Open positions whose contract has expired on or before {@code today} (candidates for auto-close).
+     * Uses {@code <=} so a contract expiring TODAY is settled in today's end-of-day run — the expiry day
+     * is the last trading/settlement day, so the position closes that evening, not the day after.
+     */
     @Query("select dp from DerivativePosition dp " +
-            "where dp.closeDate is null and dp.viopContract.expiryDate < :today")
+            "where dp.closeDate is null and dp.viopContract.expiryDate <= :today")
     List<DerivativePosition> findOpenWithExpiredContract(@Param("today") LocalDate today);
 
     Optional<DerivativePosition> findByIdAndPortfolioId(Long id, Long portfolioId);

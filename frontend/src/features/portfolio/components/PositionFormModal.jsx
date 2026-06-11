@@ -12,6 +12,7 @@ import PositionFormConfirmPanel from './PositionFormConfirmPanel';
 import PositionFormSuccessPanel from './PositionFormSuccessPanel';
 import { todayInputValue, preventDecimal, describeAction } from '../lib/positionFormHelpers';
 import { currencySymbolOf } from '../../../shared/utils/priceCurrency';
+import { MAX_MONEY, PRICE_DECIMALS, sanitizeNumberInput } from '../../../shared/utils/numberInput';
 import { commodityLabel } from '../../../shared/utils/commodityName';
 
 export default function PositionFormModal({ mode, portfolioId, portfolioPicker, asset, position, onClose, onComplete }) {
@@ -46,7 +47,7 @@ export default function PositionFormModal({ mode, portfolioId, portfolioPicker, 
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.97 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-2xl border border-border-default modal-panel p-4 sm:p-6"
+        className="relative w-full max-w-sm max-h-[90dvh] overflow-y-auto rounded-2xl border border-border-default modal-panel p-4 sm:p-6"
       >
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
         <div className="flex items-center justify-between mb-5">
@@ -218,7 +219,7 @@ export default function PositionFormModal({ mode, portfolioId, portfolioPicker, 
                           max="1000000000000"
                           inputMode="decimal"
                           value={exitPrice}
-                          onChange={(e) => { setExitPrice(e.target.value); setExitPriceTouched(true); setError(null); }}
+                          onChange={(e) => { setExitPrice(sanitizeNumberInput(e.target.value, MAX_MONEY, PRICE_DECIMALS)); setExitPriceTouched(true); setError(null); }}
                           placeholder="0.00"
                           className="w-full rounded-lg border border-border-default bg-bg-base pl-7 pr-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
                         />

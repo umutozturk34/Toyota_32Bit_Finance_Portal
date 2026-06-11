@@ -179,6 +179,19 @@ class PortfolioCrudServiceTest {
     }
 
     @Test
+    void shouldRejectAdd_whenShareAssetQuantityIsFractional() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        PositionRequest request = new PositionRequest(
+                "STOCK", "THYAO.IS", new BigDecimal("12.5"), LocalDateTime.now().minusDays(1), new BigDecimal("40"));
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+
+        assertThatThrownBy(() -> service.addPosition(PORTFOLIO_ID, USER_SUB, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.lot.wholeUnitRequired");
+        verify(positionRepository, never()).save(any());
+    }
+
+    @Test
     void shouldDelegateLotUpdateToDomainAndPersist_whenPositionOwned() {
         Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
         PortfolioPosition existing = stubPosition(PORTFOLIO_ID, AssetType.STOCK, "THYAO.IS",
@@ -547,6 +560,50 @@ class PortfolioCrudServiceTest {
         assertThat(closedSlice.getQuantity()).isEqualByComparingTo("4");
         assertThat(closedSlice.getEntryPrice()).isEqualByComparingTo("40");
         assertThat(closedSlice.getExitPrice()).isEqualByComparingTo("55");
+    }
+
+    @Test
+    void should_rejectPartialSell_when_shareAssetQuantityIsFractional() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        PortfolioPosition existing = PortfolioPosition.builder()
+                .portfolio(portfolio).portfolioId(PORTFOLIO_ID)
+                .assetType(AssetType.STOCK).assetCode("THYAO.IS")
+                .quantity(new BigDecimal("25"))
+                .entryDate(LocalDateTime.of(2024, 1, 1, 9, 0))
+                .entryPrice(new BigDecimal("40"))
+                .build();
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.findById(33L)).thenReturn(Optional.of(existing));
+        PositionSellRequest req = new PositionSellRequest(
+                new BigDecimal("12.5"), new BigDecimal("55"), LocalDateTime.of(2024, 6, 1, 12, 0));
+
+        assertThatThrownBy(() -> service.sellPosition(PORTFOLIO_ID, 33L, USER_SUB, req))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.sell.wholeUnitRequired");
+        verify(positionRepository, never()).save(any());
+    }
+
+    @Test
+    void should_allowFullClose_when_shareAssetQuantityIsFractional() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        PortfolioPosition existing = PortfolioPosition.builder()
+                .portfolio(portfolio).portfolioId(PORTFOLIO_ID)
+                .assetType(AssetType.STOCK).assetCode("THYAO.IS")
+                .quantity(new BigDecimal("12.5"))
+                .entryDate(LocalDateTime.of(2024, 1, 1, 9, 0))
+                .entryPrice(new BigDecimal("40"))
+                .build();
+        existing.setTrackedAsset(TrackedAsset.builder().id(1L).assetType(TrackedAssetType.STOCK).assetCode("THYAO.IS").build());
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.findById(33L)).thenReturn(Optional.of(existing));
+        when(positionRepository.save(any(PortfolioPosition.class))).thenAnswer(inv -> inv.getArgument(0));
+        PositionSellRequest req = new PositionSellRequest(
+                new BigDecimal("12.5"), new BigDecimal("55"), LocalDateTime.of(2024, 6, 1, 12, 0));
+
+        service.sellPosition(PORTFOLIO_ID, 33L, USER_SUB, req);
+
+        assertThat(existing.isClosed()).isTrue();
+        assertThat(existing.getExitPrice()).isEqualByComparingTo("55");
     }
 
     @Test

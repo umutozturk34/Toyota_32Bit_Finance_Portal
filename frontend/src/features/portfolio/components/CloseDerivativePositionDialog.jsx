@@ -13,7 +13,7 @@ import {
 } from '../hooks/useDerivativePositions';
 import { usePositionCloseForm, formatDateLabel, todayIso } from '../hooks/usePositionCloseForm';
 import { resolveNativeCurrency } from '../lib/positionFormHelpers';
-import { clampNumberInput, MAX_MONEY } from '../../../shared/utils/numberInput';
+import { clampNumberInput, sanitizeNumberInput, MAX_MONEY, LOT_DECIMALS } from '../../../shared/utils/numberInput';
 
 export default function CloseDerivativePositionDialog({ portfolioId, position, onClose }) {
   const entryDateIso = position?.entryDate ? String(position.entryDate).slice(0, 10) : null;
@@ -221,7 +221,7 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
               step="any"
               inputMode="decimal"
               value={closeQty}
-              onChange={(e) => setCloseQty(e.target.value)}
+              onChange={(e) => setCloseQty(sanitizeNumberInput(e.target.value, qty, LOT_DECIMALS))}
               placeholder="0.00"
               className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
             />

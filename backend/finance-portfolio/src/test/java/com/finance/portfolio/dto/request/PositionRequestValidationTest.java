@@ -16,8 +16,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Guards the spot-position request bounds added for input validation: asset code/type charset+length,
- * amount caps + decimal scale (quantity 19,8 / prices 19,4) and the 3-letter price currency. Valid lots
- * must pass; oversized / wrong-charset / over-precise inputs must be rejected before they reach the entity.
+ * amount caps + decimal scale (quantity up to 6 fraction digits, prices up to 8) and the 3-letter price
+ * currency. Valid lots must pass; oversized / wrong-charset / over-precise inputs must be rejected before
+ * they reach the entity.
  */
 class PositionRequestValidationTest {
 
@@ -78,6 +79,22 @@ class PositionRequestValidationTest {
                 LocalDateTime.now().minusDays(1), new BigDecimal("1"));
 
         assertThat(validator.validate(request)).isNotEmpty();
+    }
+
+    @Test
+    void rejects_quantityWithMoreThanSixDecimals() {
+        PositionRequest request = new PositionRequest("CRYPTO", "BTC", new BigDecimal("1.1234567"),
+                LocalDateTime.now().minusDays(1), new BigDecimal("1"));
+
+        assertThat(validator.validate(request)).isNotEmpty();
+    }
+
+    @Test
+    void accepts_quantityWithSixDecimals() {
+        PositionRequest request = new PositionRequest("CRYPTO", "BTC", new BigDecimal("1.123456"),
+                LocalDateTime.now().minusDays(1), new BigDecimal("1"));
+
+        assertThat(validator.validate(request)).isEmpty();
     }
 
     @Test

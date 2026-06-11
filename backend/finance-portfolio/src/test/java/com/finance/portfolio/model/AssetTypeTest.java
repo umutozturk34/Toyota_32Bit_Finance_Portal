@@ -19,4 +19,17 @@ class AssetTypeTest {
     void marketTypeMapsOneToOneWithAssetType(AssetType assetType, MarketType expected) {
         assertThat(assetType.marketType()).isEqualTo(expected);
     }
+
+    @ParameterizedTest
+    @CsvSource({
+            "STOCK,     true",
+            "FUND,      true",
+            "CRYPTO,    false",
+            "FOREX,     false",
+            "COMMODITY, false",
+            "VIOP,      false"
+    })
+    void isWholeUnitOnlyTrueOnlyForStockAndFund(AssetType assetType, boolean expected) {
+        assertThat(assetType.isWholeUnitOnly()).isEqualTo(expected);
+    }
 }

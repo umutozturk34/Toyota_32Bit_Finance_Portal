@@ -8,7 +8,7 @@ app:
       min-entry-date: 1999-01-04
       min-price-try: 0.0001
       max-price-try: 1000000000
-      min-quantity: 0.00000001
+      min-quantity: 0.000001
       max-quantity: 1000000000
     snapshot:
       daily-lookback-hours: 24

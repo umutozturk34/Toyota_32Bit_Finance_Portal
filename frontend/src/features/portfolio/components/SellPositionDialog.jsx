@@ -7,9 +7,9 @@ import { extractApiError } from '../../../shared/utils/apiError';
 import { useSellPosition } from '../hooks/usePortfolioData';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { usePositionCloseForm, todayIso, formatDateLabel } from '../hooks/usePositionCloseForm';
-import { resolveNativeCurrency } from '../lib/positionFormHelpers';
+import { resolveNativeCurrency, FRACTIONAL_TYPES, preventDecimal } from '../lib/positionFormHelpers';
 import { commodityLabel } from '../../../shared/utils/commodityName';
-import { clampNumberInput, MAX_MONEY } from '../../../shared/utils/numberInput';
+import { clampNumberInput, sanitizeNumberInput, MAX_MONEY, QUANTITY_DECIMALS } from '../../../shared/utils/numberInput';
 
 const QTY_PRESETS = [
   { id: '25', factor: 0.25 },
@@ -61,9 +61,20 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
     datePresets,
   } = form;
 
+  // Share-based assets (stocks, funds) trade in whole units — only crypto/forex/commodity are fractional.
+  // Mirrors the buy form so a partial sell can't carve a non-integer remainder (e.g. 12.5 shares).
+  const isFractional = FRACTIONAL_TYPES.includes(position?.assetType);
+  const qtyDecimals = isFractional ? QUANTITY_DECIMALS : 0;
+
   const [sellQty, setSellQty] = useState(() => String(totalQty));
   const parsedQty = Number(sellQty);
-  const validQty = Number.isFinite(parsedQty) && parsedQty > 0 && parsedQty <= totalQty;
+  // A full close is always allowed (lets a legacy fractional lot be cleared); a partial sell of a
+  // share-based asset must leave both a whole sold amount and a whole remainder, so no fractional piece
+  // is ever created.
+  const isFullClose = Number.isFinite(parsedQty) && Math.abs(parsedQty - totalQty) < 1e-9;
+  const leavesWhole = Number.isInteger(parsedQty) && Number.isInteger(totalQty - parsedQty);
+  const validQty = Number.isFinite(parsedQty) && parsedQty > 0 && parsedQty <= totalQty
+    && (isFractional || isFullClose || leavesWhole);
   const canSubmit = validQty && validPrice && validDate && !sell.isPending;
 
   const entryPriceInDisplay = useMemo(() => {
@@ -93,15 +104,12 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
   const remainingQty = totalQty - (validQty ? parsedQty : 0);
   const pnlPositive = realizedPnl != null && realizedPnl >= 0;
 
-  const applyQtyPreset = (factor) => {
-    if (factor >= 1) {
-      setSellQty(String(totalQty));
-      return;
-    }
+  const presetQty = (factor) => {
+    if (factor >= 1) return totalQty;
     const raw = totalQty * factor;
-    const rounded = Math.round(raw * 1e6) / 1e6;
-    setSellQty(String(rounded));
+    return isFractional ? Math.round(raw * 1e6) / 1e6 : Math.round(raw);
   };
+  const applyQtyPreset = (factor) => setSellQty(String(presetQty(factor)));
 
   const handleSubmit = async () => {
     setError(null);
@@ -175,7 +183,7 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
             </span>
             <div className="flex gap-1 flex-wrap">
               {QTY_PRESETS.map(({ id, factor }) => {
-                const target = factor >= 1 ? totalQty : Math.round(totalQty * factor * 1e6) / 1e6;
+                const target = presetQty(factor);
                 const active = validQty && Math.abs(parsedQty - target) < 1e-6;
                 return (
                   <button
@@ -198,11 +206,12 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
             type="number"
             min="0"
             max={totalQty}
-            step="any"
-            inputMode="decimal"
+            step={isFractional ? 'any' : '1'}
+            inputMode={isFractional ? 'decimal' : 'numeric'}
             value={sellQty}
-            onChange={(e) => setSellQty(e.target.value)}
-            placeholder="0.00"
+            onChange={(e) => setSellQty(sanitizeNumberInput(e.target.value, totalQty, qtyDecimals))}
+            onKeyDown={isFractional ? undefined : preventDecimal}
+            placeholder={isFractional ? '0.00' : '0'}
             className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
           />
           {!validQty && sellQty !== '' && (

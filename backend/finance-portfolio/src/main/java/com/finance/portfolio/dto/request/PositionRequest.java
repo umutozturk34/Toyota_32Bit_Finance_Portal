@@ -17,14 +17,15 @@ import java.time.LocalDateTime;
  * (null/blank means the prices are already TRY).
  *
  * <p>Bounds mirror the persisted columns + the client guards: codes are length/charset capped, amounts are
- * positive, capped and digit-bounded to the entity precision (quantity 19,8 / prices 19,4). Dates carry no
+ * positive, capped and digit-bounded (quantity to 6 fraction digits — the displayed precision and
+ * min-quantity floor — prices to 8). Dates carry no
  * {@code @PastOrPresent} on purpose — they are {@link LocalDateTime} and a same-day entry can hold a later
  * time-of-day than the server clock, which would falsely read as "future"; the UI caps the picker to today.
  */
 public record PositionRequest(
         @NotBlank @Size(max = 16) @Pattern(regexp = "^[A-Za-z]{1,16}$") String assetType,
         @NotBlank @Size(max = 32) @Pattern(regexp = "^[A-Za-z0-9._=-]{1,32}$") String assetCode,
-        @NotNull @Positive @DecimalMax("1000000000") @Digits(integer = 11, fraction = 8) BigDecimal quantity,
+        @NotNull @Positive @DecimalMax("1000000000") @Digits(integer = 11, fraction = 6) BigDecimal quantity,
         @NotNull LocalDateTime entryDate,
         @NotNull @Positive @DecimalMax("1000000000000") @Digits(integer = 15, fraction = 8) BigDecimal entryPrice,
         LocalDateTime exitDate,

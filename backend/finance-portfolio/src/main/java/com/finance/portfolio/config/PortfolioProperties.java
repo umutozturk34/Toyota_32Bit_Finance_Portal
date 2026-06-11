@@ -32,7 +32,7 @@ public class PortfolioProperties {
         private LocalDate minEntryDate = LocalDate.of(1999, 1, 4);
         private BigDecimal minPriceTry = new BigDecimal("0.0001");
         private BigDecimal maxPriceTry = new BigDecimal("1000000000");
-        private BigDecimal minQuantity = new BigDecimal("0.00000001");
+        private BigDecimal minQuantity = new BigDecimal("0.000001");
         private BigDecimal maxQuantity = new BigDecimal("1000000000");
     }
 

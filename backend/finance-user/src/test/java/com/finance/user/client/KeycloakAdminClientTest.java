@@ -31,7 +31,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -60,7 +59,7 @@ class KeycloakAdminClientTest {
 
     private KeycloakAdminClient client;
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
         KeycloakAdminProperties properties = new KeycloakAdminProperties();
@@ -387,7 +386,7 @@ class KeycloakAdminClientTest {
     }
 
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     void listUsers_buildsUriWithSearchParam_whenSearchProvided() {
         // Arrange
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();
@@ -410,7 +409,7 @@ class KeycloakAdminClientTest {
     }
 
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     void countUsers_buildsUriWithSearchParam_whenSearchProvided() {
         // Arrange
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();
@@ -433,7 +432,7 @@ class KeycloakAdminClientTest {
     }
 
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     void countUsers_buildsUriWithoutSearchParam_whenSearchBlank() {
         // Arrange
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();
@@ -455,7 +454,7 @@ class KeycloakAdminClientTest {
     }
 
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     void sendActionsEmail_buildsUriWithQueryParams() {
         // Arrange
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();
@@ -702,7 +701,7 @@ class KeycloakAdminClientTest {
     }
 
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     void ensureClientRedirectUris_buildsUriWithClientIdQueryParam() {
         // Arrange
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();

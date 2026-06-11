@@ -75,13 +75,12 @@ public class ViopEntityWriter implements MarketEntityWriter {
         int priceChanged = 0;
         int bootstrapped = 0;
         for (ViopQuoteSnapshot snap : snapshots) {
-            ViopContract entity = existing.get(snap.symbol());
-            boolean isNew = entity == null;
-            if (isNew) {
-                entity = bootstrapFromSymbol(snap.symbol());
-                if (entity == null) continue;
-                bootstrapped++;
-            }
+            ViopContract tracked = existing.get(snap.symbol());
+            boolean isNew = tracked == null;
+            ViopContract entity = isNew ? bootstrapFromSymbol(snap.symbol()) : tracked;
+            // Null only when a brand-new symbol failed to bootstrap; skip it (existing contracts are never null).
+            if (entity == null) continue;
+            if (isNew) bootstrapped++;
             BigDecimal priorLast = entity.getLastPrice();
             BigDecimal priorClose = entity.getDayClose();
             entity.setActive(true);

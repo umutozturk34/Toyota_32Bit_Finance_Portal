@@ -301,7 +301,6 @@ class PortfolioBackfillServiceTest {
 
     @Test
     void shouldSkipTodayAggregate_whenNoPositionsAndNoDerivativesExist() {
-        LocalDate today = LocalDate.now();
         when(portfolioRepository.findById(PORTFOLIO_ID)).thenReturn(Optional.of(portfolio()));
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
@@ -485,7 +484,6 @@ class PortfolioBackfillServiceTest {
 
     @Test
     void shouldSkipTodaySnapshot_whenBothExistingForToday() {
-        LocalDate today = LocalDate.now();
         when(portfolioRepository.findById(PORTFOLIO_ID)).thenReturn(Optional.of(portfolio()));
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
 

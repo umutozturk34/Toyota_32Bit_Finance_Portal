@@ -11,7 +11,7 @@
             <meta name="${meta?split('==')[0]}" content="${meta?split('==')[1]}"/>
         </#list>
     </#if>
-    <title>${msg("loginTitle",(realm.displayName!''))}</title>
+    <title>${msg("template.subtitle")}</title>
     <link rel="icon" type="image/svg+xml" href="${url.resourcesPath}/img/favicon.svg" />
     <#if properties.stylesCommon?has_content>
         <#list properties.stylesCommon?split(' ') as style>
@@ -34,14 +34,14 @@
 
     <div class="login-pf-page">
         <div class="card-pf">
+            <div class="fp-card-accent" aria-hidden="true"></div>
             <div class="fp-glow" id="fp-glow"></div>
 
             <div class="fp-card-header">
                 <div class="fp-logo">
                     <span class="fp-logo-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
                     </span>
-                    <span class="fp-logo-text">Finance Portal</span>
                 </div>
                 <p>${msg("template.subtitle")}</p>
             </div>
@@ -60,10 +60,6 @@
                         <#nested "info">
                     </div>
                 </#if>
-            </div>
-
-            <div class="fp-card-footer">
-                <p>${msg("template.poweredBy")}</p>
             </div>
         </div>
     </div>

@@ -100,6 +100,9 @@ public class InflationBeaterScheduler {
      * enumerated dynamically from the service so newly added indicators/periods warm automatically.
      */
     private void warmAll() {
+        // Simulate the (~2700-asset) universe once per (period × currency) up front; the per-benchmark
+        // rankings below then read from that cache instead of re-simulating the universe per benchmark.
+        inflationBeaterService.warmUniverse();
         List<String> benchmarks = inflationBeaterService.warmableBenchmarkCodes();
         Set<String> periods = inflationBeaterService.warmablePeriods();
         int total = periods.size() * benchmarks.size();

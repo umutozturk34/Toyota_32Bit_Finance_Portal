@@ -284,12 +284,12 @@ const MainLayout = () => {
 
       <div className={`flex-1 flex flex-col min-w-0 relative overflow-x-hidden ${blurCls}`}>
         <main className="flex-1 w-full">
-          <div className="max-w-7xl 2xl:max-w-8xl 3xl:max-w-9xl mx-auto px-4 sm:px-6 py-6 lg:py-6 pt-[calc(4rem+env(safe-area-inset-top))] lg:pt-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:py-6 pt-[calc(4rem+env(safe-area-inset-top))] lg:pt-6">
             <Outlet />
           </div>
         </main>
         <footer className="border-t border-border-default">
-          <div className="max-w-7xl 2xl:max-w-8xl 3xl:max-w-9xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-2">
             <p className="text-[11px] sm:text-xs text-fg-subtle">{t('home.footer')}</p>
             <p className="text-[11px] sm:text-xs text-fg-subtle font-mono">v1.0.0</p>
           </div>

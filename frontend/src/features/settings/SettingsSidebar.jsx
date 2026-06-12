@@ -156,7 +156,7 @@ export default function SettingsSidebar({ isOpen, onClose }) {
     <SideDrawer
       open={isOpen}
       onClose={onClose}
-      width="min(380px, 100vw)"
+      width="min(23.75rem, 100vw)"
       icon={SettingsIcon}
       iconTint="text-accent"
       title={t('settings.title')}

@@ -290,12 +290,12 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency, commo
           return `<div style="display:flex;justify-content:space-between;gap:14px;align-items:center;padding:3px 0;font-family:ui-monospace,monospace;font-size:11px">
             <span style="display:flex;align-items:center;gap:6px;min-width:0">
               <span style="width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0"></span>
-              <span style="color:${tooltipFg};opacity:0.85">${seriesDef.name}</span>
+              <span style="color:${tooltipFg};opacity:0.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${seriesDef.name}</span>
             </span>
             <span style="display:flex;align-items:baseline;gap:8px;flex-shrink:0">${valueSpans}</span>
           </div>`;
         }).filter(Boolean).join('');
-        return `<div style="padding:6px 4px;min-width:240px">
+        return `<div style="padding:6px 4px;min-width:min(240px,calc(100vw - 24px));max-width:calc(100vw - 24px)">
           <div style="font-size:10px;color:${tooltipFg};opacity:0.65;margin-bottom:6px">${date}</div>
           ${rows}
         </div>`;

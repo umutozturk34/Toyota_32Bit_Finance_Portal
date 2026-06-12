@@ -224,7 +224,17 @@
   border-bottom: 2px solid var(--color-accent);
 }
 
+:root {
+  /* Content scales up proportionally on wider screens (rem-based UI), so a bigger monitor shows the
+     SAME design filled in, just larger — not a narrow centered column. --app-scale-ref is the width
+     where scale = 1.0; --app-scale-max caps how large it gets so 4K/ultrawide don't oversize.
+     Tune the feel with these two numbers. */
+  --app-scale-ref: 1536;
+  --app-scale-max: 1.8;
+}
+
 html {
+  font-size: clamp(1rem, calc(100vw / var(--app-scale-ref) * 16), calc(1rem * var(--app-scale-max)));
   font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;

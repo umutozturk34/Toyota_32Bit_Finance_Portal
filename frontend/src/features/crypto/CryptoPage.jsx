@@ -114,7 +114,7 @@ export default function CryptoPage() {
             errorMessage={t('market.crypto.error')}
             emptyMessage={t('market.crypto.empty')}
             emptyHint={t('market.empty.adminHint')}
-            gridClass="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 min-h-[600px] content-start"
+            gridClass="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-h-[600px] content-start"
             animatePresence
         />
     );

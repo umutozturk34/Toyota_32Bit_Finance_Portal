@@ -25,16 +25,21 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * The client fetches data via four HTTP calls in order: /view → /allocation?mode=realizedPnl →
- * /positions (paginated) → /chart. Each test queues responses in that exact order. An empty
- * positions page short-circuits the pagination loop so most tests need exactly 4 responses.
+ * The client fetches data via four reads — /view, /allocation?mode=realizedPnl, /positions
+ * (paginated) and /chart — issued CONCURRENTLY (Mono.zip), so responses are dispatched by endpoint
+ * keyword rather than by call order. An empty positions page short-circuits the pagination loop.
  */
 class PortfolioDataClientTest {
 
@@ -42,35 +47,53 @@ class PortfolioDataClientTest {
             "{\"success\":true,\"data\":{\"content\":[],\"page\":0,\"size\":100,\"totalElements\":0,\"totalPages\":0}}";
 
     private final AtomicReference<ClientRequest> lastRequest = new AtomicReference<>();
-    private final List<ClientRequest> capturedRequests = new ArrayList<>();
-    private final List<ClientResponse> queuedResponses = new ArrayList<>();
+    private final List<ClientRequest> capturedRequests = Collections.synchronizedList(new ArrayList<>());
+    // The four reads now run concurrently (Mono.zip), so responses are dispatched by endpoint rather
+    // than by call order — an order-based queue raced and handed /chart the /positions body.
+    private final Map<String, Deque<ClientResponse>> responsesByEndpoint = new ConcurrentHashMap<>();
 
     private PortfolioDataClient buildClient() {
         ExchangeFunction exchange = req -> {
             lastRequest.set(req);
             capturedRequests.add(req);
-            if (queuedResponses.isEmpty()) {
-                return Mono.error(new IllegalStateException("no response queued"));
+            Deque<ClientResponse> queue = responsesByEndpoint.get(endpointOf(req.url().toString()));
+            ClientResponse response = queue == null ? null : queue.pollFirst();
+            if (response == null) {
+                return Mono.error(new IllegalStateException("no response queued for " + req.url()));
             }
-            return Mono.just(queuedResponses.remove(0));
+            return Mono.just(response);
         };
         WebClient.Builder builder = WebClient.builder().exchangeFunction(exchange);
         return new PortfolioDataClient(builder, "http://backend:8080");
     }
 
-    /** Queue the standard 4 responses: view (nullable JSON), realized allocation, positions page, chart. */
+    /** Maps a request URL to its endpoint key so responses dispatch correctly regardless of call order. */
+    private static String endpointOf(String url) {
+        if (url.contains("/view")) return "view";
+        if (url.contains("/allocation")) return "allocation";
+        if (url.contains("/positions")) return "positions";
+        if (url.contains("/chart")) return "chart";
+        return "other";
+    }
+
+    /** Enqueues a response under an endpoint key (FIFO per endpoint — positions pages drain in order). */
+    private void queue(String endpoint, ClientResponse response) {
+        responsesByEndpoint.computeIfAbsent(endpoint, k -> new ConcurrentLinkedDeque<>()).add(response);
+    }
+
+    /** Queue the standard responses: view (nullable JSON), realized allocation, positions page, chart. */
     private void queueStandardResponses(String viewJson, String realizedJson, String positionsJson, String chartJson) {
-        queuedResponses.add(jsonResponse(viewJson));
-        queuedResponses.add(jsonResponse(realizedJson));
-        queuedResponses.add(jsonResponse(positionsJson));
-        queuedResponses.add(jsonResponse(chartJson));
+        queue("view", jsonResponse(viewJson));
+        queue("allocation", jsonResponse(realizedJson));
+        queue("positions", jsonResponse(positionsJson));
+        queue("chart", jsonResponse(chartJson));
     }
 
     @BeforeEach
     void setUp() {
         lastRequest.set(null);
         capturedRequests.clear();
-        queuedResponses.clear();
+        responsesByEndpoint.clear();
     }
 
     @Test
@@ -118,8 +141,8 @@ class PortfolioDataClientTest {
 
         client.fetch(1L, "1m", "abc.token");
 
-        ClientRequest first = capturedRequests.get(0);
-        assertThat(first.headers().getFirst(HttpHeaders.AUTHORIZATION)).isEqualTo("Bearer abc.token");
+        assertThat(capturedRequests).isNotEmpty().allSatisfy(r ->
+                assertThat(r.headers().getFirst(HttpHeaders.AUTHORIZATION)).isEqualTo("Bearer abc.token"));
     }
 
     @Test
@@ -129,8 +152,8 @@ class PortfolioDataClientTest {
 
         client.fetch(1L, "1m", "   ");
 
-        ClientRequest first = capturedRequests.get(0);
-        assertThat(first.headers().getFirst(HttpHeaders.AUTHORIZATION)).isNull();
+        assertThat(capturedRequests).isNotEmpty().allSatisfy(r ->
+                assertThat(r.headers().getFirst(HttpHeaders.AUTHORIZATION)).isNull());
     }
 
     @Test
@@ -140,8 +163,8 @@ class PortfolioDataClientTest {
 
         client.fetch(1L, "1m", null);
 
-        ClientRequest first = capturedRequests.get(0);
-        assertThat(first.headers().getFirst(HttpHeaders.AUTHORIZATION)).isNull();
+        assertThat(capturedRequests).isNotEmpty().allSatisfy(r ->
+                assertThat(r.headers().getFirst(HttpHeaders.AUTHORIZATION)).isNull());
     }
 
     @Test
@@ -151,15 +174,12 @@ class PortfolioDataClientTest {
 
         client.fetch(99L, "6m", "tok");
 
-        assertThat(capturedRequests).hasSize(4);
-        assertThat(capturedRequests.get(0).url().toString())
-                .isEqualTo("http://backend:8080/api/v1/portfolios/99/view?include=summary,allocation");
-        assertThat(capturedRequests.get(1).url().toString())
-                .isEqualTo("http://backend:8080/api/v1/portfolios/99/allocation?mode=realizedPnl");
-        assertThat(capturedRequests.get(2).url().toString())
-                .isEqualTo("http://backend:8080/api/v1/portfolios/99/positions?page=0&size=100");
-        assertThat(capturedRequests.get(3).url().toString())
-                .isEqualTo("http://backend:8080/api/v1/portfolios/99/chart?type=performance&range=6m");
+        assertThat(capturedRequests.stream().map(r -> r.url().toString()).toList())
+                .containsExactlyInAnyOrder(
+                        "http://backend:8080/api/v1/portfolios/99/view?include=summary,allocation",
+                        "http://backend:8080/api/v1/portfolios/99/allocation?mode=realizedPnl",
+                        "http://backend:8080/api/v1/portfolios/99/positions?page=0&size=100",
+                        "http://backend:8080/api/v1/portfolios/99/chart?type=performance&range=6m");
     }
 
     @Test
@@ -217,30 +237,38 @@ class PortfolioDataClientTest {
     @Test
     void should_iterateAllPositionPages_when_multiplePages() {
         PortfolioDataClient client = buildClient();
-        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":null}"));
-        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":[]}"));
+        queue("view", jsonResponse("{\"success\":true,\"data\":null}"));
+        queue("allocation", jsonResponse("{\"success\":true,\"data\":[]}"));
         // page 0: 2 rows, totalPages=2
-        queuedResponses.add(jsonResponse(
+        queue("positions", jsonResponse(
                 "{\"success\":true,\"data\":{\"content\":[{\"id\":1,\"assetCode\":\"A\"},{\"id\":2,\"assetCode\":\"B\"}],\"page\":0,\"size\":100,\"totalElements\":3,\"totalPages\":2}}"));
         // page 1: 1 row, end of pagination
-        queuedResponses.add(jsonResponse(
+        queue("positions", jsonResponse(
                 "{\"success\":true,\"data\":{\"content\":[{\"id\":3,\"assetCode\":\"C\"}],\"page\":1,\"size\":100,\"totalElements\":3,\"totalPages\":2}}"));
-        queuedResponses.add(jsonResponse("{\"success\":true,\"data\":[]}"));
+        queue("chart", jsonResponse("{\"success\":true,\"data\":[]}"));
 
         PortfolioReportBundle bundle = client.fetch(1L, "1m", "tok");
 
         assertThat(bundle.positions()).hasSize(3);
-        assertThat(capturedRequests.get(2).url().toString()).endsWith("page=0&size=100");
-        assertThat(capturedRequests.get(3).url().toString()).endsWith("page=1&size=100");
+        List<String> positionUrls = capturedRequests.stream()
+                .map(r -> r.url().toString())
+                .filter(u -> u.contains("/positions"))
+                .toList();
+        assertThat(positionUrls).containsExactly(
+                "http://backend:8080/api/v1/portfolios/1/positions?page=0&size=100",
+                "http://backend:8080/api/v1/portfolios/1/positions?page=1&size=100");
     }
 
     @Test
     void should_propagateException_when_upstreamFails() {
         PortfolioDataClient client = buildClient();
-        queuedResponses.add(ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR)
+        queue("view", ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR)
                 .header("Content-Type", MediaType.TEXT_PLAIN_VALUE)
                 .body("boom")
                 .build());
+        queue("allocation", jsonResponse("{\"success\":true,\"data\":[]}"));
+        queue("positions", jsonResponse(EMPTY_POSITIONS_PAGE));
+        queue("chart", jsonResponse("{\"success\":true,\"data\":[]}"));
 
         assertThatThrownBy(() -> client.fetch(1L, "1m", "tok"))
                 .isInstanceOf(RuntimeException.class);
@@ -326,6 +354,45 @@ class PortfolioDataClientTest {
 
         assertThat(bundle.returnSeries()).hasSize(2);
         assertThat(bundle.returnSeries().get(0).value()).isEqualTo(5d);
+    }
+
+    @Test
+    void should_returnSeriesUnchanged_when_pointCountWithinCap() {
+        // Arrange: a series comfortably under the chart-point cap.
+        List<PerformanceSeriesPoint> small = new ArrayList<>();
+        for (int i = 0; i < 50; i++) {
+            small.add(new PerformanceSeriesPoint(LocalDateTime.of(2026, 1, 1, 0, 0).plusDays(i), i));
+        }
+
+        // Act
+        List<PerformanceSeriesPoint> result = PortfolioDataClient.downsample(small);
+
+        // Assert: identity — no copy, no point dropped.
+        assertThat(result).isSameAs(small);
+    }
+
+    @Test
+    void should_capPointCountPreservingEndpointsAndExtremes_when_seriesExceedsCap() {
+        // Arrange: 2000 points with a global max at index 777 and a global min at index 1234 that a
+        // plain uniform stride would skip.
+        LocalDateTime t0 = LocalDateTime.of(2020, 1, 1, 0, 0);
+        List<PerformanceSeriesPoint> big = new ArrayList<>();
+        for (int i = 0; i < 2000; i++) {
+            big.add(new PerformanceSeriesPoint(t0.plusDays(i), 100d + i));
+        }
+        big.set(777, new PerformanceSeriesPoint(t0.plusDays(777), 999_999d));
+        big.set(1234, new PerformanceSeriesPoint(t0.plusDays(1234), -999_999d));
+
+        // Act
+        List<PerformanceSeriesPoint> result = PortfolioDataClient.downsample(big);
+
+        // Assert: far fewer points, but the endpoints and both extremes survive, still time-ordered.
+        assertThat(result.size()).isLessThan(big.size()).isLessThanOrEqualTo(404);
+        assertThat(result.get(0)).isEqualTo(big.get(0));
+        assertThat(result.get(result.size() - 1)).isEqualTo(big.get(1999));
+        assertThat(result).contains(big.get(777), big.get(1234));
+        assertThat(result).isSortedAccordingTo(
+                java.util.Comparator.comparing(PerformanceSeriesPoint::timestamp));
     }
 
     private ClientResponse jsonResponse(String body) {

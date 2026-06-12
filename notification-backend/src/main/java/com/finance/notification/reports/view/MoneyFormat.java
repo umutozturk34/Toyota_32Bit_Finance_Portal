@@ -14,6 +14,8 @@ public final class MoneyFormat {
     private static final BigDecimal THOUSAND = new BigDecimal("1000");
     private static final BigDecimal MILLION = new BigDecimal("1000000");
     private static final BigDecimal BILLION = new BigDecimal("1000000000");
+    /** Adaptive-decimal cap, matching the scale-8 snapshot money columns so no cell shows more digits than the data carries. */
+    private static final int MAX_DECIMALS = 8;
 
     private final String symbol;
     private final char groupSep;
@@ -89,8 +91,20 @@ public final class MoneyFormat {
         return formatPlain(scaled) + suffix;
     }
 
+    /**
+     * Sub-thousand formatter with adaptive precision: a value that is strictly positive but would round to
+     * zero at {@code decimals} widens one place at a time (up to {@link #MAX_DECIMALS}) until its first
+     * significant digit appears, so a real sub-cent holding never prints as {@code 0,00}. Normal values keep
+     * their {@code decimals} places unchanged (no trailing zeros are stripped); a genuine zero stays {@code 0,00}.
+     */
     private String fullDecimal(BigDecimal absValue, int decimals) {
-        return formatPlain(absValue.setScale(decimals, RoundingMode.HALF_UP));
+        int scale = decimals;
+        if (absValue.signum() > 0) {
+            while (scale < MAX_DECIMALS && absValue.setScale(scale, RoundingMode.HALF_UP).signum() == 0) {
+                scale++;
+            }
+        }
+        return formatPlain(absValue.setScale(scale, RoundingMode.HALF_UP));
     }
 
     private String formatPlain(BigDecimal value) {

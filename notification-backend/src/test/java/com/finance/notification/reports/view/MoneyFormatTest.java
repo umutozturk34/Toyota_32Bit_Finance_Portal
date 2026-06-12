@@ -242,4 +242,47 @@ class MoneyFormatTest {
 
         assertThat(result).isEqualTo("—");
     }
+
+    @ParameterizedTest
+    @CsvSource({
+            "0.000046116,$ 0.00005",   // widens to 5 dp to reveal the first significant digit (was $ 0.00)
+            "0.0000001,$ 0.0000001",   // widens to 7 dp
+            "0.05,$ 0.05",             // normal sub-cent value keeps 2 dp
+            "0.5,$ 0.50",              // normal value keeps 2 dp, trailing zero preserved
+            "0,$ 0.00"                 // a genuine zero stays 0.00
+    })
+    void should_adaptDecimals_when_subThousandValueWouldRoundToZero(String input, String expected) {
+        MoneyFormat format = new MoneyFormat("$", Locale.ENGLISH);
+
+        String result = format.of(new BigDecimal(input));
+
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    void should_revealTinyValueWithTurkishSeparator_when_subCent() {
+        MoneyFormat format = new MoneyFormat("₺", Locale.forLanguageTag("tr"));
+
+        String result = format.of(new BigDecimal("0.000046116"));
+
+        assertThat(result).isEqualTo("₺ 0,00005");
+    }
+
+    @Test
+    void should_capAdaptiveDecimalsAtEight_when_valueBelowResolution() {
+        MoneyFormat format = new MoneyFormat("$", Locale.ENGLISH);
+
+        String result = format.of(new BigDecimal("0.000000001"));
+
+        assertThat(result).isEqualTo("$ 0.00000000");
+    }
+
+    @Test
+    void should_adaptSignedTinyValue_when_negativeSubCent() {
+        MoneyFormat format = new MoneyFormat("$", Locale.ENGLISH);
+
+        String result = format.signed(new BigDecimal("-0.000046116"));
+
+        assertThat(result).isEqualTo("−$ 0.00005");
+    }
 }

@@ -15,6 +15,7 @@ import com.finance.notification.reports.fx.ReportFxConverter;
 import com.finance.notification.reports.model.ReportPalette;
 import com.finance.notification.reports.view.AllocationViewItem;
 import com.finance.notification.reports.view.MoneyFormat;
+import com.finance.notification.reports.view.PercentFormat;
 import com.finance.notification.reports.view.RealizedViewItem;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.MessageSource;
@@ -40,6 +41,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 /**
  * Builds the portfolio PDF report end to end: fetches report data, derives allocation/winners/losers
@@ -104,16 +107,30 @@ public class PortfolioPdfService {
     public byte[] generate(PortfolioPdfRequest request, String userSub, String accessToken) {
         long start = System.currentTimeMillis();
         try {
+            String requested = request.currency() == null ? TRY : request.currency().toUpperCase(Locale.ROOT);
+            // Start the USD/EUR rate-history round-trip concurrently with the portfolio data fetch so it
+            // overlaps the 4-way data fan-out instead of stacking sequentially after it — a full,
+            // VDS-amplified round-trip saved on every non-TRY report (TRY reports skip FX entirely). The
+            // range stays "ALL": a lot's entry date can predate the report window and must convert at its
+            // own historical rate, so the window cannot be trimmed without corrupting older lots.
+            CompletableFuture<List<ForexRatePoint>> fxFuture = TRY.equals(requested)
+                    ? CompletableFuture.completedFuture(List.of())
+                    : CompletableFuture.supplyAsync(() -> forexHistoryClient.fetchHistory(requested, accessToken));
+
+            long fetchStart = System.currentTimeMillis();
             PortfolioReportBundle bundle = dataClient.fetch(request.portfolioId(), "5Y", accessToken);
+            long fetchMs = System.currentTimeMillis() - fetchStart;
             if (bundle.positions() == null || bundle.positions().isEmpty()) {
+                fxFuture.cancel(true);
                 throw new BadRequestException("error.report.portfolioEmpty");
             }
             Locale locale = "en".equalsIgnoreCase(request.locale()) ? Locale.ENGLISH : new Locale("tr", "TR");
             ReportPalette palette = ReportPalette.of(request.theme());
-            String requested = request.currency() == null ? TRY : request.currency().toUpperCase(Locale.ROOT);
-            List<ForexRatePoint> rates = TRY.equals(requested)
-                    ? List.of()
-                    : forexHistoryClient.fetchHistory(requested, accessToken);
+            // fxMs is now just the residual wait after the data fetch — ~0 when the FX round-trip already
+            // finished concurrently, so it no longer stacks on the critical path for non-TRY reports.
+            long fxStart = System.currentTimeMillis();
+            List<ForexRatePoint> rates = joinFxRates(fxFuture, requested);
+            long fxMs = System.currentTimeMillis() - fxStart;
             // A non-TRY report with no FX history available falls back to TRY rather than printing raw
             // lira magnitudes under a $/€ symbol.
             String target = (!TRY.equals(requested) && rates.isEmpty()) ? TRY : requested;
@@ -148,6 +165,7 @@ public class PortfolioPdfService {
             ctx.setVariable("decimalSep", "tr".equalsIgnoreCase(locale.getLanguage()) ? "COMMA" : "POINT");
             ctx.setVariable("money", new MoneyFormat(currencySymbol, locale));
             ctx.setVariable("moneyTry", new MoneyFormat("₺", locale));
+            ctx.setVariable("pct", new PercentFormat(locale));
             ctx.setVariable("generatedAt", LocalDateTime.now().format(GENERATED_FMT.withLocale(locale)));
             ctx.setVariable("summary", summary);
             ctx.setVariable("positions", positions);
@@ -168,11 +186,14 @@ public class PortfolioPdfService {
             LocaleContextHolder.setLocale(locale);
             String html = templateEngine.process(TEMPLATE, ctx);
 
+            long renderStart = System.currentTimeMillis();
             byte[] pdf = renderPdf(html, request.portfolioId());
+            long renderMs = System.currentTimeMillis() - renderStart;
 
-            log.info("Portfolio PDF generated portfolioId={} theme={} locale={} bytes={} durationMs={}",
+            log.info("Portfolio PDF generated portfolioId={} theme={} locale={} bytes={} "
+                            + "durationMs={} fetchMs={} fxMs={} renderMs={}",
                     request.portfolioId(), request.theme(), request.locale(),
-                    pdf.length, System.currentTimeMillis() - start);
+                    pdf.length, System.currentTimeMillis() - start, fetchMs, fxMs, renderMs);
             return pdf;
         } catch (PdfGenerationException e) {
             log.error("Portfolio PDF generation failed portfolioId={} durationMs={} cause={}",
@@ -222,6 +243,23 @@ public class PortfolioPdfService {
             throw new PdfGenerationException("pdf-service returned empty body for portfolio " + portfolioId);
         }
         return pdf;
+    }
+
+    /**
+     * Joins the FX history fetch that was started concurrently with the data fetch. Unwraps the
+     * {@link CompletionException} so a downstream failure surfaces as its original runtime exception —
+     * caught by {@link #generate}'s existing handler exactly as the previous sequential call was.
+     */
+    private static List<ForexRatePoint> joinFxRates(CompletableFuture<List<ForexRatePoint>> fxFuture, String currency) {
+        try {
+            return fxFuture.join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new PdfGenerationException("fx history fetch failed for " + currency, cause);
+        }
     }
 
     private List<AllocationViewItem> buildAllocationItems(List<ReportAllocation> raw, Locale locale) {

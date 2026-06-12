@@ -30,7 +30,7 @@ export default function AnalyticsPage() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5"
+      className="py-6 space-y-5"
     >
       <nav className="flex items-center gap-1 flex-wrap border-b border-border-default/40 pb-0.5 overflow-x-auto">
         {TABS.map(({ id, labelKey, Icon }) => {

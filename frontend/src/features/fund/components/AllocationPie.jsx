@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Card from '../../../shared/components/card';
 import { useTheme } from '../../../shared/context/useTheme';
+import { formatSharePct } from '../../../shared/utils/percent';
 
 const PALETTE = [
   '#5E6AD2', '#10b981', '#f59e0b', '#ef4444',
@@ -62,7 +63,7 @@ export default function AllocationPie({ allocations }) {
         start: prevEnd * 360,
         end: endFraction * 360,
         endFraction,
-        pct: (fraction * 100).toFixed(1),
+        pct: formatSharePct(fraction * 100, row.percentage),
       });
       return acc;
     }, []);

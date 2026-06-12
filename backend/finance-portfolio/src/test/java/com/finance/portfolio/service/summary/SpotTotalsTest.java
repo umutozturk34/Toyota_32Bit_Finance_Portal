@@ -102,22 +102,25 @@ class SpotTotalsTest {
     @Test
     void should_roundEveryBucketToPriceScaleHalfUp_when_scaleInvoked() {
         SpotTotals totals = new SpotTotals();
-        PortfolioPosition open = position(new BigDecimal("3"), new BigDecimal("0.33335"));
-        PortfolioPosition closed = position(new BigDecimal("3"), new BigDecimal("0.11115"));
-        closed.closeWith(LocalDateTime.now(), new BigDecimal("0.22225"));
-        totals.addOpen(open, new BigDecimal("0.44445"));
+        // Inputs carry more decimals than the PRICE scale so scale() must round (HALF_UP) each bucket:
+        // 3 × ...5 products land on a 9th decimal that rounds into the 8th.
+        PortfolioPosition open = position(new BigDecimal("3"), new BigDecimal("0.333333335"));
+        PortfolioPosition closed = position(new BigDecimal("3"), new BigDecimal("0.111111115"));
+        closed.closeWith(LocalDateTime.now(), new BigDecimal("0.222222225"));
+        totals.addOpen(open, new BigDecimal("0.444444445"));
         totals.addClosed(closed);
 
         totals.scale();
 
-        assertThat(totals.spotValue).isEqualByComparingTo("1.3334");
-        assertThat(totals.openCost).isEqualByComparingTo("1.0001");
-        assertThat(totals.closedExitValue).isEqualByComparingTo("0.6668");
-        assertThat(totals.closedCost).isEqualByComparingTo("0.3335");
-        assertThat(totals.spotValue.scale()).isEqualTo(4);
-        assertThat(totals.openCost.scale()).isEqualTo(4);
-        assertThat(totals.closedExitValue.scale()).isEqualTo(4);
-        assertThat(totals.closedCost.scale()).isEqualTo(4);
+        // 3 × 0.444444445 = 1.333333335 → HALF_UP @8 → 1.33333334; likewise for the other buckets.
+        assertThat(totals.spotValue).isEqualByComparingTo("1.33333334");
+        assertThat(totals.openCost).isEqualByComparingTo("1.00000001");
+        assertThat(totals.closedExitValue).isEqualByComparingTo("0.66666668");
+        assertThat(totals.closedCost).isEqualByComparingTo("0.33333335");
+        assertThat(totals.spotValue.scale()).isEqualTo(8);
+        assertThat(totals.openCost.scale()).isEqualTo(8);
+        assertThat(totals.closedExitValue.scale()).isEqualTo(8);
+        assertThat(totals.closedCost.scale()).isEqualTo(8);
     }
 
     private PortfolioPosition position(BigDecimal quantity, BigDecimal entryPrice) {

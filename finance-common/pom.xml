@@ -12,7 +12,7 @@
 
 	<groupId>com.finance</groupId>
 	<artifactId>finance-common</artifactId>
-	<version>0.14.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>Finance Common</name>
 	<description>Shared library for Finance Portal services</description>
 
@@ -196,6 +196,28 @@
 						<phase>test</phase>
 						<goals>
 							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<configuration>
+					<source>21</source>
+					<doclint>none</doclint>
+					<quiet>true</quiet>
+					<failOnError>false</failOnError>
+					<encoding>UTF-8</encoding>
+					<docencoding>UTF-8</docencoding>
+					<charset>UTF-8</charset>
+				</configuration>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
 						</goals>
 					</execution>
 				</executions>

@@ -50,8 +50,11 @@ services:
         - github_token
     container_name: finance-backend
     restart: unless-stopped
-    expose:
-      - "8080"
+    # Bound to localhost (not 0.0.0.0) like the notification service: lets you open the backend Swagger UI at
+    # http://localhost:8080/swagger-ui.html for local dev / over an SSH tunnel on the VDS, without ever exposing
+    # it publicly — the internet still only reaches the app through the Nginx gateway on :80/:443.
+    ports:
+      - "127.0.0.1:8080:8080"
     environment:
       TZ: Europe/Istanbul
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/finance_db

@@ -1,7 +1,6 @@
 package com.finance.market.stock.repository;
 import com.finance.market.stock.model.StockCandle;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -12,7 +11,6 @@ import java.util.Optional;
  * Provides chronological range reads, latest/previous lookups and time-based pruning used by the
  * pricing and history services.
  */
-@Repository
 public interface StockCandleRepository extends JpaRepository<StockCandle, Long> {
     /** Returns all candles for a symbol, newest first. */
     List<StockCandle> findByStockSymbolOrderByCandleDateDesc(String stockSymbol);

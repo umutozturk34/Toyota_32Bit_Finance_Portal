@@ -123,6 +123,13 @@
            page-break-inside on each row do its job and keeps every lot visible. */
         .pos-card { overflow: visible; }
         .pos-card .card-body { overflow: visible; }
+        /* overflow:visible disables the rounded-corner clip the other cards get from overflow:hidden, so a
+           full-width 2px accent bar's square corners poke past the card's rounded top (an 11px radius can't
+           render on a 2px-tall bar). Wrap just the bar + header in an overflow:hidden, top-rounded box so the
+           accent is clipped flush exactly like the other cards, while the table stays outside it and keeps its
+           page-break freedom. Also drop the last row's divider so the bottom doesn't read "broken". */
+        .pos-card .pos-card-head { overflow: hidden; border-top-left-radius: 11px; border-top-right-radius: 11px; }
+        .pos-table tbody tr:last-child td { border-bottom: none; }
         /* table-layout:fixed + an explicit colgroup pins the 9 columns to the A4 content width (the card uses
            overflow:visible for page-breaks, so a nowrap table would otherwise spill its full intrinsic width off
            the right page edge). overflow:hidden + ellipsis keeps any over-long cell from bleeding into its neighbour. */
@@ -274,7 +281,7 @@
                             <span class="swatch" th:style="'background:' + ${it.color}"></span>
                         </td>
                         <td th:text="${it.label}">Label</td>
-                        <td class="r share num" th:text="${#numbers.formatDecimal(it.sharePct, 1, decimalGroupSep, 1, decimalSep)} + '%'">0%</td>
+                        <td class="r share num" th:text="${pct.share(it.sharePct, it.value)}">0%</td>
                         <td class="r num" th:text="${money.of(it.value)}">—</td>
                     </tr>
                 </tbody>
@@ -374,9 +381,11 @@
 <div class="page">
 
 <section class="card pos-card">
-    <div class="card-bar"></div>
-    <div class="card-head">
-        <h2 class="card-title" th:text="#{pdf.section.positions}">Positions</h2>
+    <div class="pos-card-head">
+        <div class="card-bar"></div>
+        <div class="card-head">
+            <h2 class="card-title" th:text="#{pdf.section.positions}">Positions</h2>
+        </div>
     </div>
     <div class="card-body">
         <p th:if="${positions == null or positions.isEmpty()}"

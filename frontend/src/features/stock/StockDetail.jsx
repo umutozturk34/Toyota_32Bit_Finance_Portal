@@ -21,7 +21,6 @@ export default function StockDetail() {
   const { symbol } = useParams();
   const historySym = symbol.endsWith('.IS') ? symbol : `${symbol}.IS`;
   const chartSymbol = symbol.endsWith('.IS') ? symbol.replace('.IS', '') : symbol;
-  const isIndexCheck = (asset) => asset?.metadata?.stockSegment && asset.metadata.stockSegment !== 'EQUITY';
 
   return (
     <AssetDetailPage
@@ -35,15 +34,12 @@ export default function StockDetail() {
       excludeCompare={[historySym]}
       renderHeader={(asset) => <StockHeader asset={asset} />}
       showBuyButton={true}
-      getBuyProps={(asset) => {
-        if (isIndexCheck(asset)) return null;
-        return {
-          assetType: 'STOCK',
-          assetCode: asset.code || symbol,
-          assetName: asset.name || chartSymbol,
-          currentPrice: asset.price,
-        };
-      }}
+      getBuyProps={(asset) => ({
+        assetType: 'STOCK',
+        assetCode: asset.code || symbol,
+        assetName: asset.name || chartSymbol,
+        currentPrice: asset.price,
+      })}
     />
   );
 }

@@ -67,9 +67,25 @@ function buildWatchlistTiles(watchlists, byKind, t) {
   }, byKind));
 }
 
+// Kinds that allow several copies per page, capped, as long as their parameters differ.
+const MULTI_INSTANCE_CAP = { BENCHMARK_BEATERS: 3, ASSET_RETURNS: 3 };
+
+function sameConfig(a, b) {
+  const ka = Object.keys(a || {}).sort();
+  const kb = Object.keys(b || {}).sort();
+  return ka.length === kb.length && ka.every((k, i) => k === kb[i] && a[k] === b[k]);
+}
+
 function singletonUsed(sections, tile) {
   if (tile.kind === 'MOVERS') return sections.some((s) => s.kind === 'MOVERS' && s.config?.market === tile.config.market);
   if (tile.kind === 'WATCHLIST') return sections.some((s) => s.kind === 'WATCHLIST' && s.config?.watchlistId === tile.config.watchlistId);
+  const cap = MULTI_INSTANCE_CAP[tile.kind];
+  if (cap) {
+    const same = sections.filter((s) => s.kind === tile.kind);
+    // Disabled at the cap, or while an instance with the same (default/empty) params already exists — the
+    // user must reconfigure the existing one before adding another, so two same-parameter widgets can't coexist.
+    return same.length >= cap || same.some((s) => sameConfig(s.config, tile.config));
+  }
   return sections.some((s) => s.kind === tile.kind);
 }
 

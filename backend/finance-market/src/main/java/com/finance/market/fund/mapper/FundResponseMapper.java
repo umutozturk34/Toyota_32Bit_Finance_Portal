@@ -26,8 +26,12 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public abstract class FundResponseMapper implements MarketMetadataBuilder<Fund, FundMetadata> {
 
+    private FundAllocationRepository allocationRepository;
+
     @Autowired
-    protected FundAllocationRepository allocationRepository;
+    protected void setAllocationRepository(FundAllocationRepository allocationRepository) {
+        this.allocationRepository = allocationRepository;
+    }
 
     /** Maps fund NAV history to candle responses, preserving order. */
     public abstract List<FundCandleResponse> toFundCandleResponses(List<FundCandle> candles);

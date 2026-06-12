@@ -22,8 +22,12 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public abstract class CoinGeckoCandleMapper {
 
+    private AppProperties appProperties;
+
     @Autowired
-    protected AppProperties appProperties;
+    protected void setAppProperties(AppProperties appProperties) {
+        this.appProperties = appProperties;
+    }
 
     @Mapping(source = "currentPrice", target = "currentPrice")
     @Mapping(source = "priceChange24h", target = "priceChange24h")

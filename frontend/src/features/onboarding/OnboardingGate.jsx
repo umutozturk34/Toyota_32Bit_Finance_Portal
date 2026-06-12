@@ -5,12 +5,14 @@ import { ArrowRight, X, TrendingUp } from 'lucide-react';
 import i18n from '../../shared/i18n/config';
 import { useTheme } from '../../shared/context/useTheme';
 import { useUserPreferences, useUpdateUserPreferences } from '../../shared/hooks/useUserPreferences';
+import { useAuth } from '../auth/useAuth';
 import ProductTour from './ProductTour';
 import PreferencesStep from './components/PreferencesStep';
 
 export default function OnboardingGate() {
   const { t, i18n: i18nInstance } = useTranslation();
   const { preferences, isLoading } = useUserPreferences();
+  const { hasRole } = useAuth();
   const updatePreferences = useUpdateUserPreferences();
   const { themePreference, setThemePreference } = useTheme();
 
@@ -22,7 +24,9 @@ export default function OnboardingGate() {
     return () => window.clearTimeout(handle);
   }, [phase]);
 
-  const show = !isLoading && preferences && preferences.userSub && preferences.onboardingCompleted === false;
+  // Admins skip onboarding entirely — it's a product tour for end users, not the operator account.
+  const show = !isLoading && preferences && preferences.userSub
+    && preferences.onboardingCompleted === false && !hasRole('ADMIN');
 
   const closingRef = useRef(false);
   const farewellStartedRef = useRef(false);

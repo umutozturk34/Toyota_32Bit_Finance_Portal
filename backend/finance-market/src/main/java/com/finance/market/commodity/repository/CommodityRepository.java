@@ -4,7 +4,6 @@ import com.finance.market.commodity.model.Commodity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
@@ -14,7 +13,6 @@ import java.util.List;
  * <p>Extends {@link JpaSpecificationExecutor} to support dynamic, filterable
  * commodity listing/search queries.
  */
-@Repository
 public interface CommodityRepository extends JpaRepository<Commodity, String>, JpaSpecificationExecutor<Commodity> {
 
     /**

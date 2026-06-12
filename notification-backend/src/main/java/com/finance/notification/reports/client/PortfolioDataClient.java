@@ -14,6 +14,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -22,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.TreeSet;
 
 /**
  * WebClient that fetches the portfolio view (summary, positions, allocation) and performance series
@@ -44,6 +47,14 @@ public class PortfolioDataClient {
      * 50 iterations (≈5,000 positions) to keep the PDF render bounded.
      */
     private static final int POSITIONS_MAX_PAGES = 50;
+    /**
+     * Max points kept per chart series in the PDF. The performance/return charts are ~760px wide, so a
+     * multi-year daily series (~1,300 points) carries far more detail than the chart can resolve.
+     * Downsampling to this many points before FX conversion and SVG building cuts the per-point work and
+     * the HTML body with no visible change to the curve (endpoints and the global min/max are always
+     * kept). These series feed ONLY the SVG charts, never a numeric figure, so this never alters a value.
+     */
+    private static final int MAX_CHART_POINTS = 400;
     private final WebClient client;
 
     /**
@@ -78,36 +89,47 @@ public class PortfolioDataClient {
         // allocation pie (Dağılım). Its positions slice is paginated and capped — the PDF must
         // show every lot, so we don't trust it here and rebuild positions via the paginated
         // endpoint below.
-        ViewEnvelope view = getJson(
-                "/api/v1/portfolios/" + portfolioId + "/view?include=summary,allocation",
+        String base = "/api/v1/portfolios/" + portfolioId;
+        // The four backend reads are independent, so issue them concurrently and join once instead of
+        // paying four sequential round-trips. The reactive reads run on the WebClient event loop; the
+        // blocking paginated positions loop runs on a bounded-elastic worker so it overlaps with them.
+        Mono<Optional<ViewEnvelope>> viewMono = getJsonMono(
+                base + "/view?include=summary,allocation",
                 accessToken,
                 new ParameterizedTypeReference<ApiEnvelope<ViewEnvelope>>() {});
-        List<ReportAllocation> realizedAllocation = Optional.ofNullable(getJson(
-                "/api/v1/portfolios/" + portfolioId + "/allocation?mode=realizedPnl",
+        Mono<Optional<List<ReportAllocation>>> realizedMono = getJsonMono(
+                base + "/allocation?mode=realizedPnl",
                 accessToken,
-                new ParameterizedTypeReference<ApiEnvelope<List<ReportAllocation>>>() {}))
-                .orElse(List.of());
-        List<ReportPosition> positions = fetchAllPositions(portfolioId, accessToken);
-        List<PerformanceRecord> perf = getJson(
-                "/api/v1/portfolios/" + portfolioId + "/chart?type=performance&range=" + range,
+                new ParameterizedTypeReference<ApiEnvelope<List<ReportAllocation>>>() {});
+        Mono<List<ReportPosition>> positionsMono = Mono
+                .fromCallable(() -> fetchAllPositions(portfolioId, accessToken))
+                .subscribeOn(Schedulers.boundedElastic());
+        Mono<Optional<List<PerformanceRecord>>> perfMono = getJsonMono(
+                base + "/chart?type=performance&range=" + range,
                 accessToken,
                 new ParameterizedTypeReference<ApiEnvelope<List<PerformanceRecord>>>() {});
 
+        var joined = Mono.zip(viewMono, realizedMono, positionsMono, perfMono).block();
+        ViewEnvelope view = joined.getT1().orElse(null);
+        List<ReportAllocation> realizedAllocation = joined.getT2().orElse(List.of());
+        List<ReportPosition> positions = joined.getT3();
+        List<PerformanceRecord> perf = joined.getT4().orElse(null);
+
         List<PerformanceRecord> safePerf = perf == null ? Collections.emptyList() : perf;
-        List<PerformanceSeriesPoint> series = safePerf.stream()
+        List<PerformanceSeriesPoint> series = downsample(safePerf.stream()
                 .map(p -> new PerformanceSeriesPoint(
                         p.timestamp(),
                         p.totalValueTry() != null ? p.totalValueTry().doubleValue() : 0d))
-                .toList();
+                .toList());
         // Cost-based cumulative return % straight from the portfolio's pnlPercent — NOT a value index
         // (value/first − 1), which lot additions over time would distort. Leading synthetic-zero
         // points are trimmed (see #trimLeadingZeroReturn) so the curve fills the chart instead of
         // being squeezed into the tail.
-        List<PerformanceSeriesPoint> returnSeries = trimLeadingZeroReturn(safePerf).stream()
+        List<PerformanceSeriesPoint> returnSeries = downsample(trimLeadingZeroReturn(safePerf).stream()
                 .map(p -> new PerformanceSeriesPoint(
                         p.timestamp(),
                         p.pnlPercent() != null ? p.pnlPercent().doubleValue() : 0d))
-                .toList();
+                .toList());
 
         ReportSummary summary = view != null ? view.summary() : null;
         List<ReportAllocation> allocation = view != null && view.allocation() != null ? view.allocation() : List.of();
@@ -135,6 +157,39 @@ public class PortfolioDataClient {
         }
         if (firstReal <= 0) return perf;
         return perf.subList(firstReal - 1, perf.size());
+    }
+
+    /**
+     * Reduces a chart series to at most {@link #MAX_CHART_POINTS} points. Always keeps the first and
+     * last points and the global min/max (so the curve's endpoints and y-range survive) and fills the
+     * remainder with a uniform index-stride sample; series already within the cap are returned as-is.
+     * The result feeds ONLY the SVG charts — never a numeric figure — so the visible curve is preserved
+     * while the downstream per-point FX conversion, SVG path and HTML body shrink on multi-year ranges.
+     */
+    static List<PerformanceSeriesPoint> downsample(List<PerformanceSeriesPoint> points) {
+        int n = points.size();
+        if (n <= MAX_CHART_POINTS) return points;
+        TreeSet<Integer> keep = new TreeSet<>();
+        keep.add(0);
+        keep.add(n - 1);
+        int minIdx = 0;
+        int maxIdx = 0;
+        for (int i = 1; i < n; i++) {
+            double v = points.get(i).value();
+            if (v < points.get(minIdx).value()) minIdx = i;
+            if (v > points.get(maxIdx).value()) maxIdx = i;
+        }
+        keep.add(minIdx);
+        keep.add(maxIdx);
+        double stride = (double) (n - 1) / (MAX_CHART_POINTS - 1);
+        for (int k = 0; k < MAX_CHART_POINTS; k++) {
+            keep.add((int) Math.round(k * stride));
+        }
+        List<PerformanceSeriesPoint> out = new ArrayList<>(keep.size());
+        for (int idx : keep) {
+            out.add(points.get(idx));
+        }
+        return out;
     }
 
     /**
@@ -179,6 +234,29 @@ public class PortfolioDataClient {
             log.error("PortfolioDataClient call failed path={} error={}", path, e.toString());
             throw e;
         }
+    }
+
+    /**
+     * Non-blocking variant of {@link #getJson}: emits the unwrapped {@code data} as an {@link Optional}
+     * (empty when the body or its data is absent) so several reads can be combined with {@code Mono.zip}
+     * without an empty/null element silently dropping the whole tuple. Carries the same per-call timeout.
+     */
+    private <T> Mono<Optional<T>> getJsonMono(String path, String accessToken,
+                                              ParameterizedTypeReference<ApiEnvelope<T>> type) {
+        return client.get()
+                .uri(path)
+                .accept(MediaType.APPLICATION_JSON)
+                .headers(h -> {
+                    if (accessToken != null && !accessToken.isBlank()) {
+                        h.set(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
+                    }
+                })
+                .retrieve()
+                .bodyToMono(type)
+                .map(env -> Optional.ofNullable(env.data()))
+                .defaultIfEmpty(Optional.empty())
+                .timeout(TIMEOUT)
+                .doOnError(e -> log.error("PortfolioDataClient call failed path={} error={}", path, e.toString()));
     }
 
     /** Generic wrapper mirroring the backend's standard API response shape. */

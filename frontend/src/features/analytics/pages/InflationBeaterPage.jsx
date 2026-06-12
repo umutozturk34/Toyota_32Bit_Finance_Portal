@@ -261,7 +261,22 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
     || instrumentDisplayName(t, entry.type, entry.code, entry.name);
   const isDefaultView = sortKey === 'rank' && sortDir === 'asc'
     && verdictFilter === 'all' && typeFilter.size === 0 && !search.trim();
-  const winRate = totalCount > 0 ? Math.round((data.beatingCount / totalCount) * 100) : 0;
+  // Hero stats follow the active type/search filter (NOT the verdict view-toggle, which would make the
+  // beating/losing counts trivial), so narrowing the population live-updates the numbers above the table.
+  const statScope = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return indexedEntries.filter((e) => {
+      if (typeFilter.size > 0 && !typeFilter.has(e.type)) return false;
+      if (!q) return true;
+      return e.code.toLowerCase().includes(q)
+        || (e.name && e.name.toLowerCase().includes(q))
+        || e.type.toLowerCase().includes(q);
+    });
+  }, [indexedEntries, search, typeFilter]);
+  const scopeTotal = statScope.length;
+  const scopeBeating = statScope.filter((e) => e.beatsBenchmark).length;
+  const scopeLosing = scopeTotal - scopeBeating;
+  const winRate = scopeTotal > 0 ? Math.round((scopeBeating / scopeTotal) * 100) : 0;
 
   const availableTypes = useMemo(() => {
     const presentSet = new Set();
@@ -317,7 +332,7 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
         <HeroStat
           icon={<Trophy className="h-4 w-4" />}
           label={t('analytics.beatingBenchmark', { defaultValue: 'Yenenler' })}
-          value={`${data.beatingCount}/${totalCount}`}
+          value={`${scopeBeating}/${scopeTotal}`}
           sub={`${winRate}%`}
           accent="#10b981"
         />
@@ -331,9 +346,13 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
         <HeroStat
           icon={<TrendingDown className="h-4 w-4" />}
           label={t('analytics.losers', { defaultValue: 'Altta kalan' })}
-          value={`${totalCount - data.beatingCount}`}
-          sub={t('analytics.realLoss', { defaultValue: 'Excess return < 0' })}
-          accent="#ef4444"
+          value={scopeLosing > 0
+            ? `${scopeLosing}`
+            : <span className="text-sm text-fg-muted">{t('analytics.noUnderperformers', { defaultValue: 'Altta kalan yok' })}</span>}
+          sub={scopeLosing > 0
+            ? t('analytics.realLoss', { defaultValue: 'Excess return < 0' })
+            : t('analytics.allBeatSub', { defaultValue: 'Hepsi göstergeyi yendi' })}
+          accent={scopeLosing > 0 ? '#ef4444' : '#6b7280'}
         />
       </div>
 

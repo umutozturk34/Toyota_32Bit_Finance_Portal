@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createChart, CandlestickSeries, LineSeries } from 'lightweight-charts';
+import { createChart, CandlestickSeries, LineSeries, LineStyle, createSeriesMarkers } from 'lightweight-charts';
 import { calculateSMA, calculateEMA } from '../lib/indicators';
 import { getChartOptions } from '../lib/chartOptions';
 import { priceDecimals } from '../../../shared/utils/formatters';
@@ -28,6 +28,12 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
     const hoveredOverlayRef = useRef(null);
     // A clicked day stays "pinned" (its data survives the cursor leaving) until clicked again or the chart rebuilds.
     const pinnedRef = useRef(null);
+    // Set inside the chart effect; lets the toolbar date-picker jump the selected day to a chosen date.
+    const selectDateRef = useRef(null);
+    // A horizontal price line marking the SELECTED (pinned) day's price; redrawn on pin/select, removed on reset.
+    const selectedPriceLineRef = useRef(null);
+    const selectedMarkersRef = useRef(null);
+    const applyPinLineRef = useRef(null);
     const trend = useMemo(() => {
         if (!data?.candles?.length) return null;
         const candleData = data.candles.map(c => ({
@@ -51,6 +57,8 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         overlayMetaRef.current.clear();
         hoveredOverlayRef.current = null;
         pinnedRef.current = null;
+        selectedPriceLineRef.current = null;
+        selectedMarkersRef.current = null;
         // Clear stale hover when the chart rebuilds (asset/range/currency change); this also nulls the host
         // page's lifted hover via onHover, so the analysis card and legend never show the prior dataset's day.
         setCrosshairData(null);
@@ -235,6 +243,37 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 overlays: Object.keys(overlayVals).length > 0 ? overlayVals : undefined,
             };
         };
+        // Draws a horizontal price line at the pinned day's price (a second reference line alongside the live
+        // last-price line) so a selected day — clicked OR chosen from the calendar — is marked on the price
+        // axis. createPriceLine is persistent (unlike the mouse-driven crosshair); removed when unpinned/reset.
+        const applyPinnedPriceLine = () => {
+            const series = candleSeriesRef.current;
+            if (!series) return;
+            if (selectedPriceLineRef.current) {
+                try { series.removePriceLine(selectedPriceLineRef.current); } catch { void 0; }
+                selectedPriceLineRef.current = null;
+            }
+            const pin = pinnedRef.current;
+            if (pin && pin.close != null) {
+                try {
+                    selectedPriceLineRef.current = series.createPriceLine({
+                        price: Number(pin.close),
+                        color: '#a78bfa',
+                        lineWidth: 2,
+                        lineStyle: LineStyle.Dashed,
+                        axisLabelVisible: true,
+                    });
+                } catch { void 0; }
+            }
+            // A dot exactly on the selected point (date × price), persistent like the price line.
+            try {
+                if (!selectedMarkersRef.current) selectedMarkersRef.current = createSeriesMarkers(series, []);
+                selectedMarkersRef.current.setMarkers(pin && pin.time != null
+                    ? [{ time: pin.time, position: 'inBar', color: '#a78bfa', shape: 'circle', size: 1.5 }]
+                    : []);
+            } catch { void 0; }
+        };
+        applyPinLineRef.current = applyPinnedPriceLine;
         // Click pins a day: its readout survives the cursor leaving instead of snapping back to the latest.
         // Clicking the same day again unpins. Hovering still shows the live day; leaving restores the pin.
         const handleChartClick = (param) => {
@@ -242,6 +281,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             if (!built) return;
             pinnedRef.current = (pinnedRef.current && pinnedRef.current.index === built.index) ? null : built;
             setCrosshairData(pinnedRef.current || built);
+            applyPinnedPriceLine();
         };
         const handleCrosshairMove = (param) => {
             if (renderDrawingsRef.current) renderDrawingsRef.current();
@@ -293,6 +333,28 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         chart.timeScale().subscribeVisibleLogicalRangeChange(handleUpdate);
         chart.subscribeCrosshairMove(handleCrosshairMove);
         chart.subscribeClick(handleChartClick);
+        // Date picker: pick a calendar date → pin the nearest candle so the LENS/analytics panel/legend show
+        // that day and a horizontal price line marks it. Nearest-by-date so weekends/holidays still resolve.
+        selectDateRef.current = (isoDate) => {
+            const cdArr = candleDataRef.current;
+            if (!cdArr.length || !isoDate) return;
+            const parts = String(isoDate).slice(0, 10).split('-').map(Number);
+            if (parts.length < 3 || parts.some(Number.isNaN)) return;
+            const targetEpoch = Math.floor(Date.UTC(parts[0], parts[1] - 1, parts[2]) / 1000);
+            let bestIdx = -1;
+            let bestDist = Infinity;
+            for (let i = 0; i < cdArr.length; i++) {
+                const e = toEpochSec(cdArr[i].time);
+                if (e == null) continue;
+                const dist = Math.abs(e - targetEpoch);
+                if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+            }
+            if (bestIdx < 0) return;
+            const c = cdArr[bestIdx];
+            const built = buildCrosshairData({ time: c.time });
+            if (built) { pinnedRef.current = built; setCrosshairData(built); }
+            applyPinnedPriceLine();
+        };
         const handleResize = () => {
             if (chartContainerRef.current && chart) {
                 chart.applyOptions({
@@ -565,7 +627,20 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         setOverlayLast(lastMap);
     }, [indicators, data, chartType]);
 
-    return { chartRef, chartContainerRef, candleSeriesRef, candleDataRef, volumeDataRef, trend, crosshairData, overlayLast };
+    // Reset the READOUTS to the latest day: drop any pinned/hovered selection so the LENS, the right analytics
+    // panel and the on-chart legend all snap back to the newest bar. The chart's own zoom/pan is intentionally
+    // left untouched — this only clears the selected-day state, it does not re-fit or re-scroll the chart.
+    const resetView = useCallback(() => {
+        pinnedRef.current = null;
+        hoveredOverlayRef.current = null;
+        setCrosshairData(null);
+        applyPinLineRef.current?.();
+    }, []);
+
+    // Stable wrapper over the effect-scoped date selector so the toolbar date-picker can drive day selection.
+    const selectDate = useCallback((isoDate) => selectDateRef.current?.(isoDate), []);
+
+    return { chartRef, chartContainerRef, candleSeriesRef, candleDataRef, volumeDataRef, trend, crosshairData, overlayLast, resetView, selectDate };
 };
 
 export default useChartCore;

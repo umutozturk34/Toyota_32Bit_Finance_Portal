@@ -25,3 +25,18 @@ export function largestRemainderPercents(values, decimals = 1) {
   }
   return units.map((u) => u / factor);
 }
+
+// Display-only share formatter: returns the percent number rounded to `decimals` (e.g. "12.3"), EXCEPT a
+// slice that genuinely exists (|value| > 0) yet rounds to 0 at that precision, which returns the sentinel
+// "<0.1" (for decimals=1) so a real holding never reads as exactly 0%. The caller appends the "%" glyph.
+// The numeric shares from largestRemainderPercents are left untouched (still sum to 100); this only changes
+// how a sub-resolution slice is labelled.
+export function formatSharePct(pct, value, decimals = 1) {
+  const p = Number(pct);
+  const safePct = Number.isFinite(p) ? p : 0;
+  const v = Number(value);
+  if (Number.isFinite(v) && Math.abs(v) > 0 && Number(safePct.toFixed(decimals)) === 0) {
+    return `<${(1 / 10 ** decimals).toFixed(decimals)}`;
+  }
+  return safePct.toFixed(decimals);
+}

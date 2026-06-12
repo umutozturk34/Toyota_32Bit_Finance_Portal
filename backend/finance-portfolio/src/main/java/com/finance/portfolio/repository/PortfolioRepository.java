@@ -2,13 +2,11 @@ package com.finance.portfolio.repository;
 
 import com.finance.portfolio.model.Portfolio;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 /** Persistence for {@link Portfolio}, with owner-scoped lookups by {@code userSub}. */
-@Repository
 public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
 
     List<Portfolio> findByUserSub(String userSub);

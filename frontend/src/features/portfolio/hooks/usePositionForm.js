@@ -29,9 +29,15 @@ export function usePositionForm({ mode, portfolioId, asset, position, onClose, o
     if (tryValue == null || tryValue === '') return null;
     const num = Number(tryValue);
     if (!Number.isFinite(num)) return null;
-    if (inputCurrency === 'TRY') return num;
-    const rate = rateAt(inputCurrency, dateStr);
-    return rate != null && rate > 0 ? num / rate : num;
+    let display = num;
+    if (inputCurrency !== 'TRY') {
+      const rate = rateAt(inputCurrency, dateStr);
+      display = rate != null && rate > 0 ? num / rate : num;
+    }
+    // Round to the input's allowed precision: a TRY→USD/EUR division otherwise yields a 15-digit float that,
+    // when prefilled, would fail the same @Digits(fraction=8) validation a typed value passes — our own
+    // suggested price must be valid input. Keeps the hint, prefill and "applied" check on one rounded value.
+    return Number(display.toFixed(PRICE_DECIMALS));
   }, [inputCurrency, rateAt]);
 
   const displayToTry = useCallback((displayValue, dateStr) => {

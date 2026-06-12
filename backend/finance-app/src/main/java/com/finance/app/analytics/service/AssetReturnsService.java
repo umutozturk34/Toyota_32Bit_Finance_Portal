@@ -14,7 +14,7 @@ import com.finance.market.core.service.CurrencyConverter;
 import com.finance.market.core.service.TrackedAssetQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -87,8 +87,7 @@ public class AssetReturnsService {
 
     // Cold-start guard — same rationale as the beater: a USER request on a still-empty DB would yield only
     // empties / churn, so gate it; the page shows "preparing" until the scheduled warm-up fills the cache.
-    @Autowired(required = false)
-    private com.finance.app.config.MarketDataInitializer marketDataInitializer;
+    private final ObjectProvider<com.finance.app.config.MarketDataInitializer> marketDataInitializer;
 
     /** Cache-first dataset; an empty asset list signals the data isn't ready yet (cold start). */
     public AssetReturnsResponse getReturns() {
@@ -130,7 +129,8 @@ public class AssetReturnsService {
 
     /** True once the cold-start market-data init has finished (or when no initializer is wired). */
     private boolean dataReady() {
-        return marketDataInitializer == null || marketDataInitializer.completion().isDone();
+        com.finance.app.config.MarketDataInitializer initializer = marketDataInitializer.getIfAvailable();
+        return initializer == null || initializer.completion().isDone();
     }
 
     private AssetReturnsResponse compute() {

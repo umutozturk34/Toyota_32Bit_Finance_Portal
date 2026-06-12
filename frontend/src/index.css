@@ -21,6 +21,14 @@
   --color-danger: #f87171;
   --color-warning: #fbbf24;
   --spacing: 0.25rem;
+  /* Wider page shell for large monitors (≥1536px): page content caps at 7xl (1280px) up through xl, then
+     expands to 8xl (1920px) at 2xl so big displays fill instead of sitting in a narrow centered column.
+     Used via 2xl:max-w-8xl. Raise this token (or drop the cap for fully fluid) to fill even wider screens. */
+  --container-8xl: 120rem;
+  /* Above 1920px (the 3xl breakpoint) data-dense surfaces widen to ~2400px so 2K/ultrawide/4K stop
+     letterboxing instead of sitting in a 1920px column; reading-heavy pages keep the narrower cap. */
+  --breakpoint-3xl: 120rem;
+  --container-9xl: 150rem;
   --font-sans: 'Nunito Sans', system-ui, -apple-system, sans-serif;
   --font-display: 'Nunito Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'Nunito Sans', system-ui, -apple-system, sans-serif;
@@ -648,7 +656,7 @@ button {
 }
 
 .modal-panel {
-  background: rgba(20, 20, 32, 0.4);
+  background: rgba(20, 20, 32, 0.9);
   border-color: rgba(129, 140, 248, 0.15);
   box-shadow:
     0 0 80px rgba(99, 102, 241, 0.12),

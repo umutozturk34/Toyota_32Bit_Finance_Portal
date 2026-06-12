@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -50,6 +49,7 @@ class PortfolioFacadeTest {
     @Mock private PortfolioSummaryService summaryService;
     @Mock private PortfolioPerformanceService performanceService;
     @Mock private PortfolioProperties portfolioProperties;
+    @Mock private org.springframework.beans.factory.ObjectProvider<MarketDataReadiness> marketDataReadiness;
 
     private PortfolioFacade facade;
 
@@ -58,14 +58,15 @@ class PortfolioFacadeTest {
         facade = new PortfolioFacade(portfolioRepository, crudService, summaryService,
                 performanceService, portfolioProperties,
                 new com.finance.market.viop.config.ViopProperties(
-                        null, null, null, null, null, null, null, null, null, null, 5));
+                        null, null, null, null, null, null, null, null, null, null, 5),
+                marketDataReadiness);
     }
 
     @Test
     void addPosition_throwsMarketDataNotReady_whenColdStartLoadUnfinished() {
         MarketDataReadiness readiness = org.mockito.Mockito.mock(MarketDataReadiness.class);
         when(readiness.isReady()).thenReturn(false);
-        ReflectionTestUtils.setField(facade, "marketDataReadiness", readiness);
+        when(marketDataReadiness.getIfAvailable()).thenReturn(readiness);
 
         assertThatThrownBy(() -> facade.addPosition(USER, PORTFOLIO_ID, null))
                 .isInstanceOf(MarketDataNotReadyException.class);

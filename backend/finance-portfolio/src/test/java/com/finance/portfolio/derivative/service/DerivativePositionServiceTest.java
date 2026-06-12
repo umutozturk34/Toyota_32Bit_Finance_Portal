@@ -66,6 +66,7 @@ class DerivativePositionServiceTest {
     @Mock private DerivativePositionMapper mapper;
     @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
     @Mock private com.finance.market.core.service.CurrencyConverter currencyConverter;
+    @Mock private org.springframework.beans.factory.ObjectProvider<com.finance.common.market.MarketDataReadiness> marketDataReadiness;
 
     private DerivativePositionService service;
     private Portfolio portfolio;
@@ -83,7 +84,7 @@ class DerivativePositionServiceTest {
                         null, null, null, null, null, null, null, null, null, null, 5);
         service = new DerivativePositionService(positionRepository, portfolioRepository,
                 contractRepository, assetSnapshotRepository, mapper, eventPublisher,
-                snapshotMaintenance, priceResolver, currencyConverter, viopProperties);
+                snapshotMaintenance, priceResolver, currencyConverter, viopProperties, marketDataReadiness);
 
         portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).name("test").build();
 
@@ -337,7 +338,7 @@ class DerivativePositionServiceTest {
         com.finance.common.market.MarketDataReadiness readiness =
                 org.mockito.Mockito.mock(com.finance.common.market.MarketDataReadiness.class);
         when(readiness.isReady()).thenReturn(false);
-        org.springframework.test.util.ReflectionTestUtils.setField(service, "marketDataReadiness", readiness);
+        when(marketDataReadiness.getIfAvailable()).thenReturn(readiness);
 
         assertThatThrownBy(() -> service.open(PORTFOLIO_ID, USER_SUB, null))
                 .isInstanceOf(com.finance.common.exception.MarketDataNotReadyException.class);

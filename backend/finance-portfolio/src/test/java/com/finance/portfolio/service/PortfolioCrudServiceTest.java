@@ -35,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -275,6 +276,60 @@ class PortfolioCrudServiceTest {
         verify(positionRepository).delete(existing);
         verify(assetSnapshotRepository, never()).deleteByPortfolioIdAndAssetTypeAndAssetCode(
                 any(), any(), any());
+    }
+
+    @Test
+    void shouldBulkDeletePositions_coalescingOneRecomputeEventPerAsset() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        TrackedAsset asset = TrackedAsset.builder().id(7L)
+                .assetType(TrackedAssetType.CRYPTO).assetCode("bitcoin").build();
+        PortfolioPosition lotA = stubPosition(PORTFOLIO_ID, AssetType.CRYPTO, "bitcoin",
+                new BigDecimal("0.5"), new BigDecimal("2400000"));
+        lotA.setTrackedAsset(asset);
+        PortfolioPosition lotB = stubPosition(PORTFOLIO_ID, AssetType.CRYPTO, "bitcoin",
+                new BigDecimal("0.3"), new BigDecimal("2500000"));
+        lotB.setTrackedAsset(asset);
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.findAllById(any())).thenReturn(List.of(lotA, lotB));
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
+
+        service.deletePositions(PORTFOLIO_ID, List.of(10L, 11L), USER_SUB);
+
+        verify(positionRepository).deleteAll(List.of(lotA, lotB));
+        verify(assetSnapshotRepository, times(1)).deleteByPortfolioIdAndAssetTypeAndAssetCode(
+                PORTFOLIO_ID, AssetType.CRYPTO, "bitcoin");
+        verify(eventPublisher, times(1)).publishEvent(any(PortfolioBackfillService.LotChangedEvent.class));
+    }
+
+    @Test
+    void shouldSkipMissingIds_whenBulkDeleting() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        PortfolioPosition existing = stubPosition(PORTFOLIO_ID, AssetType.CRYPTO, "bitcoin",
+                new BigDecimal("0.5"), new BigDecimal("2400000"));
+        existing.setTrackedAsset(TrackedAsset.builder().id(7L)
+                .assetType(TrackedAssetType.CRYPTO).assetCode("bitcoin").build());
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        // findAllById naturally returns only existing rows — the missing 404 id is simply absent.
+        when(positionRepository.findAllById(any())).thenReturn(List.of(existing));
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
+
+        service.deletePositions(PORTFOLIO_ID, List.of(10L, 404L), USER_SUB);
+
+        verify(positionRepository).deleteAll(List.of(existing));
+        verify(eventPublisher, times(1)).publishEvent(any(PortfolioBackfillService.LotChangedEvent.class));
+    }
+
+    @Test
+    void shouldThrowBusiness_whenBulkDeletingPositionFromAnotherPortfolio() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        PortfolioPosition foreign = stubPosition(999L, AssetType.CRYPTO, "bitcoin",
+                new BigDecimal("0.5"), new BigDecimal("2400000"));
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.findAllById(any())).thenReturn(List.of(foreign));
+
+        assertThatThrownBy(() -> service.deletePositions(PORTFOLIO_ID, List.of(10L), USER_SUB))
+                .isInstanceOf(BusinessException.class);
+        verify(positionRepository, never()).deleteAll(any());
     }
 
     @Test

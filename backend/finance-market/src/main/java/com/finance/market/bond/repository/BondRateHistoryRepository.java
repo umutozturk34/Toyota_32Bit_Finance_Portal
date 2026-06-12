@@ -3,7 +3,6 @@ package com.finance.market.bond.repository;
 import com.finance.market.bond.model.BondRateHistory;
 import java.time.LocalDate;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,7 +11,6 @@ import java.util.Optional;
  * Repository for a bond's daily rate history, keyed by ISIN. Supports full chronological retrieval,
  * latest-observation lookup, and the existence/count checks used to drive incremental backfills.
  */
-@Repository
 public interface BondRateHistoryRepository extends JpaRepository<BondRateHistory, Long> {
 
     /** Returns the bond's full rate history in chronological (oldest-first) order, for charting. */

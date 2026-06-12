@@ -17,7 +17,7 @@ class PortfolioPerformanceServicePointTest {
     @ParameterizedTest
     @CsvSource({
             // openMv, openPnl, realized, closedCost, expValue, expCash, expTotalPnl, expPct
-            "800,  200,  0,    0,    800,  0,    200,  33.3333",   // all open: held value 800
+            "800,  200,  0,    0,    800,  0,    200,  33.33333333",   // all open: held value 800
             "0,    0,    250,  1000, 0,    250,  250,  25.0000",   // all closed: nothing held now → value 0
             "800,  200,  250,  1000, 800,  250,  450,  28.1250",   // mixed: held value 800, P&L incl realized
             "500,  -100, -50,  400,  500,  -50,  -150, -15.0000",  // losses: held value 500

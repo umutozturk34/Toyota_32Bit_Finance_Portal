@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScanSearch, CalendarDays, TrendingUp, TrendingDown } from 'lucide-react';
 import useAppStore from '../../../shared/stores/useAppStore';
-import { priceDecimals, formatPercent, formatVolume } from '../../../shared/utils/formatters';
+import { priceDecimals, formatPrice, formatPercent, formatVolume } from '../../../shared/utils/formatters';
 import { analyzeSeries, analyzeAt } from '../lib/chartAnalytics';
 import MetricCard from './MetricCard';
 import PositionBar from './PositionBar';
@@ -62,7 +62,7 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
 
   if (!a) return null;
 
-  const money = (v) => (v == null ? '—' : `${symbol}${Number(v).toLocaleString(locale, { maximumFractionDigits: priceDecimals(v) })}`);
+  const money = (v) => (v == null ? '—' : `${symbol}${formatPrice(v, { locale, minDecimals: 0, maxDecimals: priceDecimals(v) })}`);
   const pct1 = (v) => (v == null ? '—' : `${v.toLocaleString(locale, { maximumFractionDigits: 1 })}%`);
   const compactPct = (v, signed = true) => {
     if (v == null) return '—';
@@ -88,7 +88,7 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
   // ─── Top summary strip: brand/date · CLOSE hero · range (stretches to fill) ───
   if (variant === 'summary') {
     return (
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 px-3 sm:px-4 py-2.5 overflow-x-auto scrollbar-hide overscroll-x-contain">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 px-3 sm:px-4 py-2.5 sm:overflow-x-auto sm:scrollbar-hide overscroll-x-contain">
         <div className="shrink-0 flex flex-col justify-center gap-1 w-full sm:w-[88px]">
           <span className="inline-flex items-center gap-1.5 text-xs font-display font-bold uppercase tracking-[0.16em] text-fg leading-none">
             <ScanSearch className="h-4 w-4 text-accent" />
@@ -100,14 +100,17 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
           </span>
         </div>
 
-        <div className="shrink-0 w-full sm:w-[208px] overflow-hidden flex flex-col justify-center gap-1 pt-2 pl-0 sm:pt-0 sm:pl-4 border-t sm:border-t-0 sm:border-l border-border-default/60" style={{ boxShadow: `inset 2px 0 0 ${toneAccent(a.daily?.percent)}` }}>
+        <div className="relative shrink-0 w-full sm:w-[208px] min-w-0 sm:overflow-hidden flex flex-col justify-center gap-1 pt-2 pl-0 sm:pt-0 sm:pl-4 border-t sm:border-t-0 sm:border-l border-border-default/60">
+          {/* Solid left accent bar instead of an inset box-shadow — the shadow sub-pixel-breaks (gaps/doubling)
+              at fractional browser zoom; a filled element renders crisply at every zoom level. */}
+          <span aria-hidden="true" className="absolute left-0 inset-y-0 w-0.5" style={{ background: toneAccent(a.daily?.percent) }} />
           <span className="text-[9px] font-mono uppercase tracking-wider text-fg-subtle leading-none">{t('chart.dataWindow.close')}</span>
           {/* justify-between pins the % badge to the block's RIGHT edge and the price to the LEFT edge, so hovering
               a different day (a wider/narrower value) never slides them: the price grows from a fixed left, the
               badge from a fixed right. tabular-nums keeps digit widths equal; truncate + the fixed-width block clip
               rather than reflow. This is what stops the strip "jumping" as you move across the chart. */}
           <span className="flex items-center justify-between gap-2.5 leading-none">
-            <span className="font-mono text-lg sm:text-xl font-bold tabular-nums text-fg truncate min-w-0">{compactMoney(a.close)}</span>
+            <span className="font-mono text-lg sm:text-xl font-bold tabular-nums text-fg min-w-0 sm:truncate">{compactMoney(a.close)}</span>
             {a.daily?.percent != null && (
               <span
                 className={`shrink-0 inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 font-mono text-[11px] font-bold tabular-nums ${toneClass(a.daily.percent)}`}
@@ -147,7 +150,7 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
   return (
     <div className="p-3 sm:p-4 space-y-3">
       <Section label={t('chart.dataWindow.sectionPerformance')}>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-1.5">
           {a.period?.percent != null && (
             <MetricCard label={t('chart.dataWindow.periodReturn')} value={compactPct(a.period.percent)} tone={toneClass(a.period.percent)} accent={toneAccent(a.period.percent)} />
           )}

@@ -137,8 +137,11 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
         Specification<T> spec = enabledCodesSpec(enabledCodes);
         if (searchTerm == null || searchTerm.isBlank()) return spec;
         List<String> fields = searchFields();
+        // Match via the unaccent-based predicate so Turkish dotted/dotless I and other diacritics fold
+        // (e.g. "hisse" matches "HİSSE", "azimut" matches "AZİMUT") — the plain lower() LIKE missed them
+        // because Postgres lower() and Java toLowerCase() disagree on İ/I across locales.
         return spec.and((root, query, cb) ->
-                LikeSearchSpec.byFieldsContains(root, cb, searchTerm, fields));
+                LikeSearchSpec.byFieldsContainsAllTokensUnaccent(root, cb, searchTerm, fields.toArray(new String[0])));
     }
 
     private Specification<T> enabledCodesSpec(Set<String> enabledCodes) {

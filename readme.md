@@ -180,8 +180,9 @@ enabled — it is not part of the default stack.
 
 ## Documentation
 
-- **Interactive API** — Swagger UI (needs the stack running): <http://localhost/swagger-ui/index.html>
+- **Interactive API** — Swagger UI (needs the stack running): <http://localhost:8080/swagger-ui/index.html> (main backend) and <http://localhost:8082/swagger-ui/index.html> (notification). Both ports are localhost-bound, not public — over the gateway only the app itself (`:80`) is reachable.
 - **OpenAPI spec** — [`docs/documentation/openapi.json`](docs/documentation/openapi.json)
+- **Javadoc** — generate browsable HTML for every module with `make javadoc` (needs a local JDK 21 + Maven); output lands in each `*/target/reports/apidocs/index.html`.
 
 Reference documents (PDF):
 
@@ -333,7 +334,7 @@ Login runs through Keycloak. Demo credentials (in `.env`, intentionally visible 
 | URL | Service |
 |-----|---------|
 | http://localhost | Main app (Nginx gateway → frontend + API + `/auth` Keycloak) |
-| http://localhost/swagger-ui/index.html | Swagger UI — main backend (`:8080`) interactive API |
+| http://localhost:8080/swagger-ui/index.html | Swagger UI — main backend (`:8080`) interactive API |
 | http://localhost:8082/swagger-ui/index.html | Swagger UI — notification backend (`:8082`) interactive API |
 | http://localhost:8180/auth | Keycloak admin console (same Keycloak, direct port) |
 | http://localhost:8025 | Mailpit — all outgoing mail is captured here |
@@ -344,12 +345,12 @@ Login runs through Keycloak. Demo credentials (in `.env`, intentionally visible 
 | http://localhost:9200 | OpenSearch — log / trace store API |
 
 > On a VDS deploy these ports stay bound to `127.0.0.1` (security — the public internet only
-> reaches `:80` / `:443` through Nginx). To open OpenSearch Dashboards / phpLDAPadmin /
-> Mailpit / Keycloak admin from your laptop, run an SSH tunnel:
+> reaches `:80` / `:443` through Nginx). To open the Swagger UIs / OpenSearch Dashboards /
+> phpLDAPadmin / Mailpit / Keycloak admin from your laptop, run an SSH tunnel:
 >
 > ```bash
 > ssh -L 5601:127.0.0.1:5601 -L 8081:127.0.0.1:8081 -L 8025:127.0.0.1:8025 \
->     -L 8180:127.0.0.1:8180 -L 8082:127.0.0.1:8082 root@<VDS_IP>
+>     -L 8180:127.0.0.1:8180 -L 8082:127.0.0.1:8082 -L 8080:127.0.0.1:8080 root@<VDS_IP>
 > ```
 > Keep the SSH session open, then visit the same `http://localhost:<port>` URLs above.
 

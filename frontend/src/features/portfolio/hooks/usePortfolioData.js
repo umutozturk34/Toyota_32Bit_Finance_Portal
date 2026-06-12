@@ -258,6 +258,14 @@ export function useDeletePosition(portfolioId) {
   });
 }
 
+export function useBulkDeletePositions(portfolioId) {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: (ids) => portfolioService.bulkDeletePositions(portfolioId, ids),
+    onSuccess: invalidate,
+  });
+}
+
 export function useSellPosition(portfolioId) {
   const invalidate = useInvalidatePortfolio();
   return useMutation({

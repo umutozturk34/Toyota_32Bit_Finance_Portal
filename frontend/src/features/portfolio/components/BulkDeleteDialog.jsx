@@ -3,15 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { X, Trash2 } from 'lucide-react';
 import { AlertTriangle, AlertCircle } from '../../../shared/components/feedback/AnimatedIcons';
-import { useDeletePosition } from '../hooks/usePortfolioData';
-import { useDeleteDerivativePosition } from '../hooks/useDerivativePositions';
+import { useBulkDeletePositions } from '../hooks/usePortfolioData';
+import { useBulkDeleteDerivativePositions } from '../hooks/useDerivativePositions';
 
 export default function BulkDeleteDialog({ portfolioId, positions, onClose, onComplete }) {
     const { t } = useTranslation();
     const [phase, setPhase] = useState('confirm');
     const [error, setError] = useState(null);
-    const spotDelete = useDeletePosition(portfolioId);
-    const derivativeDelete = useDeleteDerivativePosition(portfolioId);
+    const bulkSpotDelete = useBulkDeletePositions(portfolioId);
+    const bulkDerivativeDelete = useBulkDeleteDerivativePositions(portfolioId);
     const count = positions.length;
     const dismissable = phase === 'confirm';
 
@@ -28,39 +28,18 @@ export default function BulkDeleteDialog({ portfolioId, positions, onClose, onCo
         setError(null);
         setPhase('processing');
         try {
-            // Sequential delete with single retry per failure. Parallel Promise.allSettled
-            // produced the intermittent "1 silinemedi" error: concurrent deletes on the same
-            // portfolio race against backend striped locks + the async snapshot rebuild event,
-            // surfacing as 409/500 on whichever request commits second. Serial-with-retry
-            // eliminates the race while still handling the rare transient (e.g. snapshot row
-            // visibility lag right after a previous delete).
-            const failedItems = [];
-            for (const p of positions) {
-                const mutation = p.assetType === 'VIOP' ? derivativeDelete : spotDelete;
-                try {
-                    await mutation.mutateAsync(p.id);
-                } catch (firstError) {
-                    // A 404 means the row is already gone — an idempotent success. Without this, retrying a
-                    // partially-failed batch re-deletes ids the server already removed, they re-count as
-                    // failures, and the "X/Y silinemedi" banner can never clear.
-                    if (firstError?.response?.status === 404) continue;
-                    // One quick retry: most transients clear within a few hundred ms after the
-                    // previous request's backfill event commits.
-                    await new Promise((resolve) => setTimeout(resolve, 250));
-                    try {
-                        await mutation.mutateAsync(p.id);
-                    } catch (retryError) {
-                        if (retryError?.response?.status === 404) continue;
-                        failedItems.push({ id: p.id, error: retryError ?? firstError });
-                    }
-                }
-            }
-            if (failedItems.length > 0) {
-                setError(t('portfolio.bulk.partialError', { failed: failedItems.length, total: count }));
-                return;
-            }
+            // One batch request per type (spot + VIOP) instead of one DELETE per row. Each batch is a single
+            // transaction with a coalesced snapshot recompute, and the two run sequentially so they don't race
+            // on the same portfolio's recompute. The backend skips already-gone ids (idempotent), so there is
+            // no per-item retry/404 handling to do here anymore.
+            const spotIds = positions.filter((p) => p.assetType !== 'VIOP').map((p) => p.id);
+            const derivativeIds = positions.filter((p) => p.assetType === 'VIOP').map((p) => p.id);
+            if (spotIds.length > 0) await bulkSpotDelete.mutateAsync(spotIds);
+            if (derivativeIds.length > 0) await bulkDerivativeDelete.mutateAsync(derivativeIds);
             onComplete?.(count);
             onClose();
+        } catch {
+            setError(t('portfolio.bulk.partialError', { failed: count, total: count }));
         } finally {
             // Reset 'processing' → 'confirm' so the next open of the same component instance
             // shows the action button again. Without this, after a successful bulk delete the

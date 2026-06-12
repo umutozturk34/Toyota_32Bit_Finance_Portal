@@ -40,6 +40,7 @@ class PortfolioFacadeViewTest {
     @Mock private PortfolioCrudService crudService;
     @Mock private PortfolioSummaryService summaryService;
     @Mock private PortfolioPerformanceService performanceService;
+    @Mock private org.springframework.beans.factory.ObjectProvider<com.finance.common.market.MarketDataReadiness> marketDataReadiness;
 
     private final PortfolioProperties portfolioProperties = new PortfolioProperties();
     private PortfolioFacade facade;
@@ -48,7 +49,8 @@ class PortfolioFacadeViewTest {
     void setUp() {
         facade = new PortfolioFacade(portfolioRepository, crudService, summaryService, performanceService, portfolioProperties,
                 new com.finance.market.viop.config.ViopProperties(
-                        null, null, null, null, null, null, null, null, null, null, 5));
+                        null, null, null, null, null, null, null, null, null, null, 5),
+                marketDataReadiness);
     }
 
     private void mockOwner() {

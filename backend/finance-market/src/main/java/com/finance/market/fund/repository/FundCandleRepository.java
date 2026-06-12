@@ -3,7 +3,6 @@ package com.finance.market.fund.repository;
 import com.finance.market.fund.model.FundCandle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -18,7 +17,6 @@ import java.util.Optional;
  * coverage diagnostics, latest/as-of price lookups, incremental backfill
  * support, and retention pruning.
  */
-@Repository
 public interface FundCandleRepository extends JpaRepository<FundCandle, Long> {
 
     /**

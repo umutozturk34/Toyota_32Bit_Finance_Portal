@@ -11,7 +11,7 @@ import com.finance.market.core.service.FxRateUnavailableException;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -36,12 +36,8 @@ public interface AnalyticsPriceSeriesProvider {
     class Default implements AnalyticsPriceSeriesProvider {
 
         private final UnifiedHistoryService historyService;
-
-        @Autowired(required = false)
-        private AssetNativeCurrencyResolver nativeCurrencyResolver;
-
-        @Autowired(required = false)
-        private CurrencyConverter currencyConverter;
+        private final AssetNativeCurrencyResolver nativeCurrencyResolver;
+        private final CurrencyConverter currencyConverter;
 
         // The framed series (raw history + per-date FX to the target) is deterministic for a given
         // (instrument, window, target), so memoizing it lets the warm-up reuse one USD/EUR-framed universe
@@ -52,8 +48,12 @@ public interface AnalyticsPriceSeriesProvider {
                 .maximumSize(256)
                 .build();
 
-        public Default(UnifiedHistoryService historyService) {
+        public Default(UnifiedHistoryService historyService,
+                       ObjectProvider<AssetNativeCurrencyResolver> nativeCurrencyResolver,
+                       ObjectProvider<CurrencyConverter> currencyConverter) {
             this.historyService = historyService;
+            this.nativeCurrencyResolver = nativeCurrencyResolver.getIfAvailable();
+            this.currencyConverter = currencyConverter.getIfAvailable();
         }
 
         @Override

@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
-import { largestRemainderPercents } from '../../../shared/utils/percent';
+import { largestRemainderPercents, formatSharePct } from '../../../shared/utils/percent';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import { PieChart } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
@@ -165,7 +165,8 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
       textStyle: { color: tooltipFg, fontSize: 11 },
       extraCssText: 'z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.25);',
       formatter: (params) => {
-        const pct = Number(params.data?._pct ?? (totalValue > 0 ? (params.value / totalValue) * 100 : 0)).toFixed(1);
+        const pctNum = Number(params.data?._pct ?? (totalValue > 0 ? (params.value / totalValue) * 100 : 0));
+        const pct = formatSharePct(pctNum, params.value);
         const data = params.data || {};
         let breakdown = '';
         if (data._isCash && data._cost != null && data._realized != null) {
@@ -309,7 +310,7 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
                         </p>
                       )}
                     </div>
-                    <span className="text-xs font-mono text-fg-muted shrink-0 tabular-nums">{pct.toFixed(1)}%</span>
+                    <span className="text-xs font-mono text-fg-muted shrink-0 tabular-nums">{formatSharePct(pct, value)}%</span>
                     {!showBreakdown && (
                       <span className={`text-xs font-mono font-semibold shrink-0 ${isCash ? (realized != null && realized < 0 ? 'text-danger' : 'text-success') : 'text-fg'}`}>{money(value, frameBase)}</span>
                     )}

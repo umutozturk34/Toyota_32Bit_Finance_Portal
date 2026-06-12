@@ -81,7 +81,9 @@ api.interceptors.response.use(
     }
     if (messageKey) {
       const fallback = i18n.t(messageKey);
-      toast.error(i18n.t('error.actionFailed'), isValidation ? fallback : (backendMessage || fallback));
+      const body = isValidation ? fallback : (backendMessage || fallback);
+      const dedupeKey = (!isValidation && !backendMessage) ? 'connectivity' : undefined;
+      toast.error(i18n.t('error.actionFailed'), body, { dedupeKey });
     }
     return Promise.reject(error);
   }

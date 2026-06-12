@@ -278,6 +278,7 @@
       "exitDraw": "Exit Draw",
       "fullscreen": "Fullscreen",
       "exitFullscreen": "Exit fullscreen",
+      "resetView": "Reset view · go to today",
       "active": "Active",
       "cancel": "Cancel",
       "activeInstruction": {
@@ -1707,9 +1708,13 @@
         "title": "Detail chart and drawings",
         "desc": "Pick a timeframe from 1M to MAX, switch between candle, line or area. Use Trendline, Fibonacci and other drawing tools — your drawings are saved."
       },
+      "chartLens": {
+        "title": "Lens — the data window",
+        "desc": "Open the Lens to read the exact open/high/low/close and change for any point — it follows your cursor across the chart."
+      },
       "chartDrawing": {
         "title": "Draw on the chart",
-        "desc": "Sketch direction with trendlines, mark retracement levels using Fibonacci, and add parallel channels or horizontal support and resistance lines."
+        "desc": "Use the always-on tool rail on the left — trendlines for direction, Fibonacci retracements, parallel channels and horizontal support/resistance. Your drawings are saved."
       },
       "fundDetail": {
         "title": "Fund detail card",
@@ -2394,6 +2399,8 @@
     "period": "Period",
     "quickPick": "Quick pick",
     "realLoss": "Excess return < 0",
+    "noUnderperformers": "None underperformed",
+    "allBeatSub": "All beat the benchmark",
     "realReturn": "Real",
     "realReturnHint": "Real return ≈ (1+nominal)/(1+CPI) − 1",
     "scenarioSubtitle": "If you had placed a given amount on a given date into different instruments, how much would it be today? Simulated against real historical data.",
@@ -2473,6 +2480,8 @@
       "partialHint": "The asset's history doesn't reach the start of this window — shorter span",
       "topGainer": "Top Gainer",
       "topLoser": "Top Loser",
+      "noLosers": "No losers this period",
+      "noGainers": "No gainers this period",
       "assetCount": "Assets",
       "gainers": "Positive",
       "losers": "Negative",

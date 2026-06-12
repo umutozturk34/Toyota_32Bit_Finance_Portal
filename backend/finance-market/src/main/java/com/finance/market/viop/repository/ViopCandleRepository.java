@@ -2,7 +2,6 @@ package com.finance.market.viop.repository;
 
 import com.finance.market.viop.model.ViopCandle;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,7 +10,6 @@ import java.util.List;
 import java.util.Optional;
 
 /** Persistence for VIOP daily candles, keyed and queried by contract symbol and date. */
-@Repository
 public interface ViopCandleRepository extends JpaRepository<ViopCandle, Long> {
 
     List<ViopCandle> findBySymbolOrderByCandleDateAsc(String symbol);

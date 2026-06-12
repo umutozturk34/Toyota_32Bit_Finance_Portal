@@ -1,4 +1,4 @@
-.PHONY: up down build rebuild deploy-common logs ps clean help demo empty reset
+.PHONY: up down build rebuild deploy-common logs ps clean help demo empty reset javadoc
 
 # Cross-platform shell + file-copy. On Windows, GNU Make has no /bin/bash or ⁠ cp ⁠,
 # so use cmd.exe and ⁠ copy ⁠; on Unix use bash and ⁠ cp ⁠.
@@ -28,6 +28,7 @@ help:
 	@echo "  make logs SERVICE=x  tail logs for a service"
 	@echo "  make ps              list running services"
 	@echo "  make clean           stop + remove images and volumes"
+	@echo "  make javadoc         generate browsable Javadoc HTML for every module (needs JDK 21 + Maven)"
 
 # Everyday run/build targets. finance-common is compiled from source as the first layer of
 # the Docker build (see backend/Dockerfile), so these need no GitHub token and never publish
@@ -84,3 +85,17 @@ empty: .env
 
 reset:
 	docker compose -f docker-compose.yml -f docker-compose.demo.yml down -v
+
+# Generate browsable Javadoc (HTML) for the whole codebase, tokenless, from a clean clone. The apps
+# depend on com.finance:finance-common, so it must be in the local Maven repo BEFORE they resolve it —
+# installing it first is the only reason a naive single-module `mvn javadoc:javadoc` would 401 against
+# GitHub Packages on a fresh checkout. Needs a local JDK 21 + Maven (the Docker targets above do not).
+# Output: <module>/target/reports/apidocs/index.html (backend is one aggregated site for all 6 modules).
+javadoc:
+	mvn -q -f finance-common/pom.xml install -DskipTests
+	mvn -q -f backend/pom.xml javadoc:aggregate
+	mvn -q -f notification-backend/pom.xml javadoc:javadoc
+	@echo "Javadoc generated — open in a browser:"
+	@echo "  backend (6 modules): backend/target/reports/apidocs/index.html"
+	@echo "  finance-common:      finance-common/target/reports/apidocs/index.html"
+	@echo "  notification:        notification-backend/target/reports/apidocs/index.html"

@@ -33,7 +33,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Write-side commands for portfolios and their spot lots: create/rename/delete portfolios and
@@ -172,8 +177,56 @@ public class PortfolioCrudService {
     public void deletePosition(Long portfolioId, Long positionId, String userSub) {
         PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
         LocalDateTime entryDate = position.getEntryDate();
-        Long trackedAssetId = position.getTrackedAsset() != null
-                ? position.getTrackedAsset().getId() : null;
+        removePositionRow(position, positionId);
+        publishLotChange(portfolioId, position, entryDate, false);
+    }
+
+    /**
+     * Deletes several owned lots in ONE transaction, coalescing the recompute to one event per affected
+     * asset (its earliest entry date) instead of one per lot — so deleting many lots of the same asset does
+     * not queue N redundant snapshot rebuilds. Missing ids are skipped (idempotent); a lot that belongs to
+     * another portfolio fails the whole batch (ownership guard).
+     */
+    @Transactional
+    public void deletePositions(Long portfolioId, List<Long> positionIds, String userSub) {
+        if (positionIds == null || positionIds.isEmpty()) return;
+        portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
+                .orElseThrow(() -> new ResourceNotFoundException("error.portfolio.notFound", portfolioId));
+        // One SELECT for every requested lot; ids with no row are simply absent from the result (idempotent).
+        List<PortfolioPosition> positions = positionRepository.findAllById(new LinkedHashSet<>(positionIds));
+        if (positions.isEmpty()) return;
+        Map<String, AssetRecompute> coalesced = new LinkedHashMap<>();
+        for (PortfolioPosition position : positions) {
+            if (!position.getPortfolioId().equals(portfolioId)) {
+                throw new BusinessException("error.portfolio.position.notInPortfolio", portfolioId);
+            }
+            coalesced.merge(position.getAssetType() + "|" + position.getAssetCode(),
+                    new AssetRecompute(position.getAssetType(), position.getAssetCode(), position.getEntryDate()),
+                    AssetRecompute::earliest);
+        }
+        // Lifecycle delete (same path as single delete) so version/associations are handled correctly.
+        positionRepository.deleteAll(positions);
+        // Which assets still have a lot after the removals (one query, reused proven method).
+        Set<String> stillHeld = positionRepository.findByPortfolioId(portfolioId).stream()
+                .map(p -> p.getAssetType() + "|" + p.getAssetCode())
+                .collect(Collectors.toSet());
+        // Per DISTINCT asset (not per lot): drop its snapshots when no lot of it remains, then queue ONE
+        // coalesced recompute from the asset's earliest deleted entry date.
+        coalesced.forEach((key, a) -> {
+            if (!stillHeld.contains(key)) {
+                assetSnapshotRepository.deleteByPortfolioIdAndAssetTypeAndAssetCode(portfolioId, a.assetType(), a.assetCode());
+            }
+            if (a.fromDate() != null) {
+                eventPublisher.publishEvent(new PortfolioBackfillService.LotChangedEvent(
+                        portfolioId, a.assetType(), a.assetCode(), a.fromDate().toLocalDate(), false));
+            }
+        });
+    }
+
+    /** Deletes the lot row and drops the per-asset snapshots when it was the asset's last lot. Emits no event. */
+    private void removePositionRow(PortfolioPosition position, Long positionId) {
+        Long portfolioId = position.getPortfolioId();
+        Long trackedAssetId = position.getTrackedAsset() != null ? position.getTrackedAsset().getId() : null;
         boolean hasOtherLot = trackedAssetId != null && positionRepository
                 .existsByPortfolioIdAndTrackedAsset_IdAndIdNot(portfolioId, trackedAssetId, positionId);
         positionRepository.delete(position);
@@ -181,7 +234,15 @@ public class PortfolioCrudService {
             assetSnapshotRepository.deleteByPortfolioIdAndAssetTypeAndAssetCode(
                     portfolioId, position.getAssetType(), position.getAssetCode());
         }
-        publishLotChange(portfolioId, position, entryDate, false);
+    }
+
+    /** Earliest-entry-date accumulator per asset, so a batch delete recomputes each asset once. */
+    private record AssetRecompute(AssetType assetType, String assetCode, LocalDateTime fromDate) {
+        AssetRecompute earliest(AssetRecompute other) {
+            if (fromDate == null) return other;
+            if (other.fromDate == null) return this;
+            return fromDate.isBefore(other.fromDate) ? this : other;
+        }
     }
 
     /**

@@ -30,6 +30,15 @@ const visibleDecimals = (value, base, cap = 8) => {
     if (!Number.isFinite(n) || n === 0) return base;
     let d = base;
     while (d < cap && n < 0.5 * 10 ** -d) d++;
+    // Safety net for binary-FP boundary cases the threshold loop stops one digit early on (e.g. an exact-half
+    // 5e-7): widen until the value actually renders a non-zero digit, or the cap is hit, so a real holding
+    // never shows as a flat "0.000000".
+    while (d < cap && /^0\.?0*$/.test(n.toFixed(d))) d++;
+    // If we widened for a tiny value AND rounding at d rounds UP above the true figure (e.g. 0.000046 →
+    // "0.00005"), show one more decimal so it reads accurately (0.000046), not a misleading single digit.
+    if (d > base) {
+        while (d < cap && Number(n.toFixed(d)) > n) d++;
+    }
     return d;
 };
 
@@ -137,6 +146,7 @@ export const formatPercentAbs = (percent, decimals = 2) => {
 
 export const formatDateTimeShort = (dateString, locale) => {
     const date = new Date(dateString);
+    if (!dateString || Number.isNaN(date.getTime())) return '—';
     return date.toLocaleString(locale || currentLocaleTag(), {
         day: 'numeric',
         month: 'short',
@@ -148,6 +158,7 @@ export const formatDateTimeShort = (dateString, locale) => {
 
 export const formatDateTimeFull = (dateString, locale) => {
     const date = new Date(dateString);
+    if (!dateString || Number.isNaN(date.getTime())) return '—';
     return date.toLocaleString(locale || currentLocaleTag(), {
         day: 'numeric',
         month: 'long',

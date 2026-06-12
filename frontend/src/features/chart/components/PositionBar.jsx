@@ -11,9 +11,9 @@ export default function PositionBar({ pct, lowLabel, highLabel }) {
           style={{ left: `${clamped}%` }}
         />
       </div>
-      <div className="flex justify-between text-[10px] font-mono text-fg-subtle">
-        <span className="truncate">{lowLabel}</span>
-        <span className="truncate">{highLabel}</span>
+      <div className="flex justify-between gap-2 text-[10px] font-mono text-fg-subtle">
+        <span className="truncate min-w-0">{lowLabel}</span>
+        <span className="truncate min-w-0 text-right">{highLabel}</span>
       </div>
     </div>
   );

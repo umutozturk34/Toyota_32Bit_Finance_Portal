@@ -65,10 +65,21 @@ function migrate(section, fallbackIndex) {
   };
 }
 
+// Beater (BENCHMARK_BEATERS) and Returns (ASSET_RETURNS) may have up to this many copies per page, but two
+// with the SAME parameters are a duplicate — so they dedup by a stable config signature: distinct configs
+// coexist, identical configs collapse to one. Other kinds keep their existing single-instance/keyed dedup.
+const MULTI_INSTANCE_CAP = { BENCHMARK_BEATERS: 3, ASSET_RETURNS: 3 };
+
+function configSig(config) {
+  if (!config || typeof config !== 'object') return '';
+  return Object.keys(config).sort().map((k) => `${k}=${config[k]}`).join('&');
+}
+
 function dedupKey(section) {
   if (section.kind === 'ASSET_CARDS') return `ASSET_CARDS:${section.sectionId}`;
   if (section.kind === 'WATCHLIST') return `WATCHLIST:${section.config?.watchlistId ?? 'default'}`;
   if (section.kind === 'MOVERS') return `MOVERS:${section.config?.market ?? 'any'}`;
+  if (MULTI_INSTANCE_CAP[section.kind]) return `${section.kind}:${configSig(section.config)}`;
   return section.kind;
 }
 
@@ -76,6 +87,7 @@ function normalizeSections(rawSections) {
   if (!Array.isArray(rawSections)) return [];
   const seen = new Map();
   let assetCardCount = 0;
+  const multiCounts = {};
   rawSections
     .filter((s) => s.visible !== false)
     .map((s, i) => migrate(s, i))
@@ -85,8 +97,13 @@ function normalizeSections(rawSections) {
         if (assetCardCount >= 4) return;
         assetCardCount++;
       }
+      const cap = MULTI_INSTANCE_CAP[s.kind];
+      if (cap && (multiCounts[s.kind] || 0) >= cap) return;
       const key = dedupKey(s);
-      if (!seen.has(key)) seen.set(key, s);
+      if (!seen.has(key)) {
+        seen.set(key, s);
+        if (cap) multiCounts[s.kind] = (multiCounts[s.kind] || 0) + 1;
+      }
     });
   return [...seen.values()];
 }

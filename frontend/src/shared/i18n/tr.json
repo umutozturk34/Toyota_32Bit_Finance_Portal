@@ -278,6 +278,7 @@
       "exitDraw": "Çizimi Kapat",
       "fullscreen": "Tam ekran",
       "exitFullscreen": "Tam ekrandan çık",
+      "resetView": "Görünümü sıfırla · bugüne dön",
       "active": "Aktif",
       "cancel": "İptal",
       "activeInstruction": {
@@ -1707,9 +1708,13 @@
         "title": "Detay grafiği ve çizimler",
         "desc": "Dönemi 1A–MAX arasında seç, mum/çizgi/alan görünümüne geç. Trendline, Fibonacci ve diğer çizim araçlarını kullan, çizimlerin kaydedilir."
       },
+      "chartLens": {
+        "title": "Lens — veri penceresi",
+        "desc": "Lens'i aç; herhangi bir noktanın tam açılış/yüksek/düşük/kapanış ve değişim değerlerini gör — imlecini grafikte gezdirdikçe seni takip eder."
+      },
       "chartDrawing": {
         "title": "Grafik üzerine çiz",
-        "desc": "Trendline ile yön çiz, Fibonacci ile geri çekilme seviyelerini bul, paralel kanallar ve yatay destek/direnç çizgileri ekleyebilirsin."
+        "desc": "Soldaki her zaman açık çizim rayını kullan — trendline ile yön, Fibonacci ile geri çekilme, paralel kanallar ve yatay destek/direnç. Çizimlerin kaydedilir."
       },
       "fundDetail": {
         "title": "Fon detay kartı",
@@ -2394,6 +2399,8 @@
     "period": "Dönem",
     "quickPick": "Hızlı seç",
     "realLoss": "Gösterge üzeri < 0",
+    "noUnderperformers": "Altta kalan yok",
+    "allBeatSub": "Hepsi göstergeyi yendi",
     "realReturn": "Reel",
     "realReturnHint": "Reel getiri ≈ (1+nominal)/(1+TÜFE) − 1",
     "scenarioSubtitle": "Belirli bir tarihte belirli bir miktarı farklı enstrümanlara koysaydın bugün ne kadar olurdu? Gerçek geçmiş veriyle simüle et.",
@@ -2473,6 +2480,8 @@
       "partialHint": "Varlığın geçmişi bu dönemin başına ulaşmıyor — daha kısa pencere",
       "topGainer": "En Çok Kazandıran",
       "topLoser": "En Çok Kaybettiren",
+      "noLosers": "Bu dönemde kaybeden yok",
+      "noGainers": "Bu dönemde kazanan yok",
       "assetCount": "Varlık",
       "gainers": "Pozitif",
       "losers": "Negatif",

@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useEffect, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    LineChart, Calendar, ChevronDown, ChevronUp, ScanSearch,
+    LineChart, ChevronDown, ChevronUp, ScanSearch,
 } from 'lucide-react';
 import { useTheme } from '../../../shared/context/useTheme';
 import useAppStore from '../../../shared/stores/useAppStore';
@@ -23,6 +23,10 @@ import ChartTextEditInput from './ChartTextEditInput';
 import { DEFAULT_DRAWING_COLOR } from '../lib/drawingTools';
 import { TABS, TIME_RANGES_FULL, TIME_RANGES_VIOP } from '../lib/chartConstants';
 import Card from '../../../shared/components/card';
+import DatePickerPopover from '../../../shared/components/form/DatePickerPopover';
+
+// Fixed resting spot for the static on-chart OHLC legend (top-left).
+const LEGEND_DEFAULT_CLASS = 'left-1 top-1 sm:left-2 sm:top-2';
 
 const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [], timeRange = '1Y', onTimeRangeChange, showSecondaryLines = true, onToggleSecondaryLines, sidebar = null }) => {
     const compareSymbol = compareDatas.length > 0 ? compareDatas.map(c => c.symbol).join(',') : null;
@@ -88,10 +92,25 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
     const hasMACD = useMemo(() => !isFund && indicators.some(i => i.type === 'MACD' && i.visible), [indicators, isFund]);
     const macdIndicator = useMemo(() => indicators.find(i => i.type === 'MACD' && i.visible), [indicators]);
 
-    const { chartRef, chartContainerRef, candleSeriesRef, candleDataRef, volumeDataRef, trend, crosshairData, overlayLast } = useChartCore({
+    const { chartRef, chartContainerRef, candleSeriesRef, candleDataRef, volumeDataRef, trend, crosshairData, overlayLast, resetView, selectDate } = useChartCore({
         data: data, symbol, chartType: allowCandle ? chartType : 'line', isDark, indicators: filteredIndicators, renderDrawingsRef, assetType,
         compareDatas, timeRange, showSecondaryLines,
     });
+
+    // Toolbar date picker: the calendar icon opens a native date picker bounded to the loaded data range;
+    // choosing a date pins that day (LENS + analytics panel + legend + crosshair jump to it). Reset clears it.
+    const dataDateBounds = useMemo(() => {
+        const cs = data?.candles;
+        if (!cs?.length) return { min: '', max: '' };
+        const iso = (c) => String(c.candleDate || c.date || '').slice(0, 10);
+        return { min: iso(cs[0]), max: iso(cs[cs.length - 1]) };
+    }, [data]);
+    const pickedDateValue = useMemo(() => {
+        const cs = data?.candles;
+        if (!cs?.length) return '';
+        const c = (crosshairData?.index != null && cs[crosshairData.index]) ? cs[crosshairData.index] : cs[cs.length - 1];
+        return String(c.candleDate || c.date || '').slice(0, 10);
+    }, [crosshairData, data]);
 
     const { rsiContainerRef, macdContainerRef, volumeContainerRef, investorCountContainerRef, portfolioSizeContainerRef, subValues } = useSubCharts({
         chartRef, candleDataRef, volumeDataRef, isDark,
@@ -163,7 +182,8 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
     return (
         <div className="space-y-2 sm:space-y-3">
         {data?.candles?.length > 0 && !isFullscreen && (
-            lensOpen ? (
+            <div data-tour="chart-lens">
+            {lensOpen ? (
                 <Card variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className="relative !overflow-hidden">
                     <DataWindowPanel candles={data.candles} hover={crosshairData} assetType={assetType} variant="summary" />
                     <button
@@ -187,7 +207,8 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                     </span>
                     <ChevronDown className="h-4 w-4 text-fg-muted" />
                 </button>
-            )
+            )}
+            </div>
         )}
         <Card ref={wrapperRef} variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className={`flex flex-col lg:flex-row !overflow-x-hidden !overflow-y-visible ${isFullscreen ? 'h-[100dvh] !rounded-none !overflow-y-auto' : 'min-h-[300px] sm:min-h-[380px] lg:min-h-[480px]'}`}>
             <button
@@ -295,21 +316,32 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                     compareSymbol={compareSymbol}
                     isFullscreen={isFullscreen}
                     onToggleFullscreen={toggleFullscreen}
+                    onResetView={resetView}
                 />
-                <div className="flex items-center gap-1 flex-nowrap overflow-x-auto px-2 sm:px-3 py-1.5 border-b border-border-default bg-surface/40 scrollbar-thin">
-                    <Calendar className="w-3 h-3 mr-1 text-fg-subtle shrink-0" />
-                    {TIME_RANGES.map(({ id, labelKey }) => {
-                        const isActive = timeRange === id;
-                        return (
-                            <button
-                                key={id}
-                                onClick={() => onTimeRangeChange?.(id)}
-                                className={`shrink-0 min-h-[32px] px-2 sm:px-2.5 py-1 rounded-md text-[10px] sm:text-[11px] font-semibold tracking-wide border-none cursor-pointer transition-all duration-200 ${isActive ? 'bg-indigo-400/15 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.18)]' : 'bg-transparent text-fg-muted hover:text-fg hover:bg-surface'}`}
-                            >
-                                {t(labelKey)}
-                            </button>
-                        );
-                    })}
+                <div className="flex items-center gap-1 px-2 sm:px-3 py-1.5 border-b border-border-default bg-surface/40">
+                    <div className="shrink-0 mr-1">
+                        <DatePickerPopover
+                            compact
+                            value={pickedDateValue}
+                            minDate={dataDateBounds.min}
+                            maxDate={dataDateBounds.max}
+                            onChange={selectDate}
+                        />
+                    </div>
+                    <div className="flex items-center gap-1 flex-nowrap overflow-x-auto scrollbar-thin min-w-0">
+                        {TIME_RANGES.map(({ id, labelKey }) => {
+                            const isActive = timeRange === id;
+                            return (
+                                <button
+                                    key={id}
+                                    onClick={() => onTimeRangeChange?.(id)}
+                                    className={`shrink-0 min-h-[32px] px-2 sm:px-2.5 py-1 rounded-md text-[10px] sm:text-[11px] font-semibold tracking-wide border-none cursor-pointer transition-all duration-200 ${isActive ? 'bg-indigo-400/15 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.18)]' : 'bg-transparent text-fg-muted hover:text-fg hover:bg-surface'}`}
+                                >
+                                    {t(labelKey)}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
                 {/* overflow-hidden: clip the chart canvas to its box so a stale fullscreen-height canvas can't
                     inflate the container (or spill over the page) before the resize settles it back down. */}
@@ -355,7 +387,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                         style={{ zIndex: 11 }}
                     />
                     {legendVals && (
-                        <div className="absolute left-1 top-1 sm:left-2 sm:top-2 z-[12] pointer-events-none max-w-[calc(100%-0.5rem)] sm:max-w-[calc(100%-1rem)] rounded-md border border-border-default bg-bg-base/85 backdrop-blur-sm px-1.5 sm:px-2.5 py-1 sm:py-1.5 shadow-lg">
+                        <div className={`absolute ${LEGEND_DEFAULT_CLASS} z-[12] pointer-events-none max-w-[78%] sm:max-w-[calc(100%-1rem)] rounded-md border border-border-default bg-bg-base/85 backdrop-blur-sm px-1.5 sm:px-2.5 py-1 sm:py-1.5 shadow-lg`}>
                             <div className="flex flex-wrap items-center gap-x-1.5 sm:gap-x-2.5 gap-y-0 sm:gap-y-0.5 font-mono text-[9px] sm:text-[10px] leading-tight">
                                 {legendDate && <span className="text-fg-subtle">{legendDate}</span>}
                                 {allowCandle && chartType === 'candle' ? (

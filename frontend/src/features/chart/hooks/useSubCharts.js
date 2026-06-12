@@ -244,7 +244,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         investorCountChartRef.current = chart;
         const icRows = data.candles.filter(c => c.investorCount != null);
         const icData = icRows.map(c => ({
-            time: new Date(c.candleDate || c.date).getTime() / 1000,
+            time: toEpochSec(toChartTime(c.candleDate || c.date)),
             value: c.investorCount,
             color: '#6366f1',
         }));
@@ -277,7 +277,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         portfolioSizeChartRef.current = chart;
         const psRows = data.candles.filter(c => c.portfolioSize != null);
         const psData = psRows.map(c => ({
-            time: new Date(c.candleDate || c.date).getTime() / 1000,
+            time: toEpochSec(toChartTime(c.candleDate || c.date)),
             value: c.portfolioSize,
             color: '#10b981',
         }));

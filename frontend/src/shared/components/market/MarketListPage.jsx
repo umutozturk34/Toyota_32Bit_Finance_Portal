@@ -37,7 +37,7 @@ export default function MarketListPage({
   errorMessage,
   emptyMessage,
   emptyHint,
-  gridClass = 'grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-h-[400px] content-start',
+  gridClass = 'grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 min-h-[400px] content-start',
   headerChildren,
   preGridChildren,
   filterShowAll = true,

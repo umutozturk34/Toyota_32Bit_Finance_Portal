@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { currentLocaleTag } from '../../utils/formatters';
 
@@ -33,7 +34,7 @@ function buildGrid(year, month) {
 const NEXT_VIEW = { day: 'month', month: 'year', year: 'day' };
 
 export default function DatePickerPopover({
-  value, onChange, onMonthChange, minDate, maxDate, highlightedDates, loading,
+  value, onChange, onMonthChange, minDate, maxDate, highlightedDates, loading, compact = false,
 }) {
   const { t } = useTranslation();
   const localeTag = currentLocaleTag();
@@ -56,6 +57,10 @@ export default function DatePickerPopover({
   const [openUp, setOpenUp] = useState(false);
   const ref = useRef(null);
   const triggerRef = useRef(null);
+  const popoverRef = useRef(null);
+  // Compact mode portals the popover to <body> with fixed coords so it escapes the chart card's clipped
+  // overflow (a calendar taller than the remaining card height was getting cut off, esp. on mobile).
+  const [popoverPos, setPopoverPos] = useState(null);
 
   const openWithDirection = () => {
     if (open) { setOpen(false); return; }
@@ -64,7 +69,15 @@ export default function DatePickerPopover({
       const estimatedPopupHeight = 360;
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
-      setOpenUp(spaceBelow < estimatedPopupHeight && spaceAbove > spaceBelow + 80);
+      const up = spaceBelow < estimatedPopupHeight && spaceAbove > spaceBelow + 80;
+      setOpenUp(up);
+      if (compact) {
+        const width = 264;
+        const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
+        setPopoverPos(up
+          ? { left, bottom: window.innerHeight - rect.top + 6 }
+          : { left, top: rect.bottom + 6 });
+      }
     }
     setOpen(true);
   };
@@ -97,7 +110,11 @@ export default function DatePickerPopover({
 
   useEffect(() => {
     if (!open) return undefined;
-    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const close = (e) => {
+      if (ref.current && ref.current.contains(e.target)) return;
+      if (popoverRef.current && popoverRef.current.contains(e.target)) return;
+      setOpen(false);
+    };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, [open]);
@@ -157,25 +174,43 @@ export default function DatePickerPopover({
 
   return (
     <div ref={ref} className="relative">
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={openWithDirection}
-        className="w-full flex items-center justify-between rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-colors hover:border-border-hover cursor-pointer"
-      >
-        <span className={selected ? 'text-fg' : 'text-fg-subtle'}>{display}</span>
-        <Calendar className="h-3.5 w-3.5 text-fg-muted" />
-      </button>
+      {compact ? (
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={openWithDirection}
+          aria-label={t('datePicker.placeholder')}
+          title={t('datePicker.placeholder')}
+          className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-border-default bg-surface/60 text-fg-muted hover:text-fg hover:border-border-hover transition-colors cursor-pointer"
+        >
+          <Calendar className="h-4 w-4" />
+        </button>
+      ) : (
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={openWithDirection}
+          className="w-full flex items-center justify-between rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-colors hover:border-border-hover cursor-pointer"
+        >
+          <span className={selected ? 'text-fg' : 'text-fg-subtle'}>{display}</span>
+          <Calendar className="h-3.5 w-3.5 text-fg-muted" />
+        </button>
+      )}
 
-      <AnimatePresence>
+      {(() => {
+        const node = (
+        <AnimatePresence>
         {open && (
           <motion.div
+            ref={popoverRef}
             initial={{ opacity: 0, y: openUp ? 2 : -2 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: openUp ? 2 : -2 }}
             transition={{ duration: 0.1, ease: 'easeOut' }}
-            className={`absolute z-50 left-0 right-0 rounded-xl border border-border-default p-3 space-y-2 ${openUp ? 'bottom-full mb-1.5' : 'mt-1.5'}`}
-            style={{ backgroundColor: 'var(--color-bg-base, #0f0f17)', boxShadow: '0 12px 40px -8px rgba(0,0,0,0.6)' }}
+            className={`rounded-xl border border-border-default p-3 space-y-2 ${compact ? 'fixed z-[200] w-[16.5rem] max-w-[calc(100vw-1rem)]' : `absolute z-50 left-0 right-0 ${openUp ? 'bottom-full mb-1.5' : 'mt-1.5'}`}`}
+            style={compact
+              ? { left: popoverPos?.left, top: popoverPos?.top, bottom: popoverPos?.bottom, backgroundColor: 'var(--color-bg-base, #0f0f17)', boxShadow: '0 12px 40px -8px rgba(0,0,0,0.6)' }
+              : { backgroundColor: 'var(--color-bg-base, #0f0f17)', boxShadow: '0 12px 40px -8px rgba(0,0,0,0.6)' }}
           >
             <div className="flex items-center justify-between gap-1">
               <NavBtn onClick={() => shift(-1)} title={PREV_LABEL[view]} disabled={!canGoPrev}>
@@ -276,7 +311,10 @@ export default function DatePickerPopover({
             )}
           </motion.div>
         )}
-      </AnimatePresence>
+        </AnimatePresence>
+        );
+        return compact ? createPortal(node, document.body) : node;
+      })()}
     </div>
   );
 }

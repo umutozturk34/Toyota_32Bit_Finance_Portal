@@ -4,7 +4,7 @@ import { TOOL_LABEL_KEYS } from '../lib/drawingTools';
 import {
     BarChart2, ChevronUp, ChevronDown, Diamond,
     LineChart, Layers, Crosshair,
-    MousePointer2Off, Magnet, Maximize2, Minimize2,
+    MousePointer2Off, Magnet, Maximize2, Minimize2, RotateCcw,
 } from 'lucide-react';
 
 const ChartToolbar = ({
@@ -18,6 +18,7 @@ const ChartToolbar = ({
     compareSymbol = null,
     isFullscreen = false,
     onToggleFullscreen = () => {},
+    onResetView = () => {},
 }) => {
     const { t } = useTranslation();
     const magnetLabel = t(`chart.toolbar.magnet.${magnetMode}`);
@@ -131,6 +132,13 @@ const ChartToolbar = ({
                         <span className="hidden sm:inline">{t('chart.toolbar.exitDraw')}</span>
                     </button>
                 )}
+                <button
+                    onClick={onResetView}
+                    className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md border-none cursor-pointer text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent"
+                    title={t('chart.toolbar.resetView')}
+                >
+                    <RotateCcw className="w-4 h-4" />
+                </button>
                 <button
                     onClick={onToggleFullscreen}
                     className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md border-none cursor-pointer text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent"

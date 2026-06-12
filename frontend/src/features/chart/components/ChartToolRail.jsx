@@ -158,6 +158,7 @@ export default function ChartToolRail({
   return (
     <div
       ref={rootRef}
+      data-tour="chart-drawing-rail"
       className="relative flex shrink-0 flex-row items-center gap-1 overflow-x-auto overscroll-x-contain border-b border-border-default bg-surface/40 p-1.5 scrollbar-hide lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:border-b-0 lg:border-r"
     >
       <RailButton active={!isAnyToolActive} color={ACCENT_HEX} title={t('chart.toolRail.select')} onClick={onCancelAll}>

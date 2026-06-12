@@ -312,7 +312,7 @@ export default function BankRatesPanel() {
             )}
           </div>
 
-          <span className="ml-auto shrink-0 text-[10px] font-mono text-fg-muted">
+          <span className="w-full text-right sm:w-auto sm:ml-auto shrink-0 text-[10px] font-mono text-fg-muted">
             {kind === 'GOLD'
               ? t('bankRates.goldCount', { count: filteredCurrencies.length, total: orderedCurrencies.length })
               : t('bankRates.currencyCount', { count: filteredCurrencies.length, total: orderedCurrencies.length })}

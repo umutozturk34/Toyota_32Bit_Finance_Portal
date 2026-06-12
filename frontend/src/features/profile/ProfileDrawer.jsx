@@ -215,7 +215,7 @@ export default function ProfileDrawer({ isOpen, onClose }) {
     <SideDrawer
       open={isOpen}
       onClose={onClose}
-      width="min(400px, 100vw)"
+      width="min(25rem, 100vw)"
       icon={User}
       iconTint="text-accent"
       title={t('profile.title')}

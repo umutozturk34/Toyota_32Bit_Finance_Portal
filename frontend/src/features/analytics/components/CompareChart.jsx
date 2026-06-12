@@ -112,11 +112,11 @@ function buildOption(scenario, isDark, displayCurrency, isMobile) {
           .map((r) => {
             const val = r.val.toLocaleString('tr-TR', { style: 'currency', currency: displayCurrency, maximumFractionDigits: chartDigits(r.val) });
             return `<div style="display:flex;justify-content:space-between;gap:14px;align-items:center;font-family:ui-monospace,monospace;font-size:11px">
-              <span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;background:${r.color};border-radius:50%"></span>${r.name}</span>
-              <span style="font-weight:700;color:${r.color}">${val}</span>
+              <span style="display:flex;align-items:center;gap:6px;min-width:0"><span style="width:8px;height:8px;background:${r.color};border-radius:50%;flex-shrink:0"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${r.name}</span></span>
+              <span style="font-weight:700;color:${r.color};flex-shrink:0">${val}</span>
             </div>`;
           }).join('');
-        return `<div style="padding:6px 4px;min-width:200px">
+        return `<div style="padding:6px 4px;min-width:min(200px,calc(100vw - 24px));max-width:calc(100vw - 24px)">
           <div style="font-size:10px;color:${palette.tooltipFg};opacity:0.7;margin-bottom:6px">${date}</div>
           ${rows}
         </div>`;

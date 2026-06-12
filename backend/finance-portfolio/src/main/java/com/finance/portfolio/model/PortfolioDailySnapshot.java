@@ -39,22 +39,22 @@ public class PortfolioDailySnapshot {
     @Column(name = "snapshot_date", nullable = false)
     private LocalDate snapshotDate;
 
-    @Column(name = "total_value_try", nullable = false, precision = 19, scale = 4)
+    @Column(name = "total_value_try", nullable = false, precision = 23, scale = 8)
     private BigDecimal totalValueTry;
 
-    @Column(name = "cash_try", nullable = false, precision = 19, scale = 4)
+    @Column(name = "cash_try", nullable = false, precision = 23, scale = 8)
     private BigDecimal cashTry;
 
-    @Column(name = "total_cost_try", nullable = false, precision = 19, scale = 4)
+    @Column(name = "total_cost_try", nullable = false, precision = 23, scale = 8)
     private BigDecimal totalCostTry;
 
-    @Column(name = "total_pnl_try", nullable = false, precision = 19, scale = 4)
+    @Column(name = "total_pnl_try", nullable = false, precision = 23, scale = 8)
     private BigDecimal totalPnlTry;
 
     @Column(name = "pnl_percent", nullable = false, precision = 19, scale = 4)
     private BigDecimal pnlPercent;
 
-    @Column(name = "daily_pnl_try", precision = 19, scale = 4)
+    @Column(name = "daily_pnl_try", precision = 23, scale = 8)
     private BigDecimal dailyPnlTry;
 
     @Column(name = "daily_pnl_percent", precision = 19, scale = 4)

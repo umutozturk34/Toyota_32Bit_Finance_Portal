@@ -24,7 +24,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -106,14 +106,12 @@ public class InflationBeaterService {
             .maximumSize(64)
             .build();
 
-    @Autowired(required = false)
-    private AssetNativeCurrencyResolver nativeCurrencyResolver;
+    private final ObjectProvider<AssetNativeCurrencyResolver> nativeCurrencyResolver;
 
     // Cold-start guard. The scheduled warm-up waits for the market-data init, but a USER request isn't gated —
     // on a fresh empty DB compute() would 404 on the not-yet-persisted benchmark macro (findByCode throws) or
     // hammer external APIs against an empty DB. Injected optionally: absent (init disabled) ⇒ treated as ready.
-    @Autowired(required = false)
-    private com.finance.app.config.MarketDataInitializer marketDataInitializer;
+    private final ObjectProvider<com.finance.app.config.MarketDataInitializer> marketDataInitializer;
 
     /**
      * Ranks the universe for the period against the benchmark in the benchmark-derived comparison currency
@@ -147,7 +145,8 @@ public class InflationBeaterService {
 
     /** True once the cold-start market-data init has finished (or when no initializer is wired). */
     private boolean dataReady() {
-        return marketDataInitializer == null || marketDataInitializer.completion().isDone();
+        com.finance.app.config.MarketDataInitializer initializer = marketDataInitializer.getIfAvailable();
+        return initializer == null || initializer.completion().isDone();
     }
 
     /** Empty ranking for the window — used while market data is still loading (no benchmark/universe yet). */
@@ -357,12 +356,13 @@ public class InflationBeaterService {
      * compared in USD/EUR. Falls back to TRY when no native-currency resolver is wired or none resolves.
      */
     private Currency resolveComparisonCurrency(MacroIndicator benchmark, String code) {
-        if (nativeCurrencyResolver == null) {
+        AssetNativeCurrencyResolver resolver = nativeCurrencyResolver.getIfAvailable();
+        if (resolver == null) {
             return Currency.TRY;
         }
         MarketType marketType = CATEGORY_TO_MARKET_TYPE.getOrDefault(
                 benchmark.getCategory(), MarketType.MACRO_RATE);
-        Currency resolved = nativeCurrencyResolver.resolveNativeCurrency(marketType, code);
+        Currency resolved = resolver.resolveNativeCurrency(marketType, code);
         return resolved != null ? resolved : Currency.TRY;
     }
 

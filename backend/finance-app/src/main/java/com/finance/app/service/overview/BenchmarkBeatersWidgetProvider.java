@@ -1,7 +1,6 @@
 package com.finance.app.service.overview;
 
 import tools.jackson.databind.JsonNode;
-import com.finance.app.analytics.dto.AnalyticsInstrumentType;
 import com.finance.app.analytics.dto.response.InflationBeaterEntry;
 import com.finance.app.analytics.dto.response.InflationBeaterResponse;
 import com.finance.app.analytics.service.InflationBeaterService;

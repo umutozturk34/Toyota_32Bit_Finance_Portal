@@ -25,14 +25,19 @@ import com.finance.portfolio.repository.PortfolioRepository;
 import com.finance.portfolio.service.PortfolioBackfillService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Write-side commands for VIOP derivative positions: open, close (full or partial), edit close/entry,
@@ -60,8 +65,7 @@ public class DerivativePositionService {
 
     // Optional: absent outside the full app context (e.g. unit tests), where the gate is a no-op. When present
     // (the market-data initializer), blocks opening a position until the cold-start price/FX load has finished.
-    @Autowired(required = false)
-    private MarketDataReadiness marketDataReadiness;
+    private final ObjectProvider<MarketDataReadiness> marketDataReadiness;
 
     /**
      * Rejects an entry date older than the VIOP history window ({@code today − max-history-years}). VIOP candle
@@ -77,7 +81,7 @@ public class DerivativePositionService {
 
     /** @throws MarketDataNotReadyException (HTTP 503) if the cold-start market-data load has not finished yet. */
     private void requireMarketDataReady() {
-        MarketDataReadiness readiness = marketDataReadiness;
+        MarketDataReadiness readiness = marketDataReadiness.getIfAvailable();
         if (readiness != null && !readiness.isReady()) {
             throw new MarketDataNotReadyException("error.market.dataNotReady");
         }
@@ -360,6 +364,49 @@ public class DerivativePositionService {
             }
         }
         log.info("DerivativePosition deleted id={} portfolio={}", positionId, portfolioId);
+    }
+
+    /**
+     * Deletes several owned derivative positions in ONE transaction, coalescing snapshot rebuilds to one
+     * pass per affected VIOP symbol (its earliest entry date) instead of one per position. Missing ids are
+     * skipped (idempotent).
+     */
+    @Transactional
+    public void deleteAll(List<Long> positionIds, Long portfolioId, String userSub) {
+        if (positionIds == null || positionIds.isEmpty()) return;
+        requireOwnedPortfolio(portfolioId, userSub);
+        Map<String, LocalDate> earliestBySymbol = new LinkedHashMap<>();
+        List<DerivativePosition> toDelete = new ArrayList<>();
+        for (Long id : new LinkedHashSet<>(positionIds)) {
+            DerivativePosition position = positionRepository.findByIdAndPortfolioId(id, portfolioId).orElse(null);
+            if (position == null) continue;
+            String symbol = position.getViopContract() != null ? position.getViopContract().getSymbol() : null;
+            LocalDate fromDate = position.getEntryDate();
+            toDelete.add(position);
+            if (symbol != null) {
+                if (fromDate == null) earliestBySymbol.putIfAbsent(symbol, null);
+                else earliestBySymbol.merge(symbol, fromDate, (a, b) -> a.isBefore(b) ? a : b);
+            }
+        }
+        if (toDelete.isEmpty()) return;
+        positionRepository.deleteAll(toDelete);
+        // Remaining positions grouped by symbol, loaded ONCE (was: re-query the whole portfolio per symbol).
+        Map<String, List<DerivativePosition>> remainingBySymbol = positionRepository.findByPortfolioId(portfolioId).stream()
+                .filter(p -> p.getViopContract() != null)
+                .collect(Collectors.groupingBy(p -> p.getViopContract().getSymbol()));
+        for (Map.Entry<String, LocalDate> e : earliestBySymbol.entrySet()) {
+            String symbol = e.getKey();
+            assetSnapshotRepository.deleteByPortfolioIdAndAssetTypeAndAssetCode(portfolioId, AssetType.VIOP, symbol);
+            for (DerivativePosition remaining : remainingBySymbol.getOrDefault(symbol, List.of())) {
+                snapshotMaintenance.backfillSnapshots(remaining);
+            }
+            snapshotMaintenance.consolidateSymbolSnapshots(portfolioId, symbol);
+            if (e.getValue() != null) {
+                eventPublisher.publishEvent(new PortfolioBackfillService.LotChangedEvent(
+                        portfolioId, AssetType.VIOP, symbol, e.getValue(), true));
+            }
+        }
+        log.info("DerivativePositions bulk-deleted count={} portfolio={}", toDelete.size(), portfolioId);
     }
 
     /**

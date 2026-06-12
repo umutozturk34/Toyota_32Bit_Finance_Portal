@@ -36,6 +36,9 @@ public class OverviewLayoutReader {
             "movers", WidgetKind.MOVERS,
             "watchlist", WidgetKind.WATCHLIST,
             "news", WidgetKind.NEWS);
+    /** Beater/Returns may have several distinct copies per page, capped; other kinds stay single-instance. */
+    private static final Map<WidgetKind, Integer> MULTI_INSTANCE_CAP = Map.of(
+            WidgetKind.BENCHMARK_BEATERS, 3, WidgetKind.ASSET_RETURNS, 3);
 
     private final UserLayoutService userLayoutService;
     private final OverviewDefaults defaults;
@@ -87,6 +90,7 @@ public class OverviewLayoutReader {
         LinkedHashMap<String, WidgetSection> dedup = new LinkedHashMap<>();
         int assetCardCount = 0;
         int maxAssetCards = defaults.maxAssetCardWidgetsPerLayout();
+        Map<WidgetKind, Integer> multiCounts = new LinkedHashMap<>();
         if (sectionsNode == null || !sectionsNode.isArray()) return new ParseResult(List.of(), allIds);
         for (JsonNode entry : sectionsNode) {
             WidgetSection section = parseEntry(entry);
@@ -97,7 +101,14 @@ public class OverviewLayoutReader {
                 if (assetCardCount >= maxAssetCards) continue;
                 assetCardCount++;
             }
-            dedup.putIfAbsent(dedupKey(section), section);
+            String key = dedupKey(section);
+            Integer cap = MULTI_INSTANCE_CAP.get(section.kind());
+            if (cap != null && !dedup.containsKey(key)) {
+                int count = multiCounts.getOrDefault(section.kind(), 0);
+                if (count >= cap) continue;
+                multiCounts.put(section.kind(), count + 1);
+            }
+            dedup.putIfAbsent(key, section);
         }
         List<WidgetSection> visible = new ArrayList<>(dedup.values());
         visible.sort(Comparator.comparingInt(WidgetSection::order));
@@ -115,6 +126,12 @@ public class OverviewLayoutReader {
         if (s.kind() == WidgetKind.MOVERS) {
             JsonNode market = s.config().get("market");
             return "MOVERS:" + (market != null && !market.isNull() ? market.asString() : "any");
+        }
+        // Beater / Returns key by sectionId (like ASSET_CARDS) so several distinct instances survive instead of
+        // collapsing to one; the "same parameters can't coexist" rule is enforced client-side (the gallery
+        // blocks a duplicate add and the read-path dedup collapses identical configs).
+        if (MULTI_INSTANCE_CAP.containsKey(s.kind())) {
+            return s.kind().name() + ":" + s.sectionId();
         }
         return s.kind().name();
     }

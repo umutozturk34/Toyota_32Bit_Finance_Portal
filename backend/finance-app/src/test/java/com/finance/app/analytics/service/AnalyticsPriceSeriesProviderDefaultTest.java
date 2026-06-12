@@ -14,7 +14,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,11 +36,13 @@ class AnalyticsPriceSeriesProviderDefaultTest {
     @Mock private AssetNativeCurrencyResolver nativeCurrencyResolver;
     @Mock private CurrencyConverter currencyConverter;
 
+    @SuppressWarnings("unchecked")
     private AnalyticsPriceSeriesProvider.Default newProvider(boolean wireResolver, boolean wireConverter) {
-        AnalyticsPriceSeriesProvider.Default provider = new AnalyticsPriceSeriesProvider.Default(historyService);
-        ReflectionTestUtils.setField(provider, "nativeCurrencyResolver", wireResolver ? nativeCurrencyResolver : null);
-        ReflectionTestUtils.setField(provider, "currencyConverter", wireConverter ? currencyConverter : null);
-        return provider;
+        ObjectProvider<AssetNativeCurrencyResolver> resolverProvider = mock(ObjectProvider.class);
+        when(resolverProvider.getIfAvailable()).thenReturn(wireResolver ? nativeCurrencyResolver : null);
+        ObjectProvider<CurrencyConverter> converterProvider = mock(ObjectProvider.class);
+        when(converterProvider.getIfAvailable()).thenReturn(wireConverter ? currencyConverter : null);
+        return new AnalyticsPriceSeriesProvider.Default(historyService, resolverProvider, converterProvider);
     }
 
     private static HistoryPoint point(LocalDate date, String value) {

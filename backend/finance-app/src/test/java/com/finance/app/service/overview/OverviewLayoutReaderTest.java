@@ -106,6 +106,23 @@ class OverviewLayoutReaderTest {
     }
 
     @Test
+    void should_keepUpToThreeBeaterWidgets_butDropTheFourth_when_capExceeded() throws Exception {
+        JsonNode overview = objectMapper.readTree("""
+                {"sections":[
+                  {"sectionId":"b1","kind":"BENCHMARK_BEATERS","visible":true,"order":0,"config":{"period":"1Y"}},
+                  {"sectionId":"b2","kind":"BENCHMARK_BEATERS","visible":true,"order":1,"config":{"period":"3Y"}},
+                  {"sectionId":"b3","kind":"BENCHMARK_BEATERS","visible":true,"order":2,"config":{"period":"5Y"}},
+                  {"sectionId":"b4","kind":"BENCHMARK_BEATERS","visible":true,"order":3,"config":{"period":"1M"}}
+                ]}""");
+        when(userLayoutService.getOrEmpty("user-1")).thenReturn(response(overview));
+
+        List<WidgetSection> sections = reader.readVisibleSections("user-1");
+
+        // Distinct-config instances coexist (the old cap-of-1 is lifted) but the 4th is dropped at the cap.
+        assertThat(sections).extracting(WidgetSection::sectionId).containsExactly("b1", "b2", "b3");
+    }
+
+    @Test
     void should_orderSectionsByOrderField_when_outOfOrderInJson() throws Exception {
         JsonNode overview = objectMapper.readTree("""
                 {"sections":[

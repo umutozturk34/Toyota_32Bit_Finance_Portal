@@ -176,7 +176,7 @@ class ViopDirectionSeriesRecomputerTest {
         assertThat(d1.getDailyPnlPercent()).isNull();
         PortfolioAssetDailySnapshot d2 = out.get(1);
         assertThat(d2.getDailyPnlTry()).isEqualByComparingTo("10.0000");       // (36.00-35.50)*10*2
-        assertThat(d2.getDailyPnlPercent()).isEqualByComparingTo("1.4085");    // 10*100/710
+        assertThat(d2.getDailyPnlPercent()).isEqualByComparingTo("1.40845070");    // 10*100/710 @ scale 8
         assertThat(d2.getMarketValueTry()).isEqualByComparingTo("720.0000");
     }
 
@@ -256,7 +256,7 @@ class ViopDirectionSeriesRecomputerTest {
         PortfolioAssetDailySnapshot firstHeldAfterGap = out.get(2);
         assertThat(firstHeldAfterGap.getSnapshotDate()).isEqualTo(day5);
         assertThat(firstHeldAfterGap.getDailyPnlTry()).isEqualByComparingTo("20.0000");   // (36.40-36.00)*10*5
-        assertThat(firstHeldAfterGap.getDailyPnlPercent()).isEqualByComparingTo("1.1111"); // 20*100/1800, fresh base
+        assertThat(firstHeldAfterGap.getDailyPnlPercent()).isEqualByComparingTo("1.11111111"); // 20*100/1800 @ scale 8, fresh base
     }
 
     @Test

@@ -144,6 +144,7 @@ public class KeycloakAdminClient {
     /** Idempotently sets a top-level realm flag to {@code value}, skipping the write when it already matches. */
     @CircuitBreaker(name = "keycloak-admin")
     @Retry(name = "keycloak-admin")
+    @SuppressWarnings("unchecked")
     public void ensureRealmFlag(String flag, Object value) {
         Map<String, Object> realm = executeWithRetry("fetchRealm", token -> webClient.get()
                 .uri("/admin/realms/{realm}", properties.getRealm())
@@ -206,7 +207,6 @@ public class KeycloakAdminClient {
     /** Reads a single user attribute, returning empty when absent or blank; Keycloak stores attributes as string lists, so the first element is used. */
     @CircuitBreaker(name = "keycloak-admin")
     @Retry(name = "keycloak-admin")
-    @SuppressWarnings("unchecked")
     public java.util.Optional<String> getUserAttribute(String userId, String key) {
         Map<String, Object> user = fetchUser(userId);
         Object attrs = user.get("attributes");

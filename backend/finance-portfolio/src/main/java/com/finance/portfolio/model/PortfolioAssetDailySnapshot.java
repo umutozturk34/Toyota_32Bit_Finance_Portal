@@ -60,19 +60,19 @@ public class PortfolioAssetDailySnapshot {
     @Column(name = "quantity", nullable = false, precision = 19, scale = 8)
     private BigDecimal quantity;
 
-    @Column(name = "unit_price_try", nullable = false, precision = 19, scale = 4)
+    @Column(name = "unit_price_try", nullable = false, precision = 23, scale = 8)
     private BigDecimal unitPriceTry;
 
-    @Column(name = "market_value_try", nullable = false, precision = 19, scale = 4)
+    @Column(name = "market_value_try", nullable = false, precision = 23, scale = 8)
     private BigDecimal marketValueTry;
 
-    @Column(name = "total_cost_try", nullable = false, precision = 19, scale = 4)
+    @Column(name = "total_cost_try", nullable = false, precision = 23, scale = 8)
     private BigDecimal totalCostTry;
 
-    @Column(name = "pnl_try", nullable = false, precision = 19, scale = 4)
+    @Column(name = "pnl_try", nullable = false, precision = 23, scale = 8)
     private BigDecimal pnlTry;
 
-    @Column(name = "daily_pnl_try", precision = 19, scale = 4)
+    @Column(name = "daily_pnl_try", precision = 23, scale = 8)
     private BigDecimal dailyPnlTry;
 
     @Column(name = "daily_pnl_percent", precision = 19, scale = 4)

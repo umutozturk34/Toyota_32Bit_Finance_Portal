@@ -19,8 +19,12 @@ import java.time.ZoneId;
 @Mapper(componentModel = "spring")
 public abstract class TefasClientMapper {
 
+    private AppProperties appProperties;
+
     @Autowired
-    protected AppProperties appProperties;
+    protected void setAppProperties(AppProperties appProperties) {
+        this.appProperties = appProperties;
+    }
 
     /**
      * Maps one external TEFAS fund record to the internal DTO, renaming the Turkish source

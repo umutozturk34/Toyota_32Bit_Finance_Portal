@@ -7,6 +7,7 @@ import com.finance.portfolio.derivative.dto.request.OpenDerivativePositionReques
 import com.finance.portfolio.derivative.dto.request.UpdateDerivativePositionRequest;
 import com.finance.portfolio.derivative.dto.response.DerivativePositionResponse;
 import com.finance.portfolio.derivative.service.DerivativePositionService;
+import com.finance.portfolio.dto.request.BulkDeleteRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -102,5 +103,13 @@ public class DerivativePositionController {
                        @PathVariable Long positionId,
                        @AuthenticationPrincipal Jwt jwt) {
         service.delete(positionId, portfolioId, jwt.getSubject());
+    }
+
+    @PostMapping("/bulk-delete")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void bulkDelete(@PathVariable Long portfolioId,
+                           @Valid @RequestBody BulkDeleteRequest request,
+                           @AuthenticationPrincipal Jwt jwt) {
+        service.deleteAll(request.ids(), portfolioId, jwt.getSubject());
     }
 }

@@ -4,6 +4,7 @@ import com.finance.common.config.AppProperties;
 import com.finance.common.dto.ApiResponse;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.common.i18n.Translator;
+import com.finance.portfolio.dto.request.BulkDeleteRequest;
 import com.finance.portfolio.dto.request.PortfolioCreateRequest;
 import com.finance.portfolio.dto.request.PositionRequest;
 import com.finance.portfolio.dto.request.PositionSellRequest;
@@ -116,6 +117,15 @@ public class PortfolioController {
             @PathVariable Long portfolioId,
             @PathVariable Long positionId) {
         portfolioFacade.deletePosition(jwt.getSubject(), portfolioId, positionId);
+        return ApiResponse.success(translator.translate("api.portfolio.positionDeleted"), null);
+    }
+
+    @PostMapping("/{portfolioId}/positions/bulk-delete")
+    public ApiResponse<Void> bulkDeletePositions(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long portfolioId,
+            @Valid @RequestBody BulkDeleteRequest request) {
+        portfolioFacade.bulkDeletePositions(jwt.getSubject(), portfolioId, request.ids());
         return ApiResponse.success(translator.translate("api.portfolio.positionDeleted"), null);
     }
 

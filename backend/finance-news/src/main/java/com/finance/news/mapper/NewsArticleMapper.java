@@ -20,8 +20,12 @@ import java.time.LocalDateTime;
 @Mapper(componentModel = "spring")
 public abstract class NewsArticleMapper {
 
+    private NewsProperties newsProperties;
+
     @Autowired
-    protected NewsProperties newsProperties;
+    protected void setNewsProperties(NewsProperties newsProperties) {
+        this.newsProperties = newsProperties;
+    }
 
     /** Classifies and attributes a raw feed article; returns {@code null} to skip uncategorizable or empty articles. */
     public NewsArticleDto toDto(RssArticleData data, String sourceName, String sourceUrl, String defaultCategory) {

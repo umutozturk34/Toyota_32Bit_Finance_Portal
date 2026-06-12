@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.finance</groupId>
 	<artifactId>finance-portal</artifactId>
-	<version>0.14.0</version>
+	<version>1.0.0</version>
 	<name>Finance Portal</name>
 	<description>Finance Portal - Multi Module</description>
 	<packaging>pom</packaging>
@@ -20,7 +20,7 @@
 		<mapstruct.version>1.6.3</mapstruct.version>
 		<jacoco.version>0.8.13</jacoco.version>
 		<byte-buddy.version>1.17.8</byte-buddy.version>
-		<finance-common.version>0.14.1-SNAPSHOT</finance-common.version>
+		<finance-common.version>1.0.0</finance-common.version>
 		<hibernate.version>7.3.4.Final</hibernate.version>
 	</properties>
 
@@ -194,6 +194,19 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
 					<argLine>${argLine} -javaagent:${settings.localRepository}/net/bytebuddy/byte-buddy-agent/${byte-buddy.version}/byte-buddy-agent-${byte-buddy.version}.jar -XX:+EnableDynamicAgentLoading</argLine>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<configuration>
+					<source>21</source>
+					<doclint>none</doclint>
+					<quiet>true</quiet>
+					<failOnError>false</failOnError>
+					<encoding>UTF-8</encoding>
+					<docencoding>UTF-8</docencoding>
+					<charset>UTF-8</charset>
 				</configuration>
 			</plugin>
 		</plugins>

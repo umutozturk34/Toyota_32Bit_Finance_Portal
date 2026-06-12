@@ -10,11 +10,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.util.List;
 import java.util.Map;
@@ -39,12 +38,17 @@ class InflationBeaterServiceCacheTest {
     @Mock private MacroIndicatorQueryService macroQueryService;
     @Mock private TrackedAssetQueryService trackedAssetQueryService;
     @Spy private BeaterCacheManager cacheManager = new BeaterCacheManager();
+    @Mock private ObjectProvider<com.finance.market.core.service.AssetNativeCurrencyResolver> nativeCurrencyResolver;
+    @Mock private ObjectProvider<MarketDataInitializer> marketDataInitializer;
 
-    @InjectMocks
     private InflationBeaterService service;
 
     @BeforeEach
     void wireTrackedDefaults() {
+        // Built by hand rather than @InjectMocks: both cold-start guards are erased-type ObjectProvider, which
+        // constructor injection can't disambiguate. getIfAvailable() defaults to null (ready) until stubbed.
+        service = new InflationBeaterService(scenarioService, historyService, macroQueryService,
+                trackedAssetQueryService, cacheManager, nativeCurrencyResolver, marketDataInitializer);
         for (TrackedAssetType t : TrackedAssetType.values()) {
             lenient().when(trackedAssetQueryService.getCodes(t)).thenReturn(List.of());
             lenient().when(trackedAssetQueryService.getEnabledCodes(t)).thenReturn(List.of());
@@ -59,7 +63,7 @@ class InflationBeaterServiceCacheTest {
             future.complete(null);
         }
         when(initializer.completion()).thenReturn(future);
-        ReflectionTestUtils.setField(service, "marketDataInitializer", initializer);
+        when(marketDataInitializer.getIfAvailable()).thenReturn(initializer);
     }
 
     @ParameterizedTest

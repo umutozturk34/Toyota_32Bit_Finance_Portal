@@ -13,7 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,6 +35,7 @@ class AssetReturnsServiceCacheTest {
     @Mock private TrackedAssetQueryService trackedAssetQueryService;
     @Mock private CurrencyConverter currencyConverter;
     @Spy private AssetReturnsCacheManager cacheManager = new AssetReturnsCacheManager();
+    @Mock private ObjectProvider<MarketDataInitializer> marketDataInitializer;
 
     @InjectMocks
     private AssetReturnsService service;
@@ -56,7 +57,7 @@ class AssetReturnsServiceCacheTest {
         // lenient: shouldClearCache_unconditionally wires the initializer but clearCache() is not
         // readiness-gated, so it never reads completion() — strict stubbing would flag it as unnecessary.
         lenient().when(initializer.completion()).thenReturn(future);
-        ReflectionTestUtils.setField(service, "marketDataInitializer", initializer);
+        lenient().when(marketDataInitializer.getIfAvailable()).thenReturn(initializer);
     }
 
     @Test

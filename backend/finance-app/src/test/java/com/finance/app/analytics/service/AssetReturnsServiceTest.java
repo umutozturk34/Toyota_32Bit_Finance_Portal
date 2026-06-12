@@ -20,6 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -45,6 +46,7 @@ class AssetReturnsServiceTest {
     @Mock private TrackedAssetQueryService trackedAssetQueryService;
     @Mock private CurrencyConverter currencyConverter;
     @Spy private AssetReturnsCacheManager cacheManager = new AssetReturnsCacheManager();
+    @Mock private ObjectProvider<com.finance.app.config.MarketDataInitializer> marketDataInitializer;
 
     @InjectMocks
     private AssetReturnsService service;
@@ -64,7 +66,7 @@ class AssetReturnsServiceTest {
         com.finance.app.config.MarketDataInitializer initializer =
                 mock(com.finance.app.config.MarketDataInitializer.class);
         when(initializer.completion()).thenReturn(new java.util.concurrent.CompletableFuture<>());
-        org.springframework.test.util.ReflectionTestUtils.setField(service, "marketDataInitializer", initializer);
+        when(marketDataInitializer.getIfAvailable()).thenReturn(initializer);
 
         // Act
         AssetReturnsResponse response = service.getReturns();

@@ -20,10 +20,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -47,12 +47,18 @@ class InflationBeaterServiceTest {
     @Mock private MacroIndicatorQueryService macroQueryService;
     @Mock private TrackedAssetQueryService trackedAssetQueryService;
     @Spy private BeaterCacheManager cacheManager = new BeaterCacheManager();
+    @Mock private ObjectProvider<com.finance.market.core.service.AssetNativeCurrencyResolver> nativeCurrencyResolver;
+    @Mock private ObjectProvider<com.finance.app.config.MarketDataInitializer> marketDataInitializer;
 
-    @InjectMocks
     private InflationBeaterService service;
 
     @BeforeEach
     void wireTrackedDefaults() {
+        // Built by hand rather than @InjectMocks: both cold-start guards are erased-type ObjectProvider, which
+        // constructor injection can't disambiguate. Each getIfAvailable() defaults to null — treated as ready
+        // and TRY-based — until a test stubs it.
+        service = new InflationBeaterService(scenarioService, historyService, macroQueryService,
+                trackedAssetQueryService, cacheManager, nativeCurrencyResolver, marketDataInitializer);
         for (TrackedAssetType t : TrackedAssetType.values()) {
             lenient().when(trackedAssetQueryService.getCodes(t)).thenReturn(List.of());
             lenient().when(trackedAssetQueryService.getEnabledCodes(t)).thenReturn(List.of());
@@ -67,7 +73,7 @@ class InflationBeaterServiceTest {
         com.finance.app.config.MarketDataInitializer initializer =
                 mock(com.finance.app.config.MarketDataInitializer.class);
         when(initializer.completion()).thenReturn(new java.util.concurrent.CompletableFuture<>());
-        org.springframework.test.util.ReflectionTestUtils.setField(service, "marketDataInitializer", initializer);
+        when(marketDataInitializer.getIfAvailable()).thenReturn(initializer);
 
         // Act
         InflationBeaterResponse response = service.rank("1Y", null);
@@ -195,7 +201,7 @@ class InflationBeaterServiceTest {
                 mock(com.finance.market.core.service.AssetNativeCurrencyResolver.class);
         when(resolver.resolveNativeCurrency(any(), org.mockito.ArgumentMatchers.eq("TP.USDTAS.MT03")))
                 .thenReturn(com.finance.common.model.Currency.USD);
-        org.springframework.test.util.ReflectionTestUtils.setField(service, "nativeCurrencyResolver", resolver);
+        when(nativeCurrencyResolver.getIfAvailable()).thenReturn(resolver);
 
         MacroIndicator usdDeposit = mock(MacroIndicator.class);
         lenient().when(usdDeposit.getCategory()).thenReturn(MacroCategory.DEPOSIT);
@@ -288,7 +294,7 @@ class InflationBeaterServiceTest {
                 mock(com.finance.market.core.service.AssetNativeCurrencyResolver.class);
         when(resolver.resolveNativeCurrency(any(), org.mockito.ArgumentMatchers.eq("TP.USDTAS.MT06")))
                 .thenReturn(com.finance.common.model.Currency.USD);
-        org.springframework.test.util.ReflectionTestUtils.setField(service, "nativeCurrencyResolver", resolver);
+        when(nativeCurrencyResolver.getIfAvailable()).thenReturn(resolver);
 
         MacroIndicator usdDeposit = mock(MacroIndicator.class);
         lenient().when(usdDeposit.getCategory()).thenReturn(MacroCategory.DEPOSIT);

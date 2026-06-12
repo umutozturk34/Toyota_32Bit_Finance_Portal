@@ -102,7 +102,7 @@ export default function IndicatorCard({ indicator, onOpen, dense = false }) {
       )}
 
       <div className="pl-2">
-        <IndicatorSparkline code={indicator.code} color={theme.accent} points={points} />
+        <IndicatorSparkline code={indicator.code} color={theme.accent} points={points} baselineValue={indicator.lastValue} />
       </div>
 
       <div className="pl-2 flex items-center justify-between text-[10px] font-mono text-fg-subtle">

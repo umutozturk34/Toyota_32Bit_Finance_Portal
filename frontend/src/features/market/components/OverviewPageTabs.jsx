@@ -79,13 +79,13 @@ function PageTab({ page, active, editMode, onSelect, onRename, onDelete, canDele
       {editMode && active && (
         <Pencil className="h-3 w-3 opacity-60 group-hover/tab:opacity-100 transition-opacity" />
       )}
-      {editMode && canDelete && active && (
+      {editMode && canDelete && (
         <span
           role="button"
           tabIndex={0}
           onClick={(e) => { e.stopPropagation(); onDelete(page.id); }}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onDelete(page.id); } }}
-          className="flex items-center justify-center w-4 h-4 rounded hover:bg-danger/20 hover:text-danger transition-colors cursor-pointer p-0 ml-0.5"
+          className={`flex items-center justify-center w-4 h-4 rounded hover:bg-danger/20 hover:text-danger transition-colors cursor-pointer p-0 ml-0.5 ${active ? '' : 'opacity-50 group-hover/tab:opacity-100'}`}
           aria-label={t('overviewPages.deletePage', { defaultValue: 'Sayfayı sil' })}
         >
           <X className="h-3 w-3" />

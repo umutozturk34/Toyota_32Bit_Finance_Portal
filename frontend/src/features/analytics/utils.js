@@ -1,3 +1,5 @@
+import { formatPrice } from '../../shared/utils/formatters';
+
 export function formatPercent(value, locale = 'tr-TR') {
   if (value == null) return '—';
   const n = Number(value);
@@ -20,7 +22,9 @@ export function moneyDigits(n) {
 export function formatMoney(value, locale = 'tr-TR') {
   if (value == null) return '—';
   const n = Number(value);
-  return `${n.toLocaleString(locale, { maximumFractionDigits: moneyDigits(n) })} ₺`;
+  // Route through the shared formatter so the moneyDigits ladder still applies but a sub-resolution value
+  // expands past it instead of collapsing to a flat "0 ₺" (minDecimals 0 keeps the existing no-forced-min look).
+  return `${formatPrice(n, { locale, minDecimals: 0, maxDecimals: moneyDigits(n) })} ₺`;
 }
 
 // Signed TRY change (the per-unit price delta over the window).
@@ -28,7 +32,7 @@ export function formatMoneyDelta(value, locale = 'tr-TR') {
   if (value == null) return '—';
   const n = Number(value);
   const sign = n > 0 ? '+' : '';
-  return `${sign}${n.toLocaleString(locale, { maximumFractionDigits: moneyDigits(n) })} ₺`;
+  return `${sign}${formatPrice(n, { locale, minDecimals: 0, maxDecimals: moneyDigits(n) })} ₺`;
 }
 
 function isoDate(date) {

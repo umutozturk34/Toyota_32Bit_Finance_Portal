@@ -36,4 +36,8 @@ export const derivativePositionService = {
   remove: async (portfolioId, positionId) => {
     await api.delete(`${base(portfolioId)}/${positionId}`);
   },
+
+  bulkRemove: async (portfolioId, ids) => {
+    await api.post(`${base(portfolioId)}/bulk-delete`, { ids });
+  },
 };

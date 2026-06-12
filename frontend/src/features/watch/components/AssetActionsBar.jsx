@@ -57,7 +57,7 @@ export default function AssetActionsBar({ marketType, assetCode, currentPrice, c
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <motion.button
           type="button"
           whileTap={{ scale: 0.96 }}
@@ -75,7 +75,7 @@ export default function AssetActionsBar({ marketType, assetCode, currentPrice, c
           ) : (
             <Star className={`h-3.5 w-3.5 ${isFavorite ? 'fill-warning' : ''}`} />
           )}
-          {isFavorite ? t('assetActions.inFavorites') : t('assetActions.addToFavorites')}
+          <span className="hidden sm:inline">{isFavorite ? t('assetActions.inFavorites') : t('assetActions.addToFavorites')}</span>
         </motion.button>
 
         <motion.button
@@ -86,7 +86,7 @@ export default function AssetActionsBar({ marketType, assetCode, currentPrice, c
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-border-default bg-bg-elevated text-fg hover:border-border-hover hover:bg-surface transition-colors cursor-pointer"
         >
           <Eye className="h-3.5 w-3.5" />
-          {t('assetActions.addToList')}
+          <span className="hidden sm:inline">{t('assetActions.addToList')}</span>
         </motion.button>
 
         <motion.button
@@ -96,7 +96,7 @@ export default function AssetActionsBar({ marketType, assetCode, currentPrice, c
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright transition-colors border-none cursor-pointer"
         >
           <AlertCircle className="h-3.5 w-3.5" />
-          {t('assetActions.priceAlert')}
+          <span className="hidden sm:inline">{t('assetActions.priceAlert')}</span>
         </motion.button>
       </div>
 

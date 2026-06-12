@@ -47,6 +47,11 @@ export const portfolioService = {
     return res.data.data;
   },
 
+  bulkDeletePositions: async (portfolioId, ids) => {
+    const res = await api.post(`${BASE}/${portfolioId}/positions/bulk-delete`, { ids });
+    return res.data.data;
+  },
+
   sellPosition: async (portfolioId, positionId, payload) => {
     const res = await api.post(`${BASE}/${portfolioId}/positions/${positionId}/sell`, payload);
     return res.data.data;

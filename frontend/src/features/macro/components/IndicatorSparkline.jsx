@@ -19,20 +19,23 @@ function buildPath(points, width, height) {
   const values = points.map((p) => Number(p.value));
   const min = Math.min(...values);
   const max = Math.max(...values);
-  const span = max - min || 1;
+  const flat = max === min;
+  const span = flat ? 1 : max - min;
   const innerW = width - 2 * SPARK_PAD;
   const innerH = height - 2 * SPARK_PAD;
   const stepX = innerW / (points.length - 1);
   const coords = points.map((p, i) => ({
     x: SPARK_PAD + i * stepX,
-    y: SPARK_PAD + innerH - ((Number(p.value) - min) / span) * innerH,
+    y: flat
+      ? SPARK_PAD + innerH / 2
+      : SPARK_PAD + innerH - ((Number(p.value) - min) / span) * innerH,
   }));
   const line = coords.map(({ x, y }, i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`).join(' ');
   const area = `${line} L${(coords[coords.length - 1].x).toFixed(2)},${height} L${SPARK_PAD.toFixed(2)},${height} Z`;
   return { line, area, lastDot: coords[coords.length - 1] };
 }
 
-export default function IndicatorSparkline({ code, color, points: pointsProp }) {
+export default function IndicatorSparkline({ code, color, points: pointsProp, baselineValue }) {
   const { t } = useTranslation();
   const today = useMemo(() => new Date(), []);
   const from = useMemo(() => {
@@ -45,10 +48,20 @@ export default function IndicatorSparkline({ code, color, points: pointsProp }) 
   const { data: fetched = [] } = useMacroIndicatorHistory(enabled ? code : null, { from, to });
   const points = pointsProp || fetched;
 
+  // A never-moved series (an unchanged policy rate) returns 0-1 observations in the window, leaving the
+  // sparkline blank. Carry the known latest value across the whole period as a flat baseline so the card
+  // reads as "stable" instead of broken.
+  const effectivePoints = useMemo(() => {
+    if (points.length >= 2) return points;
+    const seed = points.length === 1 ? Number(points[0].value) : Number(baselineValue);
+    if (!Number.isFinite(seed)) return points;
+    return [{ value: seed }, { value: seed }];
+  }, [points, baselineValue]);
+
   const change = useMemo(() => computeChange(points), [points]);
   const baseColor = color || (change?.direction === 'down' ? DANGER : SUCCESS);
   const gradientId = useId();
-  const { line, area, lastDot } = useMemo(() => buildPath(points, SPARK_WIDTH, SPARK_HEIGHT), [points]);
+  const { line, area, lastDot } = useMemo(() => buildPath(effectivePoints, SPARK_WIDTH, SPARK_HEIGHT), [effectivePoints]);
 
   if (!line) return <div className="h-8 w-full opacity-40" aria-hidden />;
 

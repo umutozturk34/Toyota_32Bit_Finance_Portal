@@ -4,7 +4,7 @@ import { Bitcoin, BarChart2, Activity, Clock } from 'lucide-react';
 import { TrendingUp, ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
 import { cryptoService } from './services/cryptoService';
 import { adminService } from '../admin/services/adminService';
-import { formatCompactNumber, formatPriceTRY, formatPriceUSD } from '../../shared/utils/formatters';
+import { formatPriceTRY } from '../../shared/utils/formatters';
 import MarketListPage from '../../shared/components/market/MarketListPage';
 import AssetCard from '../../shared/components/asset/AssetCard';
 import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
@@ -18,7 +18,7 @@ export default function CryptoPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const listParams = useListParams();
-    const { format: money, currency: displayCurrency } = useMoney();
+    const { format: money, formatCompact: moneyCompact, currency: displayCurrency } = useMoney();
     const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`market.sort.${id}`) }));
 
     const renderCard = (crypto, { setBuyTarget }) => {
@@ -72,15 +72,15 @@ export default function CryptoPage() {
                 <div className="mt-3 space-y-1 border-t border-border-default pt-3">
                     <div className="flex items-center justify-between text-xs">
                         <span className="flex items-center gap-1 text-fg-muted"><Activity className="h-3 w-3" />{t('market.crypto.changeLabel')}</span>
-                        <span className="font-mono text-fg">{formatPriceUSD(crypto.changeAmount)}</span>
+                        <span className="font-mono text-fg">{money(crypto.changeAmount, 'USD')}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
                         <span className="flex items-center gap-1 text-fg-muted"><BarChart2 className="h-3 w-3" />{t('market.crypto.volumeLabel')}</span>
-                        <span className="font-mono text-fg">{formatCompactNumber(crypto.metadata?.totalVolume)}</span>
+                        <span className="font-mono text-fg">{moneyCompact(crypto.metadata?.totalVolume, 'USD')}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
                         <span className="flex items-center gap-1 text-fg-muted"><TrendingUp className="h-3 w-3" />{t('market.crypto.marketCapLabel')}</span>
-                        <span className="font-mono text-fg">{formatCompactNumber(crypto.metadata?.marketCap)}</span>
+                        <span className="font-mono text-fg">{moneyCompact(crypto.metadata?.marketCap, 'USD')}</span>
                     </div>
                 </div>
 
@@ -114,7 +114,7 @@ export default function CryptoPage() {
             errorMessage={t('market.crypto.error')}
             emptyMessage={t('market.crypto.empty')}
             emptyHint={t('market.empty.adminHint')}
-            gridClass="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-h-[600px] content-start"
+            gridClass="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 min-h-[600px] content-start"
             animatePresence
         />
     );

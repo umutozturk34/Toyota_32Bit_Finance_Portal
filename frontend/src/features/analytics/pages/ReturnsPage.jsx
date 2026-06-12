@@ -226,18 +226,22 @@ export default function ReturnsPage() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <HeroStat
-              icon={best && best.returnPct < 0 ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
+              icon={<TrendingUp className="h-4 w-4" />}
               label={t('analytics.returns.topGainer')}
-              value={best ? <span className={best.returnPct >= 0 ? 'text-success' : 'text-danger'}>{formatPercent(best.returnPct)}</span> : '—'}
-              sub={best ? nameFor(best) : `—`}
-              accent={best && best.returnPct < 0 ? '#ef4444' : '#10b981'}
+              value={positiveCount > 0
+                ? <span className="text-success">{formatPercent(best.returnPct)}</span>
+                : <span className="text-sm text-fg-muted">{t('analytics.returns.noGainers', { defaultValue: 'Bu dönemde kazanan yok' })}</span>}
+              sub={positiveCount > 0 ? nameFor(best) : periodLabel}
+              accent={positiveCount > 0 ? '#10b981' : '#6b7280'}
             />
             <HeroStat
-              icon={worst && worst.returnPct > 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+              icon={<TrendingDown className="h-4 w-4" />}
               label={t('analytics.returns.topLoser')}
-              value={worst ? <span className={worst.returnPct >= 0 ? 'text-success' : 'text-danger'}>{formatPercent(worst.returnPct)}</span> : '—'}
-              sub={worst ? nameFor(worst) : `—`}
-              accent={worst && worst.returnPct > 0 ? '#10b981' : '#ef4444'}
+              value={negativeCount > 0
+                ? <span className="text-danger">{formatPercent(worst.returnPct)}</span>
+                : <span className="text-sm text-fg-muted">{t('analytics.returns.noLosers', { defaultValue: 'Bu dönemde kaybeden yok' })}</span>}
+              sub={negativeCount > 0 ? nameFor(worst) : periodLabel}
+              accent={negativeCount > 0 ? '#ef4444' : '#6b7280'}
             />
             <HeroStat
               icon={<Medal className="h-4 w-4" />}

@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { cryptoService } from './services/cryptoService';
-import { formatCompactNumber } from '../../shared/utils/formatters';
+import { useMoney } from '../../shared/hooks/useMoney';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
 
@@ -28,11 +28,14 @@ function CryptoHeader({ asset }) {
 // Data Window does not carry (market cap + 24h traded volume).
 function CryptoMetadata({ asset }) {
   const { t } = useTranslation();
+  const { formatCompact: moneyCompact } = useMoney();
   const meta = asset.metadata || {};
+  // Market cap and 24h volume arrive from CoinGecko in USD; convert them to the selected display currency
+  // (like the chart and the fund/viop metadata) instead of always printing $, so the whole view agrees.
   return (
     <MetadataTiles tiles={[
-      { label: t('market.crypto.marketCapLabel'), value: formatCompactNumber(meta.marketCap, 'USD') },
-      { label: t('marketDetail.crypto.volume24h'), value: formatCompactNumber(meta.totalVolume) },
+      { label: t('market.crypto.marketCapLabel'), value: moneyCompact(meta.marketCap, 'USD') },
+      { label: t('marketDetail.crypto.volume24h'), value: moneyCompact(meta.totalVolume, 'USD') },
     ]} />
   );
 }

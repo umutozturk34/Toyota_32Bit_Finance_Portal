@@ -55,3 +55,8 @@ export function useDeleteDerivativePosition(portfolioId) {
   return useDerivativeMutation(portfolioId, (positionId) =>
     derivativePositionService.remove(portfolioId, positionId));
 }
+
+export function useBulkDeleteDerivativePositions(portfolioId) {
+  return useDerivativeMutation(portfolioId, (ids) =>
+    derivativePositionService.bulkRemove(portfolioId, ids));
+}

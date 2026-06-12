@@ -3,6 +3,7 @@ import GridLayout, { useContainerWidth } from 'react-grid-layout';
 import OverviewWidgetCard from './OverviewWidgetCard';
 import WidgetSkeleton from './WidgetSkeleton';
 import { useWidgetDefinitions } from '../../../shared/hooks/useWidgetDefinitions';
+import useRootFontScale from '../../../shared/hooks/useRootFontScale';
 import 'react-grid-layout/css/styles.css';
 
 function buildWidgetDataMap(widgets) {
@@ -11,7 +12,7 @@ function buildWidgetDataMap(widgets) {
   return map;
 }
 
-const GRID_CONFIG = { cols: 12, rowHeight: 28, margin: [16, 16], containerPadding: [0, 0] };
+const GRID_BASE = { cols: 12, rowHeight: 28, margin: 16 };
 
 const FRONTEND_MIN = {
   ASSET_CARDS: { w: 6, h: 3 },
@@ -27,8 +28,19 @@ export default function OverviewWidgetCanvas({
   onChange, onDelete, onConfigChange, onDrop, pendingDropSize,
 }) {
   const { containerRef, width } = useContainerWidth();
+  const rootScale = useRootFontScale();
   const [mountedCount, setMountedCount] = useState(0);
   const { byKind, limits } = useWidgetDefinitions();
+
+  // Row height and gutters are plain px numbers react-grid-layout measures itself, so CSS rem can't
+  // reach them. Scale them by the live root-font factor so widgets keep their aspect ratio on wide
+  // monitors instead of stretching wider-but-not-taller.
+  const gridConfig = useMemo(() => ({
+    cols: GRID_BASE.cols,
+    rowHeight: GRID_BASE.rowHeight * rootScale,
+    margin: [GRID_BASE.margin * rootScale, GRID_BASE.margin * rootScale],
+    containerPadding: [0, 0],
+  }), [rootScale]);
 
   useEffect(() => {
     if (mountedCount >= sections.length) return;
@@ -141,7 +153,7 @@ export default function OverviewWidgetCanvas({
       ref={containerRef}
       className={`overview-canvas${pendingDropSize ? ' is-dropping' : ''}`}
       onDragOver={handleDragOver}
-      style={{ minHeight: width > 0 ? undefined : 600 }}
+      style={{ minHeight: width > 0 ? undefined : 600 * rootScale }}
     >
       {isMobile && (
         <div className="flex flex-col gap-4 pb-4">
@@ -175,7 +187,7 @@ export default function OverviewWidgetCanvas({
         <GridLayout
           layout={layout}
           width={width}
-          gridConfig={GRID_CONFIG}
+          gridConfig={gridConfig}
           maxRows={limits?.maxLayoutRows || undefined}
           dragConfig={dragConfig}
           resizeConfig={resizeConfig}

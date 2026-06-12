@@ -58,8 +58,9 @@ export default function DatePickerPopover({
   const ref = useRef(null);
   const triggerRef = useRef(null);
   const popoverRef = useRef(null);
-  // Compact mode portals the popover to <body> with fixed coords so it escapes the chart card's clipped
-  // overflow (a calendar taller than the remaining card height was getting cut off, esp. on mobile).
+  // The popover always portals to <body> with fixed coords so it escapes any clipped-overflow ancestor —
+  // a chart card, or a modal body whose overflow-y-auto would otherwise cut a calendar taller than the
+  // remaining space (esp. on mobile). Width follows the trigger in normal mode, fixed at 264px when compact.
   const [popoverPos, setPopoverPos] = useState(null);
 
   const openWithDirection = () => {
@@ -71,13 +72,11 @@ export default function DatePickerPopover({
       const spaceAbove = rect.top;
       const up = spaceBelow < estimatedPopupHeight && spaceAbove > spaceBelow + 80;
       setOpenUp(up);
-      if (compact) {
-        const width = 264;
-        const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
-        setPopoverPos(up
-          ? { left, bottom: window.innerHeight - rect.top + 6 }
-          : { left, top: rect.bottom + 6 });
-      }
+      const width = compact ? 264 : rect.width;
+      const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
+      setPopoverPos(up
+        ? { left, width, bottom: window.innerHeight - rect.top + 6 }
+        : { left, width, top: rect.bottom + 6 });
     }
     setOpen(true);
   };
@@ -207,10 +206,8 @@ export default function DatePickerPopover({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: openUp ? 2 : -2 }}
             transition={{ duration: 0.1, ease: 'easeOut' }}
-            className={`rounded-xl border border-border-default p-3 space-y-2 ${compact ? 'fixed z-[200] w-[16.5rem] max-w-[calc(100vw-1rem)]' : `absolute z-50 left-0 right-0 ${openUp ? 'bottom-full mb-1.5' : 'mt-1.5'}`}`}
-            style={compact
-              ? { left: popoverPos?.left, top: popoverPos?.top, bottom: popoverPos?.bottom, backgroundColor: 'var(--color-bg-base, #0f0f17)', boxShadow: '0 12px 40px -8px rgba(0,0,0,0.6)' }
-              : { backgroundColor: 'var(--color-bg-base, #0f0f17)', boxShadow: '0 12px 40px -8px rgba(0,0,0,0.6)' }}
+            className="rounded-xl border border-border-default p-3 space-y-2 fixed z-[200] max-w-[calc(100vw-1rem)]"
+            style={{ left: popoverPos?.left, top: popoverPos?.top, bottom: popoverPos?.bottom, width: popoverPos?.width, backgroundColor: 'var(--color-bg-base, #0f0f17)', boxShadow: '0 12px 40px -8px rgba(0,0,0,0.6)' }}
           >
             <div className="flex items-center justify-between gap-1">
               <NavBtn onClick={() => shift(-1)} title={PREV_LABEL[view]} disabled={!canGoPrev}>
@@ -313,7 +310,7 @@ export default function DatePickerPopover({
         )}
         </AnimatePresence>
         );
-        return compact ? createPortal(node, document.body) : node;
+        return createPortal(node, document.body);
       })()}
     </div>
   );

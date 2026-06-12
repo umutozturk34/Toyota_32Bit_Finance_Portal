@@ -165,12 +165,25 @@ export default function OpenDerivativePositionModal({ portfolioId, portfolioPick
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
+    // Price is optional, but a supplied premium/entry or close price must be strictly positive — a zero or
+    // negative price is never a valid trade. Validated in JS (not native min=) so the message is translated.
+    const qtyNum = Number(quantityLot);
+    if (!(qtyNum > 0)) {
+      setError(t('portfolio.derivatives.qtyMustBePositive'));
+      return;
+    }
+    const entryPriceNum = entryPrice ? Number(entryPrice) : null;
+    const closePriceNum = closeEnabled && closePrice ? Number(closePrice) : null;
+    if ((entryPriceNum != null && !(entryPriceNum > 0)) || (closePriceNum != null && !(closePriceNum > 0))) {
+      setError(t('portfolio.derivatives.priceMustBePositive'));
+      return;
+    }
     if (isEditing) {
       const payload = {
         positionId: editPosition.id,
         direction,
         entryDate,
-        entryPrice: entryPrice ? Number(entryPrice) : null,
+        entryPrice: entryPriceNum,
         quantityLot: Number(quantityLot),
         priceCurrency: inputCurrency,
       };
@@ -186,10 +199,10 @@ export default function OpenDerivativePositionModal({ portfolioId, portfolioPick
       contractSymbol: symbol.trim(),
       direction,
       entryDate,
-      entryPrice: entryPrice ? Number(entryPrice) : null,
+      entryPrice: entryPriceNum,
       quantityLot: Number(quantityLot),
       closeDate: closeEnabled ? (closeDate || null) : null,
-      closePrice: closeEnabled && closePrice ? Number(closePrice) : null,
+      closePrice: closePriceNum,
       priceCurrency: inputCurrency,
     };
     try {
@@ -247,7 +260,7 @@ export default function OpenDerivativePositionModal({ portfolioId, portfolioPick
               <Hash className="h-3 w-3" /> {t('portfolio.derivatives.qty')}
             </span>
             <input
-              type="number" min="0.01" max={MAX_QUANTITY} step="0.01" required inputMode="decimal" value={quantityLot}
+              type="number" max={MAX_QUANTITY} step="0.01" inputMode="decimal" value={quantityLot}
               onChange={(e) => setQuantityLot(clampNumberInput(e.target.value, MAX_QUANTITY))}
               className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all"
             />
@@ -275,7 +288,7 @@ export default function OpenDerivativePositionModal({ portfolioId, portfolioPick
             <Tag className="h-3 w-3" /> {priceLabel}
           </span>
           <input
-            type="number" min="0" max={MAX_MONEY} step="0.0001" inputMode="decimal" value={entryPrice}
+            type="number" max={MAX_MONEY} step="0.0001" inputMode="decimal" value={entryPrice}
             onChange={(e) => { setEntryPrice(clampNumberInput(e.target.value, MAX_MONEY)); setEntryPriceTouched(true); }}
             placeholder={t('portfolio.derivatives.autoFromHistory')}
             className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
@@ -317,7 +330,7 @@ export default function OpenDerivativePositionModal({ portfolioId, portfolioPick
               <label className="space-y-1.5 block">
                 <span className="text-xs font-medium text-fg-muted">{t('portfolio.derivatives.closePrice')}</span>
                 <input
-                  type="number" min="0" max={MAX_MONEY} step="0.0001" inputMode="decimal" value={closePrice}
+                  type="number" max={MAX_MONEY} step="0.0001" inputMode="decimal" value={closePrice}
                   onChange={(e) => { setClosePrice(clampNumberInput(e.target.value, MAX_MONEY)); setClosePriceTouched(true); }}
                   placeholder={t('portfolio.derivatives.autoFromHistory')}
                   className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"

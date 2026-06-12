@@ -162,7 +162,7 @@ export default function WatchPage() {
       <WatchViewTabs view={view} onChange={setView} watchCount={watchlists.reduce((acc, w) => acc + (w.itemCount ?? 0), 0)} alertsCount={alerts.data?.totalElements ?? alertItems.length} />
 
       {isWatchlist && (
-      <Card as="section" variant="elevated" radius="xl" padding="none" interactive>
+      <Card as="section" variant="elevated" radius="xl" padding="none" interactive clip={false}>
         <header className="flex items-center justify-between px-3 sm:px-4 py-3 border-b border-border-default gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <Star className="h-4 w-4 text-warning shrink-0" />

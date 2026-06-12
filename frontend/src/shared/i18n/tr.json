@@ -1197,6 +1197,8 @@
       "entryPriceOptional": "Giriş fiyatı (opsiyonel)",
       "premium": "Prim",
       "premiumOptional": "Prim (opsiyonel)",
+      "priceMustBePositive": "Fiyat 0'dan büyük olmalıdır",
+      "qtyMustBePositive": "Lot sayısı 0'dan büyük olmalıdır",
       "autoFromHistory": "Boş bırak → geçmişten alınır",
       "alsoClosePast": "Zaten kapadıysam",
       "closeDate": "Kapanış tarihi",

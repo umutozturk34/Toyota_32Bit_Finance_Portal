@@ -1197,6 +1197,8 @@
       "entryPriceOptional": "Entry price (optional)",
       "premium": "Premium",
       "premiumOptional": "Premium (optional)",
+      "priceMustBePositive": "Price must be greater than 0",
+      "qtyMustBePositive": "Lots must be greater than 0",
       "autoFromHistory": "Leave blank → taken from history",
       "alsoClosePast": "If already closed",
       "closeDate": "Close date",

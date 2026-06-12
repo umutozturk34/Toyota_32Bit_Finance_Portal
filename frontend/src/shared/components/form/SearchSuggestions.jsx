@@ -295,7 +295,7 @@ export default function SearchSuggestions({
             className={`absolute z-[100] w-full mt-1.5 rounded-xl border border-border-default shadow-xl overflow-hidden flex flex-col ${isHero ? 'max-h-[400px]' : 'max-h-[320px]'}`}
           >
             {suggestions.length === 0 && !isFetching ? (
-              <div className="px-4 py-6 text-center text-sm text-fg-muted">
+              <div className="px-4 py-6 text-center text-sm text-fg-muted [overflow-wrap:anywhere]">
                 {t('searchSuggestions.noMatch', { query: debouncedQuery })}
               </div>
             ) : (

@@ -2,7 +2,6 @@ package com.finance.market.commodity.repository;
 
 import com.finance.market.commodity.model.CommodityCandle;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -16,7 +15,6 @@ import java.util.Optional;
  * <p>Provides per-commodity history retrieval, latest-point lookups, gap-filling
  * by explicit dates, and retention pruning.
  */
-@Repository
 public interface CommodityCandleRepository extends JpaRepository<CommodityCandle, Long> {
 
     /**

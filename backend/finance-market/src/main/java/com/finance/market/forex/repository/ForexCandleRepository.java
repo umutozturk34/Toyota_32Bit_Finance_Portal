@@ -2,7 +2,6 @@ package com.finance.market.forex.repository;
 
 import com.finance.market.forex.model.ForexCandle;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,7 +10,6 @@ import java.util.List;
 import java.util.Optional;
 
 /** Persistence for daily forex candles, queried by currency and date for history, pricing, and change. */
-@Repository
 public interface ForexCandleRepository extends JpaRepository<ForexCandle, Long> {
 
     List<ForexCandle> findByCurrencyCodeOrderByCandleDateAsc(String currencyCode);

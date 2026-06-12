@@ -5,7 +5,6 @@ import com.finance.market.fund.model.FundType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
@@ -15,7 +14,6 @@ import java.util.List;
  * <p>Extends {@link JpaSpecificationExecutor} to support dynamic, filterable
  * fund listing/search queries.
  */
-@Repository
 public interface FundRepository extends JpaRepository<Fund, String>, JpaSpecificationExecutor<Fund> {
     /**
      * Returns all funds belonging to the given category.

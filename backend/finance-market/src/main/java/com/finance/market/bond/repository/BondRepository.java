@@ -5,7 +5,6 @@ import com.finance.market.bond.model.BondType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
@@ -15,7 +14,6 @@ import java.util.List;
  * <p>Extends {@link JpaSpecificationExecutor} so callers can build dynamic, filterable
  * bond queries (e.g. search/listing facets) without dedicated derived methods.
  */
-@Repository
 public interface BondRepository extends JpaRepository<Bond, String>, JpaSpecificationExecutor<Bond> {
 
     /**

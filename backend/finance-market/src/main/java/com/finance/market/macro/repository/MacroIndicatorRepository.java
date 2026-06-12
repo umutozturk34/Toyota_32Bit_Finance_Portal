@@ -3,7 +3,6 @@ package com.finance.market.macro.repository;
 import com.finance.market.macro.model.MacroCategory;
 import com.finance.market.macro.model.MacroIndicator;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,7 +11,6 @@ import java.util.Optional;
  * Persistence access for macroeconomic indicator definitions ({@link MacroIndicator}),
  * the catalog entries that each own a series of observation points.
  */
-@Repository
 public interface MacroIndicatorRepository extends JpaRepository<MacroIndicator, Long> {
 
     /**

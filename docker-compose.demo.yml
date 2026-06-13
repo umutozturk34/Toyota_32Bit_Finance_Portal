@@ -8,8 +8,10 @@
 # The base file alone is "empty mode":
 #   docker compose up -d --build
 #
-# This file only loads the market_data dump; the schema and config rows (instruments,
-# tracked_assets, ...) stay owned by Flyway, so nothing here fights the migrator.
+# This file loads the demo-only data from the market_data dump, which embeds the full asset catalog
+# (instruments+tracked_assets for funds/stocks/equity/viop/forex with fixed IDs) ahead of the candle/price
+# data that references those IDs. Flyway base only seeds crypto+commodity (the two types with no runtime
+# discovery); everything else self-discovers at runtime in empty mode, so it lives here as demo data.
 services:
   keycloak:
     environment:
@@ -43,9 +45,9 @@ services:
           exit 0
         fi
         echo "[db-seed] loading market data (~1 minute)..."
-        # session_replication_role=replica defers FK checks during bulk load — the dump's
-        # per-asset tables (bonds, stocks, ...) carry asset_id refs into the instruments table,
-        # which is created by Flyway but populated lazily at runtime by the scrapers.
+        # session_replication_role=replica defers FK checks during bulk load — the dump embeds the asset
+        # catalog (instruments+tracked_assets with fixed IDs) ahead of the per-asset tables (bonds, stocks,
+        # ...) that carry asset_id refs into it, so everything resolves in one pass.
         { echo 'SET session_replication_role = replica;'; gunzip -c /seed/market_data.sql.gz; } | psql -v ON_ERROR_STOP=1 -q
         echo "[db-seed] done — backend's DemoSeeder will provision the demo portfolio on startup."
     depends_on:

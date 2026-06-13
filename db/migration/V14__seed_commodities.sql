@@ -1,13 +1,5 @@
-INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (87, 'COMMODITY', 'XAUTRY', true, now(), now()) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (89, 'COMMODITY', 'XAUTRYG', true, now(), now()) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (88, 'COMMODITY', 'XAGTRY', true, now(), now()) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (90, 'COMMODITY', 'XAGTRYG', true, now(), now()) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (94, 'COMMODITY', 'XPTTRY', true, now(), now()) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (95, 'COMMODITY', 'XPDTRY', true, now(), now()) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (91, 'COMMODITY', 'BZ=F', true, now(), now()) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (92, 'COMMODITY', 'ZW=F', true, now(), now()) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (93, 'COMMODITY', 'HG=F', true, now(), now()) ON CONFLICT (id) DO NOTHING;
-
+-- Commodity detail rows. The COMMODITY instruments themselves are seeded in V13 (alongside crypto —
+-- the two types with no runtime discovery); commodities.asset_id -> instruments(id) created there.
 INSERT INTO public.commodities (commodity_code, name, commodity_name_tr, commodity_segment, yahoo_symbol, asset_id, created_at, updated_at) VALUES ('XAUTRY',  'Altın (Ons)',     NULL,           'PRECIOUS_METAL', 'GC=F', 87, now(), now()) ON CONFLICT DO NOTHING;
 INSERT INTO public.commodities (commodity_code, name, commodity_name_tr, commodity_segment, yahoo_symbol, asset_id, created_at, updated_at) VALUES ('XAUTRYG', 'Altın (Gram)',    'Gram Altın',   'PRECIOUS_METAL', NULL,   89, now(), now()) ON CONFLICT DO NOTHING;
 INSERT INTO public.commodities (commodity_code, name, commodity_name_tr, commodity_segment, yahoo_symbol, asset_id, created_at, updated_at) VALUES ('XAGTRY',  'Gümüş (Ons)',     NULL,           'PRECIOUS_METAL', 'SI=F', 88, now(), now()) ON CONFLICT DO NOTHING;

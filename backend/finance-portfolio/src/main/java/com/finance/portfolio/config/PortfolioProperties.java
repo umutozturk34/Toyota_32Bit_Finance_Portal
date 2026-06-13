@@ -29,7 +29,9 @@ public class PortfolioProperties {
     @Getter
     @Setter
     public static class LotLimits {
-        private LocalDate minEntryDate = LocalDate.of(1999, 1, 4);
+        // Earliest lot entry date: the first trading day of 2000, the floor of the EUR/TRY FX history a
+        // multi-currency lot must be valuable at. Anything older has no EUR rate and renders as broken K/Z.
+        private LocalDate minEntryDate = LocalDate.of(2000, 1, 4);
         private BigDecimal minPriceTry = new BigDecimal("0.0001");
         private BigDecimal maxPriceTry = new BigDecimal("1000000000");
         private BigDecimal minQuantity = new BigDecimal("0.000001");

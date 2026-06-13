@@ -139,6 +139,18 @@ class ScenarioServiceTest {
     }
 
     @Test
+    void shouldRejectStartDateBeforeFloor() {
+        AnalyticsInstrument spot = new AnalyticsInstrument(AnalyticsInstrumentType.SPOT, "ANY");
+        LocalDate start = LocalDate.of(1999, 12, 31);
+        LocalDate end = LocalDate.of(2024, 1, 1);
+
+        assertThatThrownBy(() -> service.simulate(new ScenarioRequest(
+                new BigDecimal("10000"), start, end, List.of(spot))))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("error.analytics.startDateTooOld");
+    }
+
+    @Test
     void shouldReturnNullRealReturnWhenCpiUnavailable() {
         AnalyticsInstrument spot = new AnalyticsInstrument(AnalyticsInstrumentType.SPOT, "ASELS.IS");
         LocalDate start = LocalDate.of(2024, 1, 1);

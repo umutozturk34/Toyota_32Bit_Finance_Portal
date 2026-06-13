@@ -153,7 +153,7 @@ class ViopDataServiceTest {
         when(entityWriter.enrichSpecs(any())).thenReturn(0);
         when(contractRepository.findActiveSymbolsWithoutPrice()).thenReturn(List.of());
         when(entityWriter.markExpired(any())).thenReturn(0);
-        when(contractRepository.findAll(any(Specification.class))).thenReturn(List.of());
+        when(contractRepository.findAll(org.mockito.ArgumentMatchers.<Specification<ViopContract>>any())).thenReturn(List.of());
 
         service.refreshAll();
 
@@ -177,7 +177,7 @@ class ViopDataServiceTest {
         ViopContract c = ViopContract.builder().symbol("F_X").kind(ViopContractKind.FUTURE)
                 .active(true).lastPrice(new BigDecimal("35"))
                 .lastUpdated(java.time.LocalDateTime.now()).build();
-        when(contractRepository.findAll(any(Specification.class))).thenReturn(List.of(c));
+        when(contractRepository.findAll(org.mockito.ArgumentMatchers.<Specification<ViopContract>>any())).thenReturn(List.of(c));
         when(historyProvider.refreshCandlesUpTo(anyString(), any())).thenReturn(1);
         when(historyProvider.upsertTodayCandle(anyString(), any())).thenReturn(1);
 
@@ -191,7 +191,7 @@ class ViopDataServiceTest {
         ViopContract c = ViopContract.builder().symbol("F_X").kind(ViopContractKind.FUTURE)
                 .active(true).lastPrice(new BigDecimal("35"))
                 .lastUpdated(java.time.LocalDateTime.now().minusDays(1)).build();
-        when(contractRepository.findAll(any(Specification.class))).thenReturn(List.of(c));
+        when(contractRepository.findAll(org.mockito.ArgumentMatchers.<Specification<ViopContract>>any())).thenReturn(List.of(c));
         when(historyProvider.refreshCandlesUpTo(anyString(), any())).thenReturn(0);
 
         int persisted = service.syncCandlesFromLastStored();

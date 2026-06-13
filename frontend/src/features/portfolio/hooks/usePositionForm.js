@@ -10,7 +10,7 @@ import {
   todayInputValue, dateInputToIso, isoToDateInput, buildInitialState,
   resolveTarget, toYearMonth, buildPriceIndex, latestPriceAtOrBefore, resolveNativeCurrency,
 } from '../lib/positionFormHelpers';
-import { MAX_MONEY, MAX_QUANTITY, PRICE_DECIMALS, QUANTITY_DECIMALS, clampNumberInput, sanitizeNumberInput } from '../../../shared/utils/numberInput';
+import { MAX_MONEY, MAX_QUANTITY, PRICE_DECIMALS, QUANTITY_DECIMALS, clampNumberInput, sanitizeNumberInput, toInputValue } from '../../../shared/utils/numberInput';
 
 export function usePositionForm({ mode, portfolioId, asset, position, onClose, onComplete }) {
   const { t } = useTranslation();
@@ -135,7 +135,7 @@ export function usePositionForm({ mode, portfolioId, asset, position, onClose, o
   if (syncKey !== null && syncKey !== lastSyncedKey) {
     setLastSyncedKey(syncKey);
     if (suggestedPriceDisplay != null) {
-      setForm((prev) => ({ ...prev, entryPrice: String(suggestedPriceDisplay) }));
+      setForm((prev) => ({ ...prev, entryPrice: toInputValue(suggestedPriceDisplay) }));
     } else if (form.entryDate !== todayIso) {
       setForm((prev) => prev.entryPrice ? { ...prev, entryPrice: '' } : prev);
     }
@@ -174,7 +174,7 @@ export function usePositionForm({ mode, portfolioId, asset, position, onClose, o
 
   const useSuggestedPrice = () => {
     if (suggestedPriceDisplay == null) return;
-    setForm((prev) => ({ ...prev, entryPrice: String(suggestedPriceDisplay) }));
+    setForm((prev) => ({ ...prev, entryPrice: toInputValue(suggestedPriceDisplay) }));
     setPriceTouched(false);
   };
 

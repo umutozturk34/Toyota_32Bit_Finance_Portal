@@ -9,7 +9,7 @@ import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { usePositionCloseForm, todayIso, formatDateLabel } from '../hooks/usePositionCloseForm';
 import { resolveNativeCurrency, FRACTIONAL_TYPES, preventDecimal } from '../lib/positionFormHelpers';
 import { commodityLabel } from '../../../shared/utils/commodityName';
-import { clampNumberInput, sanitizeNumberInput, MAX_MONEY, QUANTITY_DECIMALS } from '../../../shared/utils/numberInput';
+import { sanitizeNumberInput, MAX_MONEY, QUANTITY_DECIMALS, PRICE_DECIMALS } from '../../../shared/utils/numberInput';
 
 const QTY_PRESETS = [
   { id: '25', factor: 0.25 },
@@ -252,7 +252,7 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
             step="any"
             inputMode="decimal"
             value={sellPrice}
-            onChange={(e) => setSellPrice(clampNumberInput(e.target.value, MAX_MONEY))}
+            onChange={(e) => setSellPrice(sanitizeNumberInput(e.target.value, MAX_MONEY, PRICE_DECIMALS))}
             placeholder="0.00"
             className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
           />

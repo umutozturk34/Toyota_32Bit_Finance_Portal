@@ -40,3 +40,17 @@ export function clampDecimals(raw, maxFraction) {
 export function sanitizeNumberInput(raw, max, maxFraction) {
   return clampDecimals(clampNumberInput(raw, max), maxFraction);
 }
+
+// Formats a SUGGESTED numeric value (a market price, an FX-converted amount, a quantity preset) into a
+// string the input would itself accept. A raw String(number) leaks full float precision — an FX-divided
+// price (value/rate) carries ~15 fraction digits, which is longer than the field's @Digits cap and reads
+// as an over-long, un-typeable suggestion. Rounding to maxFraction (then back through Number) trims that
+// tail AND the binary-FP noise, and the magnitude is capped, so the prefilled/applied suggestion matches
+// exactly what typing the same value would have produced. Empty string for null/blank/non-finite input.
+export function toInputValue(num, maxFraction = PRICE_DECIMALS, max = MAX_MONEY) {
+  if (num === '' || num == null) return '';
+  const n = Number(num);
+  if (!Number.isFinite(n)) return '';
+  const capped = Math.sign(n) * Math.min(Math.abs(n), max);
+  return String(Number(capped.toFixed(maxFraction)));
+}

@@ -119,11 +119,18 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
+    // Close price is optional (blank → resolved from history), but a supplied price must be strictly
+    // positive. Validated in JS (not native min=) so the message is translated.
+    const closePriceNum = closePrice ? Number(closePrice) : null;
+    if (closePriceNum != null && !(closePriceNum > 0)) {
+      setError(t('portfolio.derivatives.priceMustBePositive'));
+      return;
+    }
     try {
       await close.mutateAsync({
         positionId: position.id,
         closeDate,
-        closePrice: closePrice ? Number(closePrice) : null,
+        closePrice: closePriceNum,
         closeQuantityLot: !isAlreadyClosed && isPartial ? parsedCloseQty : null,
         priceCurrency: inputCurrency,
       });
@@ -216,7 +223,6 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
             </div>
             <input
               type="number"
-              min="0"
               max={qty}
               step="any"
               inputMode="decimal"
@@ -310,7 +316,6 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
           </div>
           <input
             type="number"
-            min="0"
             max={MAX_MONEY}
             step="0.0001"
             inputMode="decimal"

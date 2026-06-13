@@ -17,7 +17,7 @@ import java.time.LocalDate;
  */
 public record CloseDerivativePositionRequest(
         @NotNull @PastOrPresent LocalDate closeDate,
-        @DecimalMin(value = "0", inclusive = true) @DecimalMax("1000000000000") @Digits(integer = 15, fraction = 4) BigDecimal closePrice,
+        @DecimalMin(value = "0", inclusive = false) @DecimalMax("1000000000000") @Digits(integer = 15, fraction = 4) BigDecimal closePrice,
         @DecimalMin(value = "0", inclusive = false) @DecimalMax("1000000000") @Digits(integer = 12, fraction = 4) BigDecimal closeQuantityLot,
         @Pattern(regexp = "^[A-Z]{3}$") String priceCurrency
 ) {

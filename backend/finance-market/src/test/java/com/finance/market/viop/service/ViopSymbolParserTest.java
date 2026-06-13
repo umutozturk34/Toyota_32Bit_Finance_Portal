@@ -65,10 +65,10 @@ class ViopSymbolParserTest {
     }
 
     @Test
-    void should_returnLastDayOfMonth_when_computingImpliedExpiry() {
-        assertThat(parser.impliedExpiry(2026, 5)).isEqualTo(LocalDate.of(2026, 5, 31));
-        assertThat(parser.impliedExpiry(2026, 2)).isEqualTo(LocalDate.of(2026, 2, 28));
-        assertThat(parser.impliedExpiry(2024, 2)).isEqualTo(LocalDate.of(2024, 2, 29));
-        assertThat(parser.impliedExpiry(2026, 6)).isEqualTo(LocalDate.of(2026, 6, 30));
+    void should_returnLastBusinessDayOfMonth_when_computingImpliedExpiry() {
+        assertThat(parser.impliedExpiry(2026, 5)).isEqualTo(LocalDate.of(2026, 5, 29)); // 31 May = Sun → Fri 29
+        assertThat(parser.impliedExpiry(2026, 2)).isEqualTo(LocalDate.of(2026, 2, 27)); // 28 Feb = Sat → Fri 27
+        assertThat(parser.impliedExpiry(2024, 2)).isEqualTo(LocalDate.of(2024, 2, 29)); // 29 Feb 2024 = Thu
+        assertThat(parser.impliedExpiry(2026, 6)).isEqualTo(LocalDate.of(2026, 6, 30)); // 30 Jun = Tue
     }
 }

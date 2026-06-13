@@ -83,6 +83,12 @@ public class ViopDataService implements MarketRefresher {
      * @return the number of contracts deactivated
      */
     public int deactivateStale(Set<String> activeSymbols) {
+        // Guard against a failed/empty bulk scrape: an empty set would deactivate the ENTIRE active universe.
+        // Treat "no symbols this cycle" as a transient upstream gap and leave the universe untouched.
+        if (activeSymbols == null || activeSymbols.isEmpty()) {
+            log.warn("VIOP: live snapshot produced no symbols — skipping stale deactivation to avoid nuking the universe");
+            return 0;
+        }
         int deactivated = entityWriter.deactivateNotIn(activeSymbols);
         log.info("VIOP: {} non-trading contracts deactivated", deactivated);
         return deactivated;
@@ -119,7 +125,8 @@ public class ViopDataService implements MarketRefresher {
     }
 
     /**
-     * Marks as expired every contract whose maturity date is on or before today.
+     * Marks as expired every contract whose maturity date is strictly before today — a contract is still
+     * tradable on its own expiry day, so it is only flagged once that day has passed (query: {@code expiryDate < today}).
      *
      * @return the number of contracts newly flagged expired
      */

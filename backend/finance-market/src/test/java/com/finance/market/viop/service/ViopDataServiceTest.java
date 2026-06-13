@@ -24,6 +24,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -145,8 +146,8 @@ class ViopDataServiceTest {
 
     @Test
     void should_runFullPipeline_when_refreshAllCalled() {
-        when(marketData.fetchAllLiveSnapshots()).thenReturn(List.of());
-        when(entityWriter.applyBulkSnapshots(any())).thenReturn(Set.of());
+        when(marketData.fetchAllLiveSnapshots()).thenReturn(List.of(org.mockito.Mockito.mock(ViopQuoteSnapshot.class)));
+        when(entityWriter.applyBulkSnapshots(any())).thenReturn(Set.of("F_XU0300626"));
         when(entityWriter.deactivateNotIn(any())).thenReturn(0);
         when(marketData.fetchFutureContractSpecs()).thenReturn(List.of());
         when(entityWriter.enrichSpecs(any())).thenReturn(0);
@@ -160,6 +161,15 @@ class ViopDataServiceTest {
         verify(entityWriter).deactivateNotIn(any());
         verify(entityWriter).enrichSpecs(any());
         verify(entityWriter).markExpired(any());
+    }
+
+    @Test
+    void should_notDeactivateAnything_when_liveSnapshotIsEmpty() {
+        // An empty active set (failed/empty bulk scrape) must NOT deactivate the whole universe.
+        int deactivated = service.deactivateStale(Set.of());
+
+        assertThat(deactivated).isZero();
+        verify(entityWriter, never()).deactivateNotIn(any());
     }
 
     @Test

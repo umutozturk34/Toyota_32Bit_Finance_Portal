@@ -2335,7 +2335,6 @@
       "CURRENCY_FUTURE_USD": "Currency Futures (USD)",
       "METAL_FUTURE_TRY": "Metal Futures",
       "METAL_FUTURE_USD": "Metal Futures (USD)",
-      "METAL_FUTURE": "Metal Futures",
       "PAY_OPTION": "Equity Option",
       "INDEX_OPTION": "Index Option",
       "CURRENCY_OPTION": "Currency Option"

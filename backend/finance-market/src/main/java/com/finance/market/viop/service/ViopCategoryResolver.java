@@ -19,7 +19,7 @@ public class ViopCategoryResolver {
             "USDTRY", "EURTRY", "RUBTRY", "CNHTRY", "GBPTRY", "JPYTRY",
             "EURUSD", "GBPUSD", "USDJPY"
     );
-    private static final Set<String> METAL_UNDERLYINGS = Set.of("XAU", "XAG", "XPT", "XPD");
+    private static final Set<String> METAL_UNDERLYINGS = Set.of("XAU", "XAG", "XPT", "XPD", "XCU");
 
     public ViopCategory resolve(ViopContractKind kind, String underlying, String currency) {
         String normalized = normalize(underlying);

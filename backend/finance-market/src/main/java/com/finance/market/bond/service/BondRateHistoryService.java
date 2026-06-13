@@ -98,7 +98,11 @@ public class BondRateHistoryService {
         for (BondSnapshotDto dto : batch) {
             Bond bond = bondsBySeriesCode.get(dto.seriesCode());
             if (bond == null) continue;
-            if (bond.getCouponRate() == null || bond.getCouponRate().compareTo(BigDecimal.ZERO) == 0) continue;
+            // A null coupon means EVDS returned no rate data — nothing to fetch. A ZERO coupon, however, is a
+            // discount bill (TRB): it pays no coupon but still has a price series, so it is NOT skipped here.
+            // Its history is fetched and stored with a null coupon column (the .ORAN field for a bill is
+            // days-to-maturity, not a coupon), so the price chart shows while the coupon chart stays empty.
+            if (bond.getCouponRate() == null) continue;
             Optional<BondRateHistory> latestOpt = rateHistoryRepository.findTopByIsinCodeOrderByRateDateDesc(dto.isinCode());
             LocalDate startDate;
             if (latestOpt.isEmpty()) {
@@ -123,9 +127,7 @@ public class BondRateHistoryService {
             if (bond == null) continue;
             try {
                 List<BondRateHistory> records = new ArrayList<>(fetched.getOrDefault(dto.isinCode(), List.of()));
-                if (bond.getCouponRate() != null && bond.getCouponRate().compareTo(BigDecimal.ZERO) != 0) {
-                    addTodayFromSnapshotIfMissing(records, dto, bond, today);
-                }
+                addTodayFromSnapshotIfMissing(records, dto, bond, today);
                 if (!records.isEmpty()) {
                     transactionTemplate.executeWithoutResult(status -> rateHistoryRepository.saveAll(records));
                 }
@@ -166,16 +168,23 @@ public class BondRateHistoryService {
                 dto.isinCode(), bond.getBondType(), bond.getSimpleYield(), fullHistory.size());
     }
 
+    /**
+     * Appends a synthetic "today" row from the live snapshot when the fetched history doesn't already cover
+     * today, so the latest price/coupon shows before the next batch run. Bonds with no coupon data at all
+     * ({@code couponRate == null}) are skipped, but a discount bill ({@code couponRate == 0}) still gets a
+     * price row with a {@code null} coupon column — the EVDS {@code .ORAN} value for a bill is days-to-maturity,
+     * not a coupon, so it must never be stored as one. No-ops if today's row already exists (in memory or DB).
+     */
     private void addTodayFromSnapshotIfMissing(List<BondRateHistory> records, BondSnapshotDto dto, Bond bond,
                                                 LocalDate today) {
-        if (dto.couponRate() == null) return;
+        if (bond.getCouponRate() == null) return;
         boolean todayExists = records.stream().anyMatch(r -> today.equals(r.getRateDate()));
         if (todayExists) return;
         if (rateHistoryRepository.existsByIsinCodeAndRateDate(dto.isinCode(), today)) return;
         records.add(BondRateHistory.builder()
                 .bond(bond)
                 .rateDate(today)
-                .couponRate(dto.couponRate())
+                .couponRate(bond.getCouponRate().signum() == 0 ? null : bond.getCouponRate())
                 .price(dto.cleanPrice())
                 .build());
     }

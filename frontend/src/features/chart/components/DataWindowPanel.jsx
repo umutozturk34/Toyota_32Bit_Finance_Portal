@@ -191,8 +191,8 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
                 <div className="mb-0.5 text-[11px] text-fg-muted">O / H / L / C</div>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 font-mono text-xs tabular-nums">
                   <span className="text-fg-muted">O <span className="text-fg">{money(f.open)}</span></span>
-                  <span className="text-fg-muted">H <span className="text-success">{money(f.high)}</span></span>
-                  <span className="text-fg-muted">L <span className="text-danger">{money(f.low)}</span></span>
+                  <span className="text-fg-muted">H <span className="text-fg">{money(f.high)}</span></span>
+                  <span className="text-fg-muted">L <span className="text-fg">{money(f.low)}</span></span>
                   <span className="text-fg-muted">C <span className="text-fg">{money(a.close)}</span></span>
                 </div>
               </div>

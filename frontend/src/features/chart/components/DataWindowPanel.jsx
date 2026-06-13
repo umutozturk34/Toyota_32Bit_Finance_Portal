@@ -32,8 +32,8 @@ function Section({ label, children }) {
 function DetailRow({ label, children }) {
   return (
     <div className="flex items-center justify-between gap-2 py-0.5 border-t border-border-default/30 first:border-t-0">
-      <span className="text-[11px] text-fg-muted truncate">{label}</span>
-      <span className="font-mono text-xs tabular-nums text-right text-fg shrink-0">{children}</span>
+      <span className="text-[11px] text-fg-muted truncate shrink min-w-0">{label}</span>
+      <span className="font-mono text-xs tabular-nums text-right text-fg min-w-0 truncate" title={typeof children === 'string' ? children : undefined}>{children}</span>
     </div>
   );
 }

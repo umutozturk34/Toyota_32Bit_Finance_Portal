@@ -292,9 +292,9 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
                     <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-fg truncate">{displayLabel}</p>
-                      <p className="text-[10px] font-mono mt-0.5">
-                        <span className="text-fg-muted">{money(cost, frameBase)}</span>
-                        <span style={{ color: signColor }}> {realized >= 0 ? '+' : '−'} {money(Math.abs(realized), frameBase)}</span>
+                      <p className="text-[10px] font-mono mt-0.5 truncate" title={`${money(cost, frameBase)} · ${realized >= 0 ? '+' : '−'} ${money(Math.abs(realized), frameBase)}`}>
+                        <span className="text-fg-muted">{moneyCompact(cost, frameBase)}</span>
+                        <span style={{ color: signColor }}> {realized >= 0 ? '+' : '−'} {moneyCompact(Math.abs(realized), frameBase)}</span>
                       </p>
                     </div>
                     <span className="text-xs font-mono text-fg-muted shrink-0 tabular-nums">{pct.toFixed(1)}%</span>

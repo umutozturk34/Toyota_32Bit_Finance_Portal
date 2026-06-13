@@ -30,7 +30,7 @@ function shortLabel(asset) {
 
 function AssetRow({ asset, color, onClick }) {
   const { t } = useTranslation();
-  const { formatCompact: moneyCompact } = useMoney();
+  const { format: money, formatFit } = useMoney();
   const cls = getChangeClass(asset.changePercent);
   return (
     <button
@@ -52,7 +52,7 @@ function AssetRow({ asset, color, onClick }) {
       <span className="font-display text-[12px] font-semibold text-fg truncate flex-1 min-w-[60px] group-hover:text-accent transition-colors">
         {shortLabel(asset)}
       </span>
-      <span className="font-mono text-[11px] font-bold text-fg tabular-nums shrink-0">{moneyCompact(asset.price, priceCurrencyOf(asset))}</span>
+      <span className="font-mono text-[11px] font-bold text-fg tabular-nums shrink-0" title={money(asset.price, priceCurrencyOf(asset))}>{formatFit(asset.price, priceCurrencyOf(asset), { maxChars: 12 })}</span>
       {asset.changePercent != null && (
         <span className={`font-mono text-[10px] font-semibold tabular-nums min-w-[48px] text-right shrink-0 ${changeColors[cls]}`}>
           {formatPercent(asset.changePercent)}

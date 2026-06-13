@@ -155,11 +155,11 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
                 )}
               </p>
             </div>
-            <div className="text-right shrink-0">
+            <div className="text-right min-w-0 shrink">
               <p className="text-[10px] uppercase tracking-wide text-fg-muted">
                 {t('portfolio.sell.holdingLabel')}
               </p>
-              <p className="text-sm font-semibold font-mono text-fg">
+              <p className="text-sm font-semibold font-mono text-fg truncate" title={totalQty.toLocaleString(localeTag, { maximumFractionDigits: 6 })}>
                 {totalQty.toLocaleString(localeTag, { maximumFractionDigits: 6 })}
               </p>
             </div>
@@ -333,9 +333,9 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
               </p>
             )}
             {proceeds != null && (
-              <div className="mt-2 pt-2 border-t border-border-default flex items-center justify-between text-[11px]">
-                <span className="text-fg-muted">{t('portfolio.sell.proceedsLabel')}</span>
-                <span className="font-mono font-semibold text-fg">{money(proceeds, inputCurrency)}</span>
+              <div className="mt-2 pt-2 border-t border-border-default flex items-center justify-between gap-2 text-[11px]">
+                <span className="text-fg-muted shrink min-w-0 truncate">{t('portfolio.sell.proceedsLabel')}</span>
+                <span className="font-mono font-semibold text-fg min-w-0 truncate" title={money(proceeds, inputCurrency)}>{money(proceeds, inputCurrency)}</span>
               </div>
             )}
             {isPartial && (

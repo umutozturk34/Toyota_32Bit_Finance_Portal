@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import useAppStore from '../stores/useAppStore';
 import { useExchangeRates } from './useExchangeRates';
 import { useRateHistory } from './useRateHistory';
-import { formatPrice, currentLocaleTag, priceDecimals } from '../utils/formatters';
+import { formatPrice, currentLocaleTag, priceDecimals, fitMoney } from '../utils/formatters';
 
 const SUPPORTED = ['TRY', 'USD', 'EUR'];
 
@@ -83,8 +83,24 @@ export function useMoney() {
     }).format(converted);
   }, [convert, format, resolveTarget, rates, dateRatesReady]);
 
+  // Width-aware money: full when it fits `maxChars`, compact (never digit-clipped) when it would overflow.
+  // Same conversion + currency-readiness gate as format(); pair with useFitChars + a title= carrying format().
+  const formatFit = useCallback((value, base = 'TRY', opts = {}) => {
+    const converted = convert(value, base, opts.natural, opts.dateAt);
+    if (converted == null) return 'N/A';
+    const target = resolveTarget(base, opts.natural);
+    const normalizedBase = SUPPORTED.includes(base) ? base : 'TRY';
+    const ratesReady = (opts.dateAt != null && dateRatesReady(normalizedBase, target, opts.dateAt))
+      || normalizedBase === target
+      || (rates[normalizedBase] != null && rates[target] != null);
+    const effectiveCurrency = ratesReady ? target : normalizedBase;
+    const abs = Math.abs(converted);
+    const maxDecimals = opts.maxDecimals ?? Math.max(priceDecimals(abs), abs < 10 ? 4 : abs < 1000 ? 3 : 2);
+    return fitMoney(converted, { currency: effectiveCurrency, maxChars: opts.maxChars, maxDecimals });
+  }, [convert, resolveTarget, rates, dateRatesReady]);
+
   return useMemo(
-    () => ({ currency: displayCurrency, convert, format, formatCompact, rates, resolveTarget }),
-    [displayCurrency, convert, format, formatCompact, rates, resolveTarget],
+    () => ({ currency: displayCurrency, convert, format, formatCompact, formatFit, rates, resolveTarget }),
+    [displayCurrency, convert, format, formatCompact, formatFit, rates, resolveTarget],
   );
 }

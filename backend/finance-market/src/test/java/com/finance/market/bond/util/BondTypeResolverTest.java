@@ -34,8 +34,8 @@ class BondTypeResolverTest {
     }
 
     @Test
-    void resolve_returnsSukukCpi_whenIsinTRDAndBaseIndexHigh() {
-        Bond bond = bond("TRD001", "S1", new BigDecimal("150"), new BigDecimal("3"));
+    void resolve_returnsSukukCpi_whenSukukZeroCouponAndPriceInflated() {
+        Bond bond = bond("TRD001", "S1", new BigDecimal("150"), null);
 
         BondType result = BondTypeResolver.resolve(bond, List.of(), AUCTION_THRESHOLD, CPI_FIXED_THRESHOLD);
 
@@ -43,8 +43,40 @@ class BondTypeResolverTest {
     }
 
     @Test
-    void resolve_returnsFloatingCpi_whenIsinTRTAndBaseIndexHigh() {
-        Bond bond = bond("TRT001", "S1", new BigDecimal("150"), new BigDecimal("3"));
+    void resolve_returnsFloatingCpi_whenZeroCouponAndPriceInflated() {
+        Bond bond = bond("TRT001", "S1", new BigDecimal("150"), null);
+
+        BondType result = BondTypeResolver.resolve(bond, List.of(), AUCTION_THRESHOLD, CPI_FIXED_THRESHOLD);
+
+        assertThat(result).isEqualTo(BondType.FLOATING_CPI);
+    }
+
+    @Test
+    void resolve_returnsFixedCoupon_whenNormalCouponAndPriceAbovePar() {
+        // Regression: a nominal bond whose coupon exceeds the market yield trades above par; the price
+        // must NOT reclassify it as CPI-linked (which previously hid its yield).
+        Bond bond = bond("TRT001", "S1", new BigDecimal("118"), new BigDecimal("18"));
+        List<BondRateHistory> stable = List.of(rateAt("18"), rateAt("18"));
+
+        BondType result = BondTypeResolver.resolve(bond, stable, AUCTION_THRESHOLD, CPI_FIXED_THRESHOLD);
+
+        assertThat(result).isEqualTo(BondType.FIXED_COUPON);
+    }
+
+    @Test
+    void resolve_returnsSukukFixed_whenSukukNormalCouponAndPriceAbovePar() {
+        Bond bond = bond("TRD001", "S1", new BigDecimal("120"), new BigDecimal("18"));
+        List<BondRateHistory> stable = List.of(rateAt("18"), rateAt("18"));
+
+        BondType result = BondTypeResolver.resolve(bond, stable, AUCTION_THRESHOLD, CPI_FIXED_THRESHOLD);
+
+        assertThat(result).isEqualTo(BondType.SUKUK_FIXED);
+    }
+
+    @Test
+    void resolve_returnsFloatingCpi_whenCouponFieldHoldsIndexValue() {
+        // A coupon in the thousands is the CPI reference index leaking into .ORAN, not a real coupon.
+        Bond bond = bond("TRT001", "S1", new BigDecimal("491"), new BigDecimal("2591"));
 
         BondType result = BondTypeResolver.resolve(bond, List.of(), AUCTION_THRESHOLD, CPI_FIXED_THRESHOLD);
 

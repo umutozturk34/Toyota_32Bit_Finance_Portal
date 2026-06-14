@@ -29,11 +29,18 @@ public class PortfolioProperties {
     @Getter
     @Setter
     public static class LotLimits {
-        private LocalDate minEntryDate = LocalDate.of(1999, 1, 4);
+        // Earliest lot entry date: the first trading day of 2000, the floor of the EUR/TRY FX history a
+        // multi-currency lot must be valuable at. Anything older has no EUR rate and renders as broken K/Z.
+        private LocalDate minEntryDate = LocalDate.of(2000, 1, 4);
         private BigDecimal minPriceTry = new BigDecimal("0.0001");
         private BigDecimal maxPriceTry = new BigDecimal("1000000000");
         private BigDecimal minQuantity = new BigDecimal("0.000001");
         private BigDecimal maxQuantity = new BigDecimal("1000000000");
+        // Cap on a single lot's TRY value (price × quantity). The per-field price/quantity caps alone allow a
+        // product up to 1e18, but the daily-snapshot money columns are numeric(23,8) (max < 1e15) — so an
+        // absurd lot overflows the snapshot INSERT, aborts the whole batch, and silently breaks the portfolio's
+        // entire chart. 1e13 (10 trillion TRY) is far above any real holding yet well under the column limit.
+        private BigDecimal maxLotValueTry = new BigDecimal("10000000000000");
     }
 
     @Getter

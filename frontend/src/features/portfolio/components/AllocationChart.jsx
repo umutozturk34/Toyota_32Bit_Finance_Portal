@@ -302,17 +302,17 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-fg truncate">{label}</p>
                       {showBreakdown && (
-                        <p className="text-[10px] font-mono mt-0.5">
-                          <span className="text-fg-muted">{money(cost, frameBase)}</span>
+                        <p className="text-[10px] font-mono mt-0.5 truncate" title={`${money(cost, frameBase)} · ${realized >= 0 ? '+' : '−'} ${money(Math.abs(realized), frameBase)}`}>
+                          <span className="text-fg-muted">{moneyCompact(cost, frameBase)}</span>
                           <span className={realized >= 0 ? 'text-success' : 'text-danger'}>
-                            {' '}{realized >= 0 ? '+' : '−'} {money(Math.abs(realized), frameBase)}
+                            {' '}{realized >= 0 ? '+' : '−'} {moneyCompact(Math.abs(realized), frameBase)}
                           </span>
                         </p>
                       )}
                     </div>
                     <span className="text-xs font-mono text-fg-muted shrink-0 tabular-nums">{formatSharePct(pct, value)}%</span>
                     {!showBreakdown && (
-                      <span className={`text-xs font-mono font-semibold shrink-0 ${isCash ? (realized != null && realized < 0 ? 'text-danger' : 'text-success') : 'text-fg'}`}>{money(value, frameBase)}</span>
+                      <span className={`text-xs font-mono font-semibold shrink-0 ${isCash ? (realized != null && realized < 0 ? 'text-danger' : 'text-success') : 'text-fg'}`} title={money(value, frameBase)}>{moneyCompact(value, frameBase)}</span>
                     )}
                   </div>
                 );

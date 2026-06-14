@@ -10,6 +10,7 @@ import com.finance.market.core.service.CurrencyConverter;
 import com.finance.market.viop.config.ViopProperties;
 import com.finance.market.viop.model.ViopContract;
 import com.finance.market.viop.repository.ViopContractRepository;
+import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.portfolio.derivative.dto.request.CloseDerivativePositionRequest;
 import com.finance.portfolio.derivative.dto.request.OpenDerivativePositionRequest;
 import com.finance.portfolio.derivative.dto.request.UpdateDerivativePositionRequest;
@@ -62,6 +63,7 @@ public class DerivativePositionService {
     private final DerivativePriceResolver priceResolver;
     private final CurrencyConverter currencyConverter;
     private final ViopProperties viopProperties;
+    private final PortfolioProperties portfolioProperties;
 
     // Optional: absent outside the full app context (e.g. unit tests), where the gate is a no-op. When present
     // (the market-data initializer), blocks opening a position until the cold-start price/FX load has finished.
@@ -76,6 +78,20 @@ public class DerivativePositionService {
         LocalDate floor = LocalDate.now().minusYears(viopProperties.maxHistoryYears());
         if (entryDate != null && entryDate.isBefore(floor)) {
             throw new BusinessException("error.portfolio.lot.entryDateTooOld", floor);
+        }
+    }
+
+    /**
+     * Rejects a VIOP lot whose TRY notional (entry price × contract size × lots) would overflow the
+     * numeric(23,8) snapshot money columns — the same product the snapshot persists, so an absurd lot would
+     * otherwise abort the snapshot batch and break the portfolio's whole chart. Mirrors the spot lot-value cap.
+     */
+    private void requireNotionalWithinCap(BigDecimal entryPriceTry, BigDecimal contractSize, BigDecimal quantityLot) {
+        BigDecimal max = portfolioProperties.getLotLimits().getMaxLotValueTry();
+        if (entryPriceTry == null || quantityLot == null || max == null) return;
+        BigDecimal size = contractSize != null ? contractSize : BigDecimal.ONE;
+        if (entryPriceTry.multiply(size).multiply(quantityLot).compareTo(max) > 0) {
+            throw new BusinessException("error.portfolio.lot.valueTooHigh", max);
         }
     }
 
@@ -145,6 +161,7 @@ public class DerivativePositionService {
         if (entryPrice == null) {
             throw new BadRequestException("error.viop.entryPriceUnavailable", request.contractSymbol());
         }
+        requireNotionalWithinCap(entryPrice, contract.getContractSize(), request.quantityLot());
         DerivativePosition position = DerivativePosition.builder()
                 .portfolio(portfolio)
                 .viopContract(contract)
@@ -313,6 +330,7 @@ public class DerivativePositionService {
         if (entryPrice == null) {
             throw new BadRequestException("error.viop.entryPriceUnavailable", contract.getSymbol());
         }
+        requireNotionalWithinCap(entryPrice, contract.getContractSize(), request.quantityLot());
         LocalDate previousEntry = position.getEntryDate();
         position.updateEntry(request.direction(), request.entryDate(), entryPrice, request.quantityLot());
         rebuildPeerSnapshots(portfolioId, contract.getSymbol(), position, null);

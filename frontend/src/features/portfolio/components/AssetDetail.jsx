@@ -18,7 +18,8 @@ import MarketOpenDerivativeModal from './MarketOpenDerivativeModal';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
 import IconButton from '../../../shared/components/buttons/IconButton';
-import { buildAssetChartOption, formatChartMoneyFull } from '../lib/assetChartBuilder';
+import { buildAssetChartOption } from '../lib/assetChartBuilder';
+import FitMoney from '../../../shared/components/FitMoney';
 import { resolveNativeCurrency } from '../lib/positionFormHelpers';
 import { commodityLabel } from '../../../shared/utils/commodityName';
 import { computeViopAggregate, computeClosedAggregate } from '../lib/assetAggregates';
@@ -100,12 +101,13 @@ function DirectionPanel({
   const currentPriceConverted = convertAt(aggCurrentPriceTry, 'TRY', todayIso, nativeCurrency);
   const marketValueConverted = convertAt(aggMarketValueTry, 'TRY', todayIso, nativeCurrency);
   const aggAsset = { ...asset, quantity: aggQuantity, entryDate: aggEntryDate };
-  const statValueFor = (key) => {
-    // Stat cards are not width-constrained like an axis, so show FULL precision (formatChartMoneyFull) — the
-    // compact formatChartMoney rendered a 100k+ TRY market value as "₺1,2M" with no tooltip to read the exact figure.
-    if (key === 'entryPrice') return formatChartMoneyFull(entryPriceConverted, targetCurrency);
-    if (key === 'currentPriceTry') return formatChartMoneyFull(currentPriceConverted, targetCurrency);
-    if (key === 'marketValueTry') return formatChartMoneyFull(marketValueDisplay, targetCurrency);
+  // Values are already converted to targetCurrency; FitMoney shows them full-when-fits, compact-when-too-wide
+  // (never clipping digits), with the exact figure always in title= — so a huge market value can never spill
+  // outside its stat card. base=targetCurrency means convert() is a no-op (from===target), no re-conversion.
+  const statRawFor = (key) => {
+    if (key === 'entryPrice') return entryPriceConverted;
+    if (key === 'currentPriceTry') return currentPriceConverted;
+    if (key === 'marketValueTry') return marketValueDisplay;
     return null;
   };
 
@@ -247,7 +249,9 @@ function DirectionPanel({
               </div>
               <p className="text-[11px] text-fg-muted">{t(`assetDetail.stats.${labelKey}`)}</p>
             </div>
-            <p className="text-sm font-semibold font-mono text-fg">{isMoney ? statValueFor(key) : format(aggAsset[key])}</p>
+            {isMoney
+              ? <FitMoney value={statRawFor(key)} base={targetCurrency} className="text-sm font-semibold font-mono text-fg" />
+              : <p className="text-sm font-semibold font-mono text-fg">{format(aggAsset[key])}</p>}
           </Card>
         ))}
       </motion.div>

@@ -6,6 +6,7 @@ import com.finance.market.viop.model.ViopOptionSide;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,7 +37,15 @@ public class ViopSymbolParser {
             int month = Integer.parseInt(om.group(3));
             int year = 2000 + Integer.parseInt(om.group(4));
             ViopOptionSide side = "C".equals(om.group(5)) ? ViopOptionSide.CALL : ViopOptionSide.PUT;
-            BigDecimal strike = new BigDecimal(om.group(6));
+            String strikeToken = om.group(6);
+            BigDecimal strike = new BigDecimal(strikeToken);
+            // İş Yatırım encodes currency-option strikes (e.g. O_USDTRYKE0626P46000) as decimal-less integers
+            // with 3 implied decimals (46000 → 46.000), whereas equity/index options carry an explicit decimal
+            // point (O_AKBNKE0526P45.00, O_XU030E0626P14500.00). Recover the real strike by ÷1000 only for the
+            // decimal-less, non-index (currency) form; index/equity tokens keep their explicit value.
+            if (strikeToken.indexOf('.') < 0 && !underlying.startsWith("X")) {
+                strike = strike.movePointLeft(3);
+            }
             return new Parsed(ViopContractKind.OPTION, underlying, year, month, side, strike, style);
         }
         Matcher fm = FUTURE_PATTERN.matcher(symbol);
@@ -49,9 +58,18 @@ public class ViopSymbolParser {
         return null;
     }
 
-    /** VIOP contracts expire on the last calendar day of their expiry month. */
+    /**
+     * VIOP contracts expire on the last BUSINESS day of their expiry month. Used only as a fallback when
+     * the metadata feed has not yet supplied the exact expiry, so weekends are stepped back to the prior
+     * weekday (close enough for the 1-2 day gap; the feed overwrites it with the real date).
+     */
     public LocalDate impliedExpiry(int year, int month) {
-        return LocalDate.of(year, month, 1).withDayOfMonth(LocalDate.of(year, month, 1).lengthOfMonth());
+        LocalDate last = LocalDate.of(year, month, 1);
+        last = last.withDayOfMonth(last.lengthOfMonth());
+        while (last.getDayOfWeek() == DayOfWeek.SATURDAY || last.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            last = last.minusDays(1);
+        }
+        return last;
     }
 
     public record Parsed(

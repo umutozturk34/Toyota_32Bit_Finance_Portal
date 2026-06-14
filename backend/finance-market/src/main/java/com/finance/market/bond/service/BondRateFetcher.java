@@ -99,7 +99,10 @@ public class BondRateFetcher {
                         bucket.add(BondRateHistory.builder()
                                 .bond(t.bond())
                                 .rateDate(item.rateDate())
-                                .couponRate(item.couponRate())
+                                // A zero (sanitized) coupon marks a discount bill, whose EVDS .ORAN value is
+                                // days-to-maturity rather than a coupon — store null so it is not charted as a
+                                // coupon, while the price series is kept.
+                                .couponRate(isDiscountCoupon(t.bond()) ? null : item.couponRate())
                                 .price(item.price())
                                 .build());
                     }
@@ -121,6 +124,16 @@ public class BondRateFetcher {
                     "All " + failedWindows + " batched rate history windows failed");
         }
         return byIsin;
+    }
+
+    /**
+     * Whether the bond's sanitized coupon is exactly zero, marking a discount bill (e.g. a TRB Treasury bill).
+     * For such bonds the EVDS {@code .ORAN} value is days-to-maturity rather than a coupon, so it must not be
+     * stored as a coupon. A null coupon is not treated as discount here — those bonds never become fetch
+     * targets in the normal flow, and keeping the raw value avoids changing behaviour for that edge case.
+     */
+    private static boolean isDiscountCoupon(Bond bond) {
+        return bond.getCouponRate() != null && bond.getCouponRate().signum() == 0;
     }
 
 }

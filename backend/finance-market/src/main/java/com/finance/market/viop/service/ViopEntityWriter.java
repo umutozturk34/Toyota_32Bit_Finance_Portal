@@ -9,6 +9,7 @@ import com.finance.market.core.service.TrackedAssetCommandService;
 import com.finance.market.viop.dto.ViopContractSpec;
 import com.finance.market.viop.dto.ViopQuoteSnapshot;
 import com.finance.market.viop.model.ViopContract;
+import com.finance.market.viop.model.ViopContractKind;
 import com.finance.market.viop.repository.ViopContractRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -20,6 +21,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +65,47 @@ public class ViopEntityWriter implements MarketEntityWriter {
             enriched++;
         }
         return enriched;
+    }
+
+    /**
+     * Fills in option contracts' contract size (and settlement/currency/margin) from the option metadata
+     * templates. Templates are per-UNDERLYING families (a sample code, not a concrete strike), so they are
+     * keyed by underlying and applied to every stored option of that underlying that still lacks a size.
+     * Without this, options keep a null contract size that valuation reads as 1 — understating notional and
+     * P&L by the real multiplier (e.g. 100 for equity options) and hiding the {@code ×N} badge.
+     */
+    @Transactional
+    public int enrichOptionContractSizes(List<ViopContractSpec> templates) {
+        if (templates == null || templates.isEmpty()) return 0;
+        Map<String, ViopContractSpec> byUnderlying = new HashMap<>();
+        for (ViopContractSpec t : templates) {
+            String key = normalizeUnderlying(t.underlying());
+            if (key != null && t.contractSize() != null) {
+                byUnderlying.putIfAbsent(key, t);
+            }
+        }
+        if (byUnderlying.isEmpty()) return 0;
+        int enriched = 0;
+        for (ViopContract option : repository.findByKindAndActiveTrue(ViopContractKind.OPTION)) {
+            if (option.getContractSize() != null) continue;
+            ViopContractSpec t = byUnderlying.get(normalizeUnderlying(option.getUnderlying()));
+            if (t == null) continue;
+            option.setContractSize(t.contractSize());
+            if (option.getSettlementType() == null) option.setSettlementType(t.settlementType());
+            if (option.getCurrency() == null) option.setCurrency(t.currency());
+            if (option.getInitialMargin() == null && t.initialMargin() != null) option.setInitialMargin(t.initialMargin());
+            option.scaleFields(PRICE_SCALE);
+            repository.save(option);
+            cacheService.putSnapshot(option.getSymbol(), option);
+            enriched++;
+        }
+        return enriched;
+    }
+
+    /** Upper-cases and trims an underlying for cross-source matching; {@code null}/blank stays null. */
+    private static String normalizeUnderlying(String underlying) {
+        if (underlying == null || underlying.isBlank()) return null;
+        return underlying.trim().toUpperCase();
     }
 
     /** Applies a batch of live snapshots (bootstrapping new symbols); returns the symbols touched. */

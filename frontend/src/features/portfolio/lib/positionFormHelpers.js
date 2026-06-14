@@ -1,4 +1,5 @@
 import { viopQuoteCurrency } from '../../../shared/utils/priceCurrency';
+import { toInputValue } from '../../../shared/utils/numberInput';
 
 export const FRACTIONAL_TYPES = ['CRYPTO', 'FOREX', 'COMMODITY'];
 export const ONE_HOUR_MS = 60 * 60 * 1000;
@@ -46,13 +47,13 @@ export function buildInitialState(mode, asset, position) {
   if (mode === 'edit' && position) {
     return {
       entryDate: isoToDateInput(position.entryDate),
-      entryPrice: String(position.entryPrice ?? ''),
+      entryPrice: toInputValue(position.entryPrice),
       quantity: String(position.quantity ?? ''),
     };
   }
   return {
     entryDate: todayInputValue(),
-    entryPrice: asset?.currentPrice ? String(asset.currentPrice) : '',
+    entryPrice: asset?.currentPrice ? toInputValue(asset.currentPrice) : '',
     quantity: '',
   };
 }

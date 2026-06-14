@@ -193,6 +193,22 @@ class PortfolioCrudServiceTest {
     }
 
     @Test
+    void shouldRejectAdd_whenOpeningPositionOnDisabledAsset() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        PositionRequest request = new PositionRequest(
+                "STOCK", "THYAO.IS", new BigDecimal("100"), LocalDateTime.of(2024, 1, 15, 10, 0), new BigDecimal("40"));
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TrackedAssetType.STOCK, "THYAO.IS"))
+                .thenReturn(Optional.of(TrackedAsset.builder().id(1L)
+                        .assetType(TrackedAssetType.STOCK).assetCode("THYAO.IS").enabled(false).build()));
+
+        assertThatThrownBy(() -> service.addPosition(PORTFOLIO_ID, USER_SUB, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.assetDisabled");
+        verify(positionRepository, never()).save(any());
+    }
+
+    @Test
     void shouldDelegateLotUpdateToDomainAndPersist_whenPositionOwned() {
         Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
         PortfolioPosition existing = stubPosition(PORTFOLIO_ID, AssetType.STOCK, "THYAO.IS",

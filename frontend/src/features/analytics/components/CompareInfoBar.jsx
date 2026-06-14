@@ -1,5 +1,5 @@
 import { Info } from 'lucide-react';
-import { isMacro, isRateLike } from '../lib/compareSeriesUtils';
+import { isMacro, isRateLike, compareTypeLabel } from '../lib/compareSeriesUtils';
 import { skipLeadingSplit } from '../lib/compareChartBuilder';
 import { formatPrice } from '../../../shared/utils/formatters';
 import { moneyDigits } from '../utils';
@@ -106,7 +106,7 @@ export default function CompareInfoBar({ selected, targetCurrency, commonStartDa
                 </span>
               </>
             )}
-            <span className="text-[10px] font-mono text-fg-subtle tracking-[0.04em] hidden sm:inline">{t(`marketOverview.macro.enum.${ind.type}`, { defaultValue: ind.type })}</span>
+            <span className="text-[10px] font-mono text-fg-subtle tracking-[0.04em] hidden sm:inline">{compareTypeLabel(t, ind.type)}</span>
             <span className="ml-auto flex items-baseline gap-1.5 sm:gap-2 flex-wrap justify-end shrink-0">
               <span
                 className="font-mono tabular-nums text-xs font-semibold text-fg whitespace-nowrap"

@@ -44,6 +44,7 @@ public class ViopDataService implements MarketRefresher {
         Set<String> activeSymbols = refreshLiveSnapshots();
         deactivateStale(activeSymbols);
         enrichSpecs();
+        enrichOptionContractSizes();
         enrichMissingPrices();
         sweepExpired();
         syncCandlesFromLastStored();
@@ -83,6 +84,12 @@ public class ViopDataService implements MarketRefresher {
      * @return the number of contracts deactivated
      */
     public int deactivateStale(Set<String> activeSymbols) {
+        // Guard against a failed/empty bulk scrape: an empty set would deactivate the ENTIRE active universe.
+        // Treat "no symbols this cycle" as a transient upstream gap and leave the universe untouched.
+        if (activeSymbols == null || activeSymbols.isEmpty()) {
+            log.warn("VIOP: live snapshot produced no symbols — skipping stale deactivation to avoid nuking the universe");
+            return 0;
+        }
         int deactivated = entityWriter.deactivateNotIn(activeSymbols);
         log.info("VIOP: {} non-trading contracts deactivated", deactivated);
         return deactivated;
@@ -98,6 +105,21 @@ public class ViopDataService implements MarketRefresher {
         List<ViopContractSpec> futures = marketData.fetchFutureContractSpecs();
         int enriched = entityWriter.enrichSpecs(futures);
         log.info("VIOP: {} active contracts enriched with VadeliIslemler specs", enriched);
+        return enriched;
+    }
+
+    /**
+     * Backfills option contracts' contract size (and settlement/currency/margin) from the per-underlying
+     * option metadata templates. Futures get their size from the VadeliIslemler feed, but options carry it
+     * only in these option-family templates — without this pass an option's size stays null and valuation
+     * reads it as 1, understating notional/P&L by the real multiplier.
+     *
+     * @return the number of option contracts whose size was filled in
+     */
+    public int enrichOptionContractSizes() {
+        List<ViopContractSpec> templates = marketData.fetchOptionContractTemplates();
+        int enriched = entityWriter.enrichOptionContractSizes(templates);
+        log.info("VIOP: {} option contracts enriched with contract size from option templates", enriched);
         return enriched;
     }
 
@@ -119,7 +141,8 @@ public class ViopDataService implements MarketRefresher {
     }
 
     /**
-     * Marks as expired every contract whose maturity date is on or before today.
+     * Marks as expired every contract whose maturity date is strictly before today — a contract is still
+     * tradable on its own expiry day, so it is only flagged once that day has passed (query: {@code expiryDate < today}).
      *
      * @return the number of contracts newly flagged expired
      */

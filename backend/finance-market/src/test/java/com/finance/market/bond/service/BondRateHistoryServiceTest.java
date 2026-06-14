@@ -113,6 +113,33 @@ class BondRateHistoryServiceTest {
     }
 
     @Test
+    void processBatch_fetchesPriceHistoryWithNullCoupon_forDiscountBill() {
+        // A TRB ISIN is a zero-coupon discount bill: sanitizeCouponRate forces couponRate to 0. It must still
+        // be fetched (it has a price series), and its stored row must carry a null coupon (the EVDS .ORAN value
+        // is days-to-maturity, not a coupon) while keeping the price.
+        BondSnapshotDto d = dto("S1", "TRB170626T13", new BigDecimal("308"), LocalDate.of(2025, 8, 13));
+        Bond entity = bond("S1");
+        when(bondRepository.findById("S1")).thenReturn(Optional.empty());
+        when(bondMapper.toEntity(eq(d), any())).thenReturn(entity);
+        when(assetRegistry.upsert(MarketType.BOND, "S1")).thenReturn(bondAsset("S1"));
+        when(bondRepository.save(entity)).thenReturn(entity);
+        when(rateHistoryRepository.findTopByIsinCodeOrderByRateDateDesc("TRB170626T13")).thenReturn(Optional.empty());
+        when(rateFetcher.fetchBatch(any())).thenReturn(Map.of("TRB170626T13", new java.util.ArrayList<>()));
+        when(rateHistoryRepository.existsByIsinCodeAndRateDate(eq("TRB170626T13"), any())).thenReturn(false);
+        when(rateHistoryRepository.findByIsinCodeOrderByRateDateAsc("TRB170626T13")).thenReturn(List.of());
+        stubTransactionTemplate();
+
+        service.processBatch(List.of(d), LocalDateTime.now());
+
+        verify(rateFetcher).fetchBatch(any());
+        ArgumentCaptor<List<BondRateHistory>> captor = ArgumentCaptor.forClass(List.class);
+        verify(rateHistoryRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).isNotEmpty();
+        assertThat(captor.getValue().get(0).getCouponRate()).isNull();
+        assertThat(captor.getValue().get(0).getPrice()).isEqualByComparingTo("100");
+    }
+
+    @Test
     void processBatch_updatesExistingBond_andSavesFetchedRecords_forCouponBond() {
         BondSnapshotDto d = dto("S1", "ISIN1", new BigDecimal("10"), LocalDate.of(2020, 1, 1));
         Bond existing = bond("S1");

@@ -5,6 +5,7 @@ import { AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { currentLocaleTag } from '../../utils/formatters';
+import { EARLIEST_DATA_DATE } from '../../constants/dates';
 
 function buildMonthLabels(locale, format) {
   const fmt = new Intl.DateTimeFormat(locale, { month: format });
@@ -83,7 +84,10 @@ export default function DatePickerPopover({
 
   const selected = useMemo(() => fromIso(value), [value]);
   const today = useMemo(() => new Date(), []);
-  const min = useMemo(() => fromIso(minDate), [minDate]);
+  // Floor every calendar at the earliest date with FX/market data (2000-01-04) by default, so no picker
+  // anywhere lets the user wander into pre-data years. A caller that passes its own minDate (e.g. a detail
+  // chart's data-range bound, or a position's entry date) overrides this — only a missing minDate falls back.
+  const min = useMemo(() => fromIso(minDate || EARLIEST_DATA_DATE), [minDate]);
   const max = useMemo(() => fromIso(maxDate), [maxDate]);
   const initial = selected || today;
   const [cursor, setCursor] = useState({ year: initial.getFullYear(), month: initial.getMonth() });

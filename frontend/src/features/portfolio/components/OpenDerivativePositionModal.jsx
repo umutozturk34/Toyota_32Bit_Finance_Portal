@@ -10,7 +10,7 @@ import { useMoney } from '../../../shared/hooks/useMoney';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { extractApiError } from '../../../shared/utils/apiError';
 import { ONE_HOUR_MS, toYearMonth, buildPriceIndex, latestPriceAtOrBefore, resolveNativeCurrency } from '../lib/positionFormHelpers';
-import { clampNumberInput, MAX_MONEY, MAX_QUANTITY } from '../../../shared/utils/numberInput';
+import { clampNumberInput, sanitizeNumberInput, MAX_MONEY, MAX_QUANTITY, PRICE_DECIMALS, toInputValue } from '../../../shared/utils/numberInput';
 import { useOpenDerivativePosition, useUpdateDerivativePosition } from '../hooks/useDerivativePositions';
 import { usePortfolioLimits } from '../hooks/usePortfolioData';
 
@@ -53,10 +53,10 @@ export default function OpenDerivativePositionModal({ portfolioId, portfolioPick
     if (!editPosition?.entryPrice) return '';
     const dateStr = editPosition.entryDate;
     const target = displayCurrency === 'ORIGINAL' ? currency : displayCurrency;
-    if (target === 'TRY') return String(editPosition.entryPrice);
+    if (target === 'TRY') return toInputValue(editPosition.entryPrice);
     const rate = rateAt(target, dateStr);
-    if (rate != null && rate > 0) return String(Number(editPosition.entryPrice) / rate);
-    return String(editPosition.entryPrice);
+    if (rate != null && rate > 0) return toInputValue(Number(editPosition.entryPrice) / rate);
+    return toInputValue(editPosition.entryPrice);
   }, [editPosition, displayCurrency, currency, rateAt]);
 
   const [direction, setDirection] = useState(editPosition?.direction || 'LONG');
@@ -146,13 +146,13 @@ export default function OpenDerivativePositionModal({ portfolioId, portfolioPick
     setEntrySyncKey(eKey);
     // Clear a stale auto-filled price when the new date has no suggested price, rather than leaving the
     // previous date's value to be revalued at the new date's FX rate.
-    setEntryPrice(entrySuggestedDisplay != null ? String(entrySuggestedDisplay) : '');
+    setEntryPrice(toInputValue(entrySuggestedDisplay));
   }
   const [closeSyncKey, setCloseSyncKey] = useState(null);
   const cKey = (!closeEnabled || closePriceTouched) ? null : `${closeDate}|${closeSuggestedDisplay ?? 'none'}`;
   if (cKey !== null && cKey !== closeSyncKey) {
     setCloseSyncKey(cKey);
-    setClosePrice(closeSuggestedDisplay != null ? String(closeSuggestedDisplay) : '');
+    setClosePrice(toInputValue(closeSuggestedDisplay));
   }
 
   const notional = useMemo(() => {
@@ -289,7 +289,7 @@ export default function OpenDerivativePositionModal({ portfolioId, portfolioPick
           </span>
           <input
             type="number" max={MAX_MONEY} step="0.0001" inputMode="decimal" value={entryPrice}
-            onChange={(e) => { setEntryPrice(clampNumberInput(e.target.value, MAX_MONEY)); setEntryPriceTouched(true); }}
+            onChange={(e) => { setEntryPrice(sanitizeNumberInput(e.target.value, MAX_MONEY, PRICE_DECIMALS)); setEntryPriceTouched(true); }}
             placeholder={t('portfolio.derivatives.autoFromHistory')}
             className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
           />
@@ -331,7 +331,7 @@ export default function OpenDerivativePositionModal({ portfolioId, portfolioPick
                 <span className="text-xs font-medium text-fg-muted">{t('portfolio.derivatives.closePrice')}</span>
                 <input
                   type="number" max={MAX_MONEY} step="0.0001" inputMode="decimal" value={closePrice}
-                  onChange={(e) => { setClosePrice(clampNumberInput(e.target.value, MAX_MONEY)); setClosePriceTouched(true); }}
+                  onChange={(e) => { setClosePrice(sanitizeNumberInput(e.target.value, MAX_MONEY, PRICE_DECIMALS)); setClosePriceTouched(true); }}
                   placeholder={t('portfolio.derivatives.autoFromHistory')}
                   className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
                 />

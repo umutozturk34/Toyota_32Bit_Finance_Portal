@@ -637,11 +637,16 @@ if [ "$SUCCESS" = "true" ]; then
       *)                                    _tf="@timestamp" ;;
     esac
 
-    # Trace patterns retain a duration_ms scripted field so APM viz can
-    # use it as a metric without re-declaring the painless script everywhere.
+    # Extra fields merged into the pattern beyond what _field_caps reports. Trace patterns get the
+    # duration_ms scripted field; metric patterns declare the OTLP attribute fields the dashboards split
+    # by, so the pattern carries them even before any metric is ingested — otherwise the visualizations
+    # show "Could not locate that index-pattern-field" on a freshly seeded cluster (empty metrics index).
     case "$pat_id" in
       finance-traces|notification-traces)
         _scripted='[{"name":"duration_ms","type":"number","scripted":true,"script":"if(doc.containsKey('"'"'endTime'"'"')&&doc.containsKey('"'"'startTime'"'"')&&!doc['"'"'endTime'"'"'].empty&&!doc['"'"'startTime'"'"'].empty){return doc['"'"'endTime'"'"'].value.toInstant().toEpochMilli()-doc['"'"'startTime'"'"'].value.toInstant().toEpochMilli();}return 0;","lang":"painless","searchable":true,"aggregatable":true}]'
+        ;;
+      finance-metrics|notification-metrics)
+        _scripted='[{"name":"metric.attributes.jvm@memory@type","type":"string","count":0,"scripted":false,"searchable":true,"aggregatable":true,"readFromDocValues":true},{"name":"metric.attributes.jvm@thread@state","type":"string","count":0,"scripted":false,"searchable":true,"aggregatable":true,"readFromDocValues":true},{"name":"metric.attributes.name","type":"string","count":0,"scripted":false,"searchable":true,"aggregatable":true,"readFromDocValues":true}]'
         ;;
       *) _scripted='[]' ;;
     esac
@@ -666,7 +671,7 @@ if [ "$SUCCESS" = "true" ]; then
           aggregatable: ($info.aggregatable // false),
           readFromDocValues: ($info.aggregatable // false)
         }
-      ] + $scripted')
+      ] + $scripted | unique_by(.name)')
 
     # Use jq to build payload — handles JSON escaping correctly
     PAYLOAD=$(jq -nc \

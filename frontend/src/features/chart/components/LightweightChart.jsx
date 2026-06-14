@@ -154,7 +154,14 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
     // chart stays clean when idle.
     const hoverLocale = i18n.language?.startsWith('tr') ? 'tr-TR' : 'en-US';
     const hoverSym = { TRY: '₺', USD: '$', EUR: '€' }[displayCurrency] || '';
-    const fmtHover = (v) => (v == null ? '—' : `${hoverSym}${Number(v).toLocaleString(hoverLocale, { maximumFractionDigits: Math.abs(v) < 10 ? 4 : 2 })}`);
+    const fmtHover = (v) => {
+      if (v == null) return '—';
+      const n = Number(v);
+      // Astronomical (hyperinflation-nominal) values would balloon the legend over the chart; compact them
+      // like the axis. Small prices keep full 4/2-decimal precision — the whole point of the readout.
+      if (Math.abs(n) >= 1_000_000) return `${hoverSym}${n.toLocaleString(hoverLocale, { notation: 'compact', maximumFractionDigits: 2 })}`;
+      return `${hoverSym}${n.toLocaleString(hoverLocale, { maximumFractionDigits: Math.abs(n) < 10 ? 4 : 2 })}`;
+    };
     // The legend reads the hovered candle, else falls back to the latest — so OHLC + indicators are ALWAYS shown.
     const lastCandle = data?.candles?.length ? data.candles[data.candles.length - 1] : null;
     const legendCandle = crosshairData?.index != null ? data?.candles?.[crosshairData.index] : lastCandle;

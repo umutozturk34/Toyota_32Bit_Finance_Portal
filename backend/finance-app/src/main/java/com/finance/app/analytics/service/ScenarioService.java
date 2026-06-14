@@ -47,6 +47,9 @@ public class ScenarioService {
     private static final BigDecimal SPLIT_DETECTION_HIGH = new BigDecimal("5");
     private static final BigDecimal SPLIT_DETECTION_LOW = new BigDecimal("0.2");
     private static final int BASELINE_PROBE_WINDOW = 10;
+    // Earliest scenario start: first trading day of 2000, the floor of EUR/TRY FX history (mirrors the
+    // portfolio lot floor). Before this there is no EUR rate to value a multi-currency basket against.
+    private static final LocalDate EARLIEST_START = LocalDate.of(2000, 1, 4);
 
     private final UnifiedHistoryService historyService;
     private final MacroIndicatorQueryService macroQueryService;
@@ -60,6 +63,9 @@ public class ScenarioService {
      */
     public ScenarioResponse simulate(ScenarioRequest request) {
         LocalDate startDate = request.startDate();
+        if (startDate.isBefore(EARLIEST_START)) {
+            throw new BadRequestException("error.analytics.startDateTooOld");
+        }
         LocalDate endDate = request.endDate() != null ? request.endDate() : LocalDate.now();
         if (!endDate.isAfter(startDate)) {
             throw new BadRequestException("error.analytics.invalidDateRange");

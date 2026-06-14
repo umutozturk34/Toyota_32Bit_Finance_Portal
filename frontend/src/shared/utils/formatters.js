@@ -94,6 +94,29 @@ export const formatCompactNumber = (number, currency = 'USD') => {
     }).format(number);
 };
 
+// Chooses the fullest money string that fits `maxChars` without ever CSS-clipping digits. The full,
+// grouped value is preferred (so an ordinary 6-9 figure total stays exact); only a genuinely-too-wide
+// value steps down — first by dropping decimals, then to compact notation (₺365,54 Tn) — so it fits the
+// card instead of spilling outside it. `maxChars` of 0/unset means "no width limit" → always full.
+export const fitMoney = (value, { currency, locale, maxChars = 0, maxDecimals = 2 } = {}) => {
+    if (value === null || value === undefined) return 'N/A';
+    const num = Number(value);
+    if (!Number.isFinite(num)) return 'N/A';
+    const resolvedLocale = locale || currentLocaleTag();
+    const full = formatPrice(num, { currency, locale: resolvedLocale, minDecimals: 2, maxDecimals });
+    if (!maxChars || full.length <= maxChars) return full;
+    const full0 = formatPrice(num, { currency, locale: resolvedLocale, minDecimals: 0, maxDecimals: 0 });
+    if (full0.length <= maxChars) return full0;
+    const compactOpts = { notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 2 };
+    if (currency && /^[A-Z]{3}$/.test(String(currency))) {
+        compactOpts.style = 'currency';
+        compactOpts.currency = currency;
+    }
+    const compact2 = new Intl.NumberFormat(resolvedLocale, compactOpts).format(num);
+    if (compact2.length <= maxChars) return compact2;
+    return new Intl.NumberFormat(resolvedLocale, { ...compactOpts, maximumFractionDigits: 0 }).format(num);
+};
+
 export const formatVolume = (volume) => {
     if (!volume) return 'N/A';
     if (volume >= 1_000_000_000_000) return `${(volume / 1_000_000_000_000).toFixed(1)}T`;

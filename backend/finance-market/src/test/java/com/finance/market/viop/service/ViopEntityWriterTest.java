@@ -86,6 +86,36 @@ class ViopEntityWriterTest {
     }
 
     @Test
+    void should_fillOptionContractSizeByUnderlying_when_templateMatches() {
+        ViopContract option = ViopContract.builder()
+                .symbol("O_HALKBE0626C44.00").kind(ViopContractKind.OPTION)
+                .underlying("HALKB").active(true).build();
+        when(repository.findByKindAndActiveTrue(ViopContractKind.OPTION)).thenReturn(List.of(option));
+        // Template is a per-underlying family (a sample code, not this exact strike) carrying the multiplier.
+        ViopContractSpec template = ViopContractSpec.option("O_HALKBE0626C40.00", "HALKB Opsiyon", "HALKB",
+                null, new BigDecimal("100"), null, "Nakit", "TRY", null, null, null);
+
+        int enriched = writer.enrichOptionContractSizes(List.of(template));
+
+        assertThat(enriched).isEqualTo(1);
+        assertThat(option.getContractSize()).isEqualByComparingTo("100");
+    }
+
+    @Test
+    void should_notTouchOption_when_alreadyHasContractSizeOrNoTemplate() {
+        ViopContract sized = ViopContract.builder().symbol("O_AKBNKE0626C45.00").kind(ViopContractKind.OPTION)
+                .underlying("AKBNK").contractSize(new BigDecimal("100")).active(true).build();
+        when(repository.findByKindAndActiveTrue(ViopContractKind.OPTION)).thenReturn(List.of(sized));
+        ViopContractSpec other = ViopContractSpec.option("O_HALKBE0626C40.00", "HALKB", "HALKB",
+                null, new BigDecimal("50"), null, null, "TRY", null, null, null);
+
+        int enriched = writer.enrichOptionContractSizes(List.of(other));
+
+        assertThat(enriched).isZero();
+        assertThat(sized.getContractSize()).isEqualByComparingTo("100");
+    }
+
+    @Test
     void should_returnEmptySet_when_bulkSnapshotsListIsNull() {
         Set<String> result = writer.applyBulkSnapshots(null);
 

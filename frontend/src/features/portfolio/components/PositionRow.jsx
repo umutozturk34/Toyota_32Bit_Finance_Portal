@@ -166,8 +166,8 @@ export default function PositionRow({ pos, pending, elapsed, selected, onToggleS
         <div className="flex justify-start">
           <PositionStatusBadge closed={isClosedSpot || isClosedDerivative} isDerivative={isDerivative} />
         </div>
-        <p className="text-left text-[11px] font-mono text-fg truncate">{money(pos.entryPrice, 'TRY', { dateAt: pos.entryDate, natural: nativeCurrency })}</p>
-        <p className={`text-left text-[11px] font-mono truncate ${isClosedSpot || isClosedDerivative ? 'text-fg-muted italic' : 'text-fg'}`}>{money(pos.currentPriceTry, 'TRY', closedFx)}</p>
+        <p className="text-left text-[11px] font-mono text-fg truncate" title={money(pos.entryPrice, 'TRY', { dateAt: pos.entryDate, natural: nativeCurrency })}>{money(pos.entryPrice, 'TRY', { dateAt: pos.entryDate, natural: nativeCurrency })}</p>
+        <p className={`text-left text-[11px] font-mono truncate ${isClosedSpot || isClosedDerivative ? 'text-fg-muted italic' : 'text-fg'}`} title={money(pos.currentPriceTry, 'TRY', closedFx)}>{money(pos.currentPriceTry, 'TRY', closedFx)}</p>
         <p className={`text-left text-[11px] font-mono truncate ${isClosedSpot || isClosedDerivative ? 'text-fg-muted italic' : 'text-fg'}`} title={useFrame ? fmtFramePnl(costFrame + framePnl) : money(totalEquityTry, 'TRY', closedFx)}>{useFrame ? fmtFramePnl(costFrame + framePnl) : (isClosed ? money(totalEquityTry, 'TRY', closedFx) : bigMoney(totalEquityTry))}</p>
         <div className="text-left min-w-0">
           <p className={`text-[11px] font-mono font-semibold ${changeColors[pnlClass]} truncate`} title={useFrame ? fmtFramePnl(framePnl) : money(pos.pnlTry, 'TRY', closedFx)}>{useFrame ? fmtFramePnl(framePnl) : (isClosed ? money(pos.pnlTry, 'TRY', closedFx) : bigMoney(pos.pnlTry))}</p>

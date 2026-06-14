@@ -130,7 +130,15 @@ public class PortfolioCrudService {
         // must run on the converted value, and doing it first fails fast on a bad price before any DB hit.
         BigDecimal entryPriceTry = toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate());
         PortfolioValidator.validatePriceTry(entryPriceTry, portfolioProperties.getLotLimits());
+        PortfolioValidator.validateLotValueTry(entryPriceTry, request.quantity(), portfolioProperties.getLotLimits());
         TrackedAsset trackedAsset = requireTrackedAsset(assetType, request.assetCode());
+        // Block opening a NEW position on an admin-disabled (retired-from-discovery) asset. Disable hides it
+        // from search/cards while its detail stays readable for existing holders; letting fresh positions in
+        // would re-grow exposure to a retired instrument. Only this entry point gates on enabled — existing
+        // positions (add-lot, sell, recompute) are untouched, so current holders can still manage their data.
+        if (!trackedAsset.isEnabled()) {
+            throw new BusinessException("error.portfolio.assetDisabled", request.assetCode());
+        }
         PortfolioPosition position = PortfolioPosition.builder()
                 .portfolio(portfolio)
                 .assetType(assetType)
@@ -166,6 +174,7 @@ public class PortfolioCrudService {
         LocalDateTime previousEntry = position.getEntryDate();
         BigDecimal entryPriceTry = toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate());
         PortfolioValidator.validatePriceTry(entryPriceTry, portfolioProperties.getLotLimits());
+        PortfolioValidator.validateLotValueTry(entryPriceTry, request.quantity(), portfolioProperties.getLotLimits());
         position.updateLot(request.entryDate(), entryPriceTry, request.quantity());
         PortfolioPosition saved = positionRepository.save(position);
 

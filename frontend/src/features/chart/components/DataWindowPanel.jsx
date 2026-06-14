@@ -32,8 +32,8 @@ function Section({ label, children }) {
 function DetailRow({ label, children }) {
   return (
     <div className="flex items-center justify-between gap-2 py-0.5 border-t border-border-default/30 first:border-t-0">
-      <span className="text-[11px] text-fg-muted truncate">{label}</span>
-      <span className="font-mono text-xs tabular-nums text-right text-fg shrink-0">{children}</span>
+      <span className="text-[11px] text-fg-muted truncate shrink min-w-0">{label}</span>
+      <span className="font-mono text-xs tabular-nums text-right text-fg min-w-0 truncate" title={typeof children === 'string' ? children : undefined}>{children}</span>
     </div>
   );
 }
@@ -191,8 +191,8 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
                 <div className="mb-0.5 text-[11px] text-fg-muted">O / H / L / C</div>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 font-mono text-xs tabular-nums">
                   <span className="text-fg-muted">O <span className="text-fg">{money(f.open)}</span></span>
-                  <span className="text-fg-muted">H <span className="text-success">{money(f.high)}</span></span>
-                  <span className="text-fg-muted">L <span className="text-danger">{money(f.low)}</span></span>
+                  <span className="text-fg-muted">H <span className="text-fg">{money(f.high)}</span></span>
+                  <span className="text-fg-muted">L <span className="text-fg">{money(f.low)}</span></span>
                   <span className="text-fg-muted">C <span className="text-fg">{money(a.close)}</span></span>
                 </div>
               </div>

@@ -75,7 +75,7 @@ function BondCard({ bond, onClick, dataTour }) {
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-                    <StatCell icon={Building2} label={t('market.bond.issuerLabel')} value={bond.issuer || t('market.bond.treasuryFallback')} />
+                    <StatCell icon={Building2} label={t('market.bond.issuerLabel')} value={(!bond.issuer || bond.issuer === 'HAZİNE' || bond.issuer === 'TREASURY') ? t('market.bond.treasuryFallback') : bond.issuer} />
                     <StatCell icon={Percent} label={t('market.bond.couponRate')} value={formatRate(bond.couponRate)} mono />
                     <StatCell icon={TrendingUp} label={t('market.bond.simpleYield')} value={
                         isFloatingType(bond.bondType)

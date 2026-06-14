@@ -9,6 +9,7 @@ import { useMoney } from '../../../shared/hooks/useMoney';
 import { usePortfolioSummary } from '../hooks/usePortfolioData';
 import { ASSET_TYPE_FILTERS as SUMMARY_FILTERS } from '../../../shared/constants/assetTypes';
 import Card from '../../../shared/components/card';
+import FitMoney from '../../../shared/components/FitMoney';
 
 const VALUE_CARD_DEFS = [
   { key: 'totalValueTry', labelKey: 'portfolio.summary.marketValue', Icon: Wallet, iconBg: 'bg-accent/10', iconColor: 'text-accent', border: 'border-t-accent' },
@@ -17,8 +18,6 @@ const VALUE_CARD_DEFS = [
 
 function PnlCard({ label, value, percent, realValue, realPercent, hideReal, base = 'TRY' }) {
   const { t } = useTranslation();
-  const { format: money, formatCompact: moneyCompact } = useMoney();
-  const bigMoney = (v) => moneyCompact(v, base, 100_000);
   const cls = getChangeClass(value);
   const Icon = value >= 0 ? TrendingUp : TrendingDown;
   const diff = realPercent != null && percent != null
@@ -44,9 +43,7 @@ function PnlCard({ label, value, percent, realValue, realPercent, hideReal, base
         <span className="text-[11px] text-fg-muted font-medium">{label}</span>
       </div>
       <div className="flex items-baseline justify-between gap-2">
-        <p className={`text-base font-semibold font-mono ${changeColors[cls]} truncate`} title={money(value, base)}>
-          {bigMoney(value)}
-        </p>
+        <FitMoney value={value} base={base} className={`text-base font-semibold font-mono ${changeColors[cls]}`} />
         <span className={`shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium font-mono ${changeBg[cls]} ${changeColors[cls]}`}>
           {formatPercent(percent)}
         </span>
@@ -62,9 +59,7 @@ function PnlCard({ label, value, percent, realValue, realPercent, hideReal, base
             {t('portfolio.positions.realReturnAbbr', { defaultValue: 'reel' })}
           </span>
           <div className="flex items-baseline gap-1.5">
-            <span className={`text-xs font-mono tabular-nums ${changeColors[realCls]} truncate`} title={money(realValue, base)}>
-              {bigMoney(realValue)}
-            </span>
+            <FitMoney as="span" value={realValue} base={base} className={`text-xs font-mono tabular-nums ${changeColors[realCls]}`} />
             <span className={`shrink-0 text-[10px] font-mono font-semibold tabular-nums ${changeColors[realCls]}`}>
               {formatPercent(realPercent)}
             </span>
@@ -77,7 +72,7 @@ function PnlCard({ label, value, percent, realValue, realPercent, hideReal, base
 
 export default function SummaryCards({ summary: initialSummary, portfolioId }) {
   const { t } = useTranslation();
-  const { format: money, formatCompact: moneyCompact, currency: displayCurrency } = useMoney();
+  const { currency: displayCurrency } = useMoney();
   const [activeFilter, setActiveFilter] = useSessionState('portfolio-summary-filter', null);
 
   const { data: filteredSummary, isFetching: loading } = usePortfolioSummary(portfolioId, activeFilter);
@@ -143,7 +138,6 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {VALUE_CARD_DEFS.map(({ key, labelKey, Icon, iconBg, iconColor, border }) => {
           const amount = key === 'totalValueTry' ? totalValueAmount : totalEntryAmount;
-          const bigInBase = (v) => moneyCompact(v, amount.base, 100_000);
           return (
             <Card
               as={motion.div}
@@ -161,9 +155,7 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
                 </div>
                 <span className="text-[11px] text-fg-muted font-medium">{t(labelKey)}</span>
               </div>
-              <p className="text-base font-semibold font-mono text-fg truncate" title={money(amount.value, amount.base)}>
-                {bigInBase(amount.value)}
-              </p>
+              <FitMoney value={amount.value} base={amount.base} className="text-base font-semibold font-mono text-fg" />
             </Card>
           );
         })}

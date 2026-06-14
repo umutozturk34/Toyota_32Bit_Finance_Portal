@@ -84,7 +84,8 @@ class DerivativePositionServiceTest {
                         null, null, null, null, null, null, null, null, null, null, 5);
         service = new DerivativePositionService(positionRepository, portfolioRepository,
                 contractRepository, assetSnapshotRepository, mapper, eventPublisher,
-                snapshotMaintenance, priceResolver, currencyConverter, viopProperties, marketDataReadiness);
+                snapshotMaintenance, priceResolver, currencyConverter, viopProperties,
+                new com.finance.portfolio.config.PortfolioProperties(), marketDataReadiness);
 
         portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).name("test").build();
 

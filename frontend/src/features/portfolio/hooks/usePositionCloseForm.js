@@ -5,6 +5,7 @@ import { useMoney } from '../../../shared/hooks/useMoney';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
 import { ONE_HOUR_MS, toYearMonth, buildPriceIndex, latestPriceAtOrBefore } from '../lib/positionFormHelpers';
+import { toInputValue } from '../../../shared/utils/numberInput';
 
 export const todayIso = () => new Date().toLocaleDateString('sv-SE');
 
@@ -40,7 +41,7 @@ export function usePositionCloseForm({
     : displayCurrency;
 
   const [date, setDate] = useState(() => initialDate ?? todayIso());
-  const [price, setPrice] = useState(() => initialPrice ?? '');
+  const [price, setPrice] = useState(() => toInputValue(initialPrice));
   const [priceTouched, setPriceTouched] = useState(false);
   const [error, setError] = useState(null);
   const [viewMonth, setViewMonth] = useState(() => toYearMonth(todayIso()));
@@ -75,7 +76,7 @@ export function usePositionCloseForm({
   }, [historicalPriceDisplay, isToday, liveSuggestedInDisplay]);
 
   const applyDatePrice = () => {
-    if (dateSuggestedInDisplay != null) setPrice(String(dateSuggestedInDisplay));
+    if (dateSuggestedInDisplay != null) setPrice(toInputValue(dateSuggestedInDisplay));
   };
 
   const syncKey = `${date}|${dateSuggestedInDisplay ?? 'none'}`;
@@ -83,7 +84,7 @@ export function usePositionCloseForm({
   if (syncKey !== trackedKey) {
     setTrackedKey(syncKey);
     if (!priceTouched && dateSuggestedInDisplay != null) {
-      setPrice(String(dateSuggestedInDisplay));
+      setPrice(toInputValue(dateSuggestedInDisplay));
     }
   }
 

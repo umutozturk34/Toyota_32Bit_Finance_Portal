@@ -40,12 +40,20 @@ function ViopMetadata({ asset }) {
   const localeTag = t('common.localeTag');
   const isOption = meta.kind === 'OPTION';
   const currency = viopQuoteCurrency(asset.code);
+  // Leverage ≈ notional / margin = (price × contract size) / initial margin (the lot count cancels). Only
+  // shown when all three are present and the margin is positive — futures with a real margin and size.
+  const levPrice = Number(asset.price ?? meta.lastPrice ?? meta.settlementPrice);
+  const leverage = (meta.contractSize != null && meta.initialMargin != null
+    && Number(meta.initialMargin) > 0 && Number.isFinite(levPrice) && levPrice > 0)
+    ? (levPrice * Number(meta.contractSize)) / Number(meta.initialMargin)
+    : null;
   return (
     <MetadataTiles tiles={[
       { label: t('viop.underlying'), value: meta.underlying || '—' },
       { label: t('viop.expiry'), value: formatExpiry(meta.expiryDate, localeTag) },
       meta.contractSize != null && { label: t('viop.contractSize'), value: fmt(meta.contractSize) },
       meta.initialMargin != null && { label: t('viop.initialMargin'), value: money(meta.initialMargin, currency) },
+      leverage != null && { label: t('viop.leverage'), value: `≈${leverage.toLocaleString(localeTag, { maximumFractionDigits: 1 })}x` },
       meta.settlementType && { label: t('viop.settlement'), value: meta.settlementType },
       isOption && meta.optionSide && { label: t('viop.optionSide'), value: meta.optionSide },
       isOption && meta.strikePrice != null && { label: t('viop.strike'), value: fmt(meta.strikePrice) },

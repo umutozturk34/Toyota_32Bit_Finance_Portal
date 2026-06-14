@@ -37,7 +37,7 @@ public abstract class MacroMarketAssetProvider implements MarketAssetProvider {
             Map.entry("ppi", "TUFE1YI"),
             Map.entry("mevduat", "TAS"),
             Map.entry("faiz", "FAIZ"),
-            Map.entry("politika", "GLOFFAIZ"),
+            Map.entry("politika", "BISPOLFAIZ"),
             Map.entry("interest", "FAIZ"),
             Map.entry("deposit", "TAS")
     );

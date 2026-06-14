@@ -9,6 +9,7 @@ import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { usePositionCloseForm, todayIso, formatDateLabel } from '../hooks/usePositionCloseForm';
 import { resolveNativeCurrency, FRACTIONAL_TYPES, preventDecimal } from '../lib/positionFormHelpers';
 import { commodityLabel } from '../../../shared/utils/commodityName';
+import { formatPercentSmart } from '../../../shared/utils/formatters';
 import { sanitizeNumberInput, MAX_MONEY, QUANTITY_DECIMALS, PRICE_DECIMALS } from '../../../shared/utils/numberInput';
 
 const QTY_PRESETS = [
@@ -323,12 +324,13 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
                 <span className={`text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded ${
                   pnlPositive ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger'
                 }`}>
-                  {pnlPositive ? '+' : ''}{realizedPercent.toFixed(2)}%
+                  {formatPercentSmart(realizedPercent)}
                 </span>
               )}
             </div>
             {realizedPnl != null && (
-              <p className={`text-lg sm:text-xl font-bold font-mono break-all ${pnlPositive ? 'text-success' : 'text-danger'}`}>
+              <p className={`text-lg sm:text-xl font-bold font-mono min-w-0 truncate ${pnlPositive ? 'text-success' : 'text-danger'}`}
+                 title={`${pnlPositive ? '+' : ''}${money(realizedPnl, inputCurrency)}`}>
                 {pnlPositive ? '+' : ''}{money(realizedPnl, inputCurrency)}
               </p>
             )}

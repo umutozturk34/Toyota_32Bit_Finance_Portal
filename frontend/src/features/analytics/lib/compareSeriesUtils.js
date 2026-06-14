@@ -222,11 +222,18 @@ export async function fetchSeries(item, bounds) {
     ]);
     // Each pnl point also carries pnlByCcy (USD/EUR, entry-FX cost-based) so the money overlay shows the true
     // foreign-currency P&L, not a single-rate conversion of the TRY P&L. TRY frame falls back to pnlTry.
-    const pnlByDate = new Map((pnl || []).map((p) => [p.date, { pnlTry: Number(p.value), pnlByCcy: p.pnlByCcy ?? null }]));
+    // returnIndexByCcy (USD/EUR) is the real per-currency return index (cost@entry-FX); the line uses it so a
+    // foreign frame isn't a single-rate conversion of the netted TRY index. pnlByCcy is the money overlay.
+    const pnlByDate = new Map((pnl || []).map((p) => [p.date, {
+      pnlTry: Number(p.value), pnlByCcy: p.pnlByCcy ?? null, valueByCcy: p.returnIndexByCcy ?? null,
+    }]));
     return (twr || [])
       .map((p) => {
         const m = pnlByDate.get(p.date);
-        return { date: p.date, value: Number(p.value), pnlTry: m ? m.pnlTry : null, pnlByCcy: m ? m.pnlByCcy : null };
+        return {
+          date: p.date, value: Number(p.value),
+          pnlTry: m ? m.pnlTry : null, pnlByCcy: m ? m.pnlByCcy : null, valueByCcy: m ? m.valueByCcy : null,
+        };
       })
       .filter((p) => p.date && Number.isFinite(p.value));
   }

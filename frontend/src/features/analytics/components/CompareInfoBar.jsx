@@ -1,7 +1,7 @@
 import { Info } from 'lucide-react';
 import { isMacro, isRateLike, compareTypeLabel } from '../lib/compareSeriesUtils';
 import { skipLeadingSplit } from '../lib/compareChartBuilder';
-import { formatPrice } from '../../../shared/utils/formatters';
+import { formatPercentSmart, fitMoney } from '../../../shared/utils/formatters';
 import { moneyDigits } from '../utils';
 
 export default function CompareInfoBar({ selected, targetCurrency, commonStartDate, authoritativeReturns, t }) {
@@ -51,13 +51,13 @@ export default function CompareInfoBar({ selected, targetCurrency, commonStartDa
           // Adaptive maxDecimals mirrors compareChartBuilder.formatPnl so the chart tooltip and this info-bar
           // print the same P&L to the digit, including sub-cent values that would otherwise show as ₺0,00.
           formattedLast = lastPnl != null
-            ? `${lastPnl > 0 ? '+' : ''}${formatPrice(lastPnl, { currency: targetCurrency, maxDecimals: Math.max(2, moneyDigits(lastPnl)) })}`
+            ? `${lastPnl > 0 ? '+' : ''}${fitMoney(lastPnl, { currency: targetCurrency, maxChars: 16, maxDecimals: Math.max(2, moneyDigits(lastPnl)) })}`
             : '—';
         } else if (lastValue != null) {
           if (ind.type === 'MACRO_DEPOSIT' || ind.type === 'MACRO_RATE') {
             // Deposit / policy-reference rate (TLREF) is a compounded cumulative growth index; its
             // meaningful headline is the cumulative return %, not the raw annual rate level.
-            formattedLast = pct != null ? `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%` : '—';
+            formattedLast = pct != null ? formatPercentSmart(pct) : '—';
             headlineIsPct = true;
           } else if (isRateLike(ind.type)) {
             // BOND carries a yield percentage, so it prints with a % sign. CPI/PPI (MACRO_INFLATION) reaching
@@ -70,7 +70,7 @@ export default function CompareInfoBar({ selected, targetCurrency, commonStartDa
             // lastValue is already in targetCurrency (converted by ComparePage); format it directly
             // without re-converting through displayCurrency. Adaptive maxDecimals keeps normal output
             // identical yet stops a tiny-but-nonzero value from showing as "0 €" / "₺0,00".
-            formattedLast = formatPrice(lastValue, { currency: targetCurrency, maxDecimals: Math.max(2, moneyDigits(Number(lastValue))) });
+            formattedLast = fitMoney(lastValue, { currency: targetCurrency, maxChars: 16, maxDecimals: Math.max(2, moneyDigits(Number(lastValue))) });
           }
         }
 
@@ -78,8 +78,7 @@ export default function CompareInfoBar({ selected, targetCurrency, commonStartDa
         let pctText = '';
         if (pct != null) {
           pctColor = pct > 0 ? '#10b981' : pct < 0 ? '#ef4444' : '#94a3b8';
-          const sign = pct > 0 ? '+' : '';
-          pctText = `${sign}${pct.toFixed(2)}%`;
+          pctText = formatPercentSmart(pct);
         } else {
           pctText = '—';
         }
@@ -107,9 +106,9 @@ export default function CompareInfoBar({ selected, targetCurrency, commonStartDa
               </>
             )}
             <span className="text-[10px] font-mono text-fg-subtle tracking-[0.04em] hidden sm:inline">{compareTypeLabel(t, ind.type)}</span>
-            <span className="ml-auto flex items-baseline gap-1.5 sm:gap-2 flex-wrap justify-end shrink-0">
+            <span className="ml-auto flex items-baseline gap-1.5 sm:gap-2 flex-wrap justify-end min-w-0">
               <span
-                className="font-mono tabular-nums text-xs font-semibold text-fg whitespace-nowrap"
+                className="font-mono tabular-nums text-xs font-semibold text-fg truncate min-w-0"
                 style={{ color: (isPortfolio || headlineIsPct) ? pctColor : undefined }}
               >
                 {formattedLast}

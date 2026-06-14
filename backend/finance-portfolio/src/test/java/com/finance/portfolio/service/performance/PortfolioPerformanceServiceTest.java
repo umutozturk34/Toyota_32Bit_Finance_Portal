@@ -333,6 +333,33 @@ class PortfolioPerformanceServiceTest {
     }
 
     @Test
+    void dailyReturnIndexByCcy_returnsCostBasedReturnIndex_perCurrency() {
+        // Arrange — a 2000 TRY-cost STOCK lot (entered 2024-06-01) worth 2200 TRY on 2024-06-04 (+10%).
+        // USD/TRY flat at 40, so the FX cancels and the USD return index must equal the TRY return index (110):
+        // the line plots the real cost-based return, not a single-date conversion of the netted TRY index.
+        LocalDate entry = LocalDate.of(2024, 6, 1);
+        LocalDate point = LocalDate.of(2024, 6, 4);
+        java.util.Map<LocalDate, BigDecimal> flatFx = new java.util.HashMap<>();
+        flatFx.put(entry, new BigDecimal("40"));
+        flatFx.put(point, new BigDecimal("40"));
+        org.mockito.Mockito.lenient().when(historicalPricingPort.getPriceSeries(any(), any(), any(), any()))
+                .thenReturn(flatFx);
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(
+                lot(AssetType.STOCK, "THYAO.IS", new BigDecimal("10"), new BigDecimal("200"), entry.atStartOfDay())));
+        when(assetSnapshotRepository.findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(eq(PORTFOLIO_ID), any(), any()))
+                .thenReturn(List.of());
+        PortfolioDailySnapshot snap = PortfolioDailySnapshot.builder()
+                .portfolioId(PORTFOLIO_ID).snapshotDate(point)
+                .totalValueTry(new BigDecimal("2200")).totalPnlTry(new BigDecimal("200")).build();
+
+        java.util.Map<LocalDate, java.util.Map<String, BigDecimal>> index =
+                service.dailyReturnIndexByCcy(PORTFOLIO_ID, List.of(snap));
+
+        // 100 + 100 × (2200 − 2000)/2000 = 110, identical in USD because the flat FX cancels.
+        assertThat(index.get(point).get("USD")).isEqualByComparingTo(new BigDecimal("110"));
+    }
+
+    @Test
     void shouldReconstituteBlendedSeries_whenSplitViopByDirection() {
         // Snapshots are direction-blind, so a per-direction chart is RECOMPUTED from the shared unit price + only
         // that direction's lots. Hedge on ONE size-1 TRY contract: LONG entry 100, SHORT entry 100, unit 120 →

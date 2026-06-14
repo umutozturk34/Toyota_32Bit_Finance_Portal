@@ -3,7 +3,7 @@ import { ChevronRight, ExternalLink, Pencil, Trash2, XCircle, ShoppingBag, Rotat
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
-import { formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
+import { formatPercentSmart, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { resolveNativeCurrency } from '../lib/positionFormHelpers';
 import { assetCodeLabel } from '../../../shared/utils/assetCode';
@@ -172,10 +172,10 @@ export default function PositionRow({ pos, pending, elapsed, selected, onToggleS
         <div className="text-left min-w-0">
           <p className={`text-[11px] font-mono font-semibold ${changeColors[pnlClass]} truncate`} title={useFrame ? fmtFramePnl(framePnl) : money(pos.pnlTry, 'TRY', closedFx)}>{useFrame ? fmtFramePnl(framePnl) : (isClosed ? money(pos.pnlTry, 'TRY', closedFx) : bigMoney(pos.pnlTry))}</p>
           <div className="flex items-center gap-1 flex-wrap">
-            <span className={`inline-flex items-center rounded px-1 py-0.5 text-[10px] font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>{formatPercent(shownPnlPct)}</span>
+            <span className={`inline-flex items-center rounded px-1 py-0.5 text-[10px] font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>{formatPercentSmart(shownPnlPct)}</span>
             {resolveTarget('TRY', nativeCurrency) === 'TRY' && pos.realPnlPercent != null && (
               <span className={`inline-flex items-center text-[9px] font-mono tabular-nums tracking-[0.04em] uppercase ${Number(pos.realPnlPercent) >= 0 ? 'text-emerald-500' : 'text-red-500'}`} title={t('portfolio.positions.realReturnTooltip')}>
-                {t('portfolio.positions.realReturnAbbr')} {formatPercent(pos.realPnlPercent)}
+                {t('portfolio.positions.realReturnAbbr')} {formatPercentSmart(pos.realPnlPercent)}
               </span>
             )}
           </div>
@@ -239,7 +239,7 @@ export default function PositionRow({ pos, pending, elapsed, selected, onToggleS
             </div>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
-            <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>{formatPercent(shownPnlPct)}</span>
+            <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>{formatPercentSmart(shownPnlPct)}</span>
             {showEdit && (
               <button onClick={(e) => { e.stopPropagation(); editClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')}>
                 <Pencil className="h-3 w-3" />

@@ -437,7 +437,14 @@ export default function ComparePage() {
             const cpPnl = framePnl != null
               ? framePnl
               : (p.pnlTry != null ? convertBetween(p.pnlTry, native, targetCurrency, fxDate) : null);
-            const cpVal = !originalView ? convertBetween(p.value, native, targetCurrency, fxDate) : null;
+            // Prefer the backend per-currency RETURN INDEX (real cost@entry-date FX return); the TRY-index
+            // single-date conversion is only a fallback when that frame is absent (it collapses every lot's
+            // entry FX into the window start). This is why a foreign frame now matches the portfolio page.
+            const cpVal = !originalView
+              ? (p.valueByCcy && p.valueByCcy[targetCurrency] != null
+                  ? Number(p.valueByCcy[targetCurrency])
+                  : convertBetween(p.value, native, targetCurrency, fxDate))
+              : null;
             return { ...p, value: cpVal ?? p.value, pnlTry: cpPnl ?? p.pnlTry };
           });
         }

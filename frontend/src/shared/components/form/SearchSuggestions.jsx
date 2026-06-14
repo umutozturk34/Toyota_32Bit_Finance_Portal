@@ -341,7 +341,9 @@ export default function SearchSuggestions({
                               className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
                               style={{ backgroundColor: typeColor + '18', color: typeColor }}
                             >
-                              {t(`assets.labels.${asset.type}`, { defaultValue: asset.type })}
+                              {MACRO_TYPES.has(asset.type)
+                                ? t(`marketOverview.macro.enum.${asset.type}`, { defaultValue: asset.type })
+                                : t(`assets.labels.${asset.type}`, { defaultValue: asset.type })}
                             </span>
                           </div>
                           {asset.name && asset.code !== asset.name && !MACRO_TYPES.has(asset.type) && (

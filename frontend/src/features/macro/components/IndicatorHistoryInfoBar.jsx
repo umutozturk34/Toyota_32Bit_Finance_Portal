@@ -9,12 +9,15 @@ export default function InfoBar({ selected, t }) {
         {t('marketOverview.macro.indicatorInfo', { defaultValue: 'Bilgi' })}
       </div>
       {selected.map(({ indicator: ind, color }) => {
-        const tags = [ind.type];
-        if (ind.category) tags.push(ind.category);
-        if (ind.frequency) tags.push(ind.frequency);
-        if (ind.unit) tags.push(ind.unit);
-        if (ind.currency) tags.push(ind.currency);
-        if (ind.maturity) tags.push(ind.maturity);
+        // type/category/frequency/unit resolve under marketOverview.macro.enum; maturity uses the maturity<M>
+        // convention (DepositMatrix/YieldCurvePanel); currency codes (TRY/USD/EUR) are display-safe verbatim —
+        // none of these last two live in the enum namespace, so routing them through it rendered the raw value.
+        const tags = [{ kind: 'enum', value: ind.type }];
+        if (ind.category) tags.push({ kind: 'enum', value: ind.category });
+        if (ind.frequency) tags.push({ kind: 'enum', value: ind.frequency });
+        if (ind.unit) tags.push({ kind: 'enum', value: ind.unit });
+        if (ind.currency) tags.push({ kind: 'currency', value: ind.currency });
+        if (ind.maturity) tags.push({ kind: 'maturity', value: ind.maturity });
         const friendlyName = ind.label
           ? t(`marketOverview.macro.${ind.label}`, { defaultValue: ind.name })
           : ind.name;
@@ -32,11 +35,18 @@ export default function InfoBar({ selected, t }) {
               </>
             )}
             <span className="sm:ml-auto flex items-center flex-wrap gap-1.5 text-[10px] font-mono text-fg-subtle tracking-[0.04em]">
-              {tags.filter(Boolean).map((tag, i) => (
-                <span key={`${tag}-${i}`}>
-                  {i > 0 && <span className="mr-1.5">·</span>}{t(`marketOverview.macro.enum.${tag}`, { defaultValue: tag })}
-                </span>
-              ))}
+              {tags.map(({ kind, value }, i) => {
+                const label = kind === 'maturity'
+                  ? t(`marketOverview.macro.maturity${value}`, { defaultValue: value })
+                  : kind === 'currency'
+                    ? value
+                    : t(`marketOverview.macro.enum.${value}`, { defaultValue: value });
+                return (
+                  <span key={`${value}-${i}`}>
+                    {i > 0 && <span className="mr-1.5">·</span>}{label}
+                  </span>
+                );
+              })}
             </span>
           </div>
         );

@@ -11,6 +11,15 @@ export function isMacro(type) {
   return type && type.startsWith('MACRO');
 }
 
+// Localized type badge for a compared series. Compare carries every market type plus the PORTFOLIO id, so a
+// single namespace never covers them: MACRO_* labels live under marketOverview.macro.enum, every spot/asset
+// type under assets.labels, and the portfolio under nav.portfolio. Falls back to the raw type for safety.
+export function compareTypeLabel(t, type) {
+  if (type === 'PORTFOLIO') return t('nav.portfolio', { defaultValue: 'Portföy' });
+  if (isMacro(type)) return t(`marketOverview.macro.enum.${type}`, { defaultValue: type });
+  return t(`assets.labels.${type}`, { defaultValue: type });
+}
+
 // Deposits AND PERCENT-unit reference rates (raw TLREF rate, CBRT policy rate) are compounded into a
 // cumulative growth index (see compoundRateSeries); a MACRO_RATE already published as an INDEX (e.g. the
 // BIST TLREF Index, ~6022) is left as-is because it is ALREADY cumulative — ComparePage compounds only

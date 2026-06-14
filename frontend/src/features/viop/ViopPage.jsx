@@ -166,7 +166,7 @@ export default function ViopPage() {
           )}
           {isOption && meta.strikePrice != null && (
             <div className="flex items-center justify-between gap-2">
-              <span className="text-fg-muted shrink-0">{t('viop.strike')} ({meta.optionSide})</span>
+              <span className="text-fg-muted shrink-0">{t('viop.strike')} ({t(`viop.side.${meta.optionSide}`, { defaultValue: meta.optionSide })})</span>
               <span className="font-mono text-fg">{formatPrice(meta.strikePrice)}</span>
             </div>
           )}

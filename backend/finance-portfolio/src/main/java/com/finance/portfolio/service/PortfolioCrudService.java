@@ -130,6 +130,7 @@ public class PortfolioCrudService {
         // must run on the converted value, and doing it first fails fast on a bad price before any DB hit.
         BigDecimal entryPriceTry = toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate());
         PortfolioValidator.validatePriceTry(entryPriceTry, portfolioProperties.getLotLimits());
+        PortfolioValidator.validateLotValueTry(entryPriceTry, request.quantity(), portfolioProperties.getLotLimits());
         TrackedAsset trackedAsset = requireTrackedAsset(assetType, request.assetCode());
         PortfolioPosition position = PortfolioPosition.builder()
                 .portfolio(portfolio)
@@ -166,6 +167,7 @@ public class PortfolioCrudService {
         LocalDateTime previousEntry = position.getEntryDate();
         BigDecimal entryPriceTry = toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate());
         PortfolioValidator.validatePriceTry(entryPriceTry, portfolioProperties.getLotLimits());
+        PortfolioValidator.validateLotValueTry(entryPriceTry, request.quantity(), portfolioProperties.getLotLimits());
         position.updateLot(request.entryDate(), entryPriceTry, request.quantity());
         PortfolioPosition saved = positionRepository.save(position);
 

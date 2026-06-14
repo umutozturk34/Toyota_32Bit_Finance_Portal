@@ -78,6 +78,22 @@ class PortfolioValidatorTest {
     }
 
     @Test
+    void shouldThrow_whenLotValueOverflowsSnapshotColumn() {
+        // price 1e9 × quantity 1e6 = 1e15 — within the per-field caps but past maxLotValueTry (1e13), so it
+        // would overflow numeric(23,8) and break the chart at snapshot time.
+        assertThatThrownBy(() -> PortfolioValidator.validateLotValueTry(
+                new BigDecimal("1000000000"), new BigDecimal("1000000"), defaultLimits()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.lot.valueTooHigh");
+    }
+
+    @Test
+    void shouldAcceptLotValue_whenWithinMax() {
+        assertThatCode(() -> PortfolioValidator.validateLotValueTry(
+                new BigDecimal("1000"), new BigDecimal("1000"), defaultLimits())).doesNotThrowAnyException();
+    }
+
+    @Test
     void shouldThrow_whenQuantityBelowMin() {
         PositionRequest req = request(LocalDateTime.now().minusDays(1),
                 new BigDecimal("100"), new BigDecimal("0.0000000001"));

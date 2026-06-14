@@ -69,6 +69,19 @@ final class PortfolioValidator {
         }
     }
 
+    /**
+     * Rejects a lot whose TRY value (price × quantity) would overflow the numeric(23,8) snapshot money
+     * columns. The per-field price/quantity caps don't bound their product, so an absurd lot otherwise
+     * passes validation and then breaks the whole portfolio chart at snapshot time. Call AFTER currency
+     * conversion (priceTry).
+     */
+    static void validateLotValueTry(BigDecimal priceTry, BigDecimal quantity, LotLimits limits) {
+        if (priceTry == null || quantity == null || limits.getMaxLotValueTry() == null) return;
+        if (priceTry.multiply(quantity).compareTo(limits.getMaxLotValueTry()) > 0) {
+            throw new BusinessException("error.portfolio.lot.valueTooHigh", limits.getMaxLotValueTry());
+        }
+    }
+
     /** Validates an exit/close date: not before entry and not in the future. */
     static void validateExit(LocalDate entryDate, LocalDate exitDate) {
         if (exitDate == null) return;

@@ -107,9 +107,14 @@ public class PortfolioSeriesProvider {
         // shows the true cost-based foreign-currency figure instead of converting the netted TRY P&L at one rate.
         Map<LocalDate, Map<String, BigDecimal>> pnlByCcy =
                 portfolioPerformanceService.dailyPnlByCcy(portfolioId, snapshots);
+        // Per-currency cumulative RETURN INDEX rides along too, so the compare LINE plots the real foreign-
+        // currency return (cost@entry-date FX, value@point-date FX) instead of FX-converting the netted TRY index.
+        Map<LocalDate, Map<String, BigDecimal>> returnIndexByCcy =
+                portfolioPerformanceService.dailyReturnIndexByCcy(portfolioId, snapshots);
         return snapshots.stream()
                 .filter(s -> s.getSnapshotDate() != null && s.getTotalPnlTry() != null)
-                .map(s -> new HistoryPoint(s.getSnapshotDate(), s.getTotalPnlTry(), pnlByCcy.get(s.getSnapshotDate())))
+                .map(s -> new HistoryPoint(s.getSnapshotDate(), s.getTotalPnlTry(),
+                        pnlByCcy.get(s.getSnapshotDate()), returnIndexByCcy.get(s.getSnapshotDate())))
                 .toList();
     }
 }

@@ -87,7 +87,31 @@ export function skipLeadingSplit(sortedPoints, startIdx) {
 // arbitrary because the index resets to 1.0 at the widened fetch start, well before the window.
 const INDEX_MONEY_BASE = 100000;
 
-export function buildOption(seriesData, normalize, isDark, targetCurrency, commonStartDate, levelMode) {
+// Shared 0% baseline date for a multi-series compare: the LATEST per-series effective start, where each
+// series' effective start is commonStartDate advanced past any leading split-like cliff (fund launch crash /
+// unadjusted split) for raw PRICE series only. Index/rate/portfolio lines never split, so their effective
+// start is simply commonStartDate. This is the single anchor buildOption rebases every series from, and the
+// SAME value CompareInfoBar must take its headline % at — computing it once and passing it to both keeps the
+// headline % equal to the chart line's final %. Returns commonStartDate when no series advances past it
+// (and null only when there are no points and no commonStartDate to fall back on).
+export function computeSharedBaselineDate(seriesData, commonStartDate, levelMode) {
+  let sharedBaselineDate = commonStartDate || null;
+  for (const { indicator: ind, points } of seriesData) {
+    if (!points || points.length === 0) continue;
+    const sortedPoints = [...points].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    const kind = rawKind(ind.type, levelMode);
+    const startIdx = commonStartDate ? sortedPoints.findIndex((p) => p.date >= commonStartDate) : 0;
+    const safeStart = startIdx >= 0 ? startIdx : 0;
+    const skipIdx = kind === 'price' ? skipLeadingSplit(sortedPoints, safeStart) : safeStart;
+    const effectiveStartDate = sortedPoints[skipIdx]?.date;
+    if (effectiveStartDate && (!sharedBaselineDate || effectiveStartDate > sharedBaselineDate)) {
+      sharedBaselineDate = effectiveStartDate;
+    }
+  }
+  return sharedBaselineDate;
+}
+
+export function buildOption(seriesData, normalize, isDark, targetCurrency, commonStartDate, levelMode, sharedBaselineDateOverride) {
   const muted = isDark ? '#6b6b7a' : '#94a3b8';
   const grid = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
   const tooltipBg = isDark ? 'rgba(12,12,20,0.96)' : 'rgba(255,255,255,0.98)';
@@ -116,11 +140,15 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency, commo
 
   // Shared window = the INTERSECTION [latest effective start, earliest last point], so EVERY series both
   // starts at 0% on the same date AND ends on the same date — a fully aligned apples-to-apples compare over
-  // one window (not each series running to its own private start/end).
-  let sharedBaselineDate = commonStartDate || null;
+  // one window (not each series running to its own private start/end). The baseline is the SAME value
+  // computeSharedBaselineDate yields: ComparePage computes it once and passes it in as the override so the
+  // info-bar headline % anchors at the identical date the chart line rebases from. When no override is
+  // supplied (standalone callers), it is recomputed here from the same per-series pass — identical result.
+  let sharedBaselineDate = sharedBaselineDateOverride ?? (commonStartDate || null);
   let sharedEndDate = null;
   for (const p of prepared) {
-    if (p.effectiveStartDate && (!sharedBaselineDate || p.effectiveStartDate > sharedBaselineDate)) {
+    if (sharedBaselineDateOverride === undefined
+        && p.effectiveStartDate && (!sharedBaselineDate || p.effectiveStartDate > sharedBaselineDate)) {
       sharedBaselineDate = p.effectiveStartDate;
     }
     if (p.lastDate && (sharedEndDate === null || p.lastDate < sharedEndDate)) {

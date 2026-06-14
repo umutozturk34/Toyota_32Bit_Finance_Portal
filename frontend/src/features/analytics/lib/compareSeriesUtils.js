@@ -273,6 +273,12 @@ export function parseInitialSelection(params) {
   if (!codes || !types) return [];
   const codeList = codes.split(',').map((s) => s.trim()).filter(Boolean);
   const typeList = types.split(',').map((s) => s.trim()).filter(Boolean);
+  // A macro series' unit (PERCENT vs INDEX) is round-tripped positionally beside codes/types so a reload or
+  // shared link keeps the cumulative classification correct (a PERCENT rate compounds, an INDEX level stays
+  // raw) WITHOUT waiting for the async macro list. An empty slot ('') means "unknown" — the page falls back
+  // to the macro-list map for that series. Older links carry no `units` param at all → unitList is empty.
+  const unitsParam = params.get('units');
+  const unitList = unitsParam ? unitsParam.split(',').map((s) => s.trim()) : [];
   const out = [];
   const seen = new Set();
   for (let i = 0; i < codeList.length; i += 1) {
@@ -282,10 +288,13 @@ export function parseInitialSelection(params) {
     const key = `${type}|${code}`;
     if (seen.has(key)) continue;
     seen.add(key);
+    const unit = unitList[i] || null;
     // For PORTFOLIO, `code` is a numeric DB id with no human meaning. Leave `name` null so the
     // chip falls back to displayLabel's localized "Portföy" placeholder until the backfill effect in
     // ComparePage resolves the real name from the user's portfolio list.
-    out.push({ type, code, name: type === 'PORTFOLIO' ? null : code });
+    const entry = { type, code, name: type === 'PORTFOLIO' ? null : code };
+    if (unit && isMacro(type)) entry.unit = unit;
+    out.push(entry);
   }
   return out;
 }

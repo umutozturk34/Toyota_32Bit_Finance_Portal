@@ -1,6 +1,5 @@
 import { Info } from 'lucide-react';
-import { isMacro, isRateLike, compareTypeLabel } from '../lib/compareSeriesUtils';
-import { skipLeadingSplit } from '../lib/compareChartBuilder';
+import { isRateLike, compareTypeLabel } from '../lib/compareSeriesUtils';
 import { formatPercentSmart, fitMoney } from '../../../shared/utils/formatters';
 import { moneyDigits } from '../utils';
 
@@ -16,17 +15,14 @@ export default function CompareInfoBar({ selected, targetCurrency, commonStartDa
           ? [...points].sort((a, b) => String(a.date).localeCompare(String(b.date)))
           : [];
         const lastPoint = sorted.length > 0 ? sorted[sorted.length - 1] : null;
-        // Base the % off the COMMON start date (the shared 0% baseline the chart normalizes from), not this
-        // series' own first point — otherwise the info-bar % and chart % diverge whenever another series has
-        // shorter history. Mirrors compareChartBuilder's baseIdx.
+        // commonStartDate here is the SHARED baseline date computed once in ComparePage
+        // (computeSharedBaselineDate) — the common start already advanced past any series' leading split-like
+        // cliff. The chart rebases EVERY series from this single date, so the info-bar must anchor at the
+        // identical point: take the first sample at-or-after it. Recomputing a per-series skipLeadingSplit here
+        // (as before) anchored each series at its OWN cliff-skip, so when one series advanced the shared
+        // baseline the others' % was taken at the earlier common start — headline % ≠ chart line end.
         const rawBaseIdx = commonStartDate ? sorted.findIndex((p) => p.date >= commonStartDate) : 0;
-        const safeBase = rawBaseIdx >= 0 ? rawBaseIdx : 0;
-        // Mirror compareChartBuilder EXACTLY: for a raw price series, advance the baseline past a leading
-        // split-like cliff (fund launch-week crash / unadjusted split) so the headline % matches the chart
-        // AND the inflation-beater, instead of basing on the pre-crash value (which understated PKZ ~6.4x —
-        // the +600% vs the beater's real trailing return). Non-price series (portfolio/macro/bond) never split.
-        const isPriceSeries = ind.type !== 'PORTFOLIO' && !isMacro(ind.type) && ind.type !== 'BOND';
-        const baseIdx = isPriceSeries ? skipLeadingSplit(sorted, safeBase) : safeBase;
+        const baseIdx = rawBaseIdx >= 0 ? rawBaseIdx : 0;
         const firstPoint = sorted.length > 0 ? sorted[baseIdx] : null;
         const lastValue = lastPoint?.value;
         const firstValue = firstPoint?.value;

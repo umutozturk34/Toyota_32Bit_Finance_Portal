@@ -73,13 +73,6 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
     }
     return signed ? formatPercent(v, locale) : pct1(abs);
   };
-  const compactMoney = (v) => {
-    if (v == null) return '—';
-    if (Math.abs(v) >= 1000000) {
-      return `${symbol}${new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 2 }).format(v)}`;
-    }
-    return money(v);
-  };
   const dateLabel = a.date
     ? new Date(a.date).toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' })
     : '—';
@@ -100,7 +93,7 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
           </span>
         </div>
 
-        <div className="relative shrink-0 w-full sm:w-[208px] min-w-0 sm:overflow-hidden flex flex-col justify-center gap-1 pt-2 pl-0 sm:pt-0 sm:pl-4 border-t sm:border-t-0 sm:border-l border-border-default/60">
+        <div className="relative shrink-0 w-full sm:w-[208px] min-w-0 sm:overflow-hidden flex flex-col justify-center gap-1 pt-2 pl-2.5 sm:pt-0 sm:pl-4 border-t sm:border-t-0 sm:border-l border-border-default/60">
           {/* Solid left accent bar instead of an inset box-shadow — the shadow sub-pixel-breaks (gaps/doubling)
               at fractional browser zoom; a filled element renders crisply at every zoom level. */}
           <span aria-hidden="true" className="absolute left-0 inset-y-0 w-0.5" style={{ background: toneAccent(a.daily?.percent) }} />
@@ -110,7 +103,7 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
               badge from a fixed right. tabular-nums keeps digit widths equal; truncate + the fixed-width block clip
               rather than reflow. This is what stops the strip "jumping" as you move across the chart. */}
           <span className="flex items-center justify-between gap-2.5 leading-none">
-            <span className="font-mono text-lg sm:text-xl font-bold tabular-nums text-fg min-w-0 sm:truncate">{compactMoney(a.close)}</span>
+            <span title={money(a.close)} className="font-mono text-lg sm:text-xl font-bold tabular-nums text-fg min-w-0 truncate">{money(a.close)}</span>
             {a.daily?.percent != null && (
               <span
                 className={`shrink-0 inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 font-mono text-[11px] font-bold tabular-nums ${toneClass(a.daily.percent)}`}
@@ -125,10 +118,10 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
               candle. justify-between + compact money keep the change and prev-close anchored to opposite ends. */}
           <span className="flex items-center justify-between gap-2 font-mono text-[10px] leading-none min-h-[12px]">
             {a.daily?.value != null && (
-              <span className={`shrink-0 ${toneClass(a.daily.value)}`}>{a.daily.value >= 0 ? '+' : '−'}{compactMoney(Math.abs(a.daily.value))}</span>
+              <span className={`shrink-0 ${toneClass(a.daily.value)}`}>{a.daily.value >= 0 ? '+' : '−'}{money(Math.abs(a.daily.value))}</span>
             )}
             {a.prevClose != null && (
-              <span className="truncate min-w-0 text-fg-subtle">{t('chart.dataWindow.prevClose')} <span className="text-fg-muted">{compactMoney(a.prevClose)}</span></span>
+              <span className="truncate min-w-0 text-fg-subtle">{t('chart.dataWindow.prevClose')} <span className="text-fg-muted">{money(a.prevClose)}</span></span>
             )}
           </span>
         </div>

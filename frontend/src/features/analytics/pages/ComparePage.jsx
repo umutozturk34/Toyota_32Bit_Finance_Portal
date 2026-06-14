@@ -20,7 +20,7 @@ import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import useChartRange from '../../../shared/hooks/useChartRange';
 import { RANGES } from '../../macro/constants';
 import CompareInfoBar from '../components/CompareInfoBar';
-import { buildOption } from '../lib/compareChartBuilder';
+import { buildOption, computeSharedBaselineDate } from '../lib/compareChartBuilder';
 import {
   isMacro,
   isRateLike,
@@ -48,8 +48,11 @@ export default function ComparePage() {
   const [params, setParams] = useSearchParams();
   const { data: userPortfolios } = usePortfolioList();
   // code -> i18n label key for every macro indicator, so a macro selected in compare (which only carries
-  // {type,code,name}) can resolve its localized name via marketOverview.macro.<label>.
-  const { data: macroList } = useMacroIndicators();
+  // {type,code,name}) can resolve its localized name via marketOverview.macro.<label>. isPending gates the
+  // cumulative classification on a URL-reload race: a macro series whose unit wasn't carried in the link
+  // must not be classified (compound vs raw) before this list resolves, or a PERCENT rate could briefly
+  // render as a raw level-ratio.
+  const { data: macroList, isPending: macroListPending, isError: macroListError } = useMacroIndicators();
   const macroLabelByCode = useMemo(
     () => Object.fromEntries((macroList || []).map((m) => [m.code, m.label]).filter(([, l]) => l)),
     [macroList],
@@ -129,6 +132,26 @@ export default function ComparePage() {
     })();
     return () => { cancelled = true; };
   }, [selected, setSelected]);
+
+  // A macro series added before the macro list resolved — or restored from an older URL without a `units`
+  // param — carries no unit. Once the list loads, backfill the unit onto each such macro selection so the
+  // cumulative classification (compound a PERCENT rate vs keep an INDEX level raw) becomes reliable from the
+  // selection itself and the unit is persisted back into the URL. Idempotent: only macro series missing a unit.
+  useEffect(() => {
+    if (Object.keys(macroUnitByCode).length === 0) return;
+    setSelected((prev) => {
+      let changed = false;
+      const next = prev.map((s) => {
+        if (!isMacro(s.type) || s.unit) return s;
+        const unit = macroUnitByCode[s.code];
+        if (!unit) return s;
+        changed = true;
+        return { ...s, unit };
+      });
+      return changed ? next : prev;
+    });
+  }, [macroUnitByCode, setSelected]);
+
   const [rangeId, setRangeId] = useChartRange();
   const initialRangeRef = useRef(params.get('range'));
   const initialStartRef = useRef(params.get('start'));
@@ -217,6 +240,16 @@ export default function ComparePage() {
     return new Set(selected.map((s) => nativeCurrencyFor(s.type, s.code))).size > 1;
   }, [originalView, displayCurrency, selected]);
 
+  // The /macro-indicators list failed, so a selected MACRO_RATE with no unit carried on its selection (an
+  // old/bookmarked link without the `units` param) can't be classified PERCENT-vs-INDEX and is held empty by
+  // the safety-net gate rather than mis-plotted as a raw level. Surface a minimal notice so that series isn't
+  // silently blank with no explanation — a held line is correct, but the user deserves to know why.
+  const macroUnitLoadFailed = useMemo(
+    () => macroListError && Object.keys(macroUnitByCode).length === 0
+      && selected.some((s) => s.type === 'MACRO_RATE' && !s.unit),
+    [macroListError, macroUnitByCode, selected],
+  );
+
   useEffect(() => {
     if (initialRangeRef.current) {
       setRangeId(initialRangeRef.current);
@@ -249,9 +282,16 @@ export default function ComparePage() {
     if (selected.length > 0) {
       next.set('codes', selected.map((s) => s.code).join(','));
       next.set('types', selected.map((s) => s.type).join(','));
+      // Round-trip each macro series' unit positionally (empty slot for non-macro / unknown) so a reload or
+      // shared link keeps the cumulative classification without re-waiting on the async macro list. Only
+      // emitted when at least one unit is known, otherwise the param is dropped (older-link compatible).
+      const units = selected.map((s) => (isMacro(s.type) && s.unit ? s.unit : ''));
+      if (units.some(Boolean)) next.set('units', units.join(','));
+      else next.delete('units');
     } else {
       next.delete('codes');
       next.delete('types');
+      next.delete('units');
     }
     if (mode !== 'assets') next.set('mode', mode);
     else next.delete('mode');
@@ -344,7 +384,24 @@ export default function ComparePage() {
       // as an INDEX (e.g. the BIST TLREF Index, ~6022) is ALREADY cumulative — compounding it again
       // explodes the value, so index-unit rates follow the price path (raw levels, normalized from
       // baseline). Mirrors backend ScenarioService.shouldCompound: compound only when unit == PERCENT.
-      const macroUnit = macroUnitByCode[ind.code];
+      // Unit-first: the unit carried on the selection (set at add / restored from URL / backfilled from the
+      // macro list) wins so the classification is reliable; macroUnitByCode is only a fallback for legacy
+      // selections that never carried one. A PERCENT MACRO_RATE (policy/TLREF rate) MUST compound — without
+      // a resolved unit it would fall to the raw-level branch and a positive rate would ratio-rebase into a
+      // spurious shrink (−24.94%) instead of a growing money index.
+      const macroUnit = ind.unit ?? macroUnitByCode[ind.code];
+      // Safety net for the URL-reload race AND for a /macro-indicators failure: a MACRO_RATE is the only
+      // ambiguous unit (PERCENT vs INDEX), so when its unit is still unknown AND the unit map is unresolved,
+      // hold the series (empty points) rather than guess a classification — a PERCENT rate must never be
+      // silently shown as a raw INDEX level-ratio (the −24.94% spurious-shrink bug). "Unresolved" is BOTH
+      // still-pending AND settled-but-empty (errored / no units): an old/bookmarked link with no `units` param
+      // would otherwise fall through to the raw-level branch the instant the list query ERRORED, mis-plotting
+      // a positive annual rate as a shrinking level. A MACRO_RATE that carries its OWN unit (added from search
+      // or restored from the URL `units` param) has !macroUnit === false, so it is NEVER gated and renders
+      // correctly even on a list error — only a truly-unresolved one is held (a missing line beats a wrong
+      // line). DEPOSIT always compounds and INFLATION is always an INDEX, so neither needs the unit nor is gated.
+      const macroUnitsUnresolved = Object.keys(macroUnitByCode).length === 0; // pending OR errored/empty
+      const unitPending = ind.type === 'MACRO_RATE' && !macroUnit && (macroListPending || macroUnitsUnresolved);
       // An index-unit macro series (CPI/PPI, or an INDEX-unit MACRO_RATE like the TLREF Index) is a
       // cumulative level; in annual (level) mode it becomes its derived YoY rate so it shares the % axis
       // with the raw annual rates. PERCENT rates are already annual, so they stay raw in annual mode.
@@ -353,7 +410,9 @@ export default function ComparePage() {
       const compound = !levelMode && (ind.type === 'MACRO_DEPOSIT'
         || (ind.type === 'MACRO_RATE' && macroUnit === 'PERCENT'));
       let points;
-      if (levelMode && isIndexLevel) {
+      if (unitPending) {
+        points = [];
+      } else if (levelMode && isIndexLevel) {
         points = deriveRateSeries(raw, 'yoy');
       } else if (compound) {
         points = compoundRateSeries(raw, fillUntil);
@@ -370,7 +429,7 @@ export default function ComparePage() {
         color: colorFor(ind, idx),
       };
     }),
-    [selected, queries, t, macroLabelByCode, macroUnitByCode, levelMode, fillUntil]
+    [selected, queries, t, macroLabelByCode, macroUnitByCode, macroListPending, levelMode, fillUntil]
   );
 
   const backfilledSeriesData = useMemo(
@@ -530,19 +589,38 @@ export default function ComparePage() {
   const normalize = !levelMode && (selected.length > 1 || selected.some((s) => s.type === 'PORTFOLIO'));
 
 
+  // Shared 0% anchor for the whole compare: commonStartDate/baselineDate advanced past any leading split-like
+  // cliff (one price series' launch crash advances the baseline for ALL series). Computed ONCE here and passed
+  // to both buildOption and CompareInfoBar so the headline % is taken at the exact date the chart line rebases
+  // from — without this, the info-bar recomputed a per-series baseline and desynced from the plotted line.
+  const sharedBaselineDate = useMemo(
+    () => computeSharedBaselineDate(seriesData, baselineDate, levelMode),
+    [seriesData, baselineDate, levelMode]
+  );
+
   const option = useMemo(
-    () => buildOption(seriesData, normalize, isDark, targetCurrency, baselineDate, levelMode),
-    [seriesData, normalize, isDark, targetCurrency, baselineDate, levelMode]
+    () => buildOption(seriesData, normalize, isDark, targetCurrency, baselineDate, levelMode, sharedBaselineDate),
+    [seriesData, normalize, isDark, targetCurrency, baselineDate, levelMode, sharedBaselineDate]
   );
 
   function addAsset(asset) {
     if (selected.length >= MAX_COMPARE) return;
     if (selected.some((s) => s.code === asset.code && s.type === asset.type)) return;
-    setSelected([...selected, {
+    const entry = {
       type: asset.type,
       code: asset.code,
       name: asset.name || asset.code,
-    }]);
+    };
+    // Carry the macro indicator's unit (PERCENT vs INDEX) onto the stored selection so the cumulative
+    // classification (compound a PERCENT rate, keep an INDEX level raw) is reliable from the selection
+    // itself — never dependent on the separate async macroUnitByCode map resolving in time. The unified
+    // search result doesn't include unit, so resolve it from the macro list (asset.unit honored if a
+    // future search payload starts carrying it).
+    if (isMacro(asset.type)) {
+      const unit = asset.unit ?? macroUnitByCode[asset.code];
+      if (unit) entry.unit = unit;
+    }
+    setSelected([...selected, entry]);
   }
 
   function removeAsset(code, type) {
@@ -799,6 +877,14 @@ export default function ComparePage() {
                 })}
           </div>
         )}
+        {macroUnitLoadFailed && (
+          <div className="flex items-center gap-2 text-[10px] font-mono text-amber-500 italic">
+            <Info className="h-3 w-3 shrink-0" />
+            {t('analytics.macroUnitLoadError', {
+              defaultValue: 'Makro indikatör bilgisi yüklenemedi — bu oran serisi güvenli şekilde gizlendi; sayfayı yenileyip tekrar dene',
+            })}
+          </div>
+        )}
 
         <div className="relative rounded-xl border border-border-default/60 bg-bg-base/40 overflow-hidden h-[280px] sm:h-[380px] lg:h-[460px]">
           {isLoading && (
@@ -825,7 +911,7 @@ export default function ComparePage() {
           )}
         </div>
 
-        {seriesData.length > 0 && <CompareInfoBar selected={seriesData} targetCurrency={targetCurrency} commonStartDate={baselineDate} authoritativeReturns={authoritativeReturns} t={t} />}
+        {seriesData.length > 0 && <CompareInfoBar selected={seriesData} targetCurrency={targetCurrency} commonStartDate={sharedBaselineDate} authoritativeReturns={authoritativeReturns} t={t} />}
       </Card>
     </motion.div>
   );

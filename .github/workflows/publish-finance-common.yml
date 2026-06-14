@@ -1,5 +1,8 @@
 name: Publish finance-common to GitHub Packages
 
+# finance-common is a -SNAPSHOT version, which GitHub Packages permits RE-deploying (a release version like
+# 1.0.0 is immutable and 409s on the second publish). So every push that changes the library republishes it
+# cleanly, and consumers (backend, notification-backend) always resolve the latest build.
 on:
   push:
     branches: [main]
@@ -28,20 +31,8 @@ jobs:
           server-username: GITHUB_ACTOR
           server-password: GITHUB_TOKEN
 
-      # GitHub Packages rejects re-deploying an existing release version with 409 Conflict. The build never
-      # pulls finance-common from Packages (CI installs it from source), so a stale publish is harmless —
-      # skip the deploy when this exact version is already published and only push genuinely new versions.
-      # To release changes externally, bump finance-common's version (or move to a -SNAPSHOT).
-      - name: Deploy finance-common (skip if this version is already published)
+      - name: Deploy finance-common
         working-directory: finance-common
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION=$(mvn -B -q -DforceStdout help:evaluate -Dexpression=project.version)
-          POM_URL="https://maven.pkg.github.com/${{ github.repository }}/com/finance/finance-common/${VERSION}/finance-common-${VERSION}.pom"
-          STATUS=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${GITHUB_TOKEN}" "$POM_URL")
-          if [ "$STATUS" = "200" ]; then
-            echo "finance-common ${VERSION} already published — skipping (bump the version to release changes)."
-          else
-            mvn -B deploy -DskipTests
-          fi
+        run: mvn -B deploy -DskipTests

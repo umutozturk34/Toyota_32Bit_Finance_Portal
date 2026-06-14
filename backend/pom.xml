@@ -20,7 +20,7 @@
 		<mapstruct.version>1.6.3</mapstruct.version>
 		<jacoco.version>0.8.13</jacoco.version>
 		<byte-buddy.version>1.17.8</byte-buddy.version>
-		<finance-common.version>1.0.0</finance-common.version>
+		<finance-common.version>1.0.0-SNAPSHOT</finance-common.version>
 		<hibernate.version>7.3.4.Final</hibernate.version>
 	</properties>
 

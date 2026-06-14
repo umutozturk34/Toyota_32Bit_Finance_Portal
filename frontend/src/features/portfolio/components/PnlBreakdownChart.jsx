@@ -113,7 +113,7 @@ function PnlBreakdownChart({ portfolioId }) {
   }, [perfData, valueMode, t, convertAt, frameBase]);
 
   const filterPills = (
-    <div className="flex gap-0.5 overflow-x-auto rounded-xl border border-border-default bg-bg-base p-1">
+    <div className="flex gap-0.5 overflow-x-auto min-w-0 max-w-full rounded-xl border border-border-default bg-bg-base p-1">
       {ASSET_TYPE_FILTERS.map(({ id }) => (
         <button
           key={id || 'all'}

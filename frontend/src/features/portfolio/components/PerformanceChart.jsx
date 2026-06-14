@@ -7,7 +7,7 @@ import ReactECharts from 'echarts-for-react';
 import { TrendingUp } from '../../../shared/components/feedback/AnimatedIcons';
 import { usePortfolioPerformance, useBackfillStatus } from '../hooks/usePortfolioData';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
-import { formatPrice } from '../../../shared/utils/formatters';
+import { formatPrice, fitMoney, formatPercentSmart } from '../../../shared/utils/formatters';
 import { cardVariants } from '../../../shared/utils/animations';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
@@ -183,7 +183,7 @@ function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = fals
             <span className="flex items-center justify-center w-10 h-10 rounded-xl transition-transform duration-300 group-hover:scale-105" style={{ backgroundColor: mainColor + '15', boxShadow: `0 0 20px ${mainColor}10` }}>
               <TrendingUp className="h-4.5 w-4.5 text-accent" />
             </span>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-bold text-fg">
                 {isRealized
                   ? t('portfolio.performance.realizedPnlTitle')
@@ -196,11 +196,11 @@ function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = fals
                   {readout.date && (
                     <p className="text-[11px] font-mono text-fg-muted mt-0.5 tabular-nums">{readout.date}</p>
                   )}
-                  <div className="flex items-center gap-2.5 mt-0.5">
-                    <span className="text-xl font-mono font-bold text-fg tracking-tight">{money(headValue)}</span>
+                  <div className="flex flex-wrap items-center gap-2.5 mt-0.5 min-w-0">
+                    <span className="text-xl font-mono font-bold text-fg tracking-tight truncate max-w-full" title={money(headValue)}>{fitMoney(headValue, { currency: safeCurrency, maxChars: 14 })}</span>
                     {headPnl != null && (
-                      <span className={`inline-flex items-center gap-1 text-xs font-mono font-semibold px-2 py-0.5 rounded-md ${pnlPositive ? 'text-success bg-success/10' : 'text-danger bg-danger/10'}`}>
-                        {pnlPositive ? '+' : ''}{money(headPnl)} ({headPnlPercent?.toFixed(2)}%)
+                      <span className={`inline-flex items-center gap-1 max-w-full truncate text-xs font-mono font-semibold px-2 py-0.5 rounded-md ${pnlPositive ? 'text-success bg-success/10' : 'text-danger bg-danger/10'}`} title={`${pnlPositive ? '+' : ''}${money(headPnl)}`}>
+                        {pnlPositive ? '+' : ''}{fitMoney(headPnl, { currency: safeCurrency, maxChars: 12 })} ({formatPercentSmart(headPnlPercent)})
                       </span>
                     )}
                   </div>

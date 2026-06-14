@@ -8,7 +8,7 @@ import { TrendingUp, TrendingDown } from '../../../shared/components/feedback/An
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../../shared/context/useTheme';
 import { useAssetSeries, useAssetAggregate, useBackfillStatus, isLotPending, useAssetLots } from '../hooks/usePortfolioData';
-import { formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
+import { formatPercentSmart, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { cardVariants } from '../../../shared/utils/animations';
@@ -262,26 +262,24 @@ function DirectionPanel({
         animate="show"
         className="grid grid-cols-1 sm:grid-cols-2 gap-3"
       >
-        <Card variant="outline" tone={pnlSignVal >= 0 ? 'success' : 'danger'} radius="xl" padding="md" className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <Card variant="outline" tone={pnlSignVal >= 0 ? 'success' : 'danger'} radius="xl" padding="md" className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {pnlSignVal >= 0
               ? <TrendingUp className="h-5 w-5 text-success" />
               : <TrendingDown className="h-5 w-5 text-danger" />}
             <span className="text-sm font-medium text-fg">{t('assetDetail.pnl')}</span>
           </div>
-          <div className="text-right flex items-center gap-3">
-            <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>
-              {formatPercent(aggPnlPercentFramed)}
+          <div className="text-right flex items-center gap-3 min-w-0">
+            <span className={`shrink-0 inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>
+              {formatPercentSmart(aggPnlPercentFramed)}
             </span>
-            <p className={`text-lg font-semibold font-mono ${changeColors[pnlClass]}`}>
-              {framePnl != null
-                ? money(framePnl, displayCurrency)
-                : money(aggPnlTry, 'TRY', { dateAt: pnlFxDate, natural: nativeCurrency })}
-            </p>
+            {framePnl != null
+              ? <FitMoney as="p" value={framePnl} base={displayCurrency} className={`flex-1 text-lg font-semibold font-mono ${changeColors[pnlClass]}`} />
+              : <FitMoney as="p" value={aggPnlTry} base="TRY" natural={nativeCurrency} dateAt={pnlFxDate} className={`flex-1 text-lg font-semibold font-mono ${changeColors[pnlClass]}`} />}
           </div>
         </Card>
-        <Card variant={dailyPnlTry == null ? 'elevated' : 'outline'} tone={dailyPnlTry == null ? 'default' : ((dailyFrame.pnl ?? 0) >= 0 ? 'success' : 'danger')} radius="xl" padding="md" className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <Card variant={dailyPnlTry == null ? 'elevated' : 'outline'} tone={dailyPnlTry == null ? 'default' : ((dailyFrame.pnl ?? 0) >= 0 ? 'success' : 'danger')} radius="xl" padding="md" className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {dailyPnlTry == null
               ? <TrendingUp className="h-5 w-5 text-fg-muted" />
               : (dailyFrame.pnl ?? 0) >= 0
@@ -289,19 +287,17 @@ function DirectionPanel({
                 : <TrendingDown className="h-5 w-5 text-danger" />}
             <span className="text-sm font-medium text-fg">{t('assetDetail.dailyPnl')}</span>
           </div>
-          <div className="text-right flex items-center gap-3">
+          <div className="text-right flex items-center gap-3 min-w-0">
             {dailyPnlTry == null ? (
               <p className="text-sm text-fg-muted">—</p>
             ) : (
               <>
-                <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-medium ${changeBg[dailyClass]} ${changeColors[dailyClass]}`}>
-                  {formatPercent(dailyFrame.pnlPercent)}
+                <span className={`shrink-0 inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-medium ${changeBg[dailyClass]} ${changeColors[dailyClass]}`}>
+                  {formatPercentSmart(dailyFrame.pnlPercent)}
                 </span>
-                <p className={`text-lg font-semibold font-mono ${changeColors[dailyClass]}`}>
-                  {dailyFrame.base === 'TRY'
-                    ? money(dailyPnlTry, 'TRY', { dateAt: dailyPnlFxDate, natural: nativeCurrency })
-                    : money(dailyFrame.pnl, dailyFrame.base)}
-                </p>
+                {dailyFrame.base === 'TRY'
+                  ? <FitMoney as="p" value={dailyPnlTry} base="TRY" natural={nativeCurrency} dateAt={dailyPnlFxDate} className={`flex-1 text-lg font-semibold font-mono ${changeColors[dailyClass]}`} />
+                  : <FitMoney as="p" value={dailyFrame.pnl} base={dailyFrame.base} className={`flex-1 text-lg font-semibold font-mono ${changeColors[dailyClass]}`} />}
               </>
             )}
           </div>

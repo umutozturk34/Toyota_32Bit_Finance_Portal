@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { containerVariants, cardVariants } from '../../../shared/utils/animations';
 import { Wallet, BarChart3 } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../../shared/components/feedback/AnimatedIcons';
-import { formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
+import { formatPercentSmart, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { usePortfolioSummary } from '../hooks/usePortfolioData';
 import { ASSET_TYPE_FILTERS as SUMMARY_FILTERS } from '../../../shared/constants/assetTypes';
@@ -43,9 +43,9 @@ function PnlCard({ label, value, percent, realValue, realPercent, hideReal, base
         <span className="text-[11px] text-fg-muted font-medium">{label}</span>
       </div>
       <div className="flex items-baseline justify-between gap-2">
-        <FitMoney value={value} base={base} className={`text-base font-semibold font-mono ${changeColors[cls]}`} />
+        <FitMoney value={value} base={base} className={`flex-1 text-base font-semibold font-mono ${changeColors[cls]}`} />
         <span className={`shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium font-mono ${changeBg[cls]} ${changeColors[cls]}`}>
-          {formatPercent(percent)}
+          {formatPercentSmart(percent)}
         </span>
       </div>
       {hasReal && (
@@ -58,10 +58,10 @@ function PnlCard({ label, value, percent, realValue, realPercent, hideReal, base
           >
             {t('portfolio.positions.realReturnAbbr', { defaultValue: 'reel' })}
           </span>
-          <div className="flex items-baseline gap-1.5">
-            <FitMoney as="span" value={realValue} base={base} className={`text-xs font-mono tabular-nums ${changeColors[realCls]}`} />
+          <div className="flex items-baseline gap-1.5 min-w-0">
+            <FitMoney as="span" value={realValue} base={base} className={`flex-1 text-xs font-mono tabular-nums ${changeColors[realCls]}`} />
             <span className={`shrink-0 text-[10px] font-mono font-semibold tabular-nums ${changeColors[realCls]}`}>
-              {formatPercent(realPercent)}
+              {formatPercentSmart(realPercent)}
             </span>
           </div>
         </div>

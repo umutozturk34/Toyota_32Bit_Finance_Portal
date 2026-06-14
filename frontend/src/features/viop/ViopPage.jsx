@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Layers, TrendingUp, TrendingDown } from 'lucide-react';
 import { STALE } from '../../shared/constants/query';
 import { viopService } from './services/viopService';
-import { formatPrice } from '../../shared/utils/formatters';
+import { formatPrice, formatVolume } from '../../shared/utils/formatters';
 import { viopQuoteCurrency } from '../../shared/utils/priceCurrency';
 import MarketListPage from '../../shared/components/market/MarketListPage';
 import AssetCard from '../../shared/components/asset/AssetCard';
@@ -53,7 +53,7 @@ export default function ViopPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const listParams = useListParams();
-  const { format: money } = useMoney();
+  const { format: money, formatFit } = useMoney();
   const kindFilter = listParams.filter || null;
   const classFilter = listParams.subFilter || null;
 
@@ -161,19 +161,19 @@ export default function ViopPage() {
           {meta.initialMargin != null && (
             <div className="flex items-center justify-between gap-2">
               <span className="text-fg-muted shrink-0">{t('viop.initialMargin')}</span>
-              <span className="font-mono text-fg">{money(meta.initialMargin, currency)}</span>
+              <span className="font-mono text-fg min-w-0 truncate" title={money(meta.initialMargin, currency)}>{formatFit(meta.initialMargin, currency, { maxChars: 12 })}</span>
             </div>
           )}
           {isOption && meta.strikePrice != null && (
             <div className="flex items-center justify-between gap-2">
               <span className="text-fg-muted shrink-0">{t('viop.strike')} ({t(`viop.side.${meta.optionSide}`, { defaultValue: meta.optionSide })})</span>
-              <span className="font-mono text-fg">{formatPrice(meta.strikePrice)}</span>
+              <span className="font-mono text-fg min-w-0 truncate">{formatPrice(meta.strikePrice)}</span>
             </div>
           )}
           {meta.volumeLot != null && (
             <div className="flex items-center justify-between gap-2">
               <span className="text-fg-muted shrink-0">{t('viop.volumeLot')}</span>
-              <span className="font-mono text-fg">{formatPrice(meta.volumeLot)}</span>
+              <span className="font-mono text-fg min-w-0 truncate" title={String(meta.volumeLot)}>{formatVolume(meta.volumeLot)}</span>
             </div>
           )}
         </div>

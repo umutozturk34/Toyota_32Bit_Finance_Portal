@@ -229,7 +229,7 @@ function PnlTimeSeriesChart({ series = [], loading = false, range, onRangeChange
                   {readout.date && (
                     <p className="text-[11px] font-mono text-fg-muted tabular-nums">{readout.date}</p>
                   )}
-                  <span className={`block text-lg font-mono font-bold tracking-tight ${summary.positive ? 'text-success' : 'text-danger'}`}>
+                  <span className={`block truncate text-lg font-mono font-bold tracking-tight ${summary.positive ? 'text-success' : 'text-danger'}`} title={summary.text}>
                     {summary.text}
                   </span>
                 </div>

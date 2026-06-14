@@ -3,12 +3,15 @@ import { useTranslation } from 'react-i18next';
 import useAppStore from '../stores/useAppStore';
 import { SUPPORTED_DISPLAY_CURRENCIES } from '../constants/currencies';
 
-const SYMBOL = { TRY: '₺', USD: '$', EUR: '€' };
+// The control also exposes ORIGINAL (every asset in its own native currency) so the user can flip back to it
+// straight from the sidebar instead of digging into Settings — the store defaults to ORIGINAL on first load,
+// and once a concrete currency is picked there was previously no sidebar path back.
+const SWITCHER_CURRENCIES = [...SUPPORTED_DISPLAY_CURRENCIES, 'ORIGINAL'];
+const SYMBOL = { TRY: '₺', USD: '$', EUR: '€', ORIGINAL: '⇄' };
 
-// Global display-currency toggle (₺/$/€). It writes useAppStore.displayCurrency — the single source every
+// Global display-currency toggle (₺/$/€/⇄). It writes useAppStore.displayCurrency — the single source every
 // money formatter and per-date chart frame reads — so flipping it re-renders the whole app (portfolio,
-// charts, beater) in the chosen currency, no extra wiring. ORIGINAL stays a Settings-only option; this
-// compact control covers the three concrete currencies.
+// charts, beater) in the chosen currency (or each asset's native, for ORIGINAL), no extra wiring.
 //
 // Expanded sidebar / mobile drawer: a 3-way segmented pill with a sliding accent indicator (mirrors the
 // Settings SegmentedControl so it feels native). Collapsed desktop rail: a single symbol button that
@@ -20,8 +23,8 @@ export default function CurrencySwitcher({ collapsed = false, isMobile = false }
   const label = t('settings.displayCurrency');
 
   if (collapsed && !isMobile) {
-    const idx = SUPPORTED_DISPLAY_CURRENCIES.indexOf(displayCurrency);
-    const next = SUPPORTED_DISPLAY_CURRENCIES[(idx + 1) % SUPPORTED_DISPLAY_CURRENCIES.length] || 'TRY';
+    const idx = SWITCHER_CURRENCIES.indexOf(displayCurrency);
+    const next = SWITCHER_CURRENCIES[(idx + 1) % SWITCHER_CURRENCIES.length] || 'TRY';
     return (
       <button
         type="button"
@@ -42,7 +45,7 @@ export default function CurrencySwitcher({ collapsed = false, isMobile = false }
         aria-label={label}
         className="flex items-center gap-0.5 rounded-lg border border-border-default bg-bg-elevated p-0.5"
       >
-        {SUPPORTED_DISPLAY_CURRENCIES.map((ccy) => {
+        {SWITCHER_CURRENCIES.map((ccy) => {
           const active = displayCurrency === ccy;
           return (
             <button
@@ -62,7 +65,7 @@ export default function CurrencySwitcher({ collapsed = false, isMobile = false }
               )}
               <span className={`relative z-10 inline-flex items-center gap-0.5 ${active ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
                 <span className="text-[12px]">{SYMBOL[ccy]}</span>
-                {ccy}
+                {ccy === 'ORIGINAL' ? t('settings.currencyOriginalShort', { defaultValue: 'Orj' }) : ccy}
               </span>
             </button>
           );

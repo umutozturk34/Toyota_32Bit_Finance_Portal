@@ -802,7 +802,8 @@
     "timezoneSuffix": "timezone (fixed)",
     "logout": "Log out",
     "displayCurrency": "Display Currency",
-    "currencyOriginal": "Original"
+    "currencyOriginal": "Original",
+    "currencyOriginalShort": "Orig"
   },
   "notificationPreferences": {
     "emailMaster": {
@@ -1435,9 +1436,9 @@
       "categoryInflation": "Inflation",
       "categoryDeposit": "Deposit",
       "enum": {
-        "MACRO_RATE": "Macro Rate",
-        "MACRO_INFLATION": "Macro Inflation",
-        "MACRO_DEPOSIT": "Macro Deposit",
+        "MACRO_RATE": "Rate",
+        "MACRO_INFLATION": "Inflation",
+        "MACRO_DEPOSIT": "Deposit",
         "RATES": "Rates",
         "INFLATION": "Inflation",
         "DEPOSIT": "Deposit",
@@ -2308,6 +2309,7 @@
     "expiry": "Expiry",
     "contractSize": "Contract size",
     "initialMargin": "Initial margin",
+    "leverage": "Leverage",
     "settlement": "Settlement",
     "optionSide": "Type",
     "strike": "Strike price",
@@ -2389,6 +2391,8 @@
     "nominalReturnTooltip": "Absolute percentage change (not inflation-adjusted)",
     "normalizedHintCompare": "Each series indexed to 100,000 at the start (what 100,000 invested would be worth today)",
     "normalizedHintCompareIndex": "Macro series — indexed to 100 at start",
+    "mixedCurrencyHint": "Series in different currencies are compared on a {{currency}} basis — switch the currency to change",
+    "inflationFrameHint": "Inflation is a TRY index — series are compared on a TRY basis",
     "compareLevel": "Level",
     "compareCumulative": "Cumulative",
     "compareAnnual": "Annual",

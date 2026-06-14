@@ -24,6 +24,7 @@ import { buildOption } from '../lib/compareChartBuilder';
 import {
   isMacro,
   isRateLike,
+  compareTypeLabel,
   rangeBoundsCalendar,
   fetchSeries,
   colorFor,
@@ -164,53 +165,57 @@ export default function ComparePage() {
     );
     return set.size === 1 ? [...set][0] : null;
   }, [selected]);
-  // A TR-only inflation index (CPI/TÜFE) — and the portfolio-vs-any-TR-indexed case — forces the WHOLE
-  // chart into TRY. CPI lives only in TRY (here +1800%), so a EUR/USD deposit left in its own currency
-  // (a few % growth) looks crushed by inflation, when in TRY terms (its FX-converted growth = native
-  // interest + TRY depreciation, ~+2500%) it actually BEAT it. Pinning to TRY converts every non-TRY
-  // series per-date so "did it beat inflation" is a real apples-to-apples read. An explicit URL currency
-  // or a single non-TRY deposit frame still wins over this.
+  // CPI/PPI (TÜFE/ÜFE) are TRY price indices with no USD/EUR form, so a comparison that includes one is pinned
+  // to TRY — even over an explicit currency pick — and every other series converts to TRY per-date (only then
+  // is "did it beat inflation" a real read). Every OTHER instrument stays selectable: its own native in
+  // Original, the picked currency otherwise. What matters is each thing's native.
   const forceTryFrame = useMemo(() => {
     if (initialCurrencyRef.current) return false;
-    const hasInflation = selected.some((s) => s.type === 'MACRO_INFLATION');
-    const hasPortfolio = selected.some((s) => s.type === 'PORTFOLIO');
-    const hasTrIndexed = selected.some((s) => isRateLike(s.type));
-    return hasInflation || (hasTrIndexed && hasPortfolio);
+    return selected.some((s) => s.type === 'MACRO_INFLATION');
   }, [selected]);
-  // Mixed native currencies among the compared series (e.g. a USD-native crypto vs a TRY stock; portfolio
-  // counts as TRY). There is no shared native to read returns in, so they must NOT stay in "original" view —
-  // a USD asset left in USD would plot its USD-local return on a TRY chart, hiding the USD/TRY move and making
-  // the compare unfair. When mixed, frame the whole chart in TRY and convert every series per-date.
+  // Mixed native currencies among the compared series. Every FX-convertible series has a meaningful native:
+  // assets (a USD crypto, a TRY stock), deposits (USD/EUR/TRY) AND compounded reference rates (the TRY-native
+  // policy rate / TLREF, which grow as a TRY index and convert per-date). Only the rate-like indices — CPI/PPI
+  // and bond yields (isRateLike) — have no currency to reconcile, so they're excluded; portfolio counts as TRY.
+  // When the convertible natives differ there is no shared money to read returns in, so the series must NOT stay
+  // in "original" (a USD series left in USD plots its USD-local return on a TRY chart) — frame in TRY and
+  // convert each per-date. This is why a USD crypto vs the TRY policy rate reads the SAME in Original and in
+  // TRY: both reconcile to TRY (one money wins) instead of plotting a USD return next to a TRY return.
   const mixedNative = useMemo(() => {
     const set = new Set(
       selected
-        .filter((s) => !isMacro(s.type))
+        .filter((s) => !isRateLike(s.type))
         .map((s) => (s.type === 'PORTFOLIO' ? 'TRY' : nativeCurrencyFor(s.type, s.code))),
     );
     return set.size > 1;
   }, [selected]);
   const targetCurrency = useMemo(() => {
     if (initialCurrencyRef.current) return initialCurrencyRef.current;
-    // CPI/inflation framing (TRY) wins over a single non-TRY deposit frame too: a EUR deposit vs CPI is
-    // only meaningful in TRY (deposit's TRY-terms growth vs TRY inflation), not in EUR vs a TRY index.
+    // A TR price index (CPI/PPI) pins TRY even over an explicit currency — it has no USD/EUR form.
     if (forceTryFrame) return 'TRY';
-    // An explicit display-currency choice (TRY/USD/EUR) wins over the deposit-native frame: a EUR deposit
-    // with TRY selected converts per-date and reads in TRY. Only "Original" falls back to the deposit's own
-    // currency — foreign deposits are always convertible, so there is no need to force their native frame.
+    // Otherwise an explicit display-currency choice (TRY/USD/EUR) always wins; every convertible series
+    // re-frames to it per-date. "Original" falls through to the native-based defaults below (a single foreign
+    // deposit in its own currency; mixed natives in TRY; otherwise the sole shared native).
     if (displayCurrency !== 'ORIGINAL') return displayCurrency;
     if (depositFrameCurrency) return depositFrameCurrency;
-    // Mixed natives → TRY (the base): every series converts to TRY per-date for a fair "in my money" compare.
     if (mixedNative) return 'TRY';
     const first = selected.find((s) => !isMacro(s.type) && s.type !== 'PORTFOLIO');
     return first ? nativeCurrencyFor(first.type, first.code) : 'TRY';
   }, [displayCurrency, selected, depositFrameCurrency, forceTryFrame, mixedNative]);
-  // "Original" view (each series in its own native) only when no explicit currency / non-TRY deposit frame
-  // / forced-TRY inflation frame is in effect AND every series shares one native (nothing to reconcile).
+  // "Original" view (each series in its own native) only when no explicit currency / deposit frame / forced TRY
+  // frame is in effect AND every series shares one native (nothing to reconcile).
   const originalView = displayCurrency === 'ORIGINAL'
     && !initialCurrencyRef.current
-    && !depositFrameCurrency
     && !forceTryFrame
+    && !depositFrameCurrency
     && !mixedNative;
+  // When Original mode reconciles series that live in different currencies into one frame (targetCurrency),
+  // tell the user so the converted values aren't mistaken for native ones. Guarded by !originalView so it can
+  // never claim a common basis that was not actually applied (each series staying in its own native).
+  const currencyReconciledNotice = useMemo(() => {
+    if (originalView || displayCurrency !== 'ORIGINAL' || initialCurrencyRef.current) return false;
+    return new Set(selected.map((s) => nativeCurrencyFor(s.type, s.code))).size > 1;
+  }, [originalView, displayCurrency, selected]);
 
   useEffect(() => {
     if (initialRangeRef.current) {
@@ -620,7 +625,7 @@ export default function ComparePage() {
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
                 <span className="text-fg font-semibold tracking-tight text-[11px]">{ind.displayName}</span>
                 <span className="text-fg-subtle">·</span>
-                <span className="text-fg-muted uppercase tracking-[0.12em] text-[10px]">{t(`assets.labels.${ind.type}`, { defaultValue: ind.type })}</span>
+                <span className="text-fg-muted uppercase tracking-[0.12em] text-[10px]">{compareTypeLabel(t, ind.type)}</span>
                 <button
                   type="button"
                   onClick={() => removeAsset(ind.code, ind.type)}
@@ -772,6 +777,19 @@ export default function ComparePage() {
             {t('analytics.portfolioSeriesHint', {
               defaultValue: 'Portföy serisi zaman-ağırlıklı getiridir (nakit giriş/çıkışlarından bağımsız)',
             })}
+          </div>
+        )}
+        {currencyReconciledNotice && (
+          <div className="flex items-center gap-2 text-[10px] font-mono text-amber-500 italic">
+            <Info className="h-3 w-3 shrink-0" />
+            {forceTryFrame
+              ? t('analytics.inflationFrameHint', {
+                  defaultValue: 'Enflasyon TRY endeksi — seriler TRY bazında karşılaştırılıyor',
+                })
+              : t('analytics.mixedCurrencyHint', {
+                  currency: targetCurrency,
+                  defaultValue: 'Farklı para birimlerindeki seriler {{currency}} bazında karşılaştırılıyor — para birimini değiştirebilirsin',
+                })}
           </div>
         )}
 

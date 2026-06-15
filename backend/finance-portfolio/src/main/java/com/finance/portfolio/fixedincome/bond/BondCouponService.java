@@ -46,6 +46,12 @@ public class BondCouponService {
         if (effAsOf.isBefore(maturityStart)) {
             return CouponAccrual.none();
         }
+        // At/after maturity the FINAL coupon is PAID with the principal (it is counted in couponsReceived), so
+        // nothing is still accruing — return zero, else the final coupon would be double-counted as accrued AND
+        // received on the redemption day.
+        if (maturityEnd != null && !effAsOf.isBefore(maturityEnd)) {
+            return new CouponAccrual(BigDecimal.ZERO, BigDecimal.ZERO, maturityEnd, maturityEnd);
+        }
 
         int stepMonths = frequency.stepMonths();
         BigDecimal couponPerPeriod = annualRatePer100.divide(
@@ -128,6 +134,11 @@ public class BondCouponService {
         LocalDate effAsOf = (maturityEnd != null && asOf.isAfter(maturityEnd)) ? maturityEnd : asOf;
         if (effAsOf.isBefore(maturityStart)) {
             return CouponAccrual.none();
+        }
+        // At/after maturity the FINAL coupon is PAID with the principal (counted in couponsReceived), so nothing
+        // is still accruing — return zero to avoid double-counting it as both accrued AND received.
+        if (maturityEnd != null && !effAsOf.isBefore(maturityEnd)) {
+            return new CouponAccrual(BigDecimal.ZERO, BigDecimal.ZERO, maturityEnd, maturityEnd);
         }
         int stepMonths = frequency.stepMonths();
         LocalDate last = maturityStart;

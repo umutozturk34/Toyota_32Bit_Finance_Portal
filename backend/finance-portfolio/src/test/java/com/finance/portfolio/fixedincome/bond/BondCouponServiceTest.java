@@ -137,6 +137,21 @@ class BondCouponServiceTest {
     }
 
     @Test
+    void shouldNotAccrueFinalCouponAtMaturity_avoidingDoubleCountWithReceived() {
+        // Off-by-day bond (issue 2026-01-28, maturity 2027-01-27): AT maturity the final coupon is PAID with the
+        // principal, so accrued must be ZERO — else the detail breakdown counts it twice (accrued + received).
+        BondCouponService.CouponAccrual acc = service.accrued(new BigDecimal("36.50"), CouponFrequency.SEMI_ANNUAL,
+                LocalDate.of(2026, 1, 28), LocalDate.of(2027, 1, 27), LocalDate.of(2027, 1, 27));
+        assertThat(acc.accruedPer100()).isEqualByComparingTo("0");
+        assertThat(acc.dailyAccrualPer100()).isEqualByComparingTo("0");
+
+        // And couponsPaid AT maturity counts the final coupon exactly once (2: the regular + the maturity coupon).
+        BondCouponService.CouponsPaid paid = service.couponsPaid(new BigDecimal("36.50"), CouponFrequency.SEMI_ANNUAL,
+                LocalDate.of(2026, 1, 28), LocalDate.of(2027, 1, 27), LocalDate.of(2026, 1, 28), LocalDate.of(2027, 1, 27));
+        assertThat(paid.count()).isEqualTo(2);
+    }
+
+    @Test
     void shouldConvertPer100ToFullPositionTry() {
         // Arrange + Act: 1.00 per 100 nominal on 10 000 nominal = 100 TRY.
         BigDecimal full = service.per100ToTry(new BigDecimal("1.00"), new BigDecimal("10000"));

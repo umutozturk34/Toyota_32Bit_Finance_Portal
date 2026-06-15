@@ -47,12 +47,12 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
     private volatile long loadedAt;
 
     /**
-     * Curated Turkish keyword → precious-metal/TRY pair links (gold/silver are quoted as FOREX-type XAU/XAG pairs).
+     * Curated Turkish keyword → precious-metal links. Gram gold/silver are COMMODITY-type assets (XAUTRYG/XAGTRYG).
      * Matched as a bounded phrase like every other name, so "altın" hits but "altında" (under) does not.
      */
     private static final List<NameRef> KEYWORD_REFS = List.of(
-            new NameRef("altin", "XAUTRYG", "FOREX"),
-            new NameRef("gumus", "XAGTRYG", "FOREX")
+            new NameRef("altin", "XAUTRYG", "COMMODITY"),
+            new NameRef("gumus", "XAGTRYG", "COMMODITY")
     );
 
     /** ticker/symbol → (code, type), plus the (name-phrase, code, type) list for name matching. */

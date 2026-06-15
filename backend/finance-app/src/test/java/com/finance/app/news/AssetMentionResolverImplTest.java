@@ -118,7 +118,7 @@ class AssetMentionResolverImplTest {
         List<ResolvedAsset> result = resolver.resolve("Gram altın fiyatı rekor kırdı", null);
 
         assertThat(result).extracting(ResolvedAsset::code).containsExactly("XAUTRYG");
-        assertThat(result).extracting(ResolvedAsset::type).containsExactly("FOREX");
+        assertThat(result).extracting(ResolvedAsset::type).containsExactly("COMMODITY");
     }
 
     @Test

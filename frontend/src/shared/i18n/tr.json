@@ -990,6 +990,7 @@
       "updateErrorTitle": "Güncelleme Hatası",
       "activeOnlyLabel": "Açık bonolar",
       "activeOnlyTooltip": "Vade dolmamış bonolar",
+      "filterTypeLabel": "Tür",
       "priceChartTitle": "Fiyat geçmişi",
       "noPriceData": "Fiyat geçmişi yok",
       "rateChartTitle": "Kupon oranı geçmişi",
@@ -1006,8 +1007,11 @@
         "FLOATING_TLREF": "Değişken - TLREF",
         "FLOATING_CPI": "Değişken - TÜFE",
         "FLOATING_AUCTION": "Değişken - İhale",
+        "GOLD": "Altın",
         "SUKUK_FIXED": "Sukuk - Sabit",
-        "SUKUK_CPI": "Sukuk - TÜFE"
+        "SUKUK_FLOATING": "Sukuk - Değişken",
+        "SUKUK_CPI": "Sukuk - TÜFE",
+        "SUKUK_GOLD": "Sukuk - Altın"
       }
     },
     "empty": {
@@ -1033,6 +1037,23 @@
       "downloadPdfEmpty": "PDF için en az bir pozisyon gerekli",
       "downloadPdfError": "PDF indirilemedi. Lütfen tekrar deneyin.",
       "downloadPdfRateLimit": "Saatte en fazla 2 PDF indirebilirsin. Daha sonra tekrar dene."
+    },
+    "cost": {
+      "title": "Maliyet Dağılımı",
+      "subtitle": "Tip bazında maliyet — tipe tıkla, varlıkları gör (per-date kur)",
+      "totalCost": "Toplam Maliyet",
+      "empty": "Bu filtrede maliyet yok.",
+      "lots": "{{count}} lot",
+      "lots_other": "{{count}} lot",
+      "assets": "{{count}} varlık",
+      "assets_other": "{{count}} varlık",
+      "drillInto": "{{type}} varlıklarını gör"
+    },
+    "pnlByType": {
+      "title": "Kâr/Zarar Dağılımı",
+      "subtitle": "Toplam K/Z hangi varlık tipinden — tipe tıkla, varlıkları gör",
+      "total": "Toplam K/Z",
+      "empty": "Bu filtrede pozisyon yok."
     },
     "positions": {
       "searchPlaceholder": "Pozisyon ara...",
@@ -1244,6 +1265,202 @@
       "realizedPnl": "Realize K/Z",
       "long": "LONG",
       "short": "SHORT"
+    },
+    "bonds": {
+      "title": "Tahvil",
+      "addAction": "Tahvil Ekle",
+      "empty": "Henüz tahvil yok",
+      "emptyHint": "Hazine tahvil/bonosu ekleyerek getiriyi takip et",
+      "statusSold": "SATILDI",
+      "redeemed": "İtfa edildi",
+      "marketAdd": {
+        "noPortfolioTitle": "Tahvil portföyü yok",
+        "noPortfolioHint": "Önce bir Mevduat & Tahvil portföyü oluştur"
+      },
+      "col": {
+        "series": "Seri"
+      },
+      "coupon": {
+        "label": "Kupon",
+        "next": "Sonraki kupon",
+        "accrued": "İşlemiş kupon",
+        "daily": "Günlük kupon",
+        "none": "Kuponsuz",
+        "nominalValue": "Tahvil değeri",
+        "perYearShort": "%{{rate}} yıllık",
+        "cpiLinked": "TÜFE'ye Endeksli",
+        "tlref": "TLREF değişken",
+        "floating": "Değişken kupon",
+        "received": "Alınan kupon",
+        "breakdown": "Değer kırılımı",
+        "income": "Kupon geliri",
+        "payments": "{{count}} ödeme",
+        "payments_other": "{{count}} ödeme",
+        "perPayment": "ödeme başına",
+        "indexNote": "TÜFE'ye endeksli — getiri endeks fiyatında; ayrı kupon işlemez.",
+        "scheduleReceived": "Alındı",
+        "scheduleBeforeEntry": "Alımdan önce",
+        "freq": {
+          "ANNUAL": "Yıllık",
+          "SEMI_ANNUAL": "6 Aylık",
+          "QUARTERLY": "3 Aylık",
+          "MONTHLY": "Aylık",
+          "ZERO_COUPON": "Kuponsuz"
+        }
+      },
+      "form": {
+        "titleAdd": "Tahvil Ekle",
+        "titleEdit": "Tahvili Düzenle",
+        "subtitle": "Hazine tahvil/bono bilgilerini gir",
+        "submitAdd": "Ekle",
+        "submitEdit": "Kaydet",
+        "totalCost": "Toplam maliyet",
+        "storedAsTry": "TL olarak saklanır",
+        "cpiPriceHint": "TÜFE'ye endeksli: fiyat 100 değil, endeks değeridir (~{{index}}). Giriş fiyatını endeks ölçeğinde gir.",
+        "discountNote": "Kuponsuz bono — getiri, fiyatın vadede 100'e (par) çıkmasından gelir. Kupon girilmez.",
+        "cpiCouponNote": "TÜFE'ye endeksli — düşük reel kupon endeksli anapara üzerinden ödenir; ana getiri endeks fiyatından gelir.",
+        "floatingNote": "Değişken kupon — TLREF/ihale + spread, her dönem resetlenir; oran tahvil verisinden gelir.",
+        "couponFromDb": "Kupon oranı tahvil verisinden gelir, değiştirilemez.",
+        "perPeriod": "dönemsel",
+        "freqInferred": "Sıklık tipten tahmin edilir — değiştirebilirsin",
+        "freqAutoDetect": "Dokunmazsan ödeme tarihlerindeki ani fiyat düşüşlerinden otomatik bulunur",
+        "annualApprox": "≈ %{{rate}} yıllık",
+        "fields": {
+          "series": "Seri",
+          "entryDate": "Giriş Tarihi",
+          "entryPrice": "Giriş Fiyatı",
+          "per100": "100 nominal başına",
+          "perUnit": "1 adet başına",
+          "priceHint": "100 TL nominal değer başına fiyat",
+          "priceSuggested": "Alış günü {{price}} · ±%10: {{low}} – {{high}}",
+          "priceReset": "öneriye dön",
+          "quantity": "Miktar",
+          "quantityPlaceholder": "örn. 1000",
+          "couponRate": "Kupon Oranı",
+          "couponSuggested": "önerilen %{{rate}}",
+          "couponPlaceholder": "örn. 25,50",
+          "couponHint": "Yayımlanan oran önerilir; üzerine kendi kupon oranını yazabilirsin"
+        },
+        "couponInfo": "Kupon: %{{rate}} (yıllık), {{frequency}}",
+        "maturityInfo": "İhraç {{start}} · Vade {{end}}",
+        "success": {
+          "titleAdd": "Tahvil eklendi",
+          "titleEdit": "Tahvil güncellendi",
+          "subtitle": "Portföyün güncellendi"
+        }
+      },
+      "picker": {
+        "placeholder": "Tahvil serisi ara...",
+        "clear": "Temizle",
+        "searching": "Aranıyor...",
+        "noResults": "Sonuç bulunamadı",
+        "couponShort": "Kupon %{{rate}}",
+        "maturityShort": "Vade {{date}}"
+      },
+      "sell": {
+        "title": "Tahvili sat",
+        "exitDate": "Çıkış Tarihi",
+        "exitPrice": "Çıkış Fiyatı",
+        "proceeds": "Tahsilat",
+        "confirm": "Sat"
+      },
+      "reopen": {
+        "title": "Tahvili yeniden aç"
+      },
+      "delete": {
+        "title": "Tahvili sil?",
+        "message": "Bu tahvil kalıcı olarak silinecek. Bu işlem geri alınamaz."
+      },
+      "detail": {
+        "open": "Tahvil detayı",
+        "goToPage": "{{code}} tahvil sayfasına git",
+        "positionTitle": "Pozisyon",
+        "couponTitle": "Kupon Bilgisi",
+        "currentPrice": "Güncel Fiyat",
+        "cleanPrice": "Temiz fiyat",
+        "dirtyPrice": "Kirli fiyat",
+        "redemptionValue": "İtfa (par)",
+        "returnToMaturity": "Vade getirisi",
+        "currentValue": "Güncel değer",
+        "frequencyLabel": "Kupon Sıklığı",
+        "maturityProgress": "Vade ilerlemesi",
+        "frequency": {
+          "ANNUAL": "Yılda bir",
+          "SEMI_ANNUAL": "6 ayda bir",
+          "QUARTERLY": "3 ayda bir",
+          "MONTHLY": "Ayda bir",
+          "ZERO_COUPON": "Kuponsuz"
+        },
+        "scheduleTitle": "Kupon Takvimi",
+        "scheduleHint": "Tahmini kupon tarihleri",
+        "scheduleEmpty": "Bu tahvil için kupon takvimi yok.",
+        "coupon": {
+          "past": "Geçti",
+          "upcoming": "Yaklaşan"
+        }
+      },
+      "errors": {
+        "seriesRequired": "Bir tahvil serisi seç",
+        "quantityInvalid": "Geçerli bir miktar gir",
+        "priceInvalid": "Geçerli bir fiyat gir",
+        "priceTooHigh": "100 nominal başına fiyat en fazla 100.000 olabilir",
+        "priceOutOfBand": "Fiyat, alış günü değerinin ±%10 bandında olmalı ({{low}} – {{high}})",
+        "couponInvalid": "Kupon oranı 0 ile {{max}} arasında olmalı",
+        "alreadyMatured": "Giriş tarihi tahvilin vade tarihinden önce olmalı",
+        "beforeIssue": "Giriş tarihi tahvilin ihraç tarihinden önce olamaz",
+        "exitAfterMaturity": "Çıkış tarihi tahvilin vade tarihinden sonra olamaz",
+        "dateRequired": "Tarih gir",
+        "exitBeforeEntry": "Çıkış tarihi giriş tarihinden önce olamaz",
+        "addFailed": "Tahvil eklenemedi",
+        "updateFailed": "Tahvil güncellenemedi",
+        "sellFailed": "Tahvil satılamadı",
+        "reopenFailed": "Tahvil yeniden açılamadı",
+        "deleteFailed": "Tahvil silinemedi"
+      }
+    },
+    "fixedIncome": {
+      "totalValue": "Toplam Değer",
+      "totalCost": "Toplam Maliyet",
+      "profitLoss": "Kâr / Zarar",
+      "title": "Mevduat & Tahvil",
+      "subtitle": "Sabit getirili portföy",
+      "allocation": "Dağılım",
+      "asOf": "{{date}} itibarıyla",
+      "depositSplit": "Mevduat",
+      "bondSplit": "Tahvil",
+      "countLabel": "{{count}} adet",
+      "countLabel_other": "{{count}} adet",
+      "empty": "Henüz mevduat veya tahvil eklenmedi.",
+      "chartTitle": "Sabit Getirili Değer",
+      "chartEmpty": "Bu dönem için veri yok.",
+      "modes": {
+        "total": "Toplam",
+        "deposit": "Mevduat",
+        "bond": "Tahvil"
+      },
+      "couponLabel": "Kupon",
+      "couponLegend": "Kupon ödemesi",
+      "redemption": "İtfa",
+      "cashflowTitle": "Nakit Akışı Takvimi",
+      "cashflowSubtitle": "Kupon ödemeleri + itfalar",
+      "cashflowEmpty": "Beklenen nakit akışı yok.",
+      "cashflowEmptyHint": "Kuponlu tahviller ve vadesi gelen mevduatlar burada görünür.",
+      "cashflowClickHint": "Ayrıntı için bir aya tıkla — o ay ne, ne kadar gelecek",
+      "cashflowMonthPayments": "{{month}} ödemeleri",
+      "depositMaturityLabel": "Mevduat vadesi",
+      "pnl": {
+        "title": "Kâr/Zarar vs Enflasyon",
+        "subtitle": "Maliyet dışı kazanç/kayıp, enflasyon eşiğiyle kıyas",
+        "pnlLabel": "K/Z",
+        "inflationLabel": "Enflasyon eşiği",
+        "beat": "Enflasyonu yendin",
+        "behind": "Enflasyonun altında",
+        "empty": "Bu dönem için veri yok."
+      }
+    },
+    "typeSwitcher": {
+      "spot": "Spot & VİOP",
+      "fixed": "Mevduat & Tahvil"
     }
   },
   "marketAddPosition": {
@@ -2393,6 +2610,7 @@
     "normalizedHintCompareIndex": "Makro seriler — başlangıçta 100'e endekslendi",
     "mixedCurrencyHint": "Farklı para birimlerindeki seriler {{currency}} bazında karşılaştırılıyor — para birimini değiştirebilirsin",
     "inflationFrameHint": "Enflasyon TRY endeksi — seriler TRY bazında karşılaştırılıyor",
+    "macroUnitLoadError": "Makro indikatör bilgisi yüklenemedi — bu oran serisi güvenli şekilde gizlendi; sayfayı yenileyip tekrar dene",
     "compareLevel": "Seviye",
     "compareCumulative": "Kümülatif",
     "compareAnnual": "Yıllık",
@@ -2555,6 +2773,100 @@
       "errorTitle": "Rapor oluşturulamadı",
       "footer": "Bu rapor Finance Portal tarafından otomatik olarak üretilmiştir. Değerler oluşturma anındaki anlık verileri yansıtır ve yatırım tavsiyesi içermez.",
       "page": "Sayfa {{page}} / {{total}}"
+    }
+  },
+  "deposits": {
+    "title": "Mevduat",
+    "addAction": "Mevduat Ekle",
+    "empty": "Henüz mevduat yok",
+    "emptyHint": "Vadeli mevduatını ekleyerek getiriyi takip et",
+    "fixedRate": "Sabit",
+    "term": {
+      "progress": "Vade ilerlemesi",
+      "daysLeft": "{{count}} gün kaldı",
+      "daysLeft_other": "{{count}} gün kaldı",
+      "matured": "Vade doldu"
+    },
+    "interest": {
+      "gross": "Brüt faiz",
+      "stopaj": "Stopaj",
+      "net": "Net faiz",
+      "maturityValue": "Vade değeri"
+    },
+    "cols": {
+      "deposit": "Mevduat",
+      "rate": "Oran",
+      "status": "Durum",
+      "start": "Başlangıç",
+      "maturity": "Vade",
+      "closed": "Kapanış",
+      "value": "Değer",
+      "pnl": "K/Z",
+      "actions": "İşlem"
+    },
+    "fields": {
+      "currency": "Para Birimi",
+      "principal": "Anapara",
+      "annualRate": "Yıllık Oran (%)",
+      "indicatorCode": "Gösterge Kodu",
+      "indicatorPlaceholder": "örn. TLREF",
+      "depositType": "Mevduat Türü",
+      "depositTypeCustom": "Özel oran",
+      "depositTypeNoRates": "Güncel mevduat oranı yok",
+      "rateOnDate": "{{date}} oranı: %{{rate}}",
+      "withholding": "Stopaj (%)",
+      "withholdingHint": "vadeye göre değişir",
+      "optional": "opsiyonel",
+      "startDate": "Başlangıç Tarihi",
+      "maturityDate": "Vade Tarihi",
+      "closedDate": "Kapanış Tarihi",
+      "currentValue": "Güncel Değer",
+      "pnl": "K/Z"
+    },
+    "form": {
+      "titleAdd": "Mevduat Ekle",
+      "titleEdit": "Mevduatı Düzenle",
+      "subtitle": "Vadeli mevduat bilgilerini gir",
+      "continue": "Devam Et",
+      "confirm": {
+        "heading": "Mevduatı onayla",
+        "sub": "Bilgileri kontrol et ve kaydet"
+      },
+      "success": {
+        "titleAdd": "Mevduat eklendi",
+        "titleEdit": "Mevduat güncellendi",
+        "subtitle": "Portföyün güncellendi"
+      }
+    },
+    "actions": {
+      "close": "Kapat",
+      "reopen": "Yeniden Aç"
+    },
+    "closeDialog": {
+      "title": "Mevduatı kapat?",
+      "hint": "Mevduatı vadesinden önce kapatabilirsin. Kapanış tarihine kadar olan getiri hesaplanır.",
+      "dateLabel": "Kapanış Tarihi",
+      "confirm": "Kapat"
+    },
+    "deleteDialog": {
+      "title": "Mevduatı sil?",
+      "message": "Bu mevduat kalıcı olarak silinecek. Bu işlem geri alınamaz."
+    },
+    "errors": {
+      "principalInvalid": "Geçerli bir anapara gir",
+      "currencyRequired": "Para birimi seç",
+      "rateInvalid": "Geçerli bir oran gir",
+      "withholdingInvalid": "Stopaj %0 ile %100 arasında olmalı",
+      "startRequired": "Başlangıç tarihi gir",
+      "startTooOld": "Başlangıç tarihi 2000'den eski olamaz",
+      "maturityRequired": "Vade tarihi gir",
+      "maturityAfterStart": "Vade tarihi başlangıçtan sonra olmalı",
+      "maturityTooFar": "Vade en fazla başlangıçtan 30 yıl sonra olabilir",
+      "addFailed": "Mevduat eklenemedi",
+      "updateFailed": "Mevduat güncellenemedi",
+      "closeFailed": "Mevduat kapatılamadı",
+      "deleteFailed": "Mevduat silinemedi",
+      "reopenFailed": "Mevduat yeniden açılamadı"
     }
   }
 }

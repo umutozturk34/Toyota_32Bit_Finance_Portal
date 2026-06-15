@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Wallet, ShieldCheck, Star } from 'lucide-react';
+import { Wallet, ShieldCheck, Star, CandlestickChart, Landmark } from 'lucide-react';
 import { Check, AlertTriangle } from '../../../shared/components/feedback/AnimatedIcons';
 import PageHeader from '../../../shared/components/layout/PageHeader';
 import ProcessingSteps from '../../../shared/components/feedback/ProcessingSteps';
@@ -8,6 +9,11 @@ import Card from '../../../shared/components/card';
 import useProcessingAnimation from '../../../shared/hooks/useProcessingAnimation';
 import { useCreatePortfolio, useInvalidatePortfolio } from '../hooks/usePortfolioData';
 import { ONBOARDING_SUCCESS_HOLD_MS } from '../../../shared/constants/timings';
+
+const PORTFOLIO_TYPES = [
+  { id: 'SPOT', labelKey: 'portfolio.typeSwitcher.spot', Icon: CandlestickChart },
+  { id: 'FIXED', labelKey: 'portfolio.typeSwitcher.fixed', Icon: Landmark },
+];
 
 export default function PortfolioOnboardingHost({
   phase,
@@ -19,6 +25,7 @@ export default function PortfolioOnboardingHost({
   const invalidatePortfolio = useInvalidatePortfolio();
   const createPortfolio = useCreatePortfolio();
   const { processingStep, runAnimation, reset: resetOnboarding } = useProcessingAnimation();
+  const [type, setType] = useState('SPOT');
 
   const defaultPortfolioName = t('portfolio.onboarding.defaultName');
   const onboardingSteps = [
@@ -31,14 +38,14 @@ export default function PortfolioOnboardingHost({
     setName(defaultPortfolioName);
     setPhase('confirm');
   };
-  const handleCancel = () => setPhase('idle');
+  const handleCancel = () => { setType('SPOT'); setPhase('idle'); };
 
   const handleCreate = async () => {
     const trimmedName = name.trim() || defaultPortfolioName;
     setPhase('processing');
     try {
       await Promise.all([
-        createPortfolio.mutateAsync(trimmedName),
+        createPortfolio.mutateAsync({ name: trimmedName, type }),
         runAnimation(onboardingSteps),
       ]);
       setPhase('success');
@@ -165,6 +172,27 @@ export default function PortfolioOnboardingHost({
                   <p className="text-sm font-semibold text-fg">{t('portfolio.onboarding.confirmTitle')}</p>
                   <p className="text-xs text-fg-muted">{t('portfolio.onboarding.confirmHint')}</p>
                 </motion.div>
+              </div>
+              <div className="grid grid-cols-2 gap-1 rounded-lg bg-bg-base/60 p-1 ring-1 ring-inset ring-border-default/50">
+                {PORTFOLIO_TYPES.map(({ id, labelKey, Icon }) => {
+                  const selected = type === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setType(id)}
+                      aria-pressed={selected}
+                      className={`relative flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors border-none cursor-pointer ${
+                        selected
+                          ? 'text-accent bg-accent/15 ring-1 ring-inset ring-accent/40'
+                          : 'text-fg-muted bg-transparent hover:text-fg hover:bg-surface/60'
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      <span className="truncate">{t(labelKey)}</span>
+                    </button>
+                  );
+                })}
               </div>
               <input
                 type="text"

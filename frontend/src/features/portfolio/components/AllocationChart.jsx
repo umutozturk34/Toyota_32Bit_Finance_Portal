@@ -13,6 +13,7 @@ import { usePortfolioAllocation } from '../hooks/usePortfolioData';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
 import FilterTabs from '../../../shared/components/form/FilterTabs';
+import RangeSelector from '../../../shared/components/form/RangeSelector';
 import {
   ASSET_TYPE_CHART_COLORS as ASSET_TYPE_COLORS,
   ASSET_TYPE_TABS as TYPE_TABS,
@@ -29,6 +30,10 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
   const { isDark } = useTheme();
   const { format: money, formatCompact: moneyCompact, currency: displayCurrency, convert } = useMoney();
   const [activeTab, setActiveTab] = useSessionState('portfolio-alloc-tab', 'ALL');
+  // Open/closed/all filter: the pie normally mixes open positions (per type) with the closed-proceeds CASH slice,
+  // so the centre Total can't answer "how much is OPEN?". 'open' drops CASH (centre Total = total open value),
+  // 'closed' keeps only CASH (the realized proceeds), 'all' is the combined default.
+  const [posStatus, setPosStatus] = useSessionState('portfolio-alloc-status', 'all');
   // The CASH (closed-proceeds) slice carries per-entry/exit-date FX frames (costByCurrency /
   // realizedPnlByCurrency); in USD/EUR display use them so the cost+realized breakdown sits on matching
   // FX dates instead of today's spot. TRY/ORIGINAL display and non-cash slices are a no-op.
@@ -105,10 +110,14 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
     const items = activeTab === 'ALL' ? (allocation || []) : (assetData || []);
     return items.filter((i) => {
       const value = Number(i.valueTry);
-      if (i.label === 'CASH') return value !== 0;
+      const isCash = i.label === 'CASH';
+      // CASH = closed proceeds: present in 'all' and 'closed', dropped in 'open'.
+      if (isCash) return posStatus !== 'open' && value !== 0;
+      // 'closed' (ALL view) shows only the CASH slice; open type slices are dropped.
+      if (posStatus === 'closed' && activeTab === 'ALL') return false;
       return value > 0;
     });
-  }, [activeTab, allocation, assetData]);
+  }, [activeTab, allocation, assetData, posStatus]);
 
   const totalValue = useMemo(
     () => finalData.reduce((sum, item) => sum + Math.abs(displayValueOf(item)), 0),
@@ -235,15 +244,32 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
         <span className="text-sm font-semibold text-fg">{t('portfolio.allocation.title')}</span>
       </div>
 
-      <FilterTabs
-        items={TYPE_TABS.filter(({ id }) => id !== 'ALL' && availableTypes.has(id))
-          .map(({ id }) => ({ type: id, label: assetLabel(id) }))}
-        activeId={activeTab}
-        onSelect={setActiveTab}
-        allLabel={assetLabel('ALL')}
-        showAll
-        layoutId="alloc-tab"
-      />
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="max-w-full overflow-x-auto">
+          <FilterTabs
+            items={TYPE_TABS.filter(({ id }) => id !== 'ALL' && availableTypes.has(id))
+              .map(({ id }) => ({ type: id, label: assetLabel(id) }))}
+            activeId={activeTab}
+            onSelect={setActiveTab}
+            allLabel={assetLabel('ALL')}
+            showAll
+            layoutId="alloc-tab"
+          />
+        </div>
+        {!forPrint && activeTab === 'ALL' && (
+          <RangeSelector
+            value={posStatus}
+            onChange={setPosStatus}
+            size="sm"
+            layoutId="alloc-status"
+            options={[
+              { id: 'all', label: t('portfolio.positions.statusAll') },
+              { id: 'open', label: t('portfolio.positions.statusOpen') },
+              { id: 'closed', label: t('portfolio.positions.statusClosed') },
+            ]}
+          />
+        )}
+      </div>
 
       <Card variant="elevated" radius="2xl" padding="lg" backdropBlur interactive={false}>
         {loading ? (

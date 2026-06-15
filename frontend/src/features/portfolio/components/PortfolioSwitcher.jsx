@@ -1,13 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Plus, Pencil, Trash2, Check, X, Wallet, CornerDownLeft } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Check, X, Wallet, CornerDownLeft, CandlestickChart, Landmark } from 'lucide-react';
 import { useCreatePortfolio, useRenamePortfolio, useDeletePortfolio } from '../hooks/usePortfolioData';
 import { extractApiError } from '../../../shared/utils/apiError';
 import { portfolioName } from '../../../shared/utils/portfolioName';
 import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
 
 const PANEL_TRANSITION = { duration: 0.18, ease: [0.16, 1, 0.3, 1] };
+
+const PORTFOLIO_TYPES = [
+  { id: 'SPOT', labelKey: 'portfolio.typeSwitcher.spot', Icon: CandlestickChart },
+  { id: 'FIXED', labelKey: 'portfolio.typeSwitcher.fixed', Icon: Landmark },
+];
+
+function TypeBadge({ type }) {
+  const { t } = useTranslation();
+  const meta = PORTFOLIO_TYPES.find((x) => x.id === type) ?? PORTFOLIO_TYPES[0];
+  const Icon = meta.Icon;
+  return (
+    <span className="inline-flex items-center gap-1 shrink-0 rounded-md bg-bg-base/70 px-1.5 py-0.5 text-[10px] font-medium text-fg-muted ring-1 ring-inset ring-border-default/60">
+      <Icon className="h-3 w-3" />
+      <span className="hidden sm:inline">{t(meta.labelKey)}</span>
+    </span>
+  );
+}
 
 export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect }) {
   const { t } = useTranslation();
@@ -16,6 +33,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
   const [renameValue, setRenameValue] = useState('');
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
+  const [newType, setNewType] = useState('SPOT');
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [error, setError] = useState(null);
   const ref = useRef(null);
@@ -29,6 +47,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
   const closePanel = useCallback(() => {
     setOpen(false);
     setCreating(false);
+    setNewType('SPOT');
     setRenameTarget(null);
     setDeleteTarget(null);
     setError(null);
@@ -49,9 +68,10 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
     if (!newName.trim()) return;
     setError(null);
     try {
-      const created = await create.mutateAsync(newName.trim());
+      const created = await create.mutateAsync({ name: newName.trim(), type: newType });
       setCreating(false);
       setNewName('');
+      setNewType('SPOT');
       onSelect?.(created.id);
     } catch (e) {
       setError(extractApiError(e, t('portfolioSwitcher.createFailed', { defaultValue: 'Oluşturma başarısız' })));
@@ -203,6 +223,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
                             {portfolioName(t, p)}
                           </span>
                         </button>
+                        <TypeBadge type={p.type} />
                         <div className="flex items-center gap-0.5 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity">
                           <button
                             onClick={(e) => { e.stopPropagation(); setRenameTarget(p); setRenameValue(p.name); setError(null); }}
@@ -250,7 +271,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
                         placeholder={t('portfolioSwitcher.namePlaceholder', { defaultValue: 'Portföy adı' })}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') submitCreate();
-                          if (e.key === 'Escape') { setCreating(false); setNewName(''); setError(null); }
+                          if (e.key === 'Escape') { setCreating(false); setNewName(''); setNewType('SPOT'); setError(null); }
                         }}
                         maxLength={25}
                         className="flex-1 min-w-0 rounded-md bg-bg-base/80 border border-border-default px-2.5 py-1.5 text-sm text-fg placeholder:text-fg-subtle outline-none focus:border-accent focus:ring-1 focus:ring-accent/40 transition-colors"
@@ -264,12 +285,33 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
                         <Check className="h-3.5 w-3.5" />
                       </button>
                       <button
-                        onClick={() => { setCreating(false); setNewName(''); setError(null); }}
+                        onClick={() => { setCreating(false); setNewName(''); setNewType('SPOT'); setError(null); }}
                         className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted bg-bg-base/80 hover:bg-surface hover:text-fg transition border-none cursor-pointer"
                         aria-label={t('common.cancel')}
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
+                    </div>
+                    <div className="mt-2.5 grid grid-cols-2 gap-1 rounded-lg bg-bg-base/60 p-1 ring-1 ring-inset ring-border-default/50">
+                      {PORTFOLIO_TYPES.map(({ id, labelKey, Icon }) => {
+                        const selected = newType === id;
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => { setNewType(id); setError(null); }}
+                            aria-pressed={selected}
+                            className={`relative flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors border-none cursor-pointer ${
+                              selected
+                                ? 'text-accent bg-accent/15 ring-1 ring-inset ring-accent/40'
+                                : 'text-fg-muted bg-transparent hover:text-fg hover:bg-surface/60'
+                            }`}
+                          >
+                            <Icon className="h-3.5 w-3.5" />
+                            <span className="truncate">{t(labelKey)}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                     <div className="flex items-center gap-1.5 mt-2 px-0.5 text-[10px] text-fg-subtle font-mono">
                       <CornerDownLeft className="h-3 w-3" />
@@ -282,7 +324,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
                   <motion.button
                     key="cta"
                     type="button"
-                    onClick={() => { setCreating(true); setError(null); }}
+                    onClick={() => { setCreating(true); setNewType('SPOT'); setError(null); }}
                     whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.98 }}
                     initial={{ opacity: 0 }}

@@ -990,6 +990,7 @@
       "updateErrorTitle": "Update Error",
       "activeOnlyLabel": "Active bonds",
       "activeOnlyTooltip": "Bonds not yet matured",
+      "filterTypeLabel": "Type",
       "priceChartTitle": "Price history",
       "noPriceData": "No price history",
       "rateChartTitle": "Coupon rate history",
@@ -1006,8 +1007,11 @@
         "FLOATING_TLREF": "Floating - TLREF",
         "FLOATING_CPI": "Floating - CPI",
         "FLOATING_AUCTION": "Floating - Auction",
+        "GOLD": "Gold",
         "SUKUK_FIXED": "Sukuk - Fixed",
-        "SUKUK_CPI": "Sukuk - CPI"
+        "SUKUK_FLOATING": "Sukuk - Floating",
+        "SUKUK_CPI": "Sukuk - CPI",
+        "SUKUK_GOLD": "Sukuk - Gold"
       }
     },
     "empty": {
@@ -1033,6 +1037,23 @@
       "downloadPdfEmpty": "Need at least one position to export PDF",
       "downloadPdfError": "PDF download failed. Please try again.",
       "downloadPdfRateLimit": "You can download at most 2 PDFs per hour. Please try again later."
+    },
+    "cost": {
+      "title": "Cost Breakdown",
+      "subtitle": "Cost by type — tap a type to see its assets (per-date FX)",
+      "totalCost": "Total Cost",
+      "empty": "No cost in this filter.",
+      "lots": "{{count}} lot",
+      "lots_other": "{{count}} lots",
+      "assets": "{{count}} asset",
+      "assets_other": "{{count}} assets",
+      "drillInto": "View {{type}} assets"
+    },
+    "pnlByType": {
+      "title": "P&L Breakdown",
+      "subtitle": "Where your total P&L comes from — tap a type for its assets",
+      "total": "Total P&L",
+      "empty": "No positions in this filter."
     },
     "positions": {
       "searchPlaceholder": "Search position...",
@@ -1244,6 +1265,202 @@
       "realizedPnl": "Realized P/L",
       "long": "LONG",
       "short": "SHORT"
+    },
+    "bonds": {
+      "title": "Bonds",
+      "addAction": "Add Bond",
+      "empty": "No bonds yet",
+      "emptyHint": "Add a Treasury bond/bill to track its return",
+      "statusSold": "SOLD",
+      "redeemed": "Redeemed",
+      "marketAdd": {
+        "noPortfolioTitle": "No bond portfolio",
+        "noPortfolioHint": "Create a Deposit & Bond portfolio first"
+      },
+      "col": {
+        "series": "Series"
+      },
+      "coupon": {
+        "label": "Coupon",
+        "next": "Next coupon",
+        "accrued": "Accrued coupon",
+        "daily": "Daily coupon",
+        "none": "Zero-coupon",
+        "nominalValue": "Bond value",
+        "perYearShort": "{{rate}}% p.a.",
+        "cpiLinked": "CPI-linked",
+        "tlref": "TLREF floating",
+        "floating": "Floating",
+        "received": "Coupons received",
+        "breakdown": "Value breakdown",
+        "income": "Coupon income",
+        "payments": "{{count}} payment",
+        "payments_other": "{{count}} payments",
+        "perPayment": "per payment",
+        "indexNote": "CPI-linked — return is in the index price; no separate coupon accrual.",
+        "scheduleReceived": "Received",
+        "scheduleBeforeEntry": "Before entry",
+        "freq": {
+          "ANNUAL": "Annual",
+          "SEMI_ANNUAL": "Semi-annual",
+          "QUARTERLY": "Quarterly",
+          "MONTHLY": "Monthly",
+          "ZERO_COUPON": "Zero-coupon"
+        }
+      },
+      "form": {
+        "titleAdd": "Add Bond",
+        "titleEdit": "Edit Bond",
+        "subtitle": "Enter the Treasury bond/bill details",
+        "submitAdd": "Add",
+        "submitEdit": "Save",
+        "totalCost": "Total cost",
+        "storedAsTry": "stored in TRY",
+        "cpiPriceHint": "CPI-linked: the price is the index level (~{{index}}), not 100. Enter the entry price on the index scale.",
+        "discountNote": "Zero-coupon bill — the return comes from the price accreting to par (100) at maturity. No coupon to enter.",
+        "cpiCouponNote": "CPI-linked — a low real coupon is paid on the indexed principal; the main return lives in the index price.",
+        "floatingNote": "Floating coupon — TLREF/auction + spread, resets each period; the rate comes from the bond record.",
+        "couponFromDb": "The coupon rate comes from the bond record and can't be changed.",
+        "perPeriod": "per period",
+        "freqInferred": "Frequency is inferred from the type — you can change it",
+        "freqAutoDetect": "Leave it untouched and it's auto-detected from the sharp price drops on payment dates",
+        "annualApprox": "≈ {{rate}}% annual",
+        "fields": {
+          "series": "Series",
+          "entryDate": "Entry Date",
+          "entryPrice": "Entry Price",
+          "per100": "per 100 nominal",
+          "perUnit": "per certificate",
+          "priceHint": "Price per 100 TRY of nominal value",
+          "priceSuggested": "Entry-day {{price}} · ±10%: {{low}} – {{high}}",
+          "priceReset": "reset to suggested",
+          "quantity": "Quantity",
+          "quantityPlaceholder": "e.g. 1000",
+          "couponRate": "Coupon Rate",
+          "couponSuggested": "suggested {{rate}}%",
+          "couponPlaceholder": "e.g. 25.50",
+          "couponHint": "The published rate is suggested; you can overwrite it with your own coupon rate"
+        },
+        "couponInfo": "Coupon: {{rate}}% (annual), {{frequency}}",
+        "maturityInfo": "Issued {{start}} · Matures {{end}}",
+        "success": {
+          "titleAdd": "Bond added",
+          "titleEdit": "Bond updated",
+          "subtitle": "Your portfolio has been updated"
+        }
+      },
+      "picker": {
+        "placeholder": "Search bond series...",
+        "clear": "Clear",
+        "searching": "Searching...",
+        "noResults": "No results found",
+        "couponShort": "Coupon {{rate}}%",
+        "maturityShort": "Matures {{date}}"
+      },
+      "sell": {
+        "title": "Sell bond",
+        "exitDate": "Exit Date",
+        "exitPrice": "Exit Price",
+        "proceeds": "Proceeds",
+        "confirm": "Sell"
+      },
+      "reopen": {
+        "title": "Reopen bond"
+      },
+      "delete": {
+        "title": "Delete bond?",
+        "message": "This bond will be permanently deleted. This action cannot be undone."
+      },
+      "detail": {
+        "open": "Bond detail",
+        "goToPage": "Go to {{code}} bond page",
+        "positionTitle": "Position",
+        "couponTitle": "Coupon Info",
+        "currentPrice": "Current Price",
+        "cleanPrice": "Clean price",
+        "dirtyPrice": "Dirty price",
+        "redemptionValue": "Redemption (par)",
+        "returnToMaturity": "Return to maturity",
+        "currentValue": "Current value",
+        "frequencyLabel": "Coupon Frequency",
+        "maturityProgress": "Maturity progress",
+        "frequency": {
+          "ANNUAL": "Annually",
+          "SEMI_ANNUAL": "Every 6 months",
+          "QUARTERLY": "Quarterly",
+          "MONTHLY": "Monthly",
+          "ZERO_COUPON": "Zero-coupon"
+        },
+        "scheduleTitle": "Coupon Schedule",
+        "scheduleHint": "Estimated coupon dates",
+        "scheduleEmpty": "No coupon schedule for this bond.",
+        "coupon": {
+          "past": "Past",
+          "upcoming": "Upcoming"
+        }
+      },
+      "errors": {
+        "seriesRequired": "Select a bond series",
+        "quantityInvalid": "Enter a valid quantity",
+        "priceInvalid": "Enter a valid price",
+        "priceTooHigh": "Price per 100 nominal must be at most 100,000",
+        "priceOutOfBand": "Price must stay within ±10% of the entry-day value ({{low}} – {{high}})",
+        "couponInvalid": "Coupon rate must be between 0 and {{max}}",
+        "alreadyMatured": "Entry date must be before the bond's maturity date",
+        "beforeIssue": "Entry date cannot be before the bond's issue date",
+        "exitAfterMaturity": "Exit date cannot be after the bond's maturity date",
+        "dateRequired": "Enter a date",
+        "exitBeforeEntry": "Exit date cannot be before the entry date",
+        "addFailed": "Could not add bond",
+        "updateFailed": "Could not update bond",
+        "sellFailed": "Could not sell bond",
+        "reopenFailed": "Could not reopen bond",
+        "deleteFailed": "Could not delete bond"
+      }
+    },
+    "fixedIncome": {
+      "totalValue": "Total Value",
+      "totalCost": "Total Cost",
+      "profitLoss": "Profit / Loss",
+      "title": "Deposits & Bonds",
+      "subtitle": "Fixed-income portfolio",
+      "allocation": "Allocation",
+      "asOf": "As of {{date}}",
+      "depositSplit": "Deposits",
+      "bondSplit": "Bonds",
+      "countLabel": "{{count}} item",
+      "countLabel_other": "{{count}} items",
+      "empty": "No deposits or bonds added yet.",
+      "chartTitle": "Fixed Income Value",
+      "chartEmpty": "No data for this period.",
+      "modes": {
+        "total": "Total",
+        "deposit": "Deposits",
+        "bond": "Bonds"
+      },
+      "couponLabel": "Coupon",
+      "couponLegend": "Coupon payment",
+      "redemption": "Redemption",
+      "cashflowTitle": "Cashflow Calendar",
+      "cashflowSubtitle": "Coupon payments + redemptions",
+      "cashflowEmpty": "No expected cashflow.",
+      "cashflowEmptyHint": "Coupon-bearing bonds and maturing deposits show up here.",
+      "cashflowClickHint": "Tap a month to see what pays out — and how much",
+      "cashflowMonthPayments": "{{month}} payments",
+      "depositMaturityLabel": "Deposit maturity",
+      "pnl": {
+        "title": "P&L vs Inflation",
+        "subtitle": "Gain/loss beyond cost, against the inflation breakeven",
+        "pnlLabel": "P&L",
+        "inflationLabel": "Inflation breakeven",
+        "beat": "Beating inflation",
+        "behind": "Behind inflation",
+        "empty": "No data for this period."
+      }
+    },
+    "typeSwitcher": {
+      "spot": "Spot & VIOP",
+      "fixed": "Deposits & Bonds"
     }
   },
   "marketAddPosition": {
@@ -2393,6 +2610,7 @@
     "normalizedHintCompareIndex": "Macro series — indexed to 100 at start",
     "mixedCurrencyHint": "Series in different currencies are compared on a {{currency}} basis — switch the currency to change",
     "inflationFrameHint": "Inflation is a TRY index — series are compared on a TRY basis",
+    "macroUnitLoadError": "Macro indicator info failed to load — this rate series was safely hidden; refresh the page and try again",
     "compareLevel": "Level",
     "compareCumulative": "Cumulative",
     "compareAnnual": "Annual",
@@ -2555,6 +2773,100 @@
       "errorTitle": "Unable to render report",
       "footer": "This report is generated automatically by Finance Portal. Values reflect snapshot data at generation time and do not constitute financial advice.",
       "page": "Page {{page}} of {{total}}"
+    }
+  },
+  "deposits": {
+    "term": {
+      "progress": "Term progress",
+      "daysLeft": "{{count}} day left",
+      "daysLeft_other": "{{count}} days left",
+      "matured": "Matured"
+    },
+    "interest": {
+      "gross": "Gross interest",
+      "stopaj": "Withholding",
+      "net": "Net interest",
+      "maturityValue": "Maturity value"
+    },
+    "title": "Deposits",
+    "addAction": "Add Deposit",
+    "empty": "No deposits yet",
+    "emptyHint": "Add a time deposit to track its return",
+    "fixedRate": "Fixed",
+    "cols": {
+      "deposit": "Deposit",
+      "rate": "Rate",
+      "status": "Status",
+      "start": "Start",
+      "maturity": "Maturity",
+      "closed": "Closed",
+      "value": "Value",
+      "pnl": "P/L",
+      "actions": "Actions"
+    },
+    "fields": {
+      "currency": "Currency",
+      "principal": "Principal",
+      "annualRate": "Annual Rate (%)",
+      "indicatorCode": "Indicator Code",
+      "indicatorPlaceholder": "e.g. TLREF",
+      "depositType": "Deposit Type",
+      "depositTypeCustom": "Custom rate",
+      "depositTypeNoRates": "No current deposit rates",
+      "rateOnDate": "Rate on {{date}}: {{rate}}%",
+      "withholding": "Withholding (%)",
+      "withholdingHint": "varies by term",
+      "optional": "optional",
+      "startDate": "Start Date",
+      "maturityDate": "Maturity Date",
+      "closedDate": "Closed Date",
+      "currentValue": "Current Value",
+      "pnl": "P/L"
+    },
+    "form": {
+      "titleAdd": "Add Deposit",
+      "titleEdit": "Edit Deposit",
+      "subtitle": "Enter the time deposit details",
+      "continue": "Continue",
+      "confirm": {
+        "heading": "Confirm deposit",
+        "sub": "Review the details and save"
+      },
+      "success": {
+        "titleAdd": "Deposit added",
+        "titleEdit": "Deposit updated",
+        "subtitle": "Your portfolio has been updated"
+      }
+    },
+    "actions": {
+      "close": "Close",
+      "reopen": "Reopen"
+    },
+    "closeDialog": {
+      "title": "Close deposit?",
+      "hint": "You can close the deposit before maturity. The return up to the closing date is calculated.",
+      "dateLabel": "Closing Date",
+      "confirm": "Close"
+    },
+    "deleteDialog": {
+      "title": "Delete deposit?",
+      "message": "This deposit will be permanently deleted. This action cannot be undone."
+    },
+    "errors": {
+      "principalInvalid": "Enter a valid principal",
+      "currencyRequired": "Select a currency",
+      "rateInvalid": "Enter a valid rate",
+      "withholdingInvalid": "Withholding must be between 0% and 100%",
+      "startRequired": "Enter a start date",
+      "startTooOld": "Start date cannot be earlier than 2000",
+      "maturityRequired": "Enter a maturity date",
+      "maturityAfterStart": "Maturity date must be after the start date",
+      "maturityTooFar": "Maturity can be at most 30 years after the start",
+      "addFailed": "Could not add deposit",
+      "updateFailed": "Could not update deposit",
+      "closeFailed": "Could not close deposit",
+      "deleteFailed": "Could not delete deposit",
+      "reopenFailed": "Could not reopen deposit"
     }
   }
 }

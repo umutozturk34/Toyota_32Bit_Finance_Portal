@@ -13,10 +13,18 @@ import PositionsTable from './components/PositionsTable';
 import PositionSearchBar from './components/PositionSearchBar';
 import AllocationChart from './components/AllocationChart';
 import RealizedPnlChart from './components/RealizedPnlChart';
+import CostBreakdownChart from './components/CostBreakdownChart';
+import PnlByTypeChart from './components/PnlByTypeChart';
 import PerformanceChart from './components/PerformanceChart';
 import PnlBreakdownChart from './components/PnlBreakdownChart';
 import AssetDetail from './components/AssetDetail';
 import PortfolioActions from './components/PortfolioActions';
+import DepositsList from './components/DepositsList';
+import BondsList from './components/BondsList';
+import FixedIncomeSummaryCard from './components/FixedIncomeSummaryCard';
+import FixedIncomeChart from './components/FixedIncomeChart';
+import FixedIncomePnlChart from './components/FixedIncomePnlChart';
+import CouponCashflowChart from './components/CouponCashflowChart';
 import PortfolioModalsHost from './components/PortfolioModalsHost';
 import PortfolioOnboardingHost from './components/PortfolioOnboardingHost';
 import usePortfolioPageState from './hooks/usePortfolioPageState';
@@ -58,6 +66,7 @@ export default function Portfolio() {
   const portfolio = (portfolios ?? []).find((p) => String(p.id) === urlPortfolioId)
     ?? portfolios?.[0]
     ?? null;
+  const portfolioType = portfolio?.type === 'FIXED' ? 'fixed' : 'spot';
   const setActivePortfolio = (id) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -150,7 +159,7 @@ export default function Portfolio() {
 
   return (
     <>
-      {selectedAsset ? (
+      {portfolioType === 'spot' && selectedAsset ? (
         <AssetDetail
           portfolioId={portfolio.id}
           asset={selectedAsset}
@@ -161,6 +170,34 @@ export default function Portfolio() {
           onReopenLot={handleReopen}
           hasActiveDialog={hasActiveDialog}
         />
+      ) : portfolioType === 'fixed' ? (
+        <div className="space-y-6">
+          <PortfolioActions
+            portfolio={portfolio}
+            portfolios={portfolios}
+            loading={loading}
+            onRefresh={invalidatePortfolio}
+            onSelectPortfolio={setActivePortfolio}
+            hasPositions={false}
+            showExtras={false}
+          />
+
+          {portfolio?.id && (
+            <div className="space-y-6">
+              <FixedIncomeSummaryCard portfolioId={portfolio.id} />
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+                <FixedIncomeChart portfolioId={portfolio.id} />
+                <CouponCashflowChart portfolioId={portfolio.id} />
+              </div>
+              <FixedIncomePnlChart portfolioId={portfolio.id} />
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 items-start">
+            <DepositsList portfolioId={portfolio?.id} />
+            <BondsList portfolioId={portfolio?.id} />
+          </div>
+        </div>
       ) : (
         <div className="space-y-6">
           <PortfolioActions
@@ -204,6 +241,10 @@ export default function Portfolio() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 min-w-0">
                 <AllocationChart allocation={allocation} portfolioId={portfolio?.id} />
                 <RealizedPnlChart portfolioId={portfolio?.id} />
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 min-w-0">
+                <CostBreakdownChart portfolioId={portfolio?.id} />
+                <PnlByTypeChart portfolioId={portfolio?.id} />
               </div>
               <PositionSearchBar />
               <div className="min-w-0">

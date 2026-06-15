@@ -8,8 +8,8 @@ export const portfolioService = {
     return res.data.data;
   },
 
-  create: async (name) => {
-    const res = await api.post(BASE, { name });
+  create: async ({ name, type } = {}) => {
+    const res = await api.post(BASE, { name, type });
     return res.data.data;
   },
 

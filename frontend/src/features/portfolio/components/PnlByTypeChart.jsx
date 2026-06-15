@@ -1,0 +1,222 @@
+import { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import { TrendingUp, TrendingDown, ChevronRight, Inbox } from 'lucide-react';
+import { containerVariants, cardVariants } from '../../../shared/utils/animations';
+import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
+import { useMoney } from '../../../shared/hooks/useMoney';
+import Card from '../../../shared/components/card';
+import Spinner from '../../../shared/components/feedback/Spinner';
+import FilterTabs from '../../../shared/components/form/FilterTabs';
+import RangeSelector from '../../../shared/components/form/RangeSelector';
+import { usePortfolioPositions } from '../hooks/usePortfolioData';
+
+// The overview companion to CostBreakdownChart: instead of "where the money went" it shows "where the gain/loss
+// came from", per asset type, with the same rollup + drill-in. P&L is SIGNED (a type can be a net drag), so rows
+// are coloured by sign and the bar scales to the LARGEST absolute contribution, not the net total (which can sit
+// near zero while individual types swing hard in opposite directions). The P&L-over-TIME view lives on the K/Z tab.
+const TYPE_OPTIONS = ['STOCK', 'CRYPTO', 'FOREX', 'COMMODITY', 'VIOP'];
+const FETCH_SIZE = 500;
+
+export default function PnlByTypeChart({ portfolioId }) {
+  const { t } = useTranslation();
+  const { format: money, convert, currency: displayCurrency } = useMoney();
+  const [status, setStatus] = useState('open');
+  const [typeFilter, setTypeFilter] = useState('ALL');
+
+  const queryParams = useMemo(() => ({
+    size: FETCH_SIZE,
+    closed: status === 'closed',
+    ...(typeFilter !== 'ALL' && { assetType: typeFilter }),
+  }), [status, typeFilter]);
+
+  const { data, isLoading } = usePortfolioPositions(portfolioId, queryParams);
+  const rows = useMemo(() => (Array.isArray(data) ? data : data?.content ?? []), [data]);
+  const targetCurrency = displayCurrency === 'ORIGINAL' ? 'TRY' : displayCurrency;
+
+  // PER-DATE-FX, currency-aware P&L per lot. Cost is always converted at the lot's OWN entry-date FX. For an OPEN
+  // lot the current value converts at today's FX (open FX exposure is live), so a non-TRY FX move shows up in the
+  // gain/loss. For a CLOSED lot the P&L is REALIZED and frozen — convert it at the EXIT-date FX, not today's (else
+  // a non-TRY closed position would keep drifting with the FX rate after it was sold). In TRY display every
+  // conversion is identity, so pnl == the backend pnlTry exactly.
+  const groupByType = typeFilter === 'ALL';
+  const items = useMemo(() => {
+    const map = new Map();
+    rows.forEach((p) => {
+      const key = groupByType ? p?.assetType : p?.assetCode;
+      if (!key) return;
+      const cost = convert(p.entryValueTry, 'TRY', null, p.entryDate) ?? Number(p.entryValueTry);
+      if (!Number.isFinite(cost) || cost <= 0) return;
+      let pnl;
+      if (p.exitDate) {
+        pnl = Number(convert(p.pnlTry, 'TRY', null, p.exitDate) ?? Number(p.pnlTry));
+      } else {
+        const valueTry = Number(p.entryValueTry) + Number(p.pnlTry);
+        const value = convert(valueTry, 'TRY') ?? valueTry;
+        pnl = value - cost;
+      }
+      if (!Number.isFinite(pnl)) return;
+      const prev = map.get(key)
+        || { key, type: p.assetType, code: groupByType ? null : p.assetCode,
+             name: groupByType ? null : (p.assetName || p.assetCode), pnl: 0, cost: 0, lots: 0, codes: new Set() };
+      prev.pnl += pnl;
+      prev.cost += cost;
+      prev.lots += 1;
+      if (p.assetCode) prev.codes.add(p.assetCode);
+      map.set(key, prev);
+    });
+    return [...map.values()].sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
+  }, [rows, convert, groupByType]);
+
+  const totalPnl = useMemo(() => items.reduce((s, a) => s + a.pnl, 0), [items]);
+  const totalCost = useMemo(() => items.reduce((s, a) => s + a.cost, 0), [items]);
+  const overallReturn = totalCost > 0 ? (totalPnl / totalCost) * 100 : null;
+  const maxAbs = items.reduce((m, a) => Math.max(m, Math.abs(a.pnl)), 0);
+  const totalUp = totalPnl >= 0;
+
+  const typeItems = TYPE_OPTIONS.map((type) => ({ type, label: t(`assets.labels.${type}`, { defaultValue: type }) }));
+
+  return (
+    <motion.div variants={cardVariants} initial="hidden" animate="show">
+      <Card variant="elevated" radius="2xl" padding="none" backdropBlur className="group relative overflow-hidden">
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute -top-20 -left-16 h-48 w-48 rounded-full blur-[80px] opacity-50 transition-opacity duration-500 group-hover:opacity-80 ${totalUp ? 'bg-success/12' : 'bg-danger/12'}`}
+        />
+        <div className="relative p-4 sm:p-5 space-y-4">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset ${totalUp ? 'bg-success/10 ring-success/20' : 'bg-danger/10 ring-danger/20'}`}>
+                {totalUp ? <TrendingUp className="h-4 w-4 text-success" /> : <TrendingDown className="h-4 w-4 text-danger" />}
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-fg truncate">{t('portfolio.pnlByType.title')}</p>
+                <p className="text-[11px] text-fg-muted truncate">{t('portfolio.pnlByType.subtitle')}</p>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-[10px] uppercase tracking-wider text-fg-muted">{t('portfolio.pnlByType.total')}</p>
+              <p className={`text-lg font-bold font-mono ${totalUp ? 'text-success' : 'text-danger'}`}>
+                {totalUp ? '+' : ''}{money(totalPnl, targetCurrency)}
+                {overallReturn != null && (
+                  <span className="ml-1.5 text-xs font-semibold">({totalUp ? '+' : ''}%{overallReturn.toFixed(1)})</span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* Filters: open/closed + asset type */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="max-w-full overflow-x-auto">
+              <FilterTabs
+                items={typeItems}
+                activeId={typeFilter}
+                onSelect={setTypeFilter}
+                allLabel={t('portfolio.positions.statusAll')}
+                showAll
+                layoutId="pnltype-type"
+              />
+            </div>
+            <RangeSelector
+              value={status}
+              onChange={setStatus}
+              size="sm"
+              layoutId="pnltype-status"
+              options={[
+                { id: 'open', label: t('portfolio.positions.statusOpen') },
+                { id: 'closed', label: t('portfolio.positions.statusClosed') },
+              ]}
+            />
+          </div>
+
+          {/* Per-type / per-asset P&L bars */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Spinner size="md" tone="accent" />
+            </div>
+          ) : items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+              <Inbox className="h-7 w-7 text-fg-subtle" />
+              <p className="text-sm text-fg-muted">{t('portfolio.pnlByType.empty')}</p>
+            </div>
+          ) : (
+            <motion.div
+              variants={containerVariants(0.04)}
+              initial="hidden"
+              animate="show"
+              className="space-y-2.5"
+            >
+              {items.map((a) => {
+                const up = a.pnl >= 0;
+                const ret = a.cost > 0 ? (a.pnl / a.cost) * 100 : null;
+                const width = maxAbs > 0 ? (Math.abs(a.pnl) / maxAbs) * 100 : 0;
+                const dotColor = ASSET_TYPE_COLORS[a.type] || ASSET_TYPE_COLORS.CASH;
+                const signColor = up ? 'var(--color-success)' : 'var(--color-danger)';
+                const typeLabel = t(`assets.labels.${a.type}`, { defaultValue: a.type });
+                // In the "Tümü" rollup each bar is a TYPE and clicking it drills into that type's assets; once a
+                // type is selected each bar is an individual asset (no further drill).
+                const RowTag = groupByType ? motion.button : motion.div;
+                return (
+                  <RowTag
+                    key={a.key}
+                    variants={cardVariants}
+                    {...(groupByType
+                      ? { type: 'button', onClick: () => setTypeFilter(a.type),
+                          'aria-label': t('portfolio.cost.drillInto', { type: typeLabel }) }
+                      : {})}
+                    className={`group/row block w-full space-y-1 border-none bg-transparent p-0 text-left ${
+                      groupByType ? 'cursor-pointer' : ''}`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
+                        <span className="text-xs font-mono font-semibold text-fg truncate transition-colors group-hover/row:text-accent">
+                          {groupByType ? typeLabel : a.code}
+                        </span>
+                        {!groupByType && a.name && a.name !== a.code && (
+                          <span className="hidden truncate text-[11px] text-fg-muted sm:inline">{a.name}</span>
+                        )}
+                        {groupByType ? (
+                          <span className="shrink-0 text-[10px] font-mono text-fg-subtle">
+                            {t('portfolio.cost.assets', { count: a.codes.size })}
+                          </span>
+                        ) : (
+                          a.lots > 1 && (
+                            <span className="shrink-0 text-[10px] font-mono text-fg-subtle">{t('portfolio.cost.lots', { count: a.lots })}</span>
+                          )
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`text-xs font-mono font-semibold ${up ? 'text-success' : 'text-danger'}`}>
+                          {up ? '+' : ''}{money(a.pnl, targetCurrency)}
+                        </span>
+                        {ret != null && (
+                          <span className={`w-12 text-right text-[10px] font-mono ${up ? 'text-success/80' : 'text-danger/80'}`}>
+                            {up ? '+' : ''}%{ret.toFixed(1)}
+                          </span>
+                        )}
+                        {groupByType && (
+                          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-fg-subtle transition-colors group-hover/row:text-accent" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-bg-base">
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ background: `linear-gradient(90deg, ${signColor}, ${signColor}cc)` }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${width}%` }}
+                        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                      />
+                    </div>
+                  </RowTag>
+                );
+              })}
+            </motion.div>
+          )}
+        </div>
+      </Card>
+    </motion.div>
+  );
+}

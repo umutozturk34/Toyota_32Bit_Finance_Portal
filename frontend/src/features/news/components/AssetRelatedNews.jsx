@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -6,8 +6,72 @@ import { useTranslation } from 'react-i18next';
 import { Newspaper, Calendar, ChevronRight } from 'lucide-react';
 import { formatDateTimeShort } from '../../../shared/utils/formatters';
 import { CategoryBadge } from '../lib/newsConfig.jsx';
+import { getFallbackImage } from '../lib/newsConfig';
 import { newsService } from '../services/newsService';
 import Card from '../../../shared/components/card';
+
+/**
+ * One related-news card: image header (article image, with the same category-fallback the news grid uses) carrying
+ * the relevance tag — the asset code when the article names the asset, else its market-category badge — over a
+ * gradient, then source/title/date. Per-card image error state lives here so the map stays hook-free.
+ */
+function RelatedNewsCard({ article, mentions, codeTerm, onOpen }) {
+  const fallback = getFallbackImage(article.category, article.id);
+  const [imgSrc, setImgSrc] = useState(article.imageUrl || fallback);
+  const [loaded, setLoaded] = useState(false);
+  const handleError = () => {
+    if (imgSrc !== fallback) {
+      setImgSrc(fallback);
+      setLoaded(false);
+    } else {
+      setLoaded(true);
+    }
+  };
+  return (
+    <Card
+      as="button"
+      type="button"
+      onClick={onOpen}
+      interactive
+      radius="xl"
+      padding="none"
+      className="group flex flex-col overflow-hidden text-left w-full"
+      aria-label={article.title}
+    >
+      <div className="relative h-28 w-full shrink-0 overflow-hidden bg-surface">
+        <img
+          src={imgSrc}
+          alt={article.title}
+          loading="lazy"
+          className={`h-full w-full object-cover transition-all duration-500 group-hover:scale-105 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={() => setLoaded(true)}
+          onError={handleError}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-bg-elevated/85 via-transparent to-transparent" />
+        <div className="absolute bottom-2 left-2.5 max-w-[calc(100%-1.25rem)]">
+          {mentions ? (
+            <span className="inline-flex items-center rounded-md border border-accent/30 bg-accent/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent backdrop-blur-sm truncate">
+              {codeTerm}
+            </span>
+          ) : (
+            <CategoryBadge category={article.category} />
+          )}
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col gap-1.5 p-3">
+        <span className="truncate text-[10px] font-semibold uppercase tracking-widest text-accent">{article.sourceName}</span>
+        <h3 className="text-[13px] font-semibold leading-snug text-fg line-clamp-2 break-words transition-colors group-hover:text-accent-bright">
+          {article.title}
+        </h3>
+        <div className="flex-1" />
+        <div className="flex items-center gap-1.5 text-[11px] text-fg-subtle">
+          <Calendar size={11} strokeWidth={1.6} className="shrink-0" />
+          <span className="truncate">{formatDateTimeShort(article.publishedAt)}</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 // Each asset type's "home" news category — the fallback tag shown when an article doesn't name the asset directly
 // (a BIST stock's market news still belongs under Borsa İstanbul), and the source of the category-level backfill.
@@ -116,41 +180,15 @@ export default function AssetRelatedNews({ assetCode, assetName, assetType }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {items.map((a) => {
-          const mine = mentionsAsset(a);
-          return (
-            <Card
-              key={a.id}
-              as="button"
-              type="button"
-              onClick={() => navigate(`/news/${a.id}`)}
-              interactive
-              radius="xl"
-              padding="md"
-              className="group flex flex-col gap-2 text-left w-full"
-              aria-label={a.title}
-            >
-              <div className="flex items-center justify-between gap-2 min-w-0">
-                {mine ? (
-                  <span className="inline-flex items-center rounded-md border border-accent/25 bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent truncate">
-                    {codeTerm}
-                  </span>
-                ) : (
-                  <CategoryBadge category={a.category} />
-                )}
-                <span className="text-[10px] text-fg-subtle truncate">{a.sourceName}</span>
-              </div>
-              <h3 className="text-[13px] font-semibold leading-snug text-fg line-clamp-3 break-words transition-colors group-hover:text-accent-bright">
-                {a.title}
-              </h3>
-              <div className="flex-1" />
-              <div className="flex items-center gap-1.5 border-t border-border-default pt-1.5 text-[11px] text-fg-subtle">
-                <Calendar size={11} strokeWidth={1.6} className="shrink-0" />
-                <span className="truncate">{formatDateTimeShort(a.publishedAt)}</span>
-              </div>
-            </Card>
-          );
-        })}
+        {items.map((a) => (
+          <RelatedNewsCard
+            key={a.id}
+            article={a}
+            mentions={mentionsAsset(a)}
+            codeTerm={codeTerm}
+            onOpen={() => navigate(`/news/${a.id}`)}
+          />
+        ))}
       </div>
     </motion.section>
   );

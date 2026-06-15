@@ -6,6 +6,7 @@ import { getFallbackImage } from '../../news/lib/newsConfig.js';
 import { currentLocaleTag } from '../../../shared/utils/formatters';
 import { newsCategoryName } from '../../../shared/utils/newsCategoryName';
 import useNavigationStore from '../../../shared/stores/useNavigationStore';
+import AssetMentionTag from '../../news/components/AssetMentionTag';
 import Card from '../../../shared/components/card';
 
 function formatDate(iso) {
@@ -16,11 +17,15 @@ function formatDate(iso) {
 function NewsRow({ article, onClick }) {
   const { t } = useTranslation();
   const imgSrc = article.imageUrl || getFallbackImage(article.category, article.id);
+  const assets = Array.isArray(article.assets) ? article.assets : [];
+  // A div (not a button) so the per-asset tag buttons aren't nested inside a button (invalid HTML).
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      className="w-full flex items-start gap-2.5 p-2 rounded-lg hover:bg-surface/60 transition-colors cursor-pointer text-left border-none bg-transparent group"
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
+      className="w-full flex items-start gap-2.5 p-2 rounded-lg hover:bg-surface/60 transition-colors cursor-pointer text-left group"
     >
       {imgSrc
         ? <img src={imgSrc} alt="" loading="lazy" decoding="async" fetchPriority="low" width="48" height="48" className="w-12 h-12 rounded-md object-cover shrink-0 ring-1 ring-border-default" />
@@ -39,8 +44,15 @@ function NewsRow({ article, onClick }) {
           )}
           <span className="text-[10px] text-fg-subtle">{formatDate(article.publishedAt)}</span>
         </div>
+        {assets.length > 0 && (
+          <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+            {assets.slice(0, 3).map((a) => (
+              <AssetMentionTag key={`${a.type}:${a.code}`} code={a.code} type={a.type} lite />
+            ))}
+          </div>
+        )}
       </div>
-    </button>
+    </div>
   );
 }
 

@@ -40,12 +40,13 @@ function changeOnDate(candles, dateStr) {
  * tinted by the asset's move ON THE NEWS DATE — green ↗ up, red ↘ down, accent when flat/unknown. The history is
  * fetched once per asset and cached, so the same code across the news grid shares one request.
  */
-export default function AssetMentionTag({ code, type, date, onNavigate }) {
+export default function AssetMentionTag({ code, type, date, lite = false, onNavigate }) {
   const navigate = useNavigate();
   const { data } = useQuery({
     queryKey: ['assetHistoryMini', type, code],
     queryFn: () => unifiedMarketService.getHistory(type, code, '1Y'),
-    enabled: !!code && !!type,
+    // `lite` (e.g. the overview widget) skips the history fetch — just the clickable code, no direction tint.
+    enabled: !lite && !!code && !!type,
     staleTime: 10 * 60 * 1000,
   });
 

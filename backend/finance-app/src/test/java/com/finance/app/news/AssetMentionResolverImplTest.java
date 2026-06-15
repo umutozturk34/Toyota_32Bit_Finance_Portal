@@ -35,6 +35,7 @@ class AssetMentionResolverImplTest {
         when(stockRepository.findAllSymbolsAndNames()).thenReturn(List.of(
                 new Object[]{"KRVGD.IS", "Kervan Gıda Sanayi ve Ticaret A.Ş."},
                 new Object[]{"THYAO.IS", "Türk Hava Yolları A.O."},
+                new Object[]{"AKBNK.IS", "Akbank T.A.Ş."},
                 new Object[]{"AHGAZ.IS", "Ahlatcı Doğalgaz Dağıtım A.Ş."}
         ));
         when(cryptoRepository.findAllIdsNamesAndSymbols()).thenReturn(List.of(
@@ -111,6 +112,18 @@ class AssetMentionResolverImplTest {
         List<ResolvedAsset> result = resolver.resolve("Kervan Gıda (KRVGD) ve Bitcoin gündemde", null);
 
         assertThat(result).extracting(ResolvedAsset::code).containsExactlyInAnyOrder("KRVGD.IS", "bitcoin");
+    }
+
+    @Test
+    void shouldResolveMultipleAssetsAcrossTypes_fromOneMarketWrap() {
+        // A general "day-end" article naming several firms + gold + a coin links to ALL of them (every article is
+        // checked against every catalog entry; one article → many assets).
+        List<ResolvedAsset> result = resolver.resolve(
+                "Piyasalarda gün sonu: Türk Hava Yolları ve Akbank yükseldi, gram altın rekor kırdı, Bitcoin toparlandı",
+                null);
+
+        assertThat(result).extracting(ResolvedAsset::code)
+                .contains("THYAO.IS", "AKBNK.IS", "XAUTRYG", "bitcoin");
     }
 
     @Test

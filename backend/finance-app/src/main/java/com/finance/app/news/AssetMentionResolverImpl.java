@@ -37,7 +37,9 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
     private static final Pattern DIACRITICS = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
     private static final Pattern NON_ALNUM = Pattern.compile("[^a-z0-9]+");
     private static final Set<String> NAME_STOPWORDS = Set.of("ve", "the", "a.s", "as", "ao");
-    private static final int STOCK_CORE_MIN = 7;
+    // Min length of a stock-name "core" to match on. 5 so distinctive single-word names like "Akbank" (6) link,
+    // while still dropping 3-4 char fragments that would over-match.
+    private static final int STOCK_CORE_MIN = 5;
     private static final int CRYPTO_NAME_MIN = 4;
     private static final long TTL_MS = 60 * 60 * 1000;
 

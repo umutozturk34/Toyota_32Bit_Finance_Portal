@@ -52,9 +52,20 @@ export default function AssetMentionTag({ code, type, date, lite = false, onNavi
 
   const candles = Array.isArray(data) ? data : data?.candles ?? [];
   const change = changeOnDate(candles, date);
-  const up = change != null && change > 0;
-  const down = change != null && change < 0;
+  const magnitude = change != null ? Math.abs(change) : null;
+  // A sub-0.005% move rounds to "0.00" — show it as a flat, directionless "0%" instead of a misleading
+  // green/red arrow on a move that didn't really happen (e.g. USD/TRY barely budging on the news date).
+  const flat = magnitude != null && magnitude < 0.005;
+  const up = magnitude != null && change > 0 && !flat;
+  const down = magnitude != null && change < 0 && !flat;
   const changeTone = up ? 'text-success' : down ? 'text-danger' : 'text-fg-muted';
+  // Small-but-real moves (a slow forex/commodity pair) keep two decimals so they don't collapse to "0.0%";
+  // larger moves stay at one decimal.
+  const changeLabel = magnitude == null
+    ? null
+    : flat
+      ? '0%'
+      : `${magnitude < 0.1 ? magnitude.toFixed(2) : magnitude.toFixed(1)}%`;
 
   const open = (e) => {
     e.stopPropagation();
@@ -71,11 +82,11 @@ export default function AssetMentionTag({ code, type, date, lite = false, onNavi
       className="group/tag inline-flex items-center gap-1 rounded-md border border-border-default bg-bg-elevated/70 px-1.5 py-0.5 text-[10px] hover:border-accent/40 hover:bg-bg-elevated transition-colors cursor-pointer"
     >
       <span className="font-bold uppercase tracking-wider text-accent">{bareCode(code)}</span>
-      {change != null && (
+      {changeLabel != null && (
         <span className={`inline-flex items-center gap-0.5 font-mono font-semibold ${changeTone}`}>
           {up && <ArrowUpRight className="h-2.5 w-2.5" strokeWidth={3} />}
           {down && <ArrowDownRight className="h-2.5 w-2.5" strokeWidth={3} />}
-          {Math.abs(change).toFixed(1)}%
+          {changeLabel}
         </span>
       )}
     </button>

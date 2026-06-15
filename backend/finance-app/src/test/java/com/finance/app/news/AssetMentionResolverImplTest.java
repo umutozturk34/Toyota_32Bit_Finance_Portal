@@ -170,6 +170,23 @@ class AssetMentionResolverImplTest {
     }
 
     @Test
+    void shouldResolveEveryAssetInARealDayEndWrap_withTurkishCharacters() {
+        // The actual "SON DAKİKA: Piyasalar Günü Sert Yükselişle Kapattı" article (news/218), verbatim with
+        // its Turkish diacritics: it must link the stocks (Türk Hava Yolları, Akbank, ASELSAN), gold, the
+        // dollar and Brent — not just the BIST index. Proves accent-insensitive matching (ı/İ, ş, ç) and that
+        // the stock catalog + commodity/currency keywords all fire in ONE pass.
+        String body = "Borsa İstanbul'da işlem gören BIST 100 endeksi günü yükselişle tamamladı. En çok işlem "
+                + "gören hisseler arasında: Astor Enerji, Türk Hava Yolları, Akbank, ASELSAN ve Türkiye İş "
+                + "Bankası (C) yer aldı. Altın rekor seviyelere yaklaştı, ons altın 4.354 dolar oldu. TCMB "
+                + "doların efektif kurunu açıkladı. Brent petrol 82,7 dolar seviyesine geriledi.";
+
+        List<ResolvedAsset> result = resolver.resolve("SON DAKİKA: Piyasalar Günü Sert Yükselişle Kapattı", body);
+
+        assertThat(result).extracting(ResolvedAsset::code)
+                .contains("THYAO.IS", "AKBNK.IS", "ASELS.IS", "XAUTRYG", "USD", "BZ=F");
+    }
+
+    @Test
     void shouldResolveAllAssetTypes_fromOneMarketWrap() {
         // A real day-end wrap names a stock, gold, a currency, oil and a coin at once — every type must link.
         List<ResolvedAsset> result = resolver.resolve(

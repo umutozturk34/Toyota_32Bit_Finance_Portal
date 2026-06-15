@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -88,6 +88,8 @@ const TYPE_CATEGORY = {
 const MAX_ITEMS = 6;
 const STALE_MS = 5 * 60 * 1000;
 
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // Accent/case-insensitive normalize for the "does this article name the asset?" heuristic — mirrors the backend's
 // unaccented search so "Türk Hava Yolları" matches "turk hava yollari" (Turkish ı/İ folded to i).
 function normalize(text) {
@@ -131,11 +133,26 @@ export default function AssetRelatedNews({ assetCode, assetName, assetType }) {
     staleTime: STALE_MS,
   });
 
-  // Direct mentions first (code, then name), category feed as backfill; deduped by id, capped.
+  const nCode = normalize(codeTerm);
+  const nName = normalize(nameTerm);
+  // The code must appear as a WHOLE token, not a substring — otherwise a short ticker like "AAL" matches inside a
+  // Turkish word ("fAALiyet") and tags an unrelated article. The name (a long, distinctive phrase) can substring.
+  const codeRe = useMemo(
+    () => (nCode.length >= 2 ? new RegExp(`(^|[^a-z0-9])${escapeRe(nCode)}([^a-z0-9]|$)`) : null),
+    [nCode],
+  );
+  const mentionsAsset = useCallback((a) => {
+    const hay = normalize(`${a?.title ?? ''} ${a?.description ?? ''}`);
+    return (codeRe != null && codeRe.test(hay)) || (nName.length >= 4 && hay.includes(nName));
+  }, [codeRe, nName]);
+
+  // Only GENUINE code/name mentions (word-boundary filtered) lead, so the backend's substring search can't seed the
+  // section with false positives; the market-category feed backfills. Deduped by id, capped.
   const items = useMemo(() => {
     const seen = new Set();
     const out = [];
-    for (const arr of [byCode, byName, byCategory]) {
+    const mentioned = [...byCode, ...byName].filter(mentionsAsset);
+    for (const arr of [mentioned, byCategory]) {
       for (const a of arr) {
         if (!a?.id || seen.has(a.id)) continue;
         seen.add(a.id);
@@ -143,14 +160,7 @@ export default function AssetRelatedNews({ assetCode, assetName, assetType }) {
       }
     }
     return out.slice(0, MAX_ITEMS);
-  }, [byCode, byName, byCategory]);
-
-  const nCode = normalize(codeTerm);
-  const nName = normalize(nameTerm);
-  const mentionsAsset = (a) => {
-    const hay = normalize(`${a?.title ?? ''} ${a?.description ?? ''}`);
-    return (nCode.length >= 2 && hay.includes(nCode)) || (nName.length >= 4 && hay.includes(nName));
-  };
+  }, [byCode, byName, byCategory, mentionsAsset]);
 
   if (items.length === 0) return null;
 

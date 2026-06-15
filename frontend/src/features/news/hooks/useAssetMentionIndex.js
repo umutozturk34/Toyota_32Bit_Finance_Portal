@@ -14,8 +14,17 @@ export function useAssetMentionIndex() {
   const { data } = useQuery({
     queryKey: ['assetMentionIndex', 'STOCK'],
     queryFn: async () => {
-      const res = await stockService.getAll({ size: 2000 });
-      return Array.isArray(res) ? res : res?.content ?? [];
+      // The market search page size is server-capped (100), so a single big request would silently truncate the
+      // ~600-name BIST list and most tickers would never match. Page through until the list is exhausted.
+      const all = [];
+      for (let page = 0; page < 12; page += 1) {
+        const res = await stockService.getAll({ size: 100, page });
+        const content = Array.isArray(res) ? res : res?.content ?? [];
+        all.push(...content);
+        const totalPages = res?.totalPages;
+        if (content.length < 100 || (totalPages != null && page >= totalPages - 1)) break;
+      }
+      return all;
     },
     staleTime: 60 * 60 * 1000,
     gcTime: 2 * 60 * 60 * 1000,

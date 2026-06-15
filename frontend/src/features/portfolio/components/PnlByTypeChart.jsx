@@ -9,6 +9,7 @@ import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
 import FilterTabs from '../../../shared/components/form/FilterTabs';
 import RangeSelector from '../../../shared/components/form/RangeSelector';
+import { positionFrame } from '../lib/positionsTableHelpers';
 import { usePortfolioPositions } from '../hooks/usePortfolioData';
 
 // The overview companion to CostBreakdownChart: instead of "where the money went" it shows "where the gain/loss
@@ -20,7 +21,7 @@ const FETCH_SIZE = 500;
 
 export default function PnlByTypeChart({ portfolioId }) {
   const { t } = useTranslation();
-  const { format: money, convert, currency: displayCurrency } = useMoney();
+  const { format: money, convert, resolveTarget, currency: displayCurrency } = useMoney();
   const [status, setStatus] = useState('all');
   const [typeFilter, setTypeFilter] = useState('ALL');
 
@@ -38,28 +39,20 @@ export default function PnlByTypeChart({ portfolioId }) {
   const rows = useMemo(() => (Array.isArray(data) ? data : data?.content ?? []), [data]);
   const targetCurrency = displayCurrency === 'ORIGINAL' ? 'TRY' : displayCurrency;
 
-  // PER-DATE-FX, currency-aware P&L per lot. Cost is always converted at the lot's OWN entry-date FX. For an OPEN
-  // lot the current value converts at today's FX (open FX exposure is live), so a non-TRY FX move shows up in the
-  // gain/loss. For a CLOSED lot the P&L is REALIZED and frozen — convert it at the EXIT-date FX, not today's (else
-  // a non-TRY closed position would keep drifting with the FX rate after it was sold). In TRY display every
-  // conversion is identity, so pnl == the backend pnlTry exactly.
+  // Cost & P&L come from the ONE canonical positionFrame() — the exact same per-date-FX computation the positions
+  // row uses (value@today/exit − cost@entry, each at its own date's FX; VIOP SHORT direction-aware) — so this
+  // breakdown and the row can never disagree. In the TRY frame the helper defers to the backend pnlTry verbatim.
   const groupByType = typeFilter === 'ALL';
   const items = useMemo(() => {
     const map = new Map();
     rows.forEach((p) => {
       const key = groupByType ? p?.assetType : p?.assetCode;
       if (!key) return;
-      const cost = convert(p.entryValueTry, 'TRY', null, p.entryDate) ?? Number(p.entryValueTry);
-      if (!Number.isFinite(cost) || cost <= 0) return;
-      let pnl;
-      if (p.exitDate) {
-        pnl = Number(convert(p.pnlTry, 'TRY', null, p.exitDate) ?? Number(p.pnlTry));
-      } else {
-        const valueTry = Number(p.entryValueTry) + Number(p.pnlTry);
-        const value = convert(valueTry, 'TRY') ?? valueTry;
-        pnl = value - cost;
-      }
-      if (!Number.isFinite(pnl)) return;
+      const { isNonTryFrame, costFrame, framePnl, entryValueTry } = positionFrame(p, { convert, resolveTarget });
+      const useFrame = isNonTryFrame && framePnl != null;
+      const cost = useFrame ? costFrame : entryValueTry;
+      const pnl = useFrame ? framePnl : Number(p.pnlTry);
+      if (!Number.isFinite(cost) || cost <= 0 || !Number.isFinite(pnl)) return;
       const prev = map.get(key)
         || { key, type: p.assetType, code: groupByType ? null : p.assetCode,
              name: groupByType ? null : (p.assetName || p.assetCode), pnl: 0, cost: 0, lots: 0, codes: new Set() };
@@ -70,7 +63,7 @@ export default function PnlByTypeChart({ portfolioId }) {
       map.set(key, prev);
     });
     return [...map.values()].sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
-  }, [rows, convert, groupByType]);
+  }, [rows, convert, resolveTarget, groupByType]);
 
   const totalPnl = useMemo(() => items.reduce((s, a) => s + a.pnl, 0), [items]);
   const totalCost = useMemo(() => items.reduce((s, a) => s + a.cost, 0), [items]);

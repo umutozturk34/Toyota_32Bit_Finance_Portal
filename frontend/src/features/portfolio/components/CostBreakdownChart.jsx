@@ -9,6 +9,7 @@ import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
 import FilterTabs from '../../../shared/components/form/FilterTabs';
 import RangeSelector from '../../../shared/components/form/RangeSelector';
+import { positionFrame } from '../lib/positionsTableHelpers';
 import { usePortfolioPositions } from '../hooks/usePortfolioData';
 
 // Spot asset families (the fixed-income deposit/bond surface has its own breakdown).
@@ -17,7 +18,7 @@ const FETCH_SIZE = 500;
 
 export default function CostBreakdownChart({ portfolioId }) {
   const { t } = useTranslation();
-  const { format: money, convert, currency: displayCurrency } = useMoney();
+  const { format: money, convert, resolveTarget, currency: displayCurrency } = useMoney();
   const [status, setStatus] = useState('all');
   const [typeFilter, setTypeFilter] = useState('ALL');
 
@@ -35,15 +36,16 @@ export default function CostBreakdownChart({ portfolioId }) {
   const targetCurrency = displayCurrency === 'ORIGINAL' ? 'TRY' : displayCurrency;
 
   // In "Tümü" the breakdown rolls up by ASSET TYPE (one bar per Hisse/Kripto/…); picking a type drills into the
-  // individual assets under it. Each lot's TRY cost is converted at its OWN entry-date FX (per-date FX) so the
-  // figure reflects what was actually committed at purchase, then summed into the chosen display currency.
+  // individual assets under it. Each lot's cost is the SAME per-date-FX entry cost the positions row uses (via the
+  // shared positionFrame helper — cost@entry-date FX), so this card reconciles to the cent with the row + P&L card.
   const groupByType = typeFilter === 'ALL';
   const items = useMemo(() => {
     const map = new Map();
     rows.forEach((p) => {
       const key = groupByType ? p?.assetType : p?.assetCode;
       if (!key) return;
-      const cost = convert(p.entryValueTry, 'TRY', null, p.entryDate) ?? Number(p.entryValueTry);
+      const { isNonTryFrame, costFrame, entryValueTry } = positionFrame(p, { convert, resolveTarget });
+      const cost = isNonTryFrame && costFrame != null ? costFrame : entryValueTry;
       if (!Number.isFinite(cost) || cost <= 0) return;
       const prev = map.get(key)
         || { key, type: p.assetType, code: groupByType ? null : p.assetCode,
@@ -54,7 +56,7 @@ export default function CostBreakdownChart({ portfolioId }) {
       map.set(key, prev);
     });
     return [...map.values()].sort((a, b) => b.cost - a.cost);
-  }, [rows, convert, groupByType]);
+  }, [rows, convert, resolveTarget, groupByType]);
 
   const total = useMemo(() => items.reduce((s, a) => s + a.cost, 0), [items]);
   const max = items.length > 0 ? items[0].cost : 0;

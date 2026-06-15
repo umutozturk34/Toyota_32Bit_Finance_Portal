@@ -9,6 +9,7 @@ import { newsService } from './services/newsService';
 import { COOLDOWN_MS } from './lib/newsConfig';
 import NewsFilters from './components/NewsFilters';
 import NewsCard from './components/NewsCard';
+import { useAssetMentionIndex } from './hooks/useAssetMentionIndex';
 import FeaturedCard from './components/FeaturedCard';
 import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
@@ -42,6 +43,8 @@ export default function News() {
     });
 
     const articles = data?.content ?? [];
+    // Built once for the whole grid (not per card) so each article can surface the asset(s) it names as a tag.
+    const mentionIndex = useAssetMentionIndex();
     const totalPages = data?.totalPages ?? 0;
     const totalCount = data?.totalElements ?? 0;
 
@@ -165,7 +168,7 @@ export default function News() {
                         {restArticles.length > 0 && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                 {restArticles.map((article, i) => (
-                                    <NewsCard key={article.id ?? (i + featuredArticles.length)} article={article} index={i + featuredArticles.length} />
+                                    <NewsCard key={article.id ?? (i + featuredArticles.length)} article={article} index={i + featuredArticles.length} mentionIndex={mentionIndex} />
                                 ))}
                             </div>
                         )}

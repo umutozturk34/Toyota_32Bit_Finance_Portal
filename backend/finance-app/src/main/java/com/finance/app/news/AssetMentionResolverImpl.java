@@ -160,8 +160,15 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
             return cached != null ? cached : new Catalog(Map.of(), List.of());
         }
         Catalog built = new Catalog(byTicker, byName);
-        catalog = built;
-        loadedAt = now;
+        // Only memoise once the market-data catalog has actually loaded. An empty ticker index means stocks/
+        // cryptos aren't in the DB yet (a cold `make up` where MarketDataInitializer is still fetching) — caching
+        // it would pin a keyword-only matcher for the full TTL, so every article enriched during warm-up would
+        // miss its stocks until the next restart. Leaving it uncached makes the next resolve rebuild and pick the
+        // catalog up the moment it lands. Keyword refs still resolve in the meantime.
+        if (!byTicker.isEmpty()) {
+            catalog = built;
+            loadedAt = now;
+        }
         return built;
     }
 

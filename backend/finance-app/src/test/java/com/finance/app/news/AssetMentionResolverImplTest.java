@@ -144,6 +144,26 @@ class AssetMentionResolverImplTest {
     }
 
     @Test
+    void shouldNotPinAnEmptyCatalog_soStocksLinkOnceMarketDataLoads() {
+        // Cold start: the stock/crypto catalog is still empty when the first article is enriched. That empty
+        // catalog must NOT be memoised, otherwise a keyword-only matcher is pinned for the whole TTL and every
+        // article ingested during warm-up misses its stocks until a restart. The next resolve after the catalog
+        // lands must pick the firm up.
+        when(stockRepository.findAllSymbolsAndNames()).thenReturn(List.of());
+        when(cryptoRepository.findAllIdsNamesAndSymbols()).thenReturn(List.of());
+
+        List<ResolvedAsset> cold = resolver.resolve("Akbank güçlü bilanço açıkladı", null);
+        assertThat(cold).extracting(ResolvedAsset::code).doesNotContain("AKBNK.IS");
+
+        // Market data finishes loading; the SAME resolver instance now sees the populated catalog.
+        when(stockRepository.findAllSymbolsAndNames()).thenReturn(List.<Object[]>of(
+                new Object[]{"AKBNK.IS", "Akbank T.A.Ş."}));
+
+        List<ResolvedAsset> warm = resolver.resolve("Akbank güçlü bilanço açıkladı", null);
+        assertThat(warm).extracting(ResolvedAsset::code).contains("AKBNK.IS");
+    }
+
+    @Test
     void shouldNotMatchGold_insideAnotherWord() {
         // "altında" (= under) must NOT trigger the "altın" gold keyword — bounded matching protects against it.
         List<ResolvedAsset> result = resolver.resolve("Fiyat 100 liranın altında kaldı", null);

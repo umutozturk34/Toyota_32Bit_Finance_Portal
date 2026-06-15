@@ -257,7 +257,7 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.97 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-sm sm:max-w-2xl max-h-[90dvh] flex flex-col overflow-x-hidden rounded-2xl border border-border-default modal-panel"
+        className="relative w-full max-w-sm sm:max-w-3xl max-h-[90dvh] flex flex-col overflow-x-hidden rounded-2xl border border-border-default modal-panel"
       >
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
         <div aria-hidden className="pointer-events-none absolute -top-16 -right-10 h-40 w-40 rounded-full bg-accent/15 blur-[80px] opacity-60" />
@@ -305,7 +305,7 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
         {phase === 'processing' && <ProcessingSteps steps={processingSteps} currentStep={processingStep} />}
 
         {phase === 'form' && (
-          <form onSubmit={handleSubmit} noValidate className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+          <form onSubmit={handleSubmit} noValidate className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 sm:items-start">
             {portfolioPicker && <div className="sm:col-span-2">{portfolioPicker}</div>}
 
             <div className="space-y-1.5 sm:col-span-2">
@@ -346,6 +346,24 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
                 onMonthChange={(y, m) => setViewMonth(`${y}-${String(m + 1).padStart(2, '0')}`)}
                 minDate={maturityStart || undefined}
                 maxDate={maxEntryDate}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
+                <Hash className="h-3 w-3" />
+                {t('portfolio.bonds.form.fields.quantity')}
+              </label>
+              <input
+                type="number"
+                step="any"
+                min="0"
+                max={MAX_QUANTITY}
+                inputMode="decimal"
+                value={quantity}
+                onChange={(e) => { setQuantity(sanitizeNumberInput(e.target.value, MAX_QUANTITY, QUANTITY_DECIMALS)); setError(null); }}
+                placeholder={t('portfolio.bonds.form.fields.quantityPlaceholder')}
+                className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
               />
             </div>
 
@@ -412,12 +430,12 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
 
             {/* Coupon — read-only, sourced from the bond record (not user-editable) */}
             {couponHidden ? (
-              <div className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-border-default bg-bg-base/60 px-3 py-2.5 text-[11px] text-fg-muted">
+              <div className="flex items-start gap-2 rounded-lg border border-border-default bg-bg-base/60 px-3 py-2.5 text-[11px] text-fg-muted">
                 <Percent className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                 <span>{t('portfolio.bonds.form.discountNote')}</span>
               </div>
             ) : (
-              <div className="sm:col-span-2 space-y-2.5 rounded-xl border border-border-default bg-bg-base/50 p-3">
+              <div className="space-y-2.5 rounded-xl border border-border-default bg-bg-base/50 p-3">
                 {/* Coupon RATE — read-only, the bond's published per-period (.ORAN) value */}
                 <div className="flex items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-1.5 text-xs font-medium text-fg-muted">
@@ -478,24 +496,6 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
                 )}
               </div>
             )}
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
-                <Hash className="h-3 w-3" />
-                {t('portfolio.bonds.form.fields.quantity')}
-              </label>
-              <input
-                type="number"
-                step="any"
-                min="0"
-                max={MAX_QUANTITY}
-                inputMode="decimal"
-                value={quantity}
-                onChange={(e) => { setQuantity(sanitizeNumberInput(e.target.value, MAX_QUANTITY, QUANTITY_DECIMALS)); setError(null); }}
-                placeholder={t('portfolio.bonds.form.fields.quantityPlaceholder')}
-                className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
-              />
-            </div>
 
             {totalCostTry != null && (
               <div className="sm:col-span-2 rounded-xl border border-accent/30 bg-gradient-to-r from-accent/5 to-transparent px-4 py-3 flex items-center justify-between gap-3 min-w-0">

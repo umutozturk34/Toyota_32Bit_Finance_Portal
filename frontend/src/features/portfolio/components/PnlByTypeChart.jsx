@@ -204,7 +204,7 @@ export default function PnlByTypeChart({ portfolioId }) {
                     <div className="h-2 w-full overflow-hidden rounded-full bg-bg-base">
                       <motion.div
                         className="h-full rounded-full"
-                        style={{ background: `linear-gradient(90deg, ${signColor}, ${signColor}cc)` }}
+                        style={{ background: `linear-gradient(90deg, ${signColor}, color-mix(in srgb, ${signColor} 75%, transparent))` }}
                         initial={{ width: 0 }}
                         animate={{ width: `${width}%` }}
                         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}

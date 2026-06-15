@@ -58,7 +58,7 @@ export default function NewsCard({ article, index }) {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-bg-elevated/80 via-transparent to-transparent" />
                 <div className="absolute bottom-2.5 left-3 max-w-[calc(100%-1.5rem)]">
-                    <CategoryBadge category={article.category} />
+                    <CategoryBadge category={article.category} overlay />
                 </div>
             </div>
 

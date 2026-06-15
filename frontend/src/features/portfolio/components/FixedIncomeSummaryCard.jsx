@@ -55,9 +55,15 @@ export default function FixedIncomeSummaryCard({ portfolioId }) {
     );
   }
 
-  const total = summary?.totalValueTry ?? 0;
+  const value = summary?.totalValueTry ?? 0;
+  const couponsReceived = summary?.bondCouponsReceivedTry ?? 0;
+  // The holder's true total = clean mark-to-market value PLUS the coupon cash already received (realized income);
+  // K/Z folds that income in too, so the headline isn't a price-only figure. Percent is recomputed on the
+  // coupon-inclusive K/Z (the backend pnlPercent is price-only).
+  const total = value + couponsReceived;
   const cost = summary?.totalCostTry ?? 0;
-  const pnl = summary?.totalPnlTry ?? 0;
+  const pnl = (summary?.totalPnlTry ?? 0) + couponsReceived;
+  const pnlPercent = cost > 0 ? (pnl / cost) * 100 : null;
   const pnlCls = getChangeClass(pnl);
   const PnlIcon = pnl >= 0 ? TrendingUp : TrendingDown;
   const depositValue = summary?.depositValueTry ?? 0;
@@ -163,7 +169,7 @@ export default function FixedIncomeSummaryCard({ portfolioId }) {
                   <FitMoney value={pnl} base="TRY" pinned className="font-mono" />
                 </span>
                 <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium font-mono ${changeBg[pnlCls]} ${changeColors[pnlCls]}`}>
-                  {formatPercentSmart(summary?.pnlPercent)}
+                  {formatPercentSmart(pnlPercent)}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-fg-muted">
@@ -171,6 +177,13 @@ export default function FixedIncomeSummaryCard({ portfolioId }) {
                 <span>{t('portfolio.fixedIncome.totalCost')}</span>
                 <FitMoney value={cost} base="TRY" pinned className="font-mono text-fg-muted" />
               </div>
+              {couponsReceived > 0 && (
+                <div className="flex items-center gap-1.5 text-xs text-fg-muted">
+                  <CalendarClock className="h-3.5 w-3.5 shrink-0 text-success" />
+                  <span>{t('portfolio.fixedIncome.couponsReceived')}</span>
+                  <FitMoney value={couponsReceived} base="TRY" pinned className="font-mono text-success" />
+                </div>
+              )}
             </div>
 
             <div className="lg:col-span-5 flex items-center gap-4">

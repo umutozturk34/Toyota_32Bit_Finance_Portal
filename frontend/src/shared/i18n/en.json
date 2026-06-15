@@ -1454,6 +1454,7 @@
         "returnToMaturity": "Return to maturity",
         "currentValue": "Current value",
         "frequencyLabel": "Coupon Frequency",
+        "annualCouponRate": "Coupon Rate (annual)",
         "maturityProgress": "Maturity progress",
         "frequency": {
           "ANNUAL": "Annually",
@@ -1511,6 +1512,7 @@
       "asOf": "As of {{date}}",
       "tryOnly": "TRY-based",
       "tryOnlyHint": "The bond & deposit portfolio is TRY-based only; it is Türkiye-focused and does not apply per-date FX conversion.",
+      "couponsReceived": "Coupons received",
       "depositSplit": "Deposits",
       "bondSplit": "Bonds",
       "countLabel": "{{count}} item",

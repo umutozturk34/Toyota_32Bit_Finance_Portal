@@ -1454,6 +1454,7 @@
         "returnToMaturity": "Vade getirisi",
         "currentValue": "Güncel değer",
         "frequencyLabel": "Kupon Sıklığı",
+        "annualCouponRate": "Kupon Oranı (yıllık)",
         "maturityProgress": "Vade ilerlemesi",
         "frequency": {
           "ANNUAL": "Yılda bir",
@@ -1511,6 +1512,7 @@
       "asOf": "{{date}} itibarıyla",
       "tryOnly": "TRY bazlı",
       "tryOnlyHint": "Tahvil ve mevduat portföyü yalnızca TRY bazlıdır; Türkiye odaklıdır ve çapraz-kur (per-date FX) dönüşümü uygulanmaz.",
+      "couponsReceived": "Alınan kupon",
       "depositSplit": "Mevduat",
       "bondSplit": "Tahvil",
       "countLabel": "{{count}} adet",

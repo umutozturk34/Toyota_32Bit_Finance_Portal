@@ -123,9 +123,39 @@ public class FixedIncomeSummaryService {
         BigDecimal totalPnl = scaled(totalValue.subtract(totalCost));
         BigDecimal pnlPercent = totalCost.signum() == 0 ? null
                 : totalPnl.multiply(HUNDRED).divide(totalCost, MoneyScale.PRICE, RoundingMode.HALF_UP);
+        // Coupon cash already received across all bonds — realized income on top of the clean-price value, summed
+        // exactly the way the history series' last point credits it (so the chart endpoint and this headline agree).
+        BigDecimal couponsReceived = scaled(totalBondCouponsReceived(bonds, today));
 
         return new FixedIncomeSummaryResponse(totalCost, totalValue, totalPnl, pnlPercent,
-                deposits.size(), bonds.size(), scaled(depositValue), scaled(bondValue), today);
+                deposits.size(), bonds.size(), scaled(depositValue), scaled(bondValue), couponsReceived, today);
+    }
+
+    /**
+     * Cumulative TRY coupon cash received across all bonds as of {@code today}, reusing the same coupon-event
+     * engine the history series builds (each past coupon priced at its own date's .ORAN, CPI/gold coupons on the
+     * indexed value at the coupon date). Summing {@code headMap(today, true)} per bond yields exactly the history
+     * series' last-point coupon credit, so the headline and the chart reconcile. Zero when there are no bonds.
+     */
+    private BigDecimal totalBondCouponsReceived(List<BondHolding> bonds, LocalDate today) {
+        if (bonds.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        Map<Long, Bond> bondCatalog = loadBondCatalog(bonds);
+        Map<Long, NavigableMap<LocalDate, BigDecimal>> bondPriceSeries = loadBondPriceSeries(bonds);
+        Map<Long, NavigableMap<LocalDate, BigDecimal>> couponEvents =
+                loadBondCouponEvents(bonds, bondCatalog, bondPriceSeries);
+        BigDecimal total = BigDecimal.ZERO;
+        for (BondHolding b : bonds) {
+            NavigableMap<LocalDate, BigDecimal> events = b.getId() == null ? null : couponEvents.get(b.getId());
+            if (events == null) {
+                continue;
+            }
+            for (BigDecimal amount : events.headMap(today, true).values()) {
+                total = total.add(amount);
+            }
+        }
+        return total;
     }
 
     /**

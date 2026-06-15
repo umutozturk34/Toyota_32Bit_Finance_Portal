@@ -85,8 +85,14 @@ function FixedIncomeChart({ portfolioId }) {
   }, []);
 
   const points = useMemo(
-    () => (data || []).map((d) => ({ time: new Date(d.date).getTime(), value: Number(d[valueKey]) })),
-    [data, valueKey],
+    () => (data || []).map((d) => {
+      // Credit cumulative coupon cash on the bond/total value line (realized income on top of the clean
+      // mark-to-market), so the line steps UP at each coupon rather than dipping on the ex-coupon date — and its
+      // endpoint matches the summary headline ("value + coupons"). Deposit mode carries no coupons.
+      const coupons = (mode === 'bond' || mode === 'total') ? (Number(d.bondCouponsReceivedTry) || 0) : 0;
+      return { time: new Date(d.date).getTime(), value: Number(d[valueKey]) + coupons };
+    }),
+    [data, valueKey, mode],
   );
 
   const latest = points.length > 0 ? points[points.length - 1].value : null;

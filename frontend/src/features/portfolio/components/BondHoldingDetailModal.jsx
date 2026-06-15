@@ -332,7 +332,7 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
             {t('portfolio.bonds.detail.couponTitle')}
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <StatCell icon={Percent} label={t('market.bond.couponRate')} value={formatRate(bond.couponRate)} mono />
+            <StatCell icon={Percent} label={t('portfolio.bonds.detail.annualCouponRate')} value={formatRate(bond.couponRate)} mono />
             <StatCell icon={Repeat} label={t('portfolio.bonds.detail.frequencyLabel')} value={couponFrequencyLabel} />
             <StatCell
               icon={CalendarClock}

@@ -1478,6 +1478,18 @@
       }
     },
     "fixedIncome": {
+      "controls": {
+        "searchBonds": "Tahvil ara…",
+        "searchDeposits": "Mevduat ara…",
+        "profit": "Kârda",
+        "loss": "Zararda",
+        "sortMaturity": "Vade",
+        "sortPnl": "K/Z",
+        "sortValue": "Değer",
+        "sortEntry": "Giriş tarihi",
+        "sortStart": "Başlangıç",
+        "noMatch": "Bu filtrelere uyan pozisyon yok."
+      },
       "totalValue": "Toplam Değer",
       "totalCost": "Toplam Maliyet",
       "profitLoss": "Kâr / Zarar",

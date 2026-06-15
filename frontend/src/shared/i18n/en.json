@@ -1478,6 +1478,18 @@
       }
     },
     "fixedIncome": {
+      "controls": {
+        "searchBonds": "Search bonds…",
+        "searchDeposits": "Search deposits…",
+        "profit": "In profit",
+        "loss": "In loss",
+        "sortMaturity": "Maturity",
+        "sortPnl": "P&L",
+        "sortValue": "Value",
+        "sortEntry": "Entry date",
+        "sortStart": "Start date",
+        "noMatch": "No positions match these filters."
+      },
       "totalValue": "Total Value",
       "totalCost": "Total Cost",
       "profitLoss": "Profit / Loss",

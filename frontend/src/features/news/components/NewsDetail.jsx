@@ -7,6 +7,7 @@ import { ArrowLeft, Calendar, ExternalLink, Building2 } from 'lucide-react';
 import { newsService } from '../services/newsService';
 import { formatDateTimeFull } from '../../../shared/utils/formatters';
 import { CategoryBadge } from '../lib/newsConfig.jsx';
+import AssetMentionTag from './AssetMentionTag';
 import { getFallbackImage } from '../lib/newsConfig';
 import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
@@ -96,6 +97,14 @@ export default function NewsDetail() {
                     <h1 className="text-fg text-xl sm:text-2xl md:text-3xl font-bold leading-tight tracking-[-0.02em] break-words">
                         {article.title}
                     </h1>
+
+                    {Array.isArray(article.assets) && article.assets.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            {article.assets.map((a) => (
+                                <AssetMentionTag key={`${a.type}:${a.code}`} code={a.code} type={a.type} date={article.publishedAt} />
+                            ))}
+                        </div>
+                    )}
 
                     {article.description && !hasContent && (
                         <p className="text-fg-muted text-sm sm:text-base leading-relaxed break-words">

@@ -53,27 +53,30 @@ export default function AssetMentionTag({ code, type, date, onNavigate }) {
   const change = changeOnDate(candles, date);
   const up = change != null && change > 0;
   const down = change != null && change < 0;
-  const tone = up
-    ? 'border-success/30 bg-success/15 text-success'
-    : down
-      ? 'border-danger/30 bg-danger/15 text-danger'
-      : 'border-accent/25 bg-accent/10 text-accent';
+  const changeTone = up ? 'text-success' : down ? 'text-danger' : 'text-fg-muted';
 
   const open = (e) => {
     e.stopPropagation();
     (onNavigate ?? navigate)(`${TYPE_ROUTES[type] || '/market'}/${encodeURIComponent(code)}`);
   };
 
+  // Neutral pill (theme tokens → reads on both light & dark) with an accent CODE and a separately-tinted CHANGE
+  // segment, so the ticker is always legible and only the move is coloured green ↗ / red ↘.
   return (
     <button
       type="button"
       onClick={open}
       title={change != null ? `${bareCode(code)} · ${change > 0 ? '+' : ''}${change.toFixed(2)}%` : code}
-      className={`inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-[filter] hover:brightness-125 cursor-pointer ${tone}`}
+      className="group/tag inline-flex items-center gap-1 rounded-md border border-border-default bg-bg-elevated/70 px-1.5 py-0.5 text-[10px] hover:border-accent/40 hover:bg-bg-elevated transition-colors cursor-pointer"
     >
-      {bareCode(code)}
-      {up && <ArrowUpRight className="h-2.5 w-2.5" strokeWidth={2.5} />}
-      {down && <ArrowDownRight className="h-2.5 w-2.5" strokeWidth={2.5} />}
+      <span className="font-bold uppercase tracking-wider text-accent">{bareCode(code)}</span>
+      {change != null && (
+        <span className={`inline-flex items-center gap-0.5 font-mono font-semibold ${changeTone}`}>
+          {up && <ArrowUpRight className="h-2.5 w-2.5" strokeWidth={3} />}
+          {down && <ArrowDownRight className="h-2.5 w-2.5" strokeWidth={3} />}
+          {Math.abs(change).toFixed(1)}%
+        </span>
+      )}
     </button>
   );
 }

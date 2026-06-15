@@ -74,7 +74,7 @@ export default function NewsCard({ article, index }) {
                 {mentions.length > 0 && (
                     <div className="flex flex-wrap items-center gap-1.5">
                         {mentions.map((a) => (
-                            <AssetMentionTag key={`${a.type}:${a.code}`} code={a.code} type={a.type} />
+                            <AssetMentionTag key={`${a.type}:${a.code}`} code={a.code} type={a.type} date={article.publishedAt} />
                         ))}
                     </div>
                 )}

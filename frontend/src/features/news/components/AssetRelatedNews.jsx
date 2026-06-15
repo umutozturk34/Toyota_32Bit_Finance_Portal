@@ -63,6 +63,9 @@ function RelatedNewsCard({ article, mentions, codeTerm, onOpen }) {
         <h3 className="text-[13px] font-semibold leading-snug text-fg line-clamp-2 break-words transition-colors group-hover:text-accent-bright">
           {article.title}
         </h3>
+        {article.description && (
+          <p className="text-[11px] leading-relaxed text-fg-muted line-clamp-2 break-words">{article.description}</p>
+        )}
         <div className="flex-1" />
         <div className="flex items-center gap-1.5 text-[11px] text-fg-subtle">
           <Calendar size={11} strokeWidth={1.6} className="shrink-0" />
@@ -160,17 +163,16 @@ export default function AssetRelatedNews({ assetCode, assetType }) {
         </button>
       </div>
 
-      {/* A single horizontal row that scrolls — keeps the section short on an already-tall detail page. */}
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory [scrollbar-width:thin]">
-        {items.map((a) => (
-          <div key={a.id} className="w-[15rem] sm:w-[16rem] shrink-0 snap-start">
-            <RelatedNewsCard
-              article={a}
-              mentions={mentionsAsset(a)}
-              codeTerm={codeTerm}
-              onOpen={() => navigate(`/news/${a.id}`)}
-            />
-          </div>
+      {/* A responsive row that fits as many cards as the width allows (no horizontal scroll), each with a blurb. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        {items.slice(0, 4).map((a) => (
+          <RelatedNewsCard
+            key={a.id}
+            article={a}
+            mentions={mentionsAsset(a)}
+            codeTerm={codeTerm}
+            onOpen={() => navigate(`/news/${a.id}`)}
+          />
         ))}
       </div>
     </motion.section>

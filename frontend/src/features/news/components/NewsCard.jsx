@@ -6,7 +6,6 @@ import { Calendar, ChevronRight } from 'lucide-react';
 import { formatDateTimeShort } from '../../../shared/utils/formatters';
 import { CategoryBadge } from '../lib/newsConfig.jsx';
 import { getFallbackImage } from '../lib/newsConfig';
-import { detectAssetMentions } from '../hooks/useAssetMentionIndex';
 import Card from '../../../shared/components/card';
 
 const cardVariants = {
@@ -14,13 +13,16 @@ const cardVariants = {
     show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } },
 };
 
-export default function NewsCard({ article, index, mentionIndex }) {
+const bareCode = (code) => String(code || '').replace(/\.IS$/i, '');
+
+export default function NewsCard({ article, index }) {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const fallbackSrc = getFallbackImage(article.category, article.id ?? index);
     const [imgSrc, setImgSrc] = useState(article.imageUrl || fallbackSrc);
     const [imgLoaded, setImgLoaded] = useState(false);
-    const mentions = detectAssetMentions(article, mentionIndex);
+    // The assets this article mentions are resolved server-side and arrive on the article.
+    const mentions = Array.isArray(article.assets) ? article.assets : [];
 
     const handleClick = () => {
         if (article.id) navigate(`/news/${article.id}`);
@@ -82,10 +84,10 @@ export default function NewsCard({ article, index, mentionIndex }) {
                                 key={a.code}
                                 type="button"
                                 onClick={(e) => openAsset(e, a.code)}
-                                title={a.name}
+                                title={a.code}
                                 className="inline-flex items-center rounded-md border border-accent/25 bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent hover:bg-accent/20 transition-colors cursor-pointer"
                             >
-                                {a.bare}
+                                {bareCode(a.code)}
                             </button>
                         ))}
                     </div>

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -51,7 +51,7 @@ function RelatedNewsCard({ article, mentions, codeTerm, onOpen }) {
         <div className="absolute bottom-2 left-2.5 max-w-[calc(100%-1.25rem)]">
           {mentions ? (
             <span className="inline-flex items-center rounded-md border border-accent/30 bg-accent/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent backdrop-blur-sm truncate">
-              {codeTerm}
+              {bareCode(codeTerm)}
             </span>
           ) : (
             <CategoryBadge category={article.category} />
@@ -88,43 +88,26 @@ const TYPE_CATEGORY = {
 const MAX_ITEMS = 6;
 const STALE_MS = 5 * 60 * 1000;
 
-const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-// Accent/case-insensitive normalize for the "does this article name the asset?" heuristic — mirrors the backend's
-// unaccented search so "Türk Hava Yolları" matches "turk hava yollari" (Turkish ı/İ folded to i).
-function normalize(text) {
-  return (text || '')
-    .toLocaleLowerCase('tr')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/ı/g, 'i');
-}
+const bareCode = (code) => String(code || '').replace(/\.IS$/i, '');
 
 /**
- * "İlgili Haberler" block for an asset detail page. There is no stored news↔asset link, so relatedness is derived:
- * articles that NAME the asset (by its code, then its display name — the backend full-text search is accent- and
- * case-insensitive) are the genuinely related ones, backfilled with the asset's market-category feed so the block
- * stays useful before anything names it. Each item is tagged with the asset code when its visible text mentions it,
- * otherwise with its market-category badge (the "Borsa İstanbul" fallback). Renders nothing when there is no news.
+ * "İlgili Haberler" block for an asset detail page. Relatedness is resolved SERVER-SIDE: the backend tags each
+ * article with the asset codes it mentions (parenthesised ticker + company name, catalog-validated), so we just
+ * ask for {@code assetCode=…} and get the genuinely-related articles, backfilled with the asset's market-category
+ * feed so the block stays useful when nothing names it. Each item carries its resolved {@code assets}: a match →
+ * the asset-code tag, else the market-category badge. Renders nothing when there is no news.
  */
-export default function AssetRelatedNews({ assetCode, assetName, assetType }) {
+export default function AssetRelatedNews({ assetCode, assetType }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const category = TYPE_CATEGORY[(assetType || '').toUpperCase()] || 'GENEL_FINANS';
 
   const codeTerm = (assetCode || '').trim();
-  const nameTerm = (assetName || '').trim();
 
-  const { data: byCode = [] } = useQuery({
-    queryKey: ['relatedNews', 'code', codeTerm],
-    queryFn: () => newsService.search({ search: codeTerm, size: MAX_ITEMS }).then((r) => r?.content ?? []),
+  const { data: byAsset = [] } = useQuery({
+    queryKey: ['relatedNews', 'asset', codeTerm],
+    queryFn: () => newsService.search({ assetCode: codeTerm, size: MAX_ITEMS }).then((r) => r?.content ?? []),
     enabled: codeTerm.length >= 2,
-    staleTime: STALE_MS,
-  });
-  const { data: byName = [] } = useQuery({
-    queryKey: ['relatedNews', 'name', nameTerm],
-    queryFn: () => newsService.search({ search: nameTerm, size: MAX_ITEMS }).then((r) => r?.content ?? []),
-    enabled: nameTerm.length >= 4 && normalize(nameTerm) !== normalize(codeTerm),
     staleTime: STALE_MS,
   });
   const { data: byCategory = [] } = useQuery({
@@ -133,26 +116,14 @@ export default function AssetRelatedNews({ assetCode, assetName, assetType }) {
     staleTime: STALE_MS,
   });
 
-  const nCode = normalize(codeTerm);
-  const nName = normalize(nameTerm);
-  // The code must appear as a WHOLE token, not a substring — otherwise a short ticker like "AAL" matches inside a
-  // Turkish word ("fAALiyet") and tags an unrelated article. The name (a long, distinctive phrase) can substring.
-  const codeRe = useMemo(
-    () => (nCode.length >= 2 ? new RegExp(`(^|[^a-z0-9])${escapeRe(nCode)}([^a-z0-9]|$)`) : null),
-    [nCode],
-  );
-  const mentionsAsset = useCallback((a) => {
-    const hay = normalize(`${a?.title ?? ''} ${a?.description ?? ''}`);
-    return (codeRe != null && codeRe.test(hay)) || (nName.length >= 4 && hay.includes(nName));
-  }, [codeRe, nName]);
+  // True when the backend linked this article to the current asset.
+  const mentionsAsset = (a) => Array.isArray(a?.assets) && a.assets.some((x) => x.code === codeTerm);
 
-  // Only GENUINE code/name mentions (word-boundary filtered) lead, so the backend's substring search can't seed the
-  // section with false positives; the market-category feed backfills. Deduped by id, capped.
+  // Server-confirmed mentions lead; the market-category feed backfills. Deduped by id, capped.
   const items = useMemo(() => {
     const seen = new Set();
     const out = [];
-    const mentioned = [...byCode, ...byName].filter(mentionsAsset);
-    for (const arr of [mentioned, byCategory]) {
+    for (const arr of [byAsset, byCategory]) {
       for (const a of arr) {
         if (!a?.id || seen.has(a.id)) continue;
         seen.add(a.id);
@@ -160,7 +131,7 @@ export default function AssetRelatedNews({ assetCode, assetName, assetType }) {
       }
     }
     return out.slice(0, MAX_ITEMS);
-  }, [byCode, byName, byCategory, mentionsAsset]);
+  }, [byAsset, byCategory]);
 
   if (items.length === 0) return null;
 
@@ -181,7 +152,7 @@ export default function AssetRelatedNews({ assetCode, assetName, assetType }) {
         </div>
         <button
           type="button"
-          onClick={() => navigate(`/news?search=${encodeURIComponent(codeTerm || nameTerm)}`)}
+          onClick={() => navigate(`/news?search=${encodeURIComponent(bareCode(codeTerm))}`)}
           className="inline-flex items-center gap-1 text-[11px] font-semibold text-fg-muted hover:text-accent transition-colors bg-transparent border-none cursor-pointer shrink-0"
         >
           {t('news.related.viewAll')}

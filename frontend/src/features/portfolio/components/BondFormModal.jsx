@@ -457,7 +457,7 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
                     <Repeat className="h-3.5 w-3.5 text-accent" />
                     {t('portfolio.bonds.detail.frequencyLabel')}
                   </span>
-                  <div className="grid grid-cols-4 gap-1 rounded-lg bg-bg-base/60 p-1 ring-1 ring-inset ring-border-default/50">
+                  <div className="grid grid-cols-2 gap-1 rounded-lg bg-bg-base/60 p-1 ring-1 ring-inset ring-border-default/50">
                     {FREQ_OPTIONS.map((f) => {
                       const selected = couponFrequency === f;
                       return (

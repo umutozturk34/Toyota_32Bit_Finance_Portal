@@ -122,6 +122,21 @@ class BondCouponServiceTest {
     }
 
     @Test
+    void shouldPayFinalCouponAtMaturity_whenStepLandsPastMaturity() {
+        // Arrange: SEMI_ANNUAL, issued 2026-01-28, maturing 2027-01-27 — the second coupon would step to 2027-01-28,
+        // a day PAST maturity, so the final coupon must instead be paid AT maturity (2027-01-27) with the principal.
+        List<BondCouponService.ScheduleEntry> schedule = service.schedule(new TreeMap<>(), new BigDecimal("0.40"),
+                CouponFrequency.SEMI_ANNUAL, LocalDate.of(2026, 1, 28), LocalDate.of(2027, 1, 27),
+                LocalDate.of(2026, 1, 28), LocalDate.of(2026, 6, 1));
+
+        // Assert: two coupons — the regular 2026-07-28 and a final one AT maturity, not a dropped/clamped step.
+        assertThat(schedule).hasSize(2);
+        assertThat(schedule.get(0).date()).isEqualTo(LocalDate.of(2026, 7, 28));
+        assertThat(schedule.get(1).date()).isEqualTo(LocalDate.of(2027, 1, 27));
+        assertThat(schedule.get(1).status()).isEqualTo("UPCOMING");
+    }
+
+    @Test
     void shouldConvertPer100ToFullPositionTry() {
         // Arrange + Act: 1.00 per 100 nominal on 10 000 nominal = 100 TRY.
         BigDecimal full = service.per100ToTry(new BigDecimal("1.00"), new BigDecimal("10000"));

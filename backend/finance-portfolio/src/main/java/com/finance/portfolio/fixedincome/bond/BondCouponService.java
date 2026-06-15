@@ -101,14 +101,10 @@ public class BondCouponService {
                 BigDecimal.valueOf(frequency.paymentsPerYear()), MathContext.DECIMAL64);
 
         int count = 0;
-        LocalDate couponDate = maturityStart.plusMonths(stepMonths);
-        int guard = 0;
-        while (!couponDate.isAfter(effAsOf) && guard < 2000) {
-            if (couponDate.isAfter(fromDate)) {
+        for (LocalDate couponDate : couponDates(maturityStart, maturityEnd, stepMonths)) {
+            if (couponDate.isAfter(fromDate) && !couponDate.isAfter(effAsOf)) {
                 count++;
             }
-            couponDate = couponDate.plusMonths(stepMonths);
-            guard++;
         }
         BigDecimal totalPer100 = couponPerPeriod.multiply(BigDecimal.valueOf(count))
                 .setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
@@ -180,18 +176,14 @@ public class BondCouponService {
         int stepMonths = frequency.stepMonths();
         int count = 0;
         BigDecimal total = BigDecimal.ZERO;
-        LocalDate couponDate = maturityStart.plusMonths(stepMonths);
-        int guard = 0;
-        while (!couponDate.isAfter(effAsOf) && guard < 2000) {
-            if (couponDate.isAfter(fromDate)) {
+        for (LocalDate couponDate : couponDates(maturityStart, maturityEnd, stepMonths)) {
+            if (couponDate.isAfter(fromDate) && !couponDate.isAfter(effAsOf)) {
                 BigDecimal rate = rateAt(perPeriodRateByDate, couponDate, fallbackPerPeriod);
                 if (rate != null && rate.signum() > 0) {
                     count++;
                     total = total.add(rate);
                 }
             }
-            couponDate = couponDate.plusMonths(stepMonths);
-            guard++;
         }
         return new CouponsPaid(count, total.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP));
     }
@@ -212,10 +204,7 @@ public class BondCouponService {
         if (frequency == null || !frequency.paysCoupon() || maturityStart == null || maturityEnd == null) {
             return out;
         }
-        int stepMonths = frequency.stepMonths();
-        LocalDate couponDate = maturityStart.plusMonths(stepMonths);
-        int guard = 0;
-        while (!couponDate.isAfter(maturityEnd) && guard < 2000) {
+        for (LocalDate couponDate : couponDates(maturityStart, maturityEnd, frequency.stepMonths())) {
             BigDecimal rate = rateAt(perPeriodRateByDate, couponDate, fallbackPerPeriod);
             if (rate != null && rate.signum() > 0) {
                 String status;
@@ -228,14 +217,33 @@ public class BondCouponService {
                 }
                 out.add(new ScheduleEntry(couponDate, rate.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP), status));
             }
-            couponDate = couponDate.plusMonths(stepMonths);
-            guard++;
         }
         return out;
     }
 
     /** One coupon in a bond's schedule: its payment {@code date}, the per-100 rate that priced it, and its status. */
     public record ScheduleEntry(LocalDate date, BigDecimal ratePer100, String status) {
+    }
+
+    /**
+     * Canonical coupon payment dates: each scheduled date strictly BEFORE maturity, then a final coupon ON the
+     * maturity date — the last coupon is paid together with the principal at redemption, even when the regular
+     * monthly step would land a day past the stored maturity date. Empty for a non-coupon / undated bond.
+     */
+    private static List<LocalDate> couponDates(LocalDate maturityStart, LocalDate maturityEnd, int stepMonths) {
+        List<LocalDate> dates = new ArrayList<>();
+        if (maturityStart == null || maturityEnd == null || stepMonths <= 0) {
+            return dates;
+        }
+        LocalDate d = maturityStart.plusMonths(stepMonths);
+        int guard = 0;
+        while (d.isBefore(maturityEnd) && guard < 2000) {
+            dates.add(d);
+            d = d.plusMonths(stepMonths);
+            guard++;
+        }
+        dates.add(maturityEnd);
+        return dates;
     }
 
     /** The per-period rate in effect on {@code date} (latest publication on/before it), else {@code fallback}. */

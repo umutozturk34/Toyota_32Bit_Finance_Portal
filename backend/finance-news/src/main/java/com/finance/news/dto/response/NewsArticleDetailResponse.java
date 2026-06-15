@@ -1,8 +1,9 @@
 package com.finance.news.dto.response;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-/** Full single-article view including body content and original link. */
+/** Full single-article view including body content and original link. {@code assets} are the codes it mentions. */
 public record NewsArticleDetailResponse(
         Long id,
         String title,
@@ -12,5 +13,6 @@ public record NewsArticleDetailResponse(
         String sourceName,
         String category,
         LocalDateTime publishedAt,
-        String imageUrl
+        String imageUrl,
+        List<NewsAssetResponse> assets
 ) {}

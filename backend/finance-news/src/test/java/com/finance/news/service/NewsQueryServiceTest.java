@@ -59,7 +59,7 @@ class NewsQueryServiceTest {
     }
 
     private NewsArticleResponse response(String title) {
-        return new NewsArticleResponse(1L, title, null, "Test", "CRYPTO", LocalDateTime.now(), null);
+        return new NewsArticleResponse(1L, title, null, "Test", "CRYPTO", LocalDateTime.now(), null, java.util.List.of());
     }
 
     @Test
@@ -70,7 +70,7 @@ class NewsQueryServiceTest {
         when(responseMapper.toResponses(List.of(a))).thenReturn(List.of(response("Bitcoin surges")));
 
         PagedResponse<NewsArticleResponse> result = service.search(
-                null, null, "publishedAt", "desc", 0, 10);
+                null, null, null, "publishedAt", "desc", 0, 10);
 
         assertThat(result.content()).hasSize(1);
         assertThat(result.totalElements()).isEqualTo(1);
@@ -83,7 +83,7 @@ class NewsQueryServiceTest {
                 .thenReturn(new PageImpl<>(List.of()));
         when(responseMapper.toResponses(List.of())).thenReturn(List.of());
 
-        service.search(null, null, "title", "asc", 2, 5);
+        service.search(null, null, null, "title", "asc", 2, 5);
 
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
         verify(articleRepository).findAll(any(Specification.class), captor.capture());
@@ -100,7 +100,7 @@ class NewsQueryServiceTest {
                 .thenReturn(new PageImpl<>(List.of()));
         when(responseMapper.toResponses(List.of())).thenReturn(List.of());
 
-        service.search(null, null, null, null, 0, 10);
+        service.search(null, null, null, null, null, 0, 10);
 
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
         verify(articleRepository).findAll(any(Specification.class), captor.capture());
@@ -115,7 +115,7 @@ class NewsQueryServiceTest {
                 .thenReturn(new PageImpl<>(List.of()));
         when(responseMapper.toResponses(List.of())).thenReturn(List.of());
 
-        service.search("CRYPTO", null, "publishedAt", "desc", 0, 10);
+        service.search("CRYPTO", null, null, "publishedAt", "desc", 0, 10);
 
         verify(articleRepository).findAll(any(Specification.class), any(Pageable.class));
     }
@@ -126,7 +126,7 @@ class NewsQueryServiceTest {
                 .thenReturn(new PageImpl<>(List.of()));
         when(responseMapper.toResponses(List.of())).thenReturn(List.of());
 
-        service.search(null, "bitcoin", "publishedAt", "desc", 0, 10);
+        service.search(null, "bitcoin", null, "publishedAt", "desc", 0, 10);
 
         verify(articleRepository).findAll(any(Specification.class), any(Pageable.class));
     }
@@ -137,7 +137,7 @@ class NewsQueryServiceTest {
                 .thenReturn(new PageImpl<>(List.of()));
         when(responseMapper.toResponses(List.of())).thenReturn(List.of());
 
-        service.search("CRYPTO", "ethereum", "publishedAt", "desc", 0, 10);
+        service.search("CRYPTO", "ethereum", null, "publishedAt", "desc", 0, 10);
 
         verify(articleRepository).findAll(any(Specification.class), any(Pageable.class));
     }
@@ -148,7 +148,7 @@ class NewsQueryServiceTest {
                 .thenReturn(new PageImpl<>(List.of()));
         when(responseMapper.toResponses(List.of())).thenReturn(List.of());
 
-        service.search("   ", "  ", "publishedAt", "desc", 0, 10);
+        service.search("   ", "  ", null, "publishedAt", "desc", 0, 10);
 
         verify(articleRepository).findAll(any(Specification.class), any(Pageable.class));
     }
@@ -159,7 +159,7 @@ class NewsQueryServiceTest {
         com.finance.news.dto.response.NewsArticleDetailResponse detail =
                 new com.finance.news.dto.response.NewsArticleDetailResponse(
                         1L, "Bitcoin", "https://x.com", "summary", "content",
-                        "Test", "CRYPTO", LocalDateTime.now(), null);
+                        "Test", "CRYPTO", LocalDateTime.now(), null, java.util.List.of());
         when(newsCacheService.getById(1L)).thenReturn(java.util.Optional.of(article));
         when(responseMapper.toDetailResponse(article)).thenReturn(detail);
 

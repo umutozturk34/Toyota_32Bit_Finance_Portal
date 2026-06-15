@@ -38,7 +38,7 @@ class NewsWidgetProviderTest {
     }
 
     private NewsArticleResponse article(Long id, String category, LocalDateTime publishedAt) {
-        return new NewsArticleResponse(id, "Title-" + id, "Body", "Source", category, publishedAt, "img.jpg");
+        return new NewsArticleResponse(id, "Title-" + id, "Body", "Source", category, publishedAt, "img.jpg", java.util.List.of());
     }
 
     private PagedResponse<NewsArticleResponse> pageOf(NewsArticleResponse... items) {
@@ -59,28 +59,28 @@ class NewsWidgetProviderTest {
 
     @Test
     void should_useDefaultCount_when_configMissingCount() throws Exception {
-        when(newsQueryService.search(isNull(), isNull(), anyString(), anyString(), eq(0), eq(10)))
+        when(newsQueryService.search(isNull(), isNull(), isNull(), anyString(), anyString(), eq(0), eq(10)))
                 .thenReturn(pageOf(article(1L, "MAKRO", LocalDateTime.now())));
 
         NewsData data = provider.fetch("user-1", sectionFor("{}"));
 
         assertThat(data.items()).hasSize(1);
-        verify(newsQueryService).search(isNull(), isNull(), anyString(), anyString(), eq(0), eq(10));
+        verify(newsQueryService).search(isNull(), isNull(), isNull(), anyString(), anyString(), eq(0), eq(10));
     }
 
     @Test
     void should_capAtMaxCount_when_configRequestsTooMany() throws Exception {
-        when(newsQueryService.search(any(), any(), anyString(), anyString(), anyInt(), anyInt()))
+        when(newsQueryService.search(any(), any(), any(), anyString(), anyString(), anyInt(), anyInt()))
                 .thenReturn(pageOf());
 
         provider.fetch("user-1", sectionFor("{\"count\":50}"));
 
-        verify(newsQueryService).search(isNull(), isNull(), anyString(), anyString(), eq(0), eq(12));
+        verify(newsQueryService).search(isNull(), isNull(), isNull(), anyString(), anyString(), eq(0), eq(12));
     }
 
     @Test
     void should_querySingleCategory_when_oneCategoryProvided() throws Exception {
-        when(newsQueryService.search(eq("MAKRO"), isNull(), anyString(), anyString(), eq(0), eq(4)))
+        when(newsQueryService.search(eq("MAKRO"), isNull(), isNull(), anyString(), anyString(), eq(0), eq(4)))
                 .thenReturn(pageOf(article(1L, "MAKRO", LocalDateTime.now())));
 
         NewsData data = provider.fetch("user-1", sectionFor("{\"categories\":[\"MAKRO\"],\"count\":4}"));
@@ -93,24 +93,24 @@ class NewsWidgetProviderTest {
     void should_aggregateAndDedupe_when_multipleCategoriesProvided() throws Exception {
         LocalDateTime t1 = LocalDateTime.now().minusMinutes(10);
         LocalDateTime t2 = LocalDateTime.now();
-        when(newsQueryService.search(eq("MAKRO"), isNull(), anyString(), anyString(), eq(0), eq(4)))
+        when(newsQueryService.search(eq("MAKRO"), isNull(), isNull(), anyString(), anyString(), eq(0), eq(4)))
                 .thenReturn(pageOf(article(2L, "MAKRO", t2), article(1L, "MAKRO", t1)));
-        when(newsQueryService.search(eq("HISSE"), isNull(), anyString(), anyString(), eq(0), eq(4)))
+        when(newsQueryService.search(eq("HISSE"), isNull(), isNull(), anyString(), anyString(), eq(0), eq(4)))
                 .thenReturn(pageOf(article(2L, "HISSE", t2), article(3L, "HISSE", t1)));
 
         NewsData data = provider.fetch("user-1", sectionFor("{\"categories\":[\"MAKRO\",\"HISSE\"],\"count\":4}"));
 
         assertThat(data.items()).hasSize(3);
         assertThat(data.items()).extracting(NewsData.NewsRow::id).containsExactly(2L, 1L, 3L);
-        verify(newsQueryService, times(2)).search(any(), any(), anyString(), anyString(), anyInt(), anyInt());
+        verify(newsQueryService, times(2)).search(any(), any(), any(), anyString(), anyString(), anyInt(), anyInt());
     }
 
     @Test
     void should_respectUserCategoryOrder_when_categoriesProvided() throws Exception {
         LocalDateTime now = LocalDateTime.now();
-        when(newsQueryService.search(eq("HISSE"), isNull(), anyString(), anyString(), eq(0), eq(2)))
+        when(newsQueryService.search(eq("HISSE"), isNull(), isNull(), anyString(), anyString(), eq(0), eq(2)))
                 .thenReturn(pageOf(article(10L, "HISSE", now)));
-        when(newsQueryService.search(eq("MAKRO"), isNull(), anyString(), anyString(), eq(0), eq(2)))
+        when(newsQueryService.search(eq("MAKRO"), isNull(), isNull(), anyString(), anyString(), eq(0), eq(2)))
                 .thenReturn(pageOf(article(20L, "MAKRO", now.plusMinutes(60))));
 
         NewsData data = provider.fetch("user-1", sectionFor("{\"categories\":[\"HISSE\",\"MAKRO\"],\"count\":2}"));
@@ -120,9 +120,9 @@ class NewsWidgetProviderTest {
 
     @Test
     void should_skipFailingCategory_when_searchThrowsRuntimeException() throws Exception {
-        when(newsQueryService.search(eq("BAD"), isNull(), anyString(), anyString(), eq(0), eq(3)))
+        when(newsQueryService.search(eq("BAD"), isNull(), isNull(), anyString(), anyString(), eq(0), eq(3)))
                 .thenThrow(new RuntimeException("invalid category"));
-        when(newsQueryService.search(eq("MAKRO"), isNull(), anyString(), anyString(), eq(0), eq(3)))
+        when(newsQueryService.search(eq("MAKRO"), isNull(), isNull(), anyString(), anyString(), eq(0), eq(3)))
                 .thenReturn(pageOf(article(1L, "MAKRO", LocalDateTime.now())));
 
         NewsData data = provider.fetch("user-1", sectionFor("{\"categories\":[\"BAD\",\"MAKRO\"],\"count\":3}"));
@@ -133,11 +133,11 @@ class NewsWidgetProviderTest {
 
     @Test
     void should_querySingleAllCategories_when_categoriesEmpty() throws Exception {
-        when(newsQueryService.search(isNull(), isNull(), anyString(), anyString(), eq(0), eq(10)))
+        when(newsQueryService.search(isNull(), isNull(), isNull(), anyString(), anyString(), eq(0), eq(10)))
                 .thenReturn(pageOf());
 
         provider.fetch("user-1", sectionFor("{\"categories\":[]}"));
 
-        verify(newsQueryService, times(1)).search(isNull(), isNull(), anyString(), anyString(), eq(0), eq(10));
+        verify(newsQueryService, times(1)).search(isNull(), isNull(), isNull(), anyString(), anyString(), eq(0), eq(10));
     }
 }

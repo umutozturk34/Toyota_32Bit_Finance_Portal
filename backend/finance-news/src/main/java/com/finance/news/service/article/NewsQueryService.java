@@ -34,10 +34,10 @@ public class NewsQueryService {
     private final NewsResponseMapper responseMapper;
 
     @Transactional(readOnly = true)
-    public PagedResponse<NewsArticleResponse> search(String category, String searchTerm,
+    public PagedResponse<NewsArticleResponse> search(String category, String searchTerm, String assetCode,
                                                       String sortBy, String direction,
                                                       int page, int size) {
-        Specification<NewsArticle> spec = buildSpecification(category, searchTerm);
+        Specification<NewsArticle> spec = buildSpecification(category, searchTerm, assetCode);
 
         PageRequest pageRequest = PageRequest.of(page, size, buildSort(sortBy, direction));
         Page<NewsArticle> result = articleRepository.findAll(spec, pageRequest);
@@ -61,8 +61,8 @@ public class NewsQueryService {
                 .toList();
     }
 
-    /** Composes optional category-equality and accent-insensitive multi-token search over title/description/content. */
-    private Specification<NewsArticle> buildSpecification(String category, String searchTerm) {
+    /** Composes optional category-equality, accent-insensitive multi-token text search, and an asset-mention filter. */
+    private Specification<NewsArticle> buildSpecification(String category, String searchTerm, String assetCode) {
         Specification<NewsArticle> spec = (root, query, cb) -> cb.conjunction();
 
         NewsCategory newsCategory = category == null || category.isBlank()
@@ -76,6 +76,15 @@ public class NewsQueryService {
         if (searchTerm != null && !searchTerm.isBlank()) {
             spec = spec.and((root, query, cb) ->
                     LikeSearchSpec.byFieldsContainsAllTokensUnaccent(root, cb, searchTerm, "title", "description", "content"));
+        }
+
+        if (assetCode != null && !assetCode.isBlank()) {
+            String code = assetCode;
+            // Articles whose resolved asset set contains this code — the backend news↔asset link, joined here.
+            spec = spec.and((root, query, cb) -> {
+                query.distinct(true);
+                return cb.equal(root.join("assets").get("assetCode"), code);
+            });
         }
 
         return spec;

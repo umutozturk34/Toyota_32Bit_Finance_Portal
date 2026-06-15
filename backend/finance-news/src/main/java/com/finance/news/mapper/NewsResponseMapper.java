@@ -2,7 +2,9 @@ package com.finance.news.mapper;
 
 import com.finance.news.dto.response.NewsArticleDetailResponse;
 import com.finance.news.dto.response.NewsArticleResponse;
+import com.finance.news.dto.response.NewsAssetResponse;
 import com.finance.news.model.NewsArticle;
+import com.finance.news.model.NewsArticleAsset;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -20,4 +22,9 @@ public abstract class NewsResponseMapper {
 
     @Mapping(target = "category", expression = "java(article.getCategory().name())")
     public abstract NewsArticleDetailResponse toDetailResponse(NewsArticle article);
+
+    /** Each mentioned asset (the {@code assets} set on both responses maps through this element mapping). */
+    @Mapping(target = "code", source = "assetCode")
+    @Mapping(target = "type", source = "assetType")
+    public abstract NewsAssetResponse toAssetResponse(NewsArticleAsset asset);
 }

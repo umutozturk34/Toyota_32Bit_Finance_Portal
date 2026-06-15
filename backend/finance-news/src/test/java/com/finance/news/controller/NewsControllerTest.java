@@ -44,16 +44,16 @@ class NewsControllerTest {
 
     private NewsArticleResponse sample() {
         return new NewsArticleResponse(1L, "title", "desc", "Reuters", "WORLD",
-                LocalDateTime.now(), null);
+                LocalDateTime.now(), null, java.util.List.of());
     }
 
     @Test
     void getNews_usesDefaultSize_whenSizeNotProvided() {
         PagedResponse<NewsArticleResponse> page = PagedResponse.of(List.of(sample()), 0, 10, 1);
-        when(newsQueryService.search(null, null, null, "desc", 0, 10)).thenReturn(page);
+        when(newsQueryService.search(null, null, null, null, "desc", 0,10)).thenReturn(page);
 
         ApiResponse<PagedResponse<NewsArticleResponse>> response =
-                controller.getNews(null, null, null, "desc", 0, null);
+                controller.getNews(null, null, null, null, "desc", 0,null);
 
         assertThat(response.getData().content()).hasSize(1);
     }
@@ -61,21 +61,21 @@ class NewsControllerTest {
     @Test
     void getNews_clampsAboveMaxSize_toMaxValue() {
         PagedResponse<NewsArticleResponse> page = PagedResponse.of(List.of(), 0, 100, 0);
-        when(newsQueryService.search(null, null, null, "desc", 0, 100)).thenReturn(page);
+        when(newsQueryService.search(null, null, null, null, "desc", 0,100)).thenReturn(page);
 
-        controller.getNews(null, null, null, "desc", 0, 999);
+        controller.getNews(null, null, null, null, "desc", 0,999);
 
-        verify(newsQueryService).search(null, null, null, "desc", 0, 100);
+        verify(newsQueryService).search(null, null, null, null, "desc", 0,100);
     }
 
     @Test
     void getNews_clampsBelowOne_toOne() {
         PagedResponse<NewsArticleResponse> page = PagedResponse.of(List.of(), 0, 1, 0);
-        when(newsQueryService.search(null, null, null, "desc", 0, 1)).thenReturn(page);
+        when(newsQueryService.search(null, null, null, null, "desc", 0,1)).thenReturn(page);
 
-        controller.getNews(null, null, null, "desc", 0, 0);
+        controller.getNews(null, null, null, null, "desc", 0,0);
 
-        verify(newsQueryService).search(null, null, null, "desc", 0, 1);
+        verify(newsQueryService).search(null, null, null, null, "desc", 0,1);
     }
 
     @Test
@@ -92,7 +92,7 @@ class NewsControllerTest {
     void getNewsById_delegatesToService_andReturnsDetail() {
         NewsArticleDetailResponse detail = new NewsArticleDetailResponse(
                 7L, "title", "https://x", "desc", "content", "Reuters", "WORLD",
-                LocalDateTime.now(), null);
+                LocalDateTime.now(), null, java.util.List.of());
         when(newsQueryService.getById(7L)).thenReturn(detail);
 
         ApiResponse<NewsArticleDetailResponse> response = controller.getNewsById(7L);

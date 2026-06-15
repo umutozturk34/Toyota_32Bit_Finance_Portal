@@ -1,5 +1,6 @@
 package com.finance.news.service;
 
+import com.finance.news.service.source.NewsAssetEnricher;
 import com.finance.news.service.source.NewsSourceProcessingService;
 
 import com.finance.news.service.article.NewsCacheService;
@@ -36,6 +37,7 @@ class NewsSourceProcessingServiceTest {
     private NewsArticleMapper articleMapper;
     private NewsArticleRepository articleRepository;
     private NewsCacheService cacheService;
+    private NewsAssetEnricher assetEnricher;
     private NewsSourceProcessingService service;
 
     @BeforeEach
@@ -44,10 +46,11 @@ class NewsSourceProcessingServiceTest {
         articleMapper = mock(NewsArticleMapper.class);
         articleRepository = mock(NewsArticleRepository.class);
         cacheService = mock(NewsCacheService.class);
+        assetEnricher = mock(NewsAssetEnricher.class);
         TransactionTemplate txTemplate = new TransactionTemplate(mock(PlatformTransactionManager.class));
         NewsProperties props = new NewsProperties();
         props.setMaxArticlesPerSource(10);
-        service = new NewsSourceProcessingService(rssClient, articleMapper, articleRepository, cacheService, txTemplate, props);
+        service = new NewsSourceProcessingService(rssClient, articleMapper, articleRepository, cacheService, txTemplate, assetEnricher, props);
     }
 
     private NewsSource source() {
@@ -134,7 +137,7 @@ class NewsSourceProcessingServiceTest {
         props.setMaxArticlesPerSource(2);
         TransactionTemplate txTemplate = new TransactionTemplate(mock(PlatformTransactionManager.class));
         NewsSourceProcessingService limitedService = new NewsSourceProcessingService(
-                rssClient, articleMapper, articleRepository, cacheService, txTemplate, props);
+                rssClient, articleMapper, articleRepository, cacheService, txTemplate, assetEnricher, props);
         List<RssArticleData> items = List.of(
                 rssItem("A", "https://bbc.co.uk/a"),
                 rssItem("B", "https://bbc.co.uk/b"),

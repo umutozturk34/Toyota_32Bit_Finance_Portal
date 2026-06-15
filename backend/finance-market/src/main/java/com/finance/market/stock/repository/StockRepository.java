@@ -19,6 +19,13 @@ public interface StockRepository extends JpaRepository<Stock, String>, JpaSpecif
     List<String> findAllSymbols();
 
     /**
+     * Projects {@code [symbol, name]} for every stock — used by the news↔asset matcher to build both the ticker
+     * index and the company-name index without loading full entities.
+     */
+    @Query("SELECT s.symbol, s.name FROM Stock s")
+    List<Object[]> findAllSymbolsAndNames();
+
+    /**
      * Aggregates the number of stocks per market segment, skipping rows with no segment.
      *
      * @return rows of {@code [segment, count]} ordered by segment

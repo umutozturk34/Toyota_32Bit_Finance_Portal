@@ -33,6 +33,7 @@ public class NewsController {
     public ApiResponse<PagedResponse<NewsArticleResponse>> getNews(
             @RequestParam(required = false) @Size(max = 100) String category,
             @RequestParam(required = false) @Size(max = 100) String search,
+            @RequestParam(required = false) @Size(max = 32) String assetCode,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "desc") String direction,
             @RequestParam(defaultValue = "0") int page,
@@ -41,7 +42,7 @@ public class NewsController {
         int resolvedSize = size == null ? pagination.getDefaultSize() : size;
         resolvedSize = Math.max(1, Math.min(resolvedSize, pagination.getMaxSize()));
         PagedResponse<NewsArticleResponse> result = newsQueryService.search(
-                category, search, sort, direction, page, resolvedSize);
+                category, search, assetCode, sort, direction, page, resolvedSize);
         return ApiResponse.success(translator.translate("api.news.listRetrieved"), result);
     }
 

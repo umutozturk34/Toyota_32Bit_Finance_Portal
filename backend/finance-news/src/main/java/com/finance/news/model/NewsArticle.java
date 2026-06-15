@@ -7,6 +7,8 @@ import lombok.*;
 import com.finance.news.model.NewsSource;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * An ingested news article. The {@code link} is unique and acts as the natural dedup key alongside
@@ -75,4 +77,10 @@ public class NewsArticle {
 
     @Column(name = "guid", length = 1024)
     private String guid;
+
+    /** The market assets this article mentions, resolved server-side at ingest (see {@code AssetMentionResolver}). */
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "news_article_assets", joinColumns = @JoinColumn(name = "article_id"))
+    @Builder.Default
+    private Set<NewsArticleAsset> assets = new LinkedHashSet<>();
 }

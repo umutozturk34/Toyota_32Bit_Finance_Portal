@@ -49,12 +49,12 @@ public class NewsWidgetProvider implements OverviewWidgetProvider {
 
     private List<NewsArticleResponse> aggregate(List<String> categories, int count) {
         if (categories.isEmpty()) {
-            return newsQueryService.search(null, null, SORT_FIELD, SORT_DIRECTION, 0, count).content();
+            return newsQueryService.search(null, null, null, SORT_FIELD, SORT_DIRECTION, 0, count).content();
         }
         Map<String, List<NewsArticleResponse>> perCategory = new LinkedHashMap<>();
         for (String category : categories) {
             try {
-                PagedResponse<NewsArticleResponse> page = newsQueryService.search(category, null, SORT_FIELD, SORT_DIRECTION, 0, count);
+                PagedResponse<NewsArticleResponse> page = newsQueryService.search(category, null, null, SORT_FIELD, SORT_DIRECTION, 0, count);
                 perCategory.put(category, new ArrayList<>(page.content()));
             } catch (RuntimeException ex) {
                 log.warn("NewsWidget skip category {} reason={}", category, ex.getMessage());

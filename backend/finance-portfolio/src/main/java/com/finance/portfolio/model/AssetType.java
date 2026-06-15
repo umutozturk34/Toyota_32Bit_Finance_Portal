@@ -1,5 +1,6 @@
 package com.finance.portfolio.model;
 import com.finance.common.model.MarketType;
+import com.finance.common.model.TrackedAssetType;
 
 /**
  * Asset classes a portfolio can hold, each mapped 1:1 to a market-data {@link MarketType} so pricing
@@ -11,7 +12,9 @@ public enum AssetType {
     FOREX(MarketType.FOREX),
     FUND(MarketType.FUND),
     COMMODITY(MarketType.COMMODITY),
-    VIOP(MarketType.VIOP);
+    VIOP(MarketType.VIOP),
+    DEPOSIT(MarketType.MACRO_DEPOSIT),
+    BOND(MarketType.BOND);
 
     private final MarketType marketType;
 
@@ -31,6 +34,17 @@ public enum AssetType {
      */
     public boolean isWholeUnitOnly() {
         return this == STOCK || this == FUND;
+    }
+
+    /**
+     * The curated {@link TrackedAssetType} peer for this class, or {@code null} when none exists. DEPOSIT and
+     * BOND map to a {@link MarketType} but have NO {@code TrackedAssetType} (they live in their own fixed-income
+     * tables, not the spot watchlist), and VIOP routes through derivative valuation rather than a tracked asset.
+     * Callers that need a tracked asset MUST use this safe lookup rather than {@code TrackedAssetType.valueOf(name())},
+     * which would throw {@link IllegalArgumentException} for exactly those classes and crash the request.
+     */
+    public TrackedAssetType trackedAssetType() {
+        return TrackedAssetType.fromMarketType(marketType);
     }
 
     /** Reverse lookup from a market type; null when no asset class maps to it. */

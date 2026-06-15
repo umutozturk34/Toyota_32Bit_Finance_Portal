@@ -50,13 +50,15 @@ class PortfolioSnapshotServiceTest {
     @SuppressWarnings("unchecked")
     @Mock private ObjectProvider<EventPublisherPort> events;
     @Mock private EventPublisherPort eventPublisher;
+    @Mock private com.finance.portfolio.fixedincome.FixedIncomeSummaryService fixedIncomeSummaryService;
 
     private PortfolioSnapshotService service;
 
     @BeforeEach
     void setUp() {
         service = new PortfolioSnapshotService(calculator, portfolioRepository, positionRepository,
-                derivativePositionRepository, assetSnapshotRepository, dailySnapshotRepository, transactionTemplate, events);
+                derivativePositionRepository, assetSnapshotRepository, dailySnapshotRepository, transactionTemplate,
+                events, fixedIncomeSummaryService);
         org.mockito.Mockito.lenient().doAnswer(inv -> {
             java.util.function.Consumer<org.springframework.transaction.TransactionStatus> cb = inv.getArgument(0);
             cb.accept(null);
@@ -76,6 +78,33 @@ class PortfolioSnapshotServiceTest {
 
         verify(assetSnapshotRepository, never()).save(any());
         verify(dailySnapshotRepository).save(any());
+    }
+
+    @Test
+    void generateDailySnapshots_writesFixedIncomeAggregate_fromSummary_forFixedPortfolio() {
+        // A FIXED (deposit/bond) portfolio has no spot/derivative rows; it must still snapshot — built from the
+        // fixed-income summary and written to the SAME daily table so the morning/evening digest picks it up.
+        Portfolio fixed = Portfolio.builder().id(2L).userSub("u1")
+                .type(com.finance.portfolio.model.PortfolioType.FIXED).build();
+        when(portfolioRepository.findAll()).thenReturn(List.of(fixed));
+        when(fixedIncomeSummaryService.summary(2L, "u1")).thenReturn(
+                new com.finance.portfolio.dto.response.FixedIncomeSummaryResponse(
+                        new BigDecimal("100000"), new BigDecimal("112000"), new BigDecimal("12000"),
+                        new BigDecimal("12.0000"), 2, 1,
+                        new BigDecimal("70000"), new BigDecimal("42000"), LocalDate.now()));
+        when(dailySnapshotRepository.findRecentByPortfolioId(eq(2L), any())).thenReturn(List.of());
+
+        service.generateDailySnapshots("morning");
+
+        ArgumentCaptor<PortfolioDailySnapshot> captor = ArgumentCaptor.forClass(PortfolioDailySnapshot.class);
+        verify(dailySnapshotRepository).deleteByPortfolioIdAndSnapshotDate(2L, LocalDate.now());
+        verify(dailySnapshotRepository).save(captor.capture());
+        PortfolioDailySnapshot saved = captor.getValue();
+        assertThat(saved.getTotalValueTry()).isEqualByComparingTo("112000");
+        assertThat(saved.getTotalCostTry()).isEqualByComparingTo("100000");
+        assertThat(saved.getCashTry()).isEqualByComparingTo("0");
+        // The spot per-asset path is never touched for a FIXED portfolio.
+        verify(assetSnapshotRepository, never()).save(any());
     }
 
     @Test

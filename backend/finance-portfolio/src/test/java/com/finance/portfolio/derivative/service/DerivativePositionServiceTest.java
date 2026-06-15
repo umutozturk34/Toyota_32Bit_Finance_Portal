@@ -359,6 +359,23 @@ class DerivativePositionServiceTest {
     }
 
     @Test
+    void should_throwNotSpotType_when_openingOnFixedPortfolio() {
+        // Caller owns the portfolio, but it is FIXED — VIOP derivatives may only open on a SPOT portfolio.
+        Portfolio fixed = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB)
+                .type(com.finance.portfolio.model.PortfolioType.FIXED).name("fixed").build();
+        when(portfolioRepository.findById(PORTFOLIO_ID)).thenReturn(Optional.of(fixed));
+        OpenDerivativePositionRequest req = new OpenDerivativePositionRequest(
+                "F_USDTRY0626", DerivativeDirection.LONG, LocalDate.of(2026, 4, 1),
+                new BigDecimal("35.20"), new BigDecimal("1"), null, null);
+
+        assertThatThrownBy(() -> service.open(PORTFOLIO_ID, USER_SUB, req))
+                .isInstanceOf(com.finance.common.exception.BusinessException.class)
+                .hasMessageContaining("error.portfolio.notSpotType");
+        verify(positionRepository, never()).save(any(DerivativePosition.class));
+        verify(contractRepository, never()).findBySymbol(any());
+    }
+
+    @Test
     void should_throwBadRequest_when_openingInactiveContract() {
         contract.setActive(false);
         OpenDerivativePositionRequest req = new OpenDerivativePositionRequest(

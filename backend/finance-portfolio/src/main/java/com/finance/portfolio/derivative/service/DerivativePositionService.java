@@ -21,6 +21,7 @@ import com.finance.portfolio.derivative.model.DerivativePosition;
 import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
 import com.finance.portfolio.model.Portfolio;
 import com.finance.portfolio.model.AssetType;
+import com.finance.portfolio.model.PortfolioType;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioRepository;
 import com.finance.portfolio.service.PortfolioBackfillService;
@@ -143,6 +144,9 @@ public class DerivativePositionService {
     public DerivativePositionResponse open(Long portfolioId, String userSub, OpenDerivativePositionRequest request) {
         requireMarketDataReady();
         Portfolio portfolio = requireOwnedPortfolio(portfolioId, userSub);
+        // VIOP derivatives are spot-side product and belong only in a SPOT portfolio. Gated AFTER the ownership
+        // load so an unowned portfolio still 404s ahead of this type check (no existence leak).
+        portfolio.requireType(PortfolioType.SPOT);
         ViopContract contract = contractRepository.findBySymbol(request.contractSymbol())
                 .orElseThrow(() -> new ResourceNotFoundException("error.viop.contractNotFound", request.contractSymbol()));
         if (!contract.isActive()) {

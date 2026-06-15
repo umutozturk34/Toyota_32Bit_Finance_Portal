@@ -23,4 +23,11 @@ public interface CryptoRepository extends JpaRepository<Crypto, String>, JpaSpec
      */
     @Query("SELECT c.id FROM Crypto c")
     List<String> findAllIds();
+
+    /**
+     * Projects {@code [id, name, symbol]} for every crypto — used by the news↔asset matcher to link articles that
+     * name a coin (by name e.g. "Bitcoin", or parenthesised symbol e.g. "(BTC)") to the right asset.
+     */
+    @Query("SELECT c.id, c.name, c.symbol FROM Crypto c")
+    List<Object[]> findAllIdsNamesAndSymbols();
 }

@@ -1,5 +1,6 @@
 package com.finance.app.news;
 
+import com.finance.market.crypto.repository.CryptoRepository;
 import com.finance.market.stock.repository.StockRepository;
 import com.finance.news.port.AssetMentionResolver.ResolvedAsset;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,16 +24,22 @@ class AssetMentionResolverImplTest {
 
     @Mock
     private StockRepository stockRepository;
+    @Mock
+    private CryptoRepository cryptoRepository;
 
     private AssetMentionResolverImpl resolver;
 
     @BeforeEach
     void setUp() {
-        resolver = new AssetMentionResolverImpl(stockRepository);
+        resolver = new AssetMentionResolverImpl(stockRepository, cryptoRepository);
         when(stockRepository.findAllSymbolsAndNames()).thenReturn(List.of(
                 new Object[]{"KRVGD.IS", "Kervan Gıda Sanayi ve Ticaret A.Ş."},
                 new Object[]{"THYAO.IS", "Türk Hava Yolları A.O."},
                 new Object[]{"AHGAZ.IS", "Ahlatcı Doğalgaz Dağıtım A.Ş."}
+        ));
+        when(cryptoRepository.findAllIdsNamesAndSymbols()).thenReturn(List.of(
+                new Object[]{"bitcoin", "Bitcoin", "btc"},
+                new Object[]{"ethereum", "Ethereum", "eth"}
         ));
     }
 
@@ -79,5 +86,30 @@ class AssetMentionResolverImplTest {
         List<ResolvedAsset> result = resolver.resolve("Piyasalarda sakin bir gün", "Genel piyasa yorumu");
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldResolveCryptoByName() {
+        // Arrange + Act: a coin spelled out by name, no symbol.
+        List<ResolvedAsset> result = resolver.resolve("Bitcoin yeniden 100 bin doların üzerinde", null);
+
+        // Assert: linked to the coin id, typed CRYPTO.
+        assertThat(result).extracting(ResolvedAsset::code).containsExactly("bitcoin");
+        assertThat(result).extracting(ResolvedAsset::type).containsExactly("CRYPTO");
+    }
+
+    @Test
+    void shouldResolveCryptoByParenthesisedSymbol() {
+        List<ResolvedAsset> result = resolver.resolve("Ethereum (ETH) ağ güncellemesi", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).containsExactly("ethereum");
+        assertThat(result).extracting(ResolvedAsset::type).containsExactly("CRYPTO");
+    }
+
+    @Test
+    void shouldResolveMixedStockAndCrypto() {
+        List<ResolvedAsset> result = resolver.resolve("Kervan Gıda (KRVGD) ve Bitcoin gündemde", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).containsExactlyInAnyOrder("KRVGD.IS", "bitcoin");
     }
 }

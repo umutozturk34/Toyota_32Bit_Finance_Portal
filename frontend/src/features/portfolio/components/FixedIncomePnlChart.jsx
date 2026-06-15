@@ -49,7 +49,7 @@ function cpiAtFactory(cpiSorted) {
  * since that day, then subtracts cost — i.e. the K/Z you'd need JUST to keep pace with inflation over the window.
  * When the K/Z line sits above the breakeven line, the book is beating inflation.
  */
-function buildSeries(history, cpi) {
+function buildSeries(history, allHistory, cpi) {
   const rows = Array.isArray(history) ? history : [];
   if (rows.length === 0) return [];
   const cpiSorted = (Array.isArray(cpi) ? cpi : [])
@@ -58,23 +58,32 @@ function buildSeries(history, cpi) {
     .sort((a, b) => a.t - b.t);
   const cpiAt = cpiAtFactory(cpiSorted);
 
+  // Cost increments are derived from the FULL history (each holding's TRUE entry date), not the displayed window —
+  // so capital committed before the window is grown by inflation from when it was actually deployed, not from the
+  // window's left edge (which understated the inflation hurdle on bounded ranges). Each increment carries its date.
+  const costRows = (Array.isArray(allHistory) && allHistory.length > 0) ? allHistory : rows;
   const increments = [];
   let prevCost = 0;
+  for (const r of costRows) {
+    const t = new Date(r.date).getTime();
+    const cost = Number(r.totalCostTry) || 0;
+    const delta = cost - prevCost;
+    prevCost = cost;
+    const cpi0 = cpiAt(t);
+    if (delta !== 0 && cpi0 != null) increments.push({ t, cpi0, amount: delta });
+  }
+
   return rows.map((r) => {
     const t = new Date(r.date).getTime();
     // The backend supplies the cumulative coupon cash received by this date (each coupon priced at its own
     // historical rate); add it back to value so the K/Z line doesn't dip on an ex-coupon price drop.
     const value = (Number(r.totalValueTry) || 0) + (Number(r.bondCouponsReceivedTry) || 0);
     const cost = Number(r.totalCostTry) || 0;
-    const delta = cost - prevCost;
-    prevCost = cost;
     const cpiNow = cpiAt(t);
-    if (delta !== 0 && cpiNow != null) increments.push({ cpi0: cpiNow, amount: delta });
-
     let inflationValue = cost;
-    if (cpiNow != null && increments.length > 0) {
+    if (cpiNow != null) {
       inflationValue = increments.reduce(
-        (sum, inc) => sum + (inc.cpi0 ? inc.amount * (cpiNow / inc.cpi0) : inc.amount), 0);
+        (sum, inc) => (inc.t <= t ? sum + (inc.cpi0 ? inc.amount * (cpiNow / inc.cpi0) : inc.amount) : sum), 0);
     }
     return { time: t, pnl: value - cost, inflationPnl: inflationValue - cost };
   });
@@ -85,6 +94,10 @@ function FixedIncomePnlChart({ portfolioId }) {
   const { isDark } = useTheme();
   const [period, setPeriod] = useState('1Y');
   const { data: history = [], isLoading } = useFixedIncomeHistory(portfolioId, period);
+  // The full history (regardless of the displayed window) anchors each cost increment to its true entry date so the
+  // inflation hurdle compounds from when capital was actually committed. When period==='ALL' this resolves to the
+  // same cached query as `history`, so bounded windows are the only ones paying the extra fetch.
+  const { data: allHistory = [] } = useFixedIncomeHistory(portfolioId, 'ALL');
 
   const to = history.length > 0 ? String(history[history.length - 1].date).slice(0, 10) : undefined;
   // CPI is exposed under the LABEL "cpiIndex" but the history endpoint resolves by CODE (the EVDS identifier,
@@ -100,15 +113,19 @@ function FixedIncomePnlChart({ portfolioId }) {
   }, [inflationIndicators]);
   // Fetch CPI from ~2 months before the window so the monthly index always has a baseline observation on or
   // before the first plotted day for the forward-fill.
+  // Anchor the CPI fetch to the EARLIEST entry (full history), not the window start, so every cost increment has a
+  // baseline index observation on or before it for the forward-fill — otherwise pre-window increments would grow
+  // from the wrong (later) CPI baseline.
   const cpiFrom = useMemo(() => {
-    if (history.length === 0) return undefined;
-    const d = new Date(`${String(history[0].date).slice(0, 10)}T00:00:00`);
+    const first = allHistory.length > 0 ? allHistory[0] : history[0];
+    if (!first) return undefined;
+    const d = new Date(`${String(first.date).slice(0, 10)}T00:00:00`);
     d.setDate(d.getDate() - 70);
     return d.toISOString().slice(0, 10);
-  }, [history]);
+  }, [allHistory, history]);
   const { data: cpi = [] } = useMacroIndicatorHistory(cpiCode, { from: cpiFrom, to });
 
-  const points = useMemo(() => buildSeries(history, cpi), [history, cpi]);
+  const points = useMemo(() => buildSeries(history, allHistory, cpi), [history, allHistory, cpi]);
   const last = points.length > 0 ? points[points.length - 1] : null;
   const beating = last != null && last.pnl >= last.inflationPnl;
 

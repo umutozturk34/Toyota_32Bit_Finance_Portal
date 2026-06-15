@@ -1159,7 +1159,7 @@
       "otherLabel": "Diğer",
       "realizedTitle": "Gerçekleşen K/Z",
       "realizedTotal": "Net K/Z",
-      "realizedEmpty": "Kapatılmış pozisyon yok",
+      "realizedEmpty": "Henüz realize edilmiş kâr/zarar yok",
       "empty": "Bu türde varlık bulunmuyor"
     },
     "performance": {

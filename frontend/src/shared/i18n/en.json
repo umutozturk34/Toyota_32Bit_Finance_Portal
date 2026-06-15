@@ -1159,7 +1159,7 @@
       "otherLabel": "Other",
       "realizedTitle": "Realized P/L",
       "realizedTotal": "Net P/L",
-      "realizedEmpty": "No closed positions",
+      "realizedEmpty": "No realized profit/loss yet",
       "empty": "No assets in this category"
     },
     "performance": {

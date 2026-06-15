@@ -257,7 +257,7 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.97 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-sm sm:max-w-3xl max-h-[90dvh] flex flex-col overflow-x-hidden rounded-2xl border border-border-default modal-panel"
+        className="relative w-full max-w-sm sm:max-w-3xl max-h-[90dvh] flex flex-col overflow-clip rounded-2xl border border-border-default modal-panel"
       >
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
         <div aria-hidden className="pointer-events-none absolute -top-16 -right-10 h-40 w-40 rounded-full bg-accent/15 blur-[80px] opacity-60" />

@@ -76,16 +76,22 @@ function buildBuckets(bonds, deposits, nowMs) {
       const couponAmount = (Number(b.couponRate) / perYear) * couponBase / 100;
       const maturity = new Date(`${String(b.maturityEnd).slice(0, 10)}T00:00:00`);
       const cursor = new Date(`${String(b.nextCouponDate).slice(0, 10)}T00:00:00`);
-      let guard = 0;
-      while (cursor <= maturity && guard < 400) {
-        const k = monthKey(cursor);
+      // Coupon dates step from the next coupon up to (but not onto) maturity; the FINAL coupon is then paid AT
+      // maturity together with the principal — even when the regular step lands a few days past the maturity date.
+      const addCoupon = (when) => {
+        const k = monthKey(when);
         if (k >= startKey && k < endKey) {
           add(coupons, k, couponAmount);
-          pushItem(k, { kind: 'coupon', name, bondType: b.bondType, amount: couponAmount, ts: cursor.getTime() });
+          pushItem(k, { kind: 'coupon', name, bondType: b.bondType, amount: couponAmount, ts: when.getTime() });
         }
+      };
+      let guard = 0;
+      while (cursor < maturity && guard < 400) {
+        addCoupon(cursor);
         cursor.setMonth(cursor.getMonth() + stepMonths);
         guard += 1;
       }
+      addCoupon(maturity);
     }
     // Redemption at maturity: the indexed/gold value for a CPI/gold bond, else par (100 × quantity bonds).
     if (b.maturityEnd) {

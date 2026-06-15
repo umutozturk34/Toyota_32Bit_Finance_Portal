@@ -121,9 +121,10 @@ export default function DepositFormModal({ mode = 'add', portfolioId, portfolioP
   );
 
   // History of the selected term's published rate, so the suggestion reflects the rate ON the chosen start date —
-  // deposit rates drift over time, so a back-dated start may carry a different rate than today's headline.
+  // deposit rates drift over time, so a back-dated start may carry a different rate than today's headline. NB: the
+  // window must reach BEFORE startDate (no `from` floor) — otherwise rateOnOrBefore can't see the rate published
+  // prior to a back-dated start and wrongly falls back to the earliest fetched (post-start) row.
   const { data: rateHistory = [] } = useMacroIndicatorHistory(indicatorCode || undefined, {
-    from: startDate ? startDate.slice(0, 10) : undefined,
     to: todayInputValue(),
   });
   const suggestedRate = useMemo(() => {

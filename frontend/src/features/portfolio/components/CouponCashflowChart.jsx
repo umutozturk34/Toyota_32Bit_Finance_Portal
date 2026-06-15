@@ -85,8 +85,13 @@ function buildBuckets(bonds, deposits, nowMs) {
           pushItem(k, { kind: 'coupon', name, bondType: b.bondType, amount: couponAmount, ts: when.getTime() });
         }
       };
+      // Stop stepping BEFORE the maturity month, then add the final coupon AT maturity — otherwise a regular step
+      // landing in the same month as maturity (coupon-day drift) would double up with the maturity coupon in one
+      // bucket. Coupon periods are ≥1 month apart, so at most one regular coupon could fall in the maturity month;
+      // that one IS the final coupon, so we let addCoupon(maturity) be the sole coupon there.
+      const maturityKey = monthKey(maturity);
       let guard = 0;
-      while (cursor < maturity && guard < 400) {
+      while (cursor < maturity && monthKey(cursor) < maturityKey && guard < 400) {
         addCoupon(cursor);
         cursor.setMonth(cursor.getMonth() + stepMonths);
         guard += 1;

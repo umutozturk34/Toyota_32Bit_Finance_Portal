@@ -10,7 +10,7 @@ import {
   PiHouseDuotone, PiChartLineUpDuotone, PiTrendUpDuotone, PiCurrencyBtcDuotone,
   PiCurrencyDollarSimpleDuotone, PiBriefcaseDuotone, PiDiamondDuotone, PiBankDuotone,
   PiStackDuotone, PiNewspaperClippingDuotone, PiWalletDuotone, PiEyeDuotone,
-  PiChartPieSliceDuotone, PiDatabaseDuotone, PiUsersThreeDuotone,
+  PiChartPieSliceDuotone, PiDatabaseDuotone, PiUsersThreeDuotone, PiGraduationCapDuotone,
 } from 'react-icons/pi';
 import TasksPanel from '../../features/admin/components/TasksPanel';
 import SettingsSidebar from '../../features/settings/SettingsSidebar';
@@ -49,6 +49,7 @@ const baseNavStructure = [
     ],
   },
   { kind: 'item', to: '/analytics', labelKey: 'nav.analytics', Icon: PiChartPieSliceDuotone },
+  { kind: 'item', to: '/learn', labelKey: 'nav.learn', Icon: PiGraduationCapDuotone },
 ];
 
 const adminGroup = {

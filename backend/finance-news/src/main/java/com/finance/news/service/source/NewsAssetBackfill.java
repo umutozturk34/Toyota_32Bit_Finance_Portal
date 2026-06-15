@@ -3,6 +3,7 @@ package com.finance.news.service.source;
 import com.finance.news.model.NewsArticle;
 import com.finance.news.model.NewsArticleAsset;
 import com.finance.news.repository.NewsArticleRepository;
+import com.finance.news.service.article.NewsCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -32,6 +33,7 @@ public class NewsAssetBackfill {
 
     private final NewsArticleRepository articleRepository;
     private final NewsAssetEnricher assetEnricher;
+    private final NewsCacheService newsCacheService;
     private final TransactionTemplate transactionTemplate;
 
     @EventListener(ApplicationReadyEvent.class)
@@ -84,6 +86,13 @@ public class NewsAssetBackfill {
                 if (!before.equals(article.getAssets())) {
                     transactionTemplate.execute(status -> articleRepository.save(article));
                     updated++;
+                }
+                // Keep the read-through detail cache in sync: getById serves from Redis, so an article cached before
+                // it gained links would otherwise keep showing no tags on the detail page until the TTL lapsed.
+                // Re-cache every linked article (not just the freshly changed ones) so a stale pre-linkage copy from an
+                // earlier run can't survive a restart either.
+                if (!article.getAssets().isEmpty()) {
+                    newsCacheService.cacheArticle(article);
                 }
             }
         }

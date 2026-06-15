@@ -19,14 +19,17 @@ import java.util.regex.Pattern;
 
 /**
  * The monolith-side implementation of {@link AssetMentionResolver}: it bridges finance-news with finance-market,
- * which the leaf news module can't reach itself. It links an article to the STOCKS and CRYPTOS it names, by two
- * signals, both validated against the live catalogs:
- *   1. a parenthesised ticker/symbol — a BIST ticker "(KRVGD)" or a coin symbol "(BTC)" — dropping unknown acronyms
- *      (TCMB, SPK, …);
+ * which the leaf news module can't reach itself. It links an article to every asset it names — STOCKS, CRYPTOS,
+ * COMMODITIES and CURRENCIES — by three signals:
+ *   1. a parenthesised ticker/symbol — a BIST ticker "(KRVGD)" or a coin symbol "(BTC)" — validated against the
+ *      live catalog so unknown acronyms (TCMB, SPK, …) are dropped;
  *   2. the asset NAME — "Kervan Gıda", "Bitcoin" — matched as a whole, accent-insensitive phrase, so an article
- *      that spells the firm/coin out without the ticker still links.
- * Stock names use the first two significant words as a distinctive "core"; crypto names (usually one proper noun)
- * match on the full name. Both catalogs are memoised with a short TTL.
+ *      that spells the firm/coin out without the ticker still links;
+ *   3. a curated Turkish keyword for commodities/currencies — "altın", "petrol", "dolar" — which news names
+ *      colloquially, never by their technical code.
+ * Stock names use the first two significant words as a distinctive "core" (plus the brand first word); crypto names
+ * (usually one proper noun) match on the full name. Stock + crypto catalogs are loaded from finance-market and
+ * memoised with a short TTL; the small, stable commodity/currency set is the hand-maintained keyword map below.
  */
 @Component
 @RequiredArgsConstructor
@@ -53,12 +56,28 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
     private volatile long loadedAt;
 
     /**
-     * Curated Turkish keyword → precious-metal links. Gram gold/silver are COMMODITY-type assets (XAUTRYG/XAGTRYG).
-     * Matched as a bounded phrase like every other name, so "altın" hits but "altında" (under) does not.
+     * Curated Turkish keyword → commodity/currency links. The commodity and forex universes are small and stable, and
+     * the news always names them by their colloquial Turkish word ("altın", "dolar", "petrol"), never by their
+     * technical code/name ("XAUTRYG", "BZ=F", "Altın (Ons)") — so a hand-maintained keyword map links them far more
+     * reliably than catalog-name matching ever could. Each is matched as a bounded phrase like every other name, so
+     * "altın" hits but "altında" (under) does not, and "euro" / "avro" both reach EUR. Gram gold/silver are the
+     * consumer-tracked variants (XAUTRYG/XAGTRYG); the other metals exist only as the ounce contract.
      */
     private static final List<NameRef> KEYWORD_REFS = List.of(
             new NameRef("altin", "XAUTRYG", "COMMODITY"),
-            new NameRef("gumus", "XAGTRYG", "COMMODITY")
+            new NameRef("gumus", "XAGTRYG", "COMMODITY"),
+            new NameRef("platin", "XPTTRY", "COMMODITY"),
+            new NameRef("paladyum", "XPDTRY", "COMMODITY"),
+            new NameRef("petrol", "BZ=F", "COMMODITY"),
+            new NameRef("brent", "BZ=F", "COMMODITY"),
+            new NameRef("bakir", "HG=F", "COMMODITY"),
+            new NameRef("bugday", "ZW=F", "COMMODITY"),
+            new NameRef("dolar", "USD", "FOREX"),
+            new NameRef("euro", "EUR", "FOREX"),
+            new NameRef("avro", "EUR", "FOREX"),
+            new NameRef("sterlin", "GBP", "FOREX"),
+            new NameRef("yen", "JPY", "FOREX"),
+            new NameRef("frank", "CHF", "FOREX")
     );
 
     /** ticker/symbol → (code, type), plus the (name-phrase, code, type) list for name matching. */

@@ -150,4 +150,33 @@ class AssetMentionResolverImplTest {
 
         assertThat(result).isEmpty();
     }
+
+    @Test
+    void shouldResolveCurrencyKeywords_toForexPairs() {
+        // News names currencies colloquially ("dolar", "avro"), never by code — the keyword map links them to forex.
+        List<ResolvedAsset> result = resolver.resolve("Dolar yükselirken avro geriledi", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).containsExactlyInAnyOrder("USD", "EUR");
+        assertThat(result).extracting(ResolvedAsset::type).containsOnly("FOREX");
+    }
+
+    @Test
+    void shouldResolveOilKeyword_toBrentCommodity() {
+        List<ResolvedAsset> result = resolver.resolve("Brent petrol varil başına yükseldi", null);
+
+        // Both "brent" and "petrol" point to the same Brent contract, deduped to one link.
+        assertThat(result).extracting(ResolvedAsset::code).containsExactly("BZ=F");
+        assertThat(result).extracting(ResolvedAsset::type).containsExactly("COMMODITY");
+    }
+
+    @Test
+    void shouldResolveAllAssetTypes_fromOneMarketWrap() {
+        // A real day-end wrap names a stock, gold, a currency, oil and a coin at once — every type must link.
+        List<ResolvedAsset> result = resolver.resolve(
+                "Gün sonu: Akbank yükseldi, gram altın ve Brent petrol rekor kırdı, dolar sabit, Bitcoin toparlandı",
+                null);
+
+        assertThat(result).extracting(ResolvedAsset::code)
+                .contains("AKBNK.IS", "XAUTRYG", "BZ=F", "USD", "bitcoin");
+    }
 }

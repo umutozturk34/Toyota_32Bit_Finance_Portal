@@ -733,6 +733,17 @@ button {
   to   { opacity: 1; transform: scale(1); filter: blur(0); }
 }
 
+/* Circular-reveal theme switch (in-app + homepage): JS animates the NEW layer's clip-path from the click point, so
+   suppress the default cross-fade here and just stack the incoming theme above the outgoing one. */
+:root.theme-ripple::view-transition-old(root) {
+  animation: none;
+  z-index: 1;
+}
+:root.theme-ripple::view-transition-new(root) {
+  animation: none;
+  z-index: 2;
+}
+
 /* CSS fallback (homepage, browsers without View Transitions API) */
 .theme-switching :is(
   html,

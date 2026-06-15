@@ -6,6 +6,18 @@ import { ThemeContext } from './useTheme';
 
 const THEME_KEY = 'finance-theme';
 const FADE_MS = 450;
+const RIPPLE_MS = 520;
+
+// Last pointer position, captured globally so the theme switch can ripple out from wherever the user clicked (the
+// sidebar toggle, the settings control, …). Falls back to the bottom-left corner (near the sidebar) when unknown.
+let lastPointer = null;
+if (typeof window !== 'undefined') {
+    window.addEventListener(
+        'pointerdown',
+        (e) => { lastPointer = { x: e.clientX, y: e.clientY }; },
+        { capture: true, passive: true },
+    );
+}
 
 function runThemeTransition(nextTheme, apply) {
     if (typeof document === 'undefined') {
@@ -14,28 +26,39 @@ function runThemeTransition(nextTheme, apply) {
     }
     const root = document.documentElement;
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const onHomepage = root.dataset.themeFade === '1';
     const commit = () => {
         root.setAttribute('data-theme', nextTheme);
         apply();
     };
 
-    // In-app (heavy DOM) or reduced motion → instant, no jank
-    if (!onHomepage || reducedMotion) {
+    // Reduced motion → instant. No View Transitions API → a brief CSS cross-fade rather than a hard cut.
+    if (reducedMotion) {
         commit();
         return;
     }
-
-    // Homepage (light DOM) → rich View Transitions cross-fade
-    if (typeof document.startViewTransition === 'function') {
-        document.startViewTransition(() => flushSync(commit));
+    if (typeof document.startViewTransition !== 'function') {
+        root.classList.add('theme-switching');
+        commit();
+        window.setTimeout(() => root.classList.remove('theme-switching'), FADE_MS);
         return;
     }
 
-    // Homepage fallback (no View Transitions API) → CSS fade
-    root.classList.add('theme-switching');
-    commit();
-    window.setTimeout(() => root.classList.remove('theme-switching'), FADE_MS);
+    // Circular reveal: the NEW theme circles in over the OLD from the click point. View Transitions snapshots the
+    // viewport ONCE and animates only the new layer's clip-path on the compositor, so it stays smooth even on the
+    // heavy in-app DOM (charts/grids) — a per-element CSS transition would repaint the whole tree and jank.
+    const { innerWidth: w, innerHeight: h } = window;
+    const x = lastPointer?.x ?? 48;
+    const y = lastPointer?.y ?? h - 48;
+    const endRadius = Math.hypot(Math.max(x, w - x), Math.max(y, h - y));
+    root.classList.add('theme-ripple');
+    const transition = document.startViewTransition(() => flushSync(commit));
+    transition.ready.then(() => {
+        root.animate(
+            { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`] },
+            { duration: RIPPLE_MS, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', pseudoElement: '::view-transition-new(root)' },
+        );
+    }).catch(() => { /* a superseded transition is fine */ });
+    transition.finished.finally(() => root.classList.remove('theme-ripple'));
 }
 
 function resolveTheme(preference) {

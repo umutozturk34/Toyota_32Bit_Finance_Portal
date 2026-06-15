@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import SidebarNav from './SidebarNav';
 import CurrencySwitcher from '../components/CurrencySwitcher';
+import ThemeToggle from '../components/layout/ThemeToggle';
 
 // The ⌘/Ctrl modifier is platform-specific — show the Apple key on macOS/iOS and "Ctrl" elsewhere, since
 // this is a general (non-Apple) web app. Resolved once at module load (client-only Vite bundle).
@@ -141,6 +142,7 @@ const SidebarContent = ({
         {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.profile')}</span>}
       </button>
       <CurrencySwitcher collapsed={collapsed} isMobile={isMobile} />
+      <ThemeToggle collapsed={collapsed} isMobile={isMobile} />
       <button
         onClick={() => setSettingsOpen(true)}
         data-tour="settings-menu"

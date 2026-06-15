@@ -27,9 +27,10 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Long>,
     List<Object[]> countByCategory();
 
     /**
-     * Articles with no resolved asset links yet, id-ascending after {@code afterId} — a forward cursor for the
-     * one-time backfill so each unenriched article is visited exactly once (no-mention rows don't re-loop).
+     * All articles, id-ascending after {@code afterId} — a forward cursor for the startup re-enrichment so each
+     * article is visited exactly once and re-resolved against the CURRENT matcher (logic/keyword changes then reach
+     * already-tagged articles too, not just empty ones); the backfill only writes the ones whose link set changed.
      */
-    @Query("SELECT a FROM NewsArticle a WHERE a.assets IS EMPTY AND a.id > :afterId ORDER BY a.id ASC")
-    List<NewsArticle> findWithoutAssetsAfter(@Param("afterId") Long afterId, Pageable pageable);
+    @Query("SELECT a FROM NewsArticle a WHERE a.id > :afterId ORDER BY a.id ASC")
+    List<NewsArticle> findAllAfterId(@Param("afterId") Long afterId, Pageable pageable);
 }

@@ -1,6 +1,7 @@
 package com.finance.news.service.source;
 
 import com.finance.news.model.NewsArticle;
+import com.finance.news.model.NewsArticleAsset;
 import com.finance.news.repository.NewsArticleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -10,7 +11,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * One-time enrichment of pre-existing articles that were ingested before the news↔asset link existed (e.g. the demo
@@ -41,13 +44,19 @@ public class NewsAssetBackfill {
             long afterId = 0;
             int updated = 0;
             while (true) {
-                List<NewsArticle> batch = articleRepository.findWithoutAssetsAfter(afterId, PageRequest.of(0, BATCH));
+                List<NewsArticle> batch = articleRepository.findAllAfterId(afterId, PageRequest.of(0, BATCH));
                 if (batch.isEmpty()) {
                     break;
                 }
                 for (NewsArticle article : batch) {
                     afterId = article.getId();
-                    if (assetEnricher.enrich(article)) {
+                    // Re-resolve against the current matcher and persist ONLY when the link set actually changed,
+                    // so re-scanning every article on each startup stays cheap. enrich() overwrites with the fresh
+                    // resolution when non-empty and leaves the article untouched when nothing matches (so a catalog
+                    // that isn't loaded yet can never wipe existing links).
+                    Set<NewsArticleAsset> before = new LinkedHashSet<>(article.getAssets());
+                    assetEnricher.enrich(article);
+                    if (!before.equals(article.getAssets())) {
                         transactionTemplate.execute(status -> articleRepository.save(article));
                         updated++;
                     }

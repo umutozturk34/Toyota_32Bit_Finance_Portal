@@ -10,8 +10,10 @@ import com.finance.shared.dto.response.GroupCount;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.shared.model.CandlePeriod;
 import com.finance.market.bond.service.BondQueryService;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/bonds")
 @RequiredArgsConstructor
+@Validated
 public class BondController {
 
     private final BondQueryService bondQueryService;
@@ -28,7 +31,7 @@ public class BondController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<PagedResponse<BondResponse>> getAllBonds(
-            @RequestParam(required = false) String search,
+            @RequestParam(required = false) @Size(max = 100) String search,
             @RequestParam(required = false) String bondType,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String direction,

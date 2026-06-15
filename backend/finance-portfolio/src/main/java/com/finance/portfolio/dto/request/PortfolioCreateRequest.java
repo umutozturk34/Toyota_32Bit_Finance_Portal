@@ -1,6 +1,7 @@
 package com.finance.portfolio.dto.request;
 
 import com.finance.portfolio.model.PortfolioType;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -9,7 +10,7 @@ import jakarta.validation.constraints.Size;
  * defaulted to {@code SPOT} when the client omits it, so older clients (and the rename endpoint, which
  * only carries a name) stay backward-compatible.
  */
-public record PortfolioCreateRequest(@Size(max = 25) String name, PortfolioType type) {
+public record PortfolioCreateRequest(@NotBlank @Size(max = 25) String name, PortfolioType type) {
 
     public PortfolioCreateRequest {
         if (type == null) {

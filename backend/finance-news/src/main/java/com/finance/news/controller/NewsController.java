@@ -9,8 +9,10 @@ import com.finance.news.dto.response.NewsArticleDetailResponse;
 import com.finance.news.dto.response.NewsArticleResponse;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.news.service.article.NewsQueryService;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -18,6 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/news")
 @RequiredArgsConstructor
+@Validated
 public class NewsController {
 
     private final AppProperties appProperties;
@@ -28,8 +31,8 @@ public class NewsController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<PagedResponse<NewsArticleResponse>> getNews(
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String search,
+            @RequestParam(required = false) @Size(max = 100) String category,
+            @RequestParam(required = false) @Size(max = 100) String search,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "desc") String direction,
             @RequestParam(defaultValue = "0") int page,

@@ -24,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,6 +51,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1/portfolios")
 @PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
+@Validated
 public class PortfolioController {
 
     private static final String DEFAULT_VIEW_INCLUDES = "summary,positions,allocation";

@@ -6,16 +6,22 @@ import { formatPrice, currentLocaleTag, priceDecimals, fitMoney } from '../utils
 
 const SUPPORTED = ['TRY', 'USD', 'EUR'];
 
-export function useMoney() {
+// `lockBase` pins every format to its own `base` currency and bypasses all FX conversion — the value is
+// rendered exactly as supplied (e.g. a TRY total stays TRY whatever the global selector is). The
+// fixed-income surface uses this because bonds/deposits are reported in TRY by the backend and must NEVER
+// be FX-converted (bonds-stay-TRY); converting an already-TRY figure to the display currency would
+// double-display it in the wrong unit.
+export function useMoney({ lockBase = false } = {}) {
   const displayCurrency = useAppStore((s) => s.displayCurrency) || 'TRY';
   const rates = useExchangeRates();
   const { convertAt, rateAt } = useRateHistory();
 
   const resolveTarget = useCallback((base, natural) => {
+    if (lockBase) return SUPPORTED.includes(base) ? base : 'TRY';
     if (displayCurrency !== 'ORIGINAL') return displayCurrency;
     const candidate = natural ?? base ?? 'TRY';
     return SUPPORTED.includes(candidate) ? candidate : 'TRY';
-  }, [displayCurrency]);
+  }, [displayCurrency, lockBase]);
 
   // convertAt returns the UNCONVERTED base value when its rate-history lookup misses for either side
   // (cold-load, before the rate-history query resolves). In that case the value is still in `base`, so
@@ -26,7 +32,7 @@ export function useMoney() {
   ), [rateAt]);
 
   const convert = useCallback((value, base = 'TRY', natural, dateAt) => {
-    if (dateAt) return convertAt(value, base, dateAt, natural);
+    if (dateAt && !lockBase) return convertAt(value, base, dateAt, natural);
     if (value == null) return null;
     const num = Number(value);
     if (!Number.isFinite(num)) return null;
@@ -38,7 +44,7 @@ export function useMoney() {
     if (fromRate == null || toRate == null) return num;
     const inTry = from === 'TRY' ? num : num * fromRate;
     return target === 'TRY' ? inTry : inTry / toRate;
-  }, [resolveTarget, rates, convertAt]);
+  }, [resolveTarget, rates, convertAt, lockBase]);
 
   const format = useCallback((value, base = 'TRY', opts = {}) => {
     const natural = opts.natural;

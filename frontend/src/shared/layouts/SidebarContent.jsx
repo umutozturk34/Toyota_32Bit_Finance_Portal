@@ -64,13 +64,15 @@ const SidebarContent = ({
         data-tour="global-search"
         title={collapsed && !isMobile ? t('nav.search') : undefined}
         aria-label={t('nav.search')}
-        className={`w-full group flex items-center rounded-lg border transition-all duration-150 cursor-pointer ${
+        className={`w-full group flex items-center overflow-hidden rounded-lg border px-0 py-2 transition-all duration-150 cursor-pointer ${
           collapsed && !isMobile
-            ? 'justify-center px-0 py-2 border-transparent text-fg-muted hover:text-fg hover:bg-surface'
-            : 'gap-2.5 px-3 py-2 border-border-default bg-surface/60 text-fg-subtle hover:text-fg hover:border-accent/40 hover:bg-accent/5'
+            ? 'border-transparent text-fg-muted hover:text-fg hover:bg-surface'
+            : 'pr-3 border-border-default bg-surface/60 text-fg-subtle hover:text-fg hover:border-accent/40 hover:bg-accent/5'
         }`}
       >
-        <Search size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
+        <span className="flex items-center justify-center w-12 shrink-0">
+          <Search size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
+        </span>
         {(!collapsed || isMobile) && (
           <>
             <span className="flex-1 text-left text-[13px] font-medium">{t('searchSuggestions.openLabel')}</span>
@@ -97,11 +99,11 @@ const SidebarContent = ({
         <button
           onClick={() => setTasksOpen(true)}
           title={collapsed && !isMobile ? t('nav.tasks') : undefined}
-          className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
-            collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-          }`}
+          className={`w-full group flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
         >
-          <Activity size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
+          <span className="flex items-center justify-center w-12 shrink-0">
+            <Activity size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
+          </span>
           {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.tasks')}</span>}
         </button>
       </div>
@@ -112,15 +114,15 @@ const SidebarContent = ({
         onClick={() => setNotificationsOpen(true)}
         data-tour="notifications-bell"
         title={collapsed && !isMobile ? t('nav.notifications') : undefined}
-        className={`w-full group relative flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
-          collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-        }`}
+        className={`w-full group relative flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
       >
-        <span className="relative shrink-0">
-          <Bell size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent ring-2 ring-bg-base" aria-label={t('common.unreadNotifications', { count: unreadCount })} />
-          )}
+        <span className="flex items-center justify-center w-12 shrink-0">
+          <span className="relative inline-flex">
+            <Bell size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-accent ring-2 ring-bg-base" aria-label={t('common.unreadNotifications', { count: unreadCount })} />
+            )}
+          </span>
         </span>
         {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.notifications')}</span>}
         {(!collapsed || isMobile) && unreadCount > 0 && (
@@ -131,11 +133,11 @@ const SidebarContent = ({
         onClick={() => setProfileOpen(true)}
         data-tour="profile-menu"
         title={collapsed && !isMobile ? t('nav.profile') : undefined}
-        className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
-          collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-        }`}
+        className={`w-full group flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
       >
-        <UserIcon size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
+        <span className="flex items-center justify-center w-12 shrink-0">
+          <UserIcon size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
+        </span>
         {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.profile')}</span>}
       </button>
       <CurrencySwitcher collapsed={collapsed} isMobile={isMobile} />
@@ -143,11 +145,11 @@ const SidebarContent = ({
         onClick={() => setSettingsOpen(true)}
         data-tour="settings-menu"
         title={collapsed && !isMobile ? t('nav.settings') : undefined}
-        className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
-          collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-        }`}
+        className={`w-full group flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
       >
-        <Settings size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
+        <span className="flex items-center justify-center w-12 shrink-0">
+          <Settings size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
+        </span>
         {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.settings')}</span>}
       </button>
       {(!collapsed || isMobile) && (
@@ -170,11 +172,11 @@ const SidebarContent = ({
       <button
         onClick={logout}
         title={collapsed && !isMobile ? t('nav.logout') : undefined}
-        className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
-          collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-        }`}
+        className={`w-full group flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
       >
-        <LogOut size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-danger transition-colors" />
+        <span className="flex items-center justify-center w-12 shrink-0">
+          <LogOut size={16} strokeWidth={1.6} className="group-hover:text-danger transition-colors" />
+        </span>
         {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.logout')}</span>}
       </button>
     </div>

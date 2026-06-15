@@ -124,10 +124,14 @@ export default function SearchSuggestions({
 
   // filterType may be a single type ('STOCK') or a comma-joined set ('STOCK,CRYPTO,...') as passed by
   // Compare's "assets" mode; match membership so the recent list isn't silently empty in that case.
+  // excludeTypes must ALSO gate the recent list, not just the live results — otherwise a stale recent item
+  // of an excluded type (e.g. a BOND in the analytics instrument picker) leaks back in through this panel.
   const allowedTypes = filterType ? new Set(filterType.split(',')) : null;
-  const recentItems = allowedTypes
+  const excludedTypeSet = useMemo(() => new Set(excludeTypes), [excludeTypes]);
+  const recentItems = (allowedTypes
     ? recentSearches.filter((item) => allowedTypes.has(item.type))
-    : recentSearches;
+    : recentSearches
+  ).filter((item) => !excludedTypeSet.has(item.type));
 
   const handleSelect = useCallback((asset) => {
     trackRecent(asset);

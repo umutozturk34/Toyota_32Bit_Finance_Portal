@@ -23,6 +23,10 @@ export function useWatchlistItems(id, { sort = 'CUSTOM', direction = 'ASC', enab
     queryFn: () => watchlistService.listItems(id, { sort, direction }),
     enabled: enabled && isAuthenticated && !loading && id != null,
     staleTime: STALE.SHORT,
+    // Keep the current rows on screen while a sort/direction change refetches under a new query key. Without
+    // this the new key has no cached data → isLoading flips true → the list/empty-state unmounts and re-runs its
+    // entrance animation, which reads as a jarring "snap" when you only changed the sort.
+    placeholderData: (prev) => prev,
   });
 }
 

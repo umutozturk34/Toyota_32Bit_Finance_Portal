@@ -14,6 +14,7 @@ import {
     Building2,
     ChevronRight,
     Filter,
+    X,
 } from 'lucide-react';
 import { bondService } from './services/bondService';
 import { adminService } from '../admin/services/adminService';
@@ -28,7 +29,6 @@ import SearchInput from '../../shared/components/form/SearchInput';
 import SortSelect from '../../shared/components/form/SortSelect';
 import Pagination from '../../shared/components/form/Pagination';
 import { toast } from '../../shared/components/feedback/toastBus';
-import FilterTabs from '../../shared/components/form/FilterTabs';
 import useListParams from '../../shared/hooks/useListParams';
 import { BOND_TYPE_COLORS } from './lib/bondConstants';
 
@@ -44,7 +44,7 @@ function BondCard({ bond, onClick, dataTour }) {
     return (
         <motion.div
             variants={cardVariants}
-            layout
+            layout="position"
             role="button"
             tabIndex={0}
             data-tour={dataTour}
@@ -145,7 +145,12 @@ export default function BondsPage() {
     const [activeOnly, setActiveOnly] = useSessionState('bonds-active-only', true);
     const isAdmin = hasRole('ADMIN');
     const listParams = useListParams();
-    const typeFilter = listParams.filter || 'ALL';
+    // Multi-select bond-type filter stored as a comma-separated list in the shared `filter` param (empty/"ALL" =
+    // every type). Mirrors the FundsPage category filter so several types can be shown at once.
+    const selectedTypes = useMemo(() => {
+        const raw = listParams.filter;
+        return raw && raw !== 'ALL' ? raw.split(',').filter(Boolean) : [];
+    }, [listParams.filter]);
     const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`market.bond.sort.${id}`) }));
 
     const { data: bondTypes = [] } = useQuery({
@@ -156,7 +161,7 @@ export default function BondsPage() {
 
     const queryParams = {
         ...listParams.params,
-        ...(typeFilter !== 'ALL' && { bondType: typeFilter }),
+        ...(selectedTypes.length > 0 && { bondType: selectedTypes.join(',') }),
     };
 
     const { data, isLoading: loading, error, refetch } = useQuery({
@@ -197,9 +202,13 @@ export default function BondsPage() {
         { key: 'full', label: t('market.bond.updateLabel'), title: t('market.bond.updateTitle'), handler: handleBondUpdate },
     ];
 
-    const handleTypeFilter = (id) => {
-        listParams.setFilter(id);
+    const toggleType = (type) => {
+        const next = selectedTypes.includes(type)
+            ? selectedTypes.filter((x) => x !== type)
+            : [...selectedTypes, type];
+        listParams.setFilter(next.length ? next.join(',') : 'ALL');
     };
+    const clearTypes = () => listParams.setFilter('ALL');
 
     if (loading && allBonds.length === 0) return <LoadingState message={t('market.bond.loading')} />;
     if (error) return <ErrorState message={t('market.bond.error')} onRetry={refetch} />;
@@ -264,14 +273,43 @@ export default function BondsPage() {
             </div>
 
             {bondTypes.length > 0 && (
-                <div className="w-full min-w-0">
-                    <FilterTabs
-                        items={bondTypes.map(b => ({ type: b.type, count: b.count, label: t(`market.bond.types.${b.type}`, { defaultValue: b.type }) }))}
-                        activeId={typeFilter}
-                        onSelect={handleTypeFilter}
-                        allCount={bondTypes.reduce((sum, b) => sum + Number(b.count), 0)}
-                        layoutId="bond-type"
-                    />
+                <div className="flex items-start gap-2 flex-wrap">
+                    <span className="text-[11px] font-semibold text-fg-muted uppercase tracking-wider pt-1.5 shrink-0">
+                        {t('market.bond.filterTypeLabel', { defaultValue: 'Tür' })}
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                        {bondTypes.map((b) => {
+                            const active = selectedTypes.includes(b.type);
+                            return (
+                                <button
+                                    key={b.type}
+                                    type="button"
+                                    onClick={() => toggleType(b.type)}
+                                    aria-pressed={active}
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] rounded-md border transition-colors cursor-pointer ${
+                                        active
+                                            ? 'border-accent/40 bg-accent/15 text-accent-bright font-semibold'
+                                            : 'border-border-default bg-bg-base/40 text-fg-muted hover:text-fg hover:border-border-strong'
+                                    }`}
+                                >
+                                    {t(`market.bond.types.${b.type}`, { defaultValue: b.type })}
+                                    <span className={`text-[10px] font-mono tabular-nums ${active ? 'text-accent-bright' : 'text-fg-subtle'}`}>
+                                        {b.count}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                        {selectedTypes.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={clearTypes}
+                                className="ml-1 inline-flex items-center gap-1 px-1.5 text-[11px] text-fg-muted hover:text-fg cursor-pointer bg-transparent border-none"
+                            >
+                                <X className="h-3 w-3" />
+                                {t('market.fund.clearFilters', { defaultValue: 'Temizle' })}
+                            </button>
+                        )}
+                    </div>
                 </div>
             )}
 

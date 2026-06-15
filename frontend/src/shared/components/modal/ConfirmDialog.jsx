@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -42,7 +43,10 @@ export default function ConfirmDialog({
 
   const v = variants[variant] || variants.danger;
 
-  return (
+  // Portal to <body>: rendered inline, the `fixed` overlay is trapped by any ancestor with a backdrop-filter /
+  // transform (e.g. a glass Card), which confines it to that card — the empty grey box bug. The portal escapes
+  // that containing block so the dialog covers the real viewport.
+  return createPortal(
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-4">
@@ -107,6 +111,7 @@ export default function ConfirmDialog({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

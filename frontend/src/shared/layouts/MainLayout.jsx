@@ -167,10 +167,11 @@ const MainLayout = () => {
   const blurCls = anyOverlayOpen ? 'blur-sm pointer-events-none select-none' : '';
 
   const isActive = (path) => location.pathname === path;
-  // rem (not px) so the sidebar scales with the content on wider screens.
+  // rem (not px) so the sidebar scales with the content on wider screens. The spacer must always match the
+  // sidebar's actual width so content clears it: a previous Overview-only 4rem override left the page sliding
+  // under the (now rem-scaled, up to ~1.8×) 14rem expanded sidebar on wide monitors.
   const sidebarWidth = collapsed ? '4rem' : '14rem';
-  const overviewOverlayMode = location.pathname === '/market';
-  const spacerWidth = overviewOverlayMode ? '4rem' : sidebarWidth;
+  const spacerWidth = sidebarWidth;
 
   const sidebarProps = {
     collapsed,
@@ -213,8 +214,7 @@ const MainLayout = () => {
         }}
       >
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-accent/20 to-transparent" />
-          <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-accent/[0.03] to-transparent" />
+          <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-border-default to-transparent" />
         </div>
         <div className="relative flex flex-col h-full">
           <SidebarContent {...sidebarProps} />

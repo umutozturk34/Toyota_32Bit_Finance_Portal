@@ -4,6 +4,15 @@
 export const MAX_MONEY = 1_000_000_000_000;
 export const MAX_QUANTITY = 1_000_000_000;
 export const MAX_PERCENT = 999.9999;
+// Clean price per 100 nominal: real bond quotes orbit 100. Mirrors PortfolioProperties.BondLimits.maxPriceTry
+// so a mistyped total-value (e.g. 150000 in the per-100 price field) is caught client-side instead of returning
+// a server 400 — keep in lockstep with the backend cap.
+export const MAX_BOND_PRICE_TRY = 100_000;
+
+// User-editable bond coupon-rate override (SEMI-ANNUAL percent). Mirrors PortfolioProperties.BondLimits
+// maxCouponRate so a value the validator would reject (e.g. a price pasted into the coupon field) is caught
+// client-side; keep in lockstep with the backend cap.
+export const MAX_BOND_COUPON_RATE = 100;
 
 // Silent clamp for controlled numeric inputs: returns the raw keystroke unchanged while it's empty or a
 // partial number (e.g. "", "-", "1."), so typing stays fluid, and only rewrites it to String(max) once the
@@ -24,6 +33,9 @@ export const PRICE_DECIMALS = 8;
 export const QUANTITY_DECIMALS = 6;
 // VIOP lots are whole-ish: the backend caps closeQuantityLot/quantityLot at @Digits fraction=4.
 export const LOT_DECIMALS = 4;
+// Bond coupon-rate override keeps 4 fraction digits, matching BondHoldingRequest @Digits(fraction=4) and the
+// stored numeric(10,4) coupon column.
+export const COUPON_DECIMALS = 4;
 
 // Trim a controlled numeric input's fractional tail to maxFraction digits (mirrors @Digits). Leaves an
 // in-progress "1." or a plain integer untouched so typing stays fluid; only cuts once the tail is too long.

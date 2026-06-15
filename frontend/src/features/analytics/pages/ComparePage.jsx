@@ -435,7 +435,13 @@ export default function ComparePage() {
   const backfilledSeriesData = useMemo(
     () => rawSeriesData.map((s) => ({
       ...s,
-      points: backFillToWindowStart(s.points || [], bounds.from),
+      // Sanitize at the source: drop any null/dateless point so every downstream sort/map/findIndex over a
+      // series' points (commonStartDate, convertedData) is guaranteed real objects — a single null point here
+      // used to throw inside a useMemo and blank the whole compare page (white screen).
+      points: backFillToWindowStart(
+        (s.points || []).filter((p) => p && p.date != null),
+        bounds.from,
+      ) || [],
     })),
     [rawSeriesData, bounds.from]
   );
@@ -459,7 +465,9 @@ export default function ComparePage() {
     return backfilledSeriesData.map((s) => {
       // No commonStartDate trim: every series keeps its full history (so CPI shows its pre-window data)
       // and the chart builder normalizes each series from commonStartDate's value as the shared baseline.
-      let pts = s.points || [];
+      // Belt-and-braces: re-drop any null/dateless point (a fill helper could in theory reintroduce one) so the
+      // per-date map/findIndex below never dereferences a null and crashes the page.
+      let pts = (s.points || []).filter((p) => p && p.date != null);
       const native = nativeCurrencyFor(s.indicator.type, s.indicator.code);
       const isPortfolioSeries = s.indicator.type === 'PORTFOLIO';
       if (isPortfolioSeries) {
@@ -536,6 +544,8 @@ export default function ComparePage() {
       // Extend the last value to the right edge so the line reaches today / the window end (no-op for dense
       // series and for compounded deposits whose daily tail already reaches fillUntil).
       pts = forwardFillTo(pts, fillUntil);
+      // Guard against a fill helper handing back a non-array (empty/odd input) before the date math below.
+      if (!Array.isArray(pts)) pts = [];
       // Trim to the common overlap start so the x-axis begins where ALL selected series have data (e.g. the
       // 2012 deposit start) instead of being dragged back to one long-history series' origin (CPI 2005).
       // A SPARSE compounded series has no point exactly at commonStartDate, so a bare trim made the builder

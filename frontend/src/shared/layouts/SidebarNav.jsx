@@ -11,18 +11,23 @@ function SectionDivider() {
 }
 
 function NavLeaf({ to, label, Icon, active, collapsed, isMobile, indented }) {
+  // Rail (top-level) items keep their icon in a FIXED-WIDTH, left-anchored column (w-12 == the collapsed
+  // content width: 4rem rail − 2×px-2 nav padding). The icon centers inside that box at a constant x in BOTH
+  // states, so collapsing the rail can no longer drift it sideways. The label simply gets clipped by the row's
+  // overflow-hidden as the width animates down — no justify-center toggle (which, while the label was still
+  // exiting, used to center the icon in the still-wide row and snap it right). Indented sub-items never collapse,
+  // so they keep the original inline layout.
+  const rail = !indented;
   return (
     <Link
       to={to}
       title={collapsed && !isMobile ? label : undefined}
-      className={`group relative flex items-center gap-2.5 rounded-lg no-underline overflow-hidden transition-all duration-200 ease-out ${
-        collapsed && !isMobile
-          ? 'justify-center px-0 py-2'
-          : indented ? 'pl-3 pr-2 py-1.5' : 'px-3 py-2'
+      className={`group relative flex items-center rounded-lg no-underline overflow-hidden transition-all duration-200 ease-out ${
+        rail ? 'px-0 py-2' : 'gap-2.5 pl-3 pr-2 py-1.5'
       } ${
         active
           ? 'text-fg shadow-[0_4px_20px_-6px_rgba(99,102,241,0.35)]'
-          : 'text-fg-muted hover:text-fg hover:translate-x-0.5'
+          : 'text-fg-muted hover:text-fg'
       }`}
     >
       {active && (
@@ -35,15 +40,29 @@ function NavLeaf({ to, label, Icon, active, collapsed, isMobile, indented }) {
       {!active && (
         <span className="absolute inset-0 rounded-lg bg-surface/0 group-hover:bg-surface/60 transition-colors duration-200" />
       )}
-      <Icon
-        size={indented ? 14 : 16}
-        strokeWidth={1.6}
-        className={`relative shrink-0 transition-all duration-200 ${
-          active
-            ? 'text-accent scale-110 drop-shadow-[0_0_6px_rgba(99,102,241,0.5)]'
-            : 'group-hover:text-fg-muted group-hover:scale-105'
-        }`}
-      />
+      {rail ? (
+        <span className="relative flex items-center justify-center w-12 shrink-0">
+          <Icon
+            size={16}
+            strokeWidth={1.6}
+            className={`transition-all duration-200 ${
+              active
+                ? 'text-accent scale-110 drop-shadow-[0_0_6px_rgba(99,102,241,0.5)]'
+                : 'group-hover:text-fg-muted group-hover:scale-105'
+            }`}
+          />
+        </span>
+      ) : (
+        <Icon
+          size={14}
+          strokeWidth={1.6}
+          className={`relative shrink-0 transition-all duration-200 ${
+            active
+              ? 'text-accent scale-110 drop-shadow-[0_0_6px_rgba(99,102,241,0.5)]'
+              : 'group-hover:text-fg-muted group-hover:scale-105'
+          }`}
+        />
+      )}
       <AnimatePresence initial={false}>
         {(!collapsed || isMobile) && (
           <motion.span
@@ -51,7 +70,7 @@ function NavLeaf({ to, label, Icon, active, collapsed, isMobile, indented }) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -4 }}
             transition={{ duration: 0.16, ease: 'easeOut' }}
-            className={`relative whitespace-nowrap ${
+            className={`relative whitespace-nowrap ${rail ? 'pr-3' : ''} ${
               indented ? 'text-[12px]' : 'text-[13px] font-medium'
             } ${active ? 'font-semibold' : ''}`}
           >
@@ -80,20 +99,22 @@ function NavGroupExpanded({ group, t, expanded, onToggle, isActive, hasActive, i
       <button
         type="button"
         onClick={onToggle}
-        className={`w-full group relative flex items-center gap-2.5 rounded-lg px-3 py-2 transition-all duration-200 ease-out border-none cursor-pointer bg-transparent ${
+        className={`w-full group relative flex items-center pl-0 pr-2 py-2 rounded-lg transition-all duration-200 ease-out border-none cursor-pointer bg-transparent ${
           hasActive ? 'text-fg' : 'text-fg-muted hover:text-fg'
         }`}
       >
         <span className={`absolute inset-0 rounded-lg transition-colors duration-200 ${
           hasActive ? 'bg-surface/40' : 'bg-surface/0 group-hover:bg-surface/40'
         }`} />
-        <Icon
-          size={16}
-          strokeWidth={1.6}
-          className={`relative shrink-0 transition-all ${
-            hasActive ? 'text-accent' : 'group-hover:text-fg-muted'
-          }`}
-        />
+        <span className="relative flex items-center justify-center w-12 shrink-0">
+          <Icon
+            size={16}
+            strokeWidth={1.6}
+            className={`transition-all ${
+              hasActive ? 'text-accent' : 'group-hover:text-fg-muted'
+            }`}
+          />
+        </span>
         <span className={`relative flex-1 text-left text-[13px] font-semibold whitespace-nowrap ${
           hasActive ? 'text-fg' : ''
         }`}>

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -10,10 +10,12 @@ import {
   Calendar,
   Percent,
   TrendingUp,
+  TrendingDown,
   Building2,
   Clock,
   ChevronDown,
   ChevronUp,
+  Plus,
 } from 'lucide-react';
 import { bondService } from './services/bondService';
 import { useTheme } from '../../shared/context/useTheme';
@@ -23,6 +25,7 @@ import IconButton from '../../shared/components/buttons/IconButton';
 import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
 import MarketStatusBadge from '../../shared/components/layout/MarketStatusBadge';
+import MarketAddBondModal from '../portfolio/components/MarketAddBondModal';
 import { BOND_TYPE_COLORS, CHART_LINE_COLORS, CHART_RATE_COLORS, DEFAULT_RATE_COLOR } from './lib/bondConstants';
 
 function formatRate(val) {
@@ -154,6 +157,7 @@ export default function BondDetail() {
   const goBack = useNavigationBack('/bonds');
   const localeTag = t('common.localeTag');
   const [rateOpen, setRateOpen] = useSessionState('bond-detail-rate-open', true);
+  const [addOpen, setAddOpen] = useState(false);
 
   const { data: bond, isLoading: bondLoading, error: bondError, refetch } = useQuery({
     queryKey: ['bond', seriesCode],
@@ -174,6 +178,16 @@ export default function BondDetail() {
     }
     return bond?.baseIndex != null ? Number(bond.baseIndex) : null;
   }, [history, bond?.baseIndex]);
+  // Clean-price change vs the previous observation in the rate history — the bond's day-over-day move. Null when
+  // there are fewer than two priced points (a freshly-listed or sparsely-quoted bond).
+  const priceChangePct = useMemo(() => {
+    const priced = history.filter((d) => d.price != null);
+    if (priced.length < 2) return null;
+    const last = Number(priced[priced.length - 1].price);
+    const prev = Number(priced[priced.length - 2].price);
+    if (!(prev > 0)) return null;
+    return ((last - prev) / prev) * 100;
+  }, [history]);
   const latestRate = useMemo(() => {
     for (let i = history.length - 1; i >= 0; i--) {
       if (history[i].rate != null) return Number(history[i].rate);
@@ -233,10 +247,26 @@ export default function BondDetail() {
           <MarketStatusBadge market="BOND" compact />
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setAddOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs sm:text-sm font-semibold text-white hover:bg-accent-bright transition-colors cursor-pointer border-none"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {t('portfolio.bonds.addAction', { defaultValue: 'Tahvil Ekle' })}
+          </button>
           <span className={`rounded-lg border px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold tracking-wider ${typeColor}`}>
             {t(`market.bond.types.${bond.bondType}`, { defaultValue: bond.bondType })}
           </span>
-          <span className="font-mono text-lg sm:text-2xl font-bold text-fg">{formatPrice(bond.baseIndex, localeTag)}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-lg sm:text-2xl font-bold text-fg">{formatPrice(bond.baseIndex, localeTag)}</span>
+            {priceChangePct != null && (
+              <span className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs sm:text-sm font-semibold ${priceChangePct >= 0 ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+                {priceChangePct >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                {priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(2)}%
+              </span>
+            )}
+          </div>
         </div>
       </motion.div>
 
@@ -325,6 +355,14 @@ export default function BondDetail() {
           </AnimatePresence>
         </div>
       </div>
+
+      {addOpen && (
+        <MarketAddBondModal
+          bond={bond}
+          onClose={() => setAddOpen(false)}
+          onComplete={() => setAddOpen(false)}
+        />
+      )}
     </div>
   );
 }

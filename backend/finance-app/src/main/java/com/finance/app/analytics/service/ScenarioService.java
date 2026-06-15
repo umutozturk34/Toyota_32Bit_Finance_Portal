@@ -83,7 +83,11 @@ public class ScenarioService {
                 ? cpiGrowthRatio.subtract(BigDecimal.ONE).multiply(HUNDRED).setScale(RETURN_SCALE, RoundingMode.HALF_UP)
                 : null;
 
+        // Bonds are excluded from scenario analytics: their bond_rate_history is coupon-YIELD, not a value path
+        // that scales cleanly with an invested amount. The UI already hides BOND from the picker; filtering here
+        // is the backend guard so a stale recent-search or a direct API call can't slip a bond into the run.
         List<ScenarioSeries> series = request.instruments().stream()
+                .filter(instrument -> instrument.type() != AnalyticsInstrumentType.BOND)
                 .map(instrument -> simulateOne(instrument, request.amount(), startDate, endDate,
                         cpiGrowthRatio, target))
                 .toList();

@@ -156,7 +156,7 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
         <div aria-hidden className="pointer-events-none absolute -top-20 -right-12 h-48 w-48 rounded-full bg-accent/15 blur-[90px] opacity-60" />
         <div aria-hidden className="pointer-events-none absolute -bottom-24 -left-16 h-52 w-52 rounded-full bg-success/10 blur-[90px] opacity-50" />
 
-        <div className="flex items-start justify-between gap-3 px-4 sm:px-6 pt-4 sm:pt-6 pb-4 shrink-0">
+        <div className="flex items-start justify-between gap-3 px-4 sm:px-6 pt-4 sm:pt-5 pb-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 text-accent shrink-0">
               <Landmark className="h-5 w-5" />
@@ -192,12 +192,12 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pb-4 sm:pb-6">
-        <section className="rounded-2xl border border-border-default bg-bg-base/50 p-4 mb-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pb-4 sm:pb-5">
+        <section className="rounded-2xl border border-border-default bg-bg-base/50 p-3.5 mb-3">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-fg-muted mb-3">
             {t('portfolio.bonds.detail.positionTitle')}
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <StatCell icon={Hash} label={t('portfolio.positions.quantityCol')} value={Number(bond.quantity).toLocaleString(localeTag, { maximumFractionDigits: 6 })} mono />
             <StatCell icon={Calendar} label={t('portfolio.positions.entryDateCol')} value={formatDate(bond.entryDate, localeTag)} mono />
             <StatCell icon={Tag} label={t('portfolio.positions.entryPriceCol')} value={money(bond.entryPrice, 'TRY')} mono />
@@ -245,7 +245,7 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
 
         {/* Value breakdown + coupon info sit side-by-side on desktop to cut the modal's height (less scroll). */}
         <div className="sm:grid sm:grid-cols-2 sm:gap-4 sm:items-start">
-        <section className="rounded-2xl border border-border-default bg-bg-base/50 p-4 mb-4">
+        <section className="rounded-2xl border border-border-default bg-bg-base/50 p-3.5 mb-3">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-fg-muted mb-3">
             {t('portfolio.bonds.coupon.breakdown')}
           </h3>
@@ -327,11 +327,11 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
           )}
         </section>
 
-        <section className="rounded-2xl border border-border-default bg-bg-base/50 p-4 mb-4">
+        <section className="rounded-2xl border border-border-default bg-bg-base/50 p-3.5 mb-3">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-fg-muted mb-3">
             {t('portfolio.bonds.detail.couponTitle')}
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <StatCell icon={Percent} label={t('market.bond.couponRate')} value={formatRate(bond.couponRate)} mono />
             <StatCell icon={Repeat} label={t('portfolio.bonds.detail.frequencyLabel')} value={couponFrequencyLabel} />
             <StatCell
@@ -387,7 +387,7 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
         </section>
         </div>
 
-        <section className="rounded-2xl border border-border-default bg-bg-base/50 p-4">
+        <section className="rounded-2xl border border-border-default bg-bg-base/50 p-3.5">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-fg-muted mb-1">
             {t('portfolio.bonds.detail.scheduleTitle')}
           </h3>

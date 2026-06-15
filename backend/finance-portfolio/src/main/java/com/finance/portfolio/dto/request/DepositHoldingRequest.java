@@ -25,7 +25,7 @@ public record DepositHoldingRequest(
         @Pattern(regexp = "^[A-Z]{3}$") String currency,
         @NotNull @DecimalMin(value = "0", inclusive = false) @DecimalMax("10000000000000")
         @Digits(integer = 15, fraction = 8) BigDecimal principal,
-        @NotNull @PositiveOrZero @DecimalMax("1000") @Digits(integer = 6, fraction = 4) BigDecimal annualRate,
+        @NotNull @PositiveOrZero @DecimalMax("500") @Digits(integer = 6, fraction = 4) BigDecimal annualRate,
         @Size(max = 64) String indicatorCode,
         @NotNull LocalDate startDate,
         @NotNull LocalDate maturityDate,

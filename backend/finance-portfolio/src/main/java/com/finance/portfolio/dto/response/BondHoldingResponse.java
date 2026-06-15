@@ -9,10 +9,12 @@ import java.time.LocalDate;
  * is TRY. {@code currentPriceTry} is the clean price per 100 nominal; {@code currentValueTry} and
  * {@code costTry} are full-position TRY amounts; {@code pnlTry}/{@code pnlPercent} are derived against cost.
  *
- * <p>Valuation is now DIRTY: {@code currentValueTry} = {@code nominalValueTry} (clean price × nominal) +
- * {@code accruedCouponTry} (işlemiş kupon since the last coupon date). {@code dailyCouponAccrualTry} is how much
- * coupon the position accrues per calendar day in the current period, so the UI can show the bond's daily coupon
- * yield alongside its nominal value. A closed holding reports its realized clean value (no accrued line).
+ * <p>Valuation is CLEAN: {@code currentValueTry} == {@code nominalValueTry} (clean price × nominal) so the
+ * grid/summary/history reconcile and {@code pnlTry} is a pure mark-to-market figure. The işlemiş kupon since the
+ * last coupon date is surfaced SEPARATELY as {@code accruedCouponTry} (NOT folded into the value), and
+ * {@code dailyCouponAccrualTry} is how much coupon the position accrues per calendar day in the current period, so
+ * the UI can present the dirty value (nominal + accrued) itself. A closed holding reports its realized clean value
+ * (no accrued line). To get the dirty/settlement price, add {@code accruedCouponTry} to {@code currentValueTry}.
  *
  * <p>The reference block ({@code couponRate}..{@code couponFrequency}) is denormalized from the resolved market
  * bond so the grid and chart can render coupon/maturity context without a second round-trip. {@code couponRate}

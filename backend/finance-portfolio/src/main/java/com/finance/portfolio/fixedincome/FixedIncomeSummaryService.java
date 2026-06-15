@@ -224,19 +224,20 @@ public class FixedIncomeSummaryService {
     }
 
     /**
-     * Per-date TRY value of a bond for the history series. A sold bond accrues live up to and including its exit
-     * date, then holds its FROZEN realized proceeds ({@code exitPrice}) afterwards — mirroring the closed-deposit
-     * treatment in {@link #depositValueAt} so the chart's today endpoint reconciles with {@link #summary} (which
-     * also values a closed bond at its exit proceeds) and so the bond and deposit legs share one closed-holding
-     * policy. An open bond is forward-filled from the preloaded clean-price series (falling back to its
-     * {@code entryPrice} when the date predates the series), matching {@link BondValuationService#cleanPriceTry}.
+     * Per-date TRY value of a bond for the history series. A sold bond accrues live up to the day BEFORE its exit
+     * date, then holds its FROZEN realized proceeds ({@code exitPrice}) from the exit date onward — the bond was
+     * sold at {@code exitPrice} on that day, so the exit-day value IS the realized proceeds (not the live quote).
+     * This mirrors the closed-deposit treatment in {@link #depositValueAt} and makes the chart's today endpoint
+     * reconcile with {@link #summary} for a bond sold today (which also values a closed bond at its exit proceeds).
+     * An open bond is forward-filled from the preloaded clean-price series (falling back to its {@code entryPrice}
+     * when the date predates the series), matching {@link BondValuationService#cleanPriceTry}.
      */
     private BigDecimal bondValueAt(BondHolding bond, LocalDate date,
                                    Map<Long, NavigableMap<LocalDate, BigDecimal>> seriesByBondId,
                                    Map<Long, Bond> catalog) {
         Bond catalogBond = bond.getId() == null ? null : catalog.get(bond.getId());
         boolean perUnit = isPerUnit(catalogBond);
-        if (bond.isClosed() && date.isAfter(bond.getExitDate())) {
+        if (bond.isClosed() && !date.isBefore(bond.getExitDate())) {
             return bond.currentValue(bond.getExitPrice(), perUnit);
         }
         if (catalogBond != null) {

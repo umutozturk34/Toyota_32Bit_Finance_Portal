@@ -388,13 +388,15 @@ class FixedIncomeSummaryServiceTest {
 
         List<FixedIncomeHistoryPoint> points = service.history(PORTFOLIO_ID, USER_SUB, "1M");
 
-        // Before/on exit: live value (entry-price fallback) contributes 1000; strictly after exit: frozen 950.
+        // BEFORE exit: live value (entry-price fallback) contributes 1000. ON and AFTER exit: the bond was sold at
+        // exitPrice that day, so the value is the FROZEN proceeds 950 — making a bond sold today reconcile with the
+        // headline summary (which always values a closed bond at its exit proceeds).
         FixedIncomeHistoryPoint beforeExit = points.stream().filter(p -> p.date().equals(exit.minusDays(1)))
                 .findFirst().orElseThrow();
         assertThat(beforeExit.bondValueTry()).isEqualByComparingTo("1000");
         FixedIncomeHistoryPoint onExit = points.stream().filter(p -> p.date().equals(exit))
                 .findFirst().orElseThrow();
-        assertThat(onExit.bondValueTry()).isEqualByComparingTo("1000");
+        assertThat(onExit.bondValueTry()).isEqualByComparingTo("950");
         FixedIncomeHistoryPoint todayPoint = points.get(points.size() - 1);
         assertThat(todayPoint.bondValueTry()).isEqualByComparingTo("950");
 

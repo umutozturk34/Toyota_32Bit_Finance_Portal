@@ -78,6 +78,12 @@ public class DepositHoldingService {
     public DepositHoldingResponse update(Long portfolioId, Long holdingId, String userSub,
                                          DepositHoldingRequest request) {
         DepositHolding holding = loadOwnedHolding(portfolioId, holdingId, userSub);
+        // A closed deposit has a closedValueTry frozen at its OLD terms; editing principal/rate/currency/dates here
+        // would leave that realized value stale and inconsistent with the holding. Editing is only valid while
+        // active — the caller must reopen() first (which clears the frozen value) before changing terms.
+        if (!holding.isActive()) {
+            throw new BusinessException("error.portfolio.deposit.alreadyClosed");
+        }
         String currency = request.currencyOrDefault();
         DepositValidator.validate(currency, request);
         holding.update(scaled(request.principal()), request.annualRate(), request.startDate(),

@@ -36,7 +36,7 @@ final class DepositValidator {
     // trading day, so a deposit older than this could not be valued in TRY.
     private static final LocalDate MIN_START_DATE = LocalDate.of(2000, 1, 4);
     private static final int MAX_TERM_YEARS = 30;
-    // The projected daily-compounded maturity value (principal × (1+rate/100/365)^days, in the deposit's own
+    // The projected SIMPLE-interest maturity value (principal × (1 + rate/100 × days/365), in the deposit's own
     // currency) must stay under this ceiling so that — even after FX-conversion to TRY at close (USD/EUR rates
     // orbit ~40 TRY) — the realized value provably fits the numeric(23,8) money columns (max ~1e15). 1e13 native
     // × a generous 50× FX headroom = 5e14 < 1e15, so close()/persist can never throw a numeric-overflow DB error.
@@ -92,11 +92,11 @@ final class DepositValidator {
     }
 
     /**
-     * Rejects a deposit whose daily-compounded value at maturity would exceed {@link #MAX_PROJECTED_VALUE}.
-     * This is the real overflow guard: principal, rate and term may each be individually legal yet compound to
+     * Rejects a deposit whose SIMPLE-interest value at maturity would exceed {@link #MAX_PROJECTED_VALUE}.
+     * This is the real overflow guard: principal, rate and term may each be individually legal yet grow to
      * a value that — after FX-conversion to TRY at close — overflows the numeric(23,8) money columns, which
      * would surface only later as a DB error on close()/persist. Mirrors {@code DepositAccrualService}'s
-     * act/365 compounding so the projection matches what would actually be stored. Bails silently on any null
+     * act/365 SIMPLE interest so the projection matches what would actually be stored. Bails silently on any null
      * (the prior guards already rejected nulls; this avoids a redundant NPE if called in isolation).
      */
     private static void validateProjectedValue(DepositHoldingRequest request) {

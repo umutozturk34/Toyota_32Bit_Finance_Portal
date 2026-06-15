@@ -218,6 +218,22 @@ class DepositHoldingServiceTest {
     }
 
     @Test
+    void shouldRejectUpdate_whenDepositAlreadyClosed() {
+        // Arrange: an owned but CLOSED deposit. Its closedValueTry is frozen at the old terms, so editing
+        // principal/rate/dates would orphan that realized value — the caller must reopen() first.
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(ownedPortfolio()));
+        DepositHolding closed = holdingIn(PORTFOLIO_ID);
+        closed.close(LocalDate.now().minusDays(1), new BigDecimal("130000"));
+        when(depositHoldingRepository.findById(HOLDING_ID)).thenReturn(Optional.of(closed));
+
+        // Act + Assert: rejected as alreadyClosed and nothing is persisted.
+        assertThatThrownBy(() -> service.update(PORTFOLIO_ID, HOLDING_ID, USER_SUB, validRequest()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.deposit.alreadyClosed");
+        verify(depositHoldingRepository, never()).save(any());
+    }
+
+    @Test
     void shouldThrowResourceNotFound_whenHoldingMissingUnderOwnedPortfolio() {
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(ownedPortfolio()));
         when(depositHoldingRepository.findById(HOLDING_ID)).thenReturn(Optional.empty());

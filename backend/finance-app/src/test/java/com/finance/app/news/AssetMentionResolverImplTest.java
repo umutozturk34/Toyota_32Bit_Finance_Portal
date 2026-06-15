@@ -1,0 +1,83 @@
+package com.finance.app.news;
+
+import com.finance.market.stock.repository.StockRepository;
+import com.finance.news.port.AssetMentionResolver.ResolvedAsset;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+
+/**
+ * Unit tests for {@link AssetMentionResolverImpl}: proves a news article is linked to the right stock by BOTH the
+ * parenthesised ticker and the company name, validated against the catalog so acronyms are dropped and a
+ * ticker+name double-mention collapses to one link. Plain Mockito + AAA; the stock catalog is stubbed.
+ */
+@ExtendWith(MockitoExtension.class)
+class AssetMentionResolverImplTest {
+
+    @Mock
+    private StockRepository stockRepository;
+
+    private AssetMentionResolverImpl resolver;
+
+    @BeforeEach
+    void setUp() {
+        resolver = new AssetMentionResolverImpl(stockRepository);
+        when(stockRepository.findAllSymbolsAndNames()).thenReturn(List.of(
+                new Object[]{"KRVGD.IS", "Kervan Gıda Sanayi ve Ticaret A.Ş."},
+                new Object[]{"THYAO.IS", "Türk Hava Yolları A.O."},
+                new Object[]{"AHGAZ.IS", "Ahlatcı Doğalgaz Dağıtım A.Ş."}
+        ));
+    }
+
+    @Test
+    void shouldResolveParenthesisedTicker() {
+        // Arrange + Act: the ticker appears in parentheses.
+        List<ResolvedAsset> result = resolver.resolve("Bir hisseye tedbir kararı (KRVGD)", null);
+
+        // Assert: linked to the full catalog code, typed STOCK.
+        assertThat(result).extracting(ResolvedAsset::code).containsExactly("KRVGD.IS");
+        assertThat(result).extracting(ResolvedAsset::type).containsExactly("STOCK");
+    }
+
+    @Test
+    void shouldResolveByCompanyName_whenNoTickerPresent() {
+        // Arrange + Act: the firm is spelled out, no ticker.
+        List<ResolvedAsset> result = resolver.resolve("Türk Hava Yolları yeni sefer açtı", "Detaylar");
+
+        // Assert: matched by name core ("turk hava").
+        assertThat(result).extracting(ResolvedAsset::code).containsExactly("THYAO.IS");
+    }
+
+    @Test
+    void shouldCollapseTickerAndNameToSingleLink() {
+        // Arrange + Act: both the name AND the ticker name the same stock.
+        List<ResolvedAsset> result = resolver.resolve("Kervan Gıda (KRVGD) temettü ödedi", null);
+
+        // Assert: deduped to one.
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).code()).isEqualTo("KRVGD.IS");
+    }
+
+    @Test
+    void shouldDropUnknownParenthesisedAcronyms() {
+        // Arrange + Act: regulator/central-bank acronyms are parenthesised but are not stock codes.
+        List<ResolvedAsset> result = resolver.resolve("TCMB faiz kararı (TCMB)", "(SPK) açıklaması");
+
+        // Assert: nothing linked.
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldReturnEmpty_whenArticleNamesNoAsset() {
+        List<ResolvedAsset> result = resolver.resolve("Piyasalarda sakin bir gün", "Genel piyasa yorumu");
+
+        assertThat(result).isEmpty();
+    }
+}

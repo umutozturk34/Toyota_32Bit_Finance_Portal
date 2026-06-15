@@ -1040,6 +1040,18 @@
       "maturityLabel": "Vade Sonu",
       "couponDateLabel": "Kupon Tarihi",
       "daysSuffix": "g",
+      "cadence": {
+        "title": "Gözlemlenen kupon ritmi",
+        "everyDays": "~{{days}} günde bir",
+        "firstJump": "ilk sıçrama vade başından {{n}} gün sonra",
+        "jumpOnly": "Fiyat sıçraması: vade başından {{n}} gün sonra",
+        "labels": {
+          "monthly": "aylık",
+          "quarterly": "3 aylık",
+          "semiAnnual": "6 aylık",
+          "annual": "yıllık"
+        }
+      },
       "rateChangeButton": "Faiz Değişimi",
       "updateLabel": "Güncelle",
       "updateTitle": "Tahvil verilerini güncelle",

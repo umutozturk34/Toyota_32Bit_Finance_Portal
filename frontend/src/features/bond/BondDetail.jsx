@@ -16,8 +16,10 @@ import {
   ChevronDown,
   ChevronUp,
   Plus,
+  Repeat,
 } from 'lucide-react';
 import { bondService } from './services/bondService';
+import { inferCouponCadence } from './lib/couponCadence';
 import AssetRelatedNews from '../news/components/AssetRelatedNews';
 import { useTheme } from '../../shared/context/useTheme';
 import useSessionState from '../../shared/hooks/useSessionState';
@@ -195,6 +197,9 @@ export default function BondDetail() {
     }
     return bond?.couponRate != null ? Number(bond.couponRate) : null;
   }, [history, bond?.couponRate]);
+  // Coupon rhythm read off the price-history SHAPE (jumps), not the declared schedule — most telling for CPI/gold
+  // linkers whose indexed price steps at each coupon. Null (→ nothing rendered) when the price shows no jump.
+  const cadence = useMemo(() => inferCouponCadence(history, bond?.maturityStart), [history, bond?.maturityStart]);
   const priceOption = useMemo(
     () => buildLineOption({
       history, valueKey: 'price', color: priceColor, isDark,
@@ -314,6 +319,26 @@ export default function BondDetail() {
             <div className="h-72 flex items-center justify-center text-fg-muted text-xs">{t('market.bond.noPriceData', { defaultValue: 'Fiyat geçmişi yok' })}</div>
           )}
         </div>
+
+        {cadence && (cadence.cadenceKey || (cadence.firstJumpDaysFromStart != null && cadence.firstJumpDaysFromStart >= 0)) && (
+          <div className="px-5 pb-4 -mt-1 flex items-start gap-2 text-[11px] text-fg-subtle">
+            <Repeat className="h-3.5 w-3.5 mt-0.5 shrink-0 text-fg-muted" />
+            <span>
+              {cadence.cadenceKey ? (
+                <>
+                  <span className="font-medium text-fg-muted">{t('market.bond.cadence.title')}:</span>{' '}
+                  {t('market.bond.cadence.everyDays', { days: cadence.approxDays })}{' '}
+                  ({t(`market.bond.cadence.labels.${cadence.cadenceKey}`)})
+                  {cadence.firstJumpDaysFromStart != null && cadence.firstJumpDaysFromStart >= 0 && (
+                    <> · {t('market.bond.cadence.firstJump', { n: cadence.firstJumpDaysFromStart })}</>
+                  )}
+                </>
+              ) : (
+                t('market.bond.cadence.jumpOnly', { n: cadence.firstJumpDaysFromStart })
+              )}
+            </span>
+          </div>
+        )}
 
         <div className="border-t border-border-default">
           <button

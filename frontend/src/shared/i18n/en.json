@@ -1040,6 +1040,18 @@
       "maturityLabel": "Maturity",
       "couponDateLabel": "Coupon Date",
       "daysSuffix": "d",
+      "cadence": {
+        "title": "Observed coupon rhythm",
+        "everyDays": "every ~{{days}} days",
+        "firstJump": "first jump {{n}} days after issue",
+        "jumpOnly": "Price jump {{n}} days after issue",
+        "labels": {
+          "monthly": "monthly",
+          "quarterly": "quarterly",
+          "semiAnnual": "semi-annual",
+          "annual": "annual"
+        }
+      },
       "rateChangeButton": "Rate Movement",
       "updateLabel": "Update",
       "updateTitle": "Refresh bond data",

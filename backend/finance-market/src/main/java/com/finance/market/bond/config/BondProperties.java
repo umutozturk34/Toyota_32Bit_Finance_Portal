@@ -28,7 +28,13 @@ public class BondProperties {
     private int maxDaysPerRequest = 1000;
     private BigDecimal rateThreshold = new BigDecimal("0.5");
     private BigDecimal auctionThreshold = new BigDecimal("14");
-    private BigDecimal cpiFixedThreshold = new BigDecimal("5");
+    // A coupon below this (percent) marks an inflation-indexed (CPI) bond's small real coupon. Set at 4 to sit
+    // between the highest real CPI coupon observed (~3.06%) and the lowest variable-sukuk/auction coupon (~4.6%),
+    // so a low-coupon variable sukuk is no longer swept into CPI.
+    private BigDecimal cpiFixedThreshold = new BigDecimal("4");
+    // A low-coupon bond whose quoted value clears this (TRY) is gold-linked (altına dayalı): its per-unit value is
+    // the gold-content value (~6000-7000), well above any per-100 indexed CPI price (≤ ~1200), so the gap is clean.
+    private BigDecimal goldValueThreshold = new BigDecimal("2000");
     private BigDecimal faceValue = new BigDecimal("100");
     private int daysInYear = 365;
 }

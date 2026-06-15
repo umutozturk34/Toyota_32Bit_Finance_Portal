@@ -123,9 +123,9 @@ public class Bond extends BaseAsset {
      * @param auctionThreshold rate-variation cutoff above which the bond is treated as auction-indexed
      * @param cpiFixedThreshold cutoff distinguishing CPI-indexed bonds from fixed-coupon ones
      */
-    public void resolveType(List<BondRateHistory> history,
-                             BigDecimal auctionThreshold, BigDecimal cpiFixedThreshold) {
-        this.bondType = BondTypeResolver.resolve(this, history, auctionThreshold, cpiFixedThreshold);
+    public void resolveType(List<BondRateHistory> history, BigDecimal auctionThreshold,
+                             BigDecimal cpiFixedThreshold, BigDecimal goldValueThreshold) {
+        this.bondType = BondTypeResolver.resolve(this, history, auctionThreshold, cpiFixedThreshold, goldValueThreshold);
     }
 
     /**

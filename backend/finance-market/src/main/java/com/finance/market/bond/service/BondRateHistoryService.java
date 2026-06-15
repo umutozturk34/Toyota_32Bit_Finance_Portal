@@ -44,6 +44,7 @@ public class BondRateHistoryService {
     private final AssetRegistryService assetRegistry;
     private final BigDecimal auctionThreshold;
     private final BigDecimal cpiFixedThreshold;
+    private final BigDecimal goldValueThreshold;
     private final BigDecimal faceValue;
     private final int daysInYear;
 
@@ -68,6 +69,7 @@ public class BondRateHistoryService {
         this.assetRegistry = assetRegistry;
         this.auctionThreshold = bondProperties.getAuctionThreshold();
         this.cpiFixedThreshold = bondProperties.getCpiFixedThreshold();
+        this.goldValueThreshold = bondProperties.getGoldValueThreshold();
         this.faceValue = bondProperties.getFaceValue();
         this.daysInYear = bondProperties.getDaysInYear();
     }
@@ -159,7 +161,7 @@ public class BondRateHistoryService {
     /** Resolves bond type and simple yield from full rate history; clears coupon date for discount bonds. */
     private void applyClassification(Bond bond, BondSnapshotDto dto) {
         List<BondRateHistory> fullHistory = rateHistoryRepository.findByIsinCodeOrderByRateDateAsc(dto.isinCode());
-        bond.resolveType(fullHistory, auctionThreshold, cpiFixedThreshold);
+        bond.resolveType(fullHistory, auctionThreshold, cpiFixedThreshold, goldValueThreshold);
         bond.resolveSimpleYield(faceValue, daysInYear);
         if (bond.isDiscounted()) {
             bond.setNextCouponDate(null);

@@ -27,6 +27,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -46,11 +47,12 @@ public class BondQueryService {
     private final MarketCacheService<Bond> bondCacheService;
 
     /**
-     * Paged bond search. A non-blank {@code search} matches the series or ISIN code (contains); a non-blank
-     * {@code bondType} filters by type. Sorting falls back to simple yield when no sort field is given; the
-     * page size is clamped to the configured default/max bounds.
+     * Paged bond search. A non-blank {@code search} matches the series or ISIN code (contains); {@code bondType}
+     * filters by type and accepts a COMMA-SEPARATED list (e.g. {@code "GOLD,SUKUK_GOLD"}) so the UI can select
+     * several types at once — a single value still works. Sorting falls back to simple yield when no sort field
+     * is given; the page size is clamped to the configured default/max bounds.
      *
-     * @throws com.finance.common.exception.BadRequestException if {@code bondType} is not a valid type
+     * @throws com.finance.common.exception.BadRequestException if any {@code bondType} token is not a valid type
      */
     public PagedResponse<BondResponse> search(String search, String bondType, String sort, String direction, int page, Integer size) {
         Specification<Bond> spec = (root, query, cb) -> cb.conjunction();
@@ -60,12 +62,9 @@ public class BondQueryService {
                     LikeSearchSpec.byFieldsContains(root, cb, search, "seriesCode", "isinCode"));
         }
 
-        BondType filterType = bondType == null || bondType.isBlank()
-                ? null
-                : EnumParser.parseOrBadRequest(BondType.class, bondType.toUpperCase(), "enum.field.bondType");
-        if (filterType != null) {
-            BondType fixed = filterType;
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("bondType"), fixed));
+        List<BondType> filterTypes = parseBondTypes(bondType);
+        if (!filterTypes.isEmpty()) {
+            spec = spec.and((root, query, cb) -> root.get("bondType").in(filterTypes));
         }
 
         int resolvedSize = resolvePageSize(size);
@@ -76,6 +75,19 @@ public class BondQueryService {
 
         List<BondResponse> bonds = bondResponseMapper.toBondResponses(result.getContent());
         return PagedResponse.of(bonds, page, resolvedSize, result.getTotalElements());
+    }
+
+    /** Parses a comma-separated bondType filter into distinct {@link BondType}s; empty/blank yields no filter. */
+    private List<BondType> parseBondTypes(String bondType) {
+        if (bondType == null || bondType.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(bondType.split(","))
+                .map(String::trim)
+                .filter(token -> !token.isEmpty())
+                .map(token -> EnumParser.parseOrBadRequest(BondType.class, token.toUpperCase(), "enum.field.bondType"))
+                .distinct()
+                .toList();
     }
 
     /**

@@ -19,6 +19,14 @@ public interface BondRateHistoryRepository extends JpaRepository<BondRateHistory
     /** Returns the most recent rate observation for the bond, if any. */
     Optional<BondRateHistory> findTopByIsinCodeOrderByRateDateDesc(String isinCode);
 
+    /**
+     * Returns the latest observation on or before {@code asOf} for the bond — the forward-filled
+     * "clean price as of this date" lookup used by portfolio bond valuation (a holiday/weekend
+     * carries the prior trading day's price forward), empty when nothing exists at/before the date.
+     */
+    Optional<BondRateHistory> findFirstByIsinCodeAndRateDateLessThanEqualOrderByRateDateDesc(
+            String isinCode, LocalDate asOf);
+
     /** Counts stored observations for the bond, used to decide between full seed and incremental update. */
     long countByIsinCode(String isinCode);
 

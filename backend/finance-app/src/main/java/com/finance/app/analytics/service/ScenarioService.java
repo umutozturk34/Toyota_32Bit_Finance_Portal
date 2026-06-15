@@ -100,6 +100,13 @@ public class ScenarioService {
     private ScenarioSeries simulateOne(AnalyticsInstrument instrument, BigDecimal amount,
                                        LocalDate startDate, LocalDate endDate,
                                        BigDecimal cpiGrowthRatio, Currency target) {
+        // A macro INDEX instrument (CPI/PPI) is anchored to the most recent print AT OR BEFORE the start —
+        // the same convention the CPI deflator uses — so "investing in inflation" earns exactly the deflator
+        // and reads ~0 real return, instead of losing to inflation by the one month a plain in-window fetch
+        // silently drops. Handled before the generic fetch because it needs a pre-start lead-in.
+        if (isIndexMacro(instrument)) {
+            return simulateIndexMacro(instrument, amount, startDate, endDate, cpiGrowthRatio, target);
+        }
         PricedSeries series = priceSeriesProvider.fetch(instrument, startDate, endDate, target);
         if (series.isEmpty()) {
             return emptySeries(instrument);
@@ -107,6 +114,88 @@ public class ScenarioService {
         return shouldCompound(instrument)
                 ? simulateRate(instrument, series, amount, startDate, endDate, cpiGrowthRatio, series.nativeCurrency())
                 : simulateMarket(instrument, series, amount, startDate, endDate, cpiGrowthRatio, series.nativeCurrency());
+    }
+
+    /** True for a macro/deposit indicator quoted as an INDEX/NUMBER level (CPI, PPI) rather than a PERCENT rate. */
+    private boolean isIndexMacro(AnalyticsInstrument instrument) {
+        if (instrument.type() != AnalyticsInstrumentType.MACRO
+                && instrument.type() != AnalyticsInstrumentType.DEPOSIT) {
+            return false;
+        }
+        try {
+            MacroUnit unit = macroQueryService.findByCode(instrument.code()).getUnit();
+            return unit == MacroUnit.INDEX || unit == MacroUnit.NUMBER;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Index-level macro path (CPI/PPI): the value of {@code amount} riding the index from the start. Unlike
+     * {@link #simulateMarket} it anchors the baseline to the most recent observation AT OR BEFORE the start
+     * (fetching a two-month lead-in to reach it), matching {@link #computeCpiGrowthRatio}. A plain in-window
+     * fetch starts at the first print AFTER the start and drops the first month's inflation — exactly why the
+     * inflation instrument used to read a small negative real return ("losing to inflation"). Ends at the last
+     * print on/before the window end (no extrapolation) so it reconciles with the deflator to the cent. FX
+     * framing mirrors the market path for non-TRY targets.
+     */
+    private ScenarioSeries simulateIndexMacro(AnalyticsInstrument instrument, BigDecimal amount,
+                                              LocalDate startDate, LocalDate endDate,
+                                              BigDecimal cpiGrowthRatio, Currency target) {
+        PricedSeries series = priceSeriesProvider.fetch(instrument, startDate.minusMonths(2), endDate, target);
+        if (series.isEmpty()) {
+            return emptySeries(instrument);
+        }
+        List<HistoryPoint> raw = series.rawPoints();
+
+        HistoryPoint baseline = null;
+        for (HistoryPoint p : raw) {
+            if (p.value() == null || p.value().signum() <= 0) {
+                continue;
+            }
+            if (p.date().isAfter(startDate)) {
+                if (baseline == null) {
+                    baseline = p; // series starts mid-window: fall back to its first print
+                }
+                break;
+            }
+            baseline = p; // latest valid print on/before the start
+        }
+        if (baseline == null) {
+            return emptySeries(instrument);
+        }
+        BigDecimal basePrice = baseline.value();
+        BigDecimal baseFx = series.fxAt(baseline.date());
+        if (baseFx == null || baseFx.signum() <= 0) {
+            baseFx = series.baseFx();
+        }
+        if (baseFx == null || baseFx.signum() <= 0) {
+            return emptySeries(instrument);
+        }
+
+        List<ScenarioPoint> points = new ArrayList<>();
+        points.add(new ScenarioPoint(startDate, amount));
+        for (HistoryPoint p : raw) {
+            if (p.value() == null || !p.date().isAfter(startDate) || p.date().isAfter(endDate)) {
+                continue;
+            }
+            BigDecimal fx = series.fxAt(p.date());
+            if (fx == null) {
+                continue;
+            }
+            BigDecimal value = amount.multiply(p.value()).multiply(fx)
+                    .divide(basePrice.multiply(baseFx), VALUE_SCALE, RoundingMode.HALF_UP);
+            points.add(new ScenarioPoint(p.date(), value));
+        }
+        if (points.size() <= 1) {
+            return emptySeries(instrument);
+        }
+        BigDecimal finalValue = points.get(points.size() - 1).value();
+        // Monthly index data legitimately lags the window end by a few weeks; that trailing gap is not a
+        // truncation, so only a baseline starting AFTER the window start (a series younger than the window)
+        // marks the run partial.
+        boolean partial = baseline.date().isAfter(startDate);
+        return buildSeries(instrument, points, finalValue, amount, cpiGrowthRatio, series.nativeCurrency(), partial);
     }
 
     /**

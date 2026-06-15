@@ -9,6 +9,8 @@ import com.finance.app.analytics.dto.response.ScenarioSeries;
 import com.finance.app.config.AnalyticsProperties;
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.model.Currency;
+import com.finance.market.macro.model.MacroIndicator;
+import com.finance.market.macro.model.MacroUnit;
 import com.finance.market.macro.service.MacroIndicatorQueryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,7 @@ import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -107,6 +110,38 @@ class ScenarioServiceTest {
         assertThat(series.finalValue()).isGreaterThan(new BigDecimal("16000"));
         assertThat(series.finalValue()).isLessThan(new BigDecimal("17000"));
         assertThat(series.nominalReturnPct()).isGreaterThan(new BigDecimal("60"));
+    }
+
+    @Test
+    void shouldAnchorInflationInstrumentToDeflatorSoItDoesNotLoseToItself() {
+        // The CPI index as a scenario instrument must earn EXACTLY the CPI deflator (real return ~0): it can't
+        // beat or lose to itself. The regression was that the instrument path started at the first print AFTER
+        // the start (2024-02-01), dropping January's inflation the deflator (anchored at 2023-12-01 ≤ start)
+        // still counted, so inflation always showed a small negative real return ("enflasyona yenilmiş").
+        AnalyticsInstrument inflation = new AnalyticsInstrument(AnalyticsInstrumentType.MACRO, "TP.GENENDEKS.T1");
+        LocalDate start = LocalDate.of(2024, 1, 15);
+        LocalDate end = LocalDate.of(2024, 12, 31);
+        MacroIndicator cpiIndicator = mock(MacroIndicator.class);
+        when(cpiIndicator.getUnit()).thenReturn(MacroUnit.INDEX);
+        when(macroQueryService.findByCode("TP.GENENDEKS.T1")).thenReturn(cpiIndicator);
+        // Two-month lead-in fetch reaches the 2023-12-01 print (the latest on/before the start).
+        when(priceSeriesProvider.fetch(eq(inflation), eq(start.minusMonths(2)), eq(end), any()))
+                .thenReturn(pricedTry(List.of(
+                        new HistoryPoint(LocalDate.of(2023, 12, 1), new BigDecimal("2000")),
+                        new HistoryPoint(LocalDate.of(2024, 12, 1), new BigDecimal("2400"))
+                )));
+        when(historyService.getMacroSeries(anyString(), any(), any())).thenReturn(List.of(
+                new HistoryPoint(LocalDate.of(2023, 12, 1), new BigDecimal("2000")),
+                new HistoryPoint(LocalDate.of(2024, 12, 1), new BigDecimal("2400"))
+        ));
+
+        ScenarioResponse response = service.simulate(new ScenarioRequest(
+                new BigDecimal("10000"), start, end, List.of(inflation)));
+
+        ScenarioSeries series = response.series().get(0);
+        assertThat(series.nominalReturnPct()).isEqualByComparingTo("20.0000");
+        assertThat(response.cpiGrowthPct()).isEqualByComparingTo("20.0000");
+        assertThat(series.realReturnPct()).isCloseTo(BigDecimal.ZERO, within(new BigDecimal("0.0001")));
     }
 
     @Test

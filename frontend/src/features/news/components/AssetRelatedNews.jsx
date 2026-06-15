@@ -189,15 +189,17 @@ export default function AssetRelatedNews({ assetCode, assetName, assetType }) {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {/* A single horizontal row that scrolls — keeps the section short on an already-tall detail page. */}
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory [scrollbar-width:thin]">
         {items.map((a) => (
-          <RelatedNewsCard
-            key={a.id}
-            article={a}
-            mentions={mentionsAsset(a)}
-            codeTerm={codeTerm}
-            onOpen={() => navigate(`/news/${a.id}`)}
-          />
+          <div key={a.id} className="w-[15rem] sm:w-[16rem] shrink-0 snap-start">
+            <RelatedNewsCard
+              article={a}
+              mentions={mentionsAsset(a)}
+              codeTerm={codeTerm}
+              onOpen={() => navigate(`/news/${a.id}`)}
+            />
+          </div>
         ))}
       </div>
     </motion.section>

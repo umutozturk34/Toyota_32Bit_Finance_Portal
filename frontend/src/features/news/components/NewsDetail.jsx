@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useParams } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import { ArrowLeft, Calendar, ExternalLink, Building2 } from 'lucide-react';
 import { newsService } from '../services/newsService';
 import { formatDateTimeFull } from '../../../shared/utils/formatters';
@@ -41,6 +42,9 @@ export default function NewsDetail() {
 
     const imgSrc = article.imageUrl || getFallbackImage(article.category, article.id);
     const hasContent = article.content && article.content.trim().length > 0;
+    // Third-party RSS content:encoded is raw HTML — sanitize before injecting it so a malicious/compromised feed
+    // can't run script (drops <script>, on*= handlers, javascript: URLs) while keeping safe formatting/images.
+    const safeContent = hasContent ? DOMPurify.sanitize(article.content) : '';
 
     return (
         <div className="max-w-4xl mx-auto py-6 space-y-6 min-w-0">
@@ -106,7 +110,7 @@ export default function NewsDetail() {
                                        prose-img:rounded-lg prose-img:w-full prose-img:h-auto prose-img:max-h-96 prose-img:object-cover
                                        prose-p:mb-4 prose-li:mb-1
                                        prose-pre:overflow-x-auto prose-pre:whitespace-pre"
-                            dangerouslySetInnerHTML={{ __html: article.content }}
+                            dangerouslySetInnerHTML={{ __html: safeContent }}
                         />
                     )}
 

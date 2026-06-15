@@ -1355,7 +1355,8 @@
         "payments": "{{count}} payment",
         "payments_other": "{{count}} payments",
         "perPayment": "per payment",
-        "indexNote": "CPI-linked — return is in the index price; no separate coupon accrual.",
+        "indexNote": "CPI-linked — the main return is in the index price; the coupon accrues on the indexed value.",
+        "goldNote": "Gold-linked — the main return is in the gold value; the coupon accrues on the gold value.",
         "scheduleReceived": "Received",
         "scheduleBeforeEntry": "Before entry",
         "freq": {

@@ -72,6 +72,8 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
   const isCpi = CPI_TYPES.has(bond.bondType);
   // Gold-linked bonds are quoted PER CERTIFICATE, so the per-100 clean/dirty-price math below doesn't apply.
   const isPerUnit = bond.bondType === 'GOLD' || bond.bondType === 'SUKUK_GOLD';
+  // CPI and gold both ride an index, but the note must name the RIGHT one (a gold bond is not "CPI-linked").
+  const indexNoteKey = isPerUnit ? 'portfolio.bonds.coupon.goldNote' : 'portfolio.bonds.coupon.indexNote';
   const isDiscount = bond.bondType === 'DISCOUNTED' || bond.couponFrequency === 'ZERO_COUPON';
   // A discount bill redeems at PAR (100 per bond) at maturity → redemption value = 100 × quantity (adet). The whole
   // return is the price reaching par, so show what you'll get back and the gain to maturity (no coupons involved).
@@ -148,7 +150,7 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.97 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-lg max-h-[90dvh] flex flex-col overflow-x-hidden rounded-2xl border border-border-default modal-panel"
+        className="relative w-full max-w-lg sm:max-w-3xl max-h-[90dvh] flex flex-col overflow-x-hidden rounded-2xl border border-border-default modal-panel"
       >
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
         <div aria-hidden className="pointer-events-none absolute -top-20 -right-12 h-48 w-48 rounded-full bg-accent/15 blur-[90px] opacity-60" />
@@ -241,13 +243,14 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
           </div>
         </section>
 
-        {/* Value breakdown — how much is nominal vs coupon income */}
+        {/* Value breakdown + coupon info sit side-by-side on desktop to cut the modal's height (less scroll). */}
+        <div className="sm:grid sm:grid-cols-2 sm:gap-4 sm:items-start">
         <section className="rounded-2xl border border-border-default bg-bg-base/50 p-4 mb-4">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-fg-muted mb-3">
             {t('portfolio.bonds.coupon.breakdown')}
           </h3>
-          {isCpi && (
-            <p className="text-[11px] text-warning/90 bg-warning/10 rounded-lg px-3 py-2 mb-3">{t('portfolio.bonds.coupon.indexNote')}</p>
+          {(isCpi || isPerUnit) && (
+            <p className="text-[11px] text-warning/90 bg-warning/10 rounded-lg px-3 py-2 mb-3">{t(indexNoteKey)}</p>
           )}
           {isDiscount ? (
             <div className="space-y-3.5">
@@ -382,6 +385,7 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
             </div>
           )}
         </section>
+        </div>
 
         <section className="rounded-2xl border border-border-default bg-bg-base/50 p-4">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-fg-muted mb-1">
@@ -390,12 +394,12 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
           <p className="text-[11px] text-fg-subtle mb-3">{t('portfolio.bonds.detail.scheduleHint')}</p>
           {schedule.length === 0 ? (
             <p className="text-xs text-fg-muted">
-              {isCpi ? t('portfolio.bonds.coupon.indexNote') : t('portfolio.bonds.detail.scheduleEmpty')}
+              {(isCpi || isPerUnit) ? t(indexNoteKey) : t('portfolio.bonds.detail.scheduleEmpty')}
             </p>
           ) : (
             <>
               {(isCpi || isPerUnit) && (
-                <p className="text-[11px] text-fg-muted mb-2">{t('portfolio.bonds.coupon.indexNote')}</p>
+                <p className="text-[11px] text-fg-muted mb-2">{t(indexNoteKey)}</p>
               )}
               <ul className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
               {schedule.map((c) => {

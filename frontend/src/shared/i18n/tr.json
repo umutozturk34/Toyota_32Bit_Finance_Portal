@@ -1355,7 +1355,8 @@
         "payments": "{{count}} ödeme",
         "payments_other": "{{count}} ödeme",
         "perPayment": "ödeme başına",
-        "indexNote": "TÜFE'ye endeksli — getiri endeks fiyatında; ayrı kupon işlemez.",
+        "indexNote": "TÜFE'ye endeksli — ana getiri endeks fiyatından gelir; kupon endeks değeri üzerinden işler.",
+        "goldNote": "Altına dayalı — ana getiri altın değerinden gelir; kupon altın değeri üzerinden işler.",
         "scheduleReceived": "Alındı",
         "scheduleBeforeEntry": "Alımdan önce",
         "freq": {

@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Plus, Pencil, Trash2, Check, X, Wallet, CornerDownLeft, CandlestickChart, Landmark } from 'lucide-react';
 import { useCreatePortfolio, useRenamePortfolio, useDeletePortfolio } from '../hooks/usePortfolioData';
+import { portfolioService } from '../services/portfolioService';
+import { fixedIncomeService } from '../services/fixedIncomeService';
+import { useMoney } from '../../../shared/hooks/useMoney';
 import { extractApiError } from '../../../shared/utils/apiError';
 import { portfolioName } from '../../../shared/utils/portfolioName';
 import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
@@ -13,6 +17,24 @@ const PORTFOLIO_TYPES = [
   { id: 'SPOT', labelKey: 'portfolio.typeSwitcher.spot', Icon: CandlestickChart },
   { id: 'FIXED', labelKey: 'portfolio.typeSwitcher.fixed', Icon: Landmark },
 ];
+
+// Each portfolio's current TRY total, fetched lazily only while the dropdown is open (so opening the switcher costs
+// at most N small summary calls, never on every render). Spot and fixed-income read their own summary endpoint.
+function PortfolioTotal({ portfolio, enabled }) {
+  const isFixed = portfolio.type === 'FIXED';
+  const { format: money } = useMoney({ lockBase: true });
+  const { data } = useQuery({
+    queryKey: ['switcherTotal', portfolio.id, portfolio.type],
+    queryFn: () => (isFixed ? fixedIncomeService.summary(portfolio.id) : portfolioService.getSummary(portfolio.id)),
+    enabled,
+    staleTime: 60 * 1000,
+  });
+  const total = data?.totalValueTry ?? data?.totalValue ?? data?.value ?? null;
+  if (total == null) return null;
+  return (
+    <span className="block text-[11px] font-mono tabular-nums text-fg-muted truncate">{money(total, 'TRY')}</span>
+  );
+}
 
 function TypeBadge({ type }) {
   const { t } = useTranslation();
@@ -120,7 +142,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
         <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-accent/25 to-accent/10 ring-1 ring-inset ring-accent/30">
           <Wallet className="h-3.5 w-3.5 text-accent" />
         </span>
-        <span className="text-sm font-semibold text-fg max-w-[120px] sm:max-w-[180px] truncate tracking-tight">
+        <span className="text-sm font-semibold text-fg max-w-[160px] sm:max-w-[240px] truncate tracking-tight">
           {active ? portfolioName(t, active) : t('portfolio.headerTitle')}
         </span>
         {portfolios.length > 1 && (
@@ -139,7 +161,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
             exit={{ opacity: 0, scale: 0.97, y: -6 }}
             transition={PANEL_TRANSITION}
             style={{ background: 'var(--color-bg-deep)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
-            className="absolute right-0 z-50 mt-2 w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-180px)] overflow-y-auto overscroll-contain rounded-2xl border border-border-default shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)]"
+            className="absolute right-0 z-50 mt-2 w-[min(26rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-180px)] overflow-y-auto overscroll-contain rounded-2xl border border-border-default shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)]"
           >
             <div className="flex items-center justify-between px-3 pt-3 pb-2">
               <span className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-muted">
@@ -219,8 +241,11 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
                               isActive ? 'bg-accent shadow-[0_0_8px] shadow-accent/70' : 'bg-fg-muted/30 group-hover/item:bg-fg-muted/60'
                             }`}
                           />
-                          <span className={`text-sm truncate ${isActive ? 'font-semibold text-fg' : 'font-medium text-fg/85'}`}>
-                            {portfolioName(t, p)}
+                          <span className="min-w-0 flex flex-col">
+                            <span className={`text-sm truncate ${isActive ? 'font-semibold text-fg' : 'font-medium text-fg/85'}`}>
+                              {portfolioName(t, p)}
+                            </span>
+                            <PortfolioTotal portfolio={p} enabled={open} />
                           </span>
                         </button>
                         <TypeBadge type={p.type} />

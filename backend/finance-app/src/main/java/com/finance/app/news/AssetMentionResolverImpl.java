@@ -37,6 +37,10 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
     private static final Pattern DIACRITICS = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
     private static final Pattern NON_ALNUM = Pattern.compile("[^a-z0-9]+");
     private static final Set<String> NAME_STOPWORDS = Set.of("ve", "the", "a.s", "as", "ao");
+    // First words too generic to match a stock on their OWN (need a second word) — geo/common leads that head many
+    // unrelated firms and appear constantly in finance text.
+    private static final Set<String> GENERIC_FIRST_WORDS = Set.of(
+            "turkiye", "anadolu", "akdeniz", "marmara", "avrupa", "ulusal", "global", "dunya", "merkez");
     // Min length of a stock-name "core" to match on. 5 so distinctive single-word names like "Akbank" (6) link,
     // while still dropping 3-4 char fragments that would over-match.
     private static final int STOCK_CORE_MIN = 5;
@@ -110,6 +114,12 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
                 if (core != null) {
                     byName.add(new NameRef(core, symbol, "STOCK"));
                 }
+                // Also match on the DISTINCTIVE first word alone ("ASELSAN" from "ASELSAN Elektronik…"), since news
+                // cites firms by their brand word, not their full legal name. Skipped for generic/geo leads.
+                String firstWord = stockNameFirstWord(str(row[1]));
+                if (firstWord != null) {
+                    byName.add(new NameRef(firstWord, symbol, "STOCK"));
+                }
             }
             for (Object[] row : cryptoRepository.findAllIdsNamesAndSymbols()) {
                 String id = str(row[0]);
@@ -157,6 +167,24 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
         }
         String core = String.join(" ", sig);
         return core.length() >= STOCK_CORE_MIN ? core : null;
+    }
+
+    /**
+     * The company's brand word — its first significant word — IF it's distinctive enough to match on its own (≥6
+     * chars and not a generic/geo lead like "Türkiye"). Returns null otherwise, so such firms only match on their
+     * two-word core. This is what links "ASELSAN" to ASELS even though the catalogue name is "ASELSAN Elektronik…".
+     */
+    private static String stockNameFirstWord(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        for (String w : normalize(name).split(" ")) {
+            if (w.length() <= 1 || NAME_STOPWORDS.contains(w)) {
+                continue;
+            }
+            return (w.length() >= 6 && !GENERIC_FIRST_WORDS.contains(w)) ? w : null;
+        }
+        return null;
     }
 
     /** Lower-case, strip Turkish diacritics (ı/İ → i), reduce punctuation to single spaces. */

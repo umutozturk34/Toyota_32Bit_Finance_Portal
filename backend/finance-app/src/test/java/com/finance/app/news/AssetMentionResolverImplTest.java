@@ -36,6 +36,7 @@ class AssetMentionResolverImplTest {
                 new Object[]{"KRVGD.IS", "Kervan Gıda Sanayi ve Ticaret A.Ş."},
                 new Object[]{"THYAO.IS", "Türk Hava Yolları A.O."},
                 new Object[]{"AKBNK.IS", "Akbank T.A.Ş."},
+                new Object[]{"ASELS.IS", "ASELSAN Elektronik Sanayi ve Ticaret A.Ş."},
                 new Object[]{"AHGAZ.IS", "Ahlatcı Doğalgaz Dağıtım A.Ş."}
         ));
         when(cryptoRepository.findAllIdsNamesAndSymbols()).thenReturn(List.of(
@@ -52,6 +53,14 @@ class AssetMentionResolverImplTest {
         // Assert: linked to the full catalog code, typed STOCK.
         assertThat(result).extracting(ResolvedAsset::code).containsExactly("KRVGD.IS");
         assertThat(result).extracting(ResolvedAsset::type).containsExactly("STOCK");
+    }
+
+    @Test
+    void shouldResolveStockByDistinctiveFirstWord() {
+        // "ASELSAN" alone (catalog name is "ASELSAN Elektronik…") links via the distinctive first word.
+        List<ResolvedAsset> result = resolver.resolve("ASELSAN ile Akbank en çok işlem gören hisseler oldu", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).contains("ASELS.IS");
     }
 
     @Test

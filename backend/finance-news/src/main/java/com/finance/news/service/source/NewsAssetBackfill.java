@@ -27,6 +27,8 @@ import java.util.Set;
 public class NewsAssetBackfill {
 
     private static final int BATCH = 500;
+    private static final int MAX_ATTEMPTS = 6;
+    private static final long RETRY_MS = 20_000;
 
     private final NewsArticleRepository articleRepository;
     private final NewsAssetEnricher assetEnricher;
@@ -40,33 +42,51 @@ public class NewsAssetBackfill {
     }
 
     private void backfill() {
-        try {
-            long afterId = 0;
-            int updated = 0;
-            while (true) {
-                List<NewsArticle> batch = articleRepository.findAllAfterId(afterId, PageRequest.of(0, BATCH));
-                if (batch.isEmpty()) {
-                    break;
-                }
-                for (NewsArticle article : batch) {
-                    afterId = article.getId();
-                    // Re-resolve against the current matcher and persist ONLY when the link set actually changed,
-                    // so re-scanning every article on each startup stays cheap. enrich() overwrites with the fresh
-                    // resolution when non-empty and leaves the article untouched when nothing matches (so a catalog
-                    // that isn't loaded yet can never wipe existing links).
-                    Set<NewsArticleAsset> before = new LinkedHashSet<>(article.getAssets());
-                    assetEnricher.enrich(article);
-                    if (!before.equals(article.getAssets())) {
-                        transactionTemplate.execute(status -> articleRepository.save(article));
-                        updated++;
+        // The asset catalog (stocks/cryptos) may not be loaded the instant the app reports ready. If a full scan
+        // links nothing yet articles still lack assets, the catalog probably isn't up — wait and retry, up to a cap.
+        // Once a scan links something (catalog is up) or no article is left unlinked, we stop.
+        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+            try {
+                int updated = runScan();
+                if (updated > 0 || !articleRepository.existsWithoutAssets()) {
+                    if (updated > 0) {
+                        log.info("News asset backfill linked {} existing articles to assets", updated);
                     }
+                    return;
+                }
+            } catch (RuntimeException e) {
+                log.warn("News asset backfill attempt {} failed: {}", attempt, e.getMessage());
+            }
+            try {
+                Thread.sleep(RETRY_MS);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+    }
+
+    /** One forward-cursor pass over every article; re-resolves and saves only those whose link set changed. */
+    private int runScan() {
+        long afterId = 0;
+        int updated = 0;
+        while (true) {
+            List<NewsArticle> batch = articleRepository.findAllAfterId(afterId, PageRequest.of(0, BATCH));
+            if (batch.isEmpty()) {
+                break;
+            }
+            for (NewsArticle article : batch) {
+                afterId = article.getId();
+                // enrich() overwrites with the fresh resolution when non-empty and leaves the article untouched
+                // when nothing matches (so a catalog that isn't loaded yet can never wipe existing links).
+                Set<NewsArticleAsset> before = new LinkedHashSet<>(article.getAssets());
+                assetEnricher.enrich(article);
+                if (!before.equals(article.getAssets())) {
+                    transactionTemplate.execute(status -> articleRepository.save(article));
+                    updated++;
                 }
             }
-            if (updated > 0) {
-                log.info("News asset backfill linked {} existing articles to assets", updated);
-            }
-        } catch (RuntimeException e) {
-            log.warn("News asset backfill skipped: {}", e.getMessage());
         }
+        return updated;
     }
 }

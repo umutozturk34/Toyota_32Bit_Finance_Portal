@@ -33,4 +33,8 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Long>,
      */
     @Query("SELECT a FROM NewsArticle a WHERE a.id > :afterId ORDER BY a.id ASC")
     List<NewsArticle> findAllAfterId(@Param("afterId") Long afterId, Pageable pageable);
+
+    /** True while some article still has no asset links — lets the startup backfill retry until the catalog loads. */
+    @Query("SELECT COUNT(a) > 0 FROM NewsArticle a WHERE a.assets IS EMPTY")
+    boolean existsWithoutAssets();
 }

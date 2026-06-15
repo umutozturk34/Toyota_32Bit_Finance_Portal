@@ -22,8 +22,9 @@ import { Coins } from 'lucide-react';
 // glyph — gold bar, coin pile, crown coin, diamond ring, pearl necklace (the bilezik), oil drum — that lucide's
 // small flat set can't tell apart (it collapses every gold type to Coins/Gem). Keep gi here for that variety.
 // Colour is a SINGLE shared tone on purpose: the old per-type rainbow of ambers/yellows/oranges/rose/slate read
-// as visual noise in the strip — the distinct glyph alone carries the identity, the tone stays cohesive.
-const ICON_TONE = 'text-warning';
+// as visual noise in the strip — the distinct glyph alone carries the identity, the tone stays cohesive. The tone
+// is the app accent (not amber): one neutral brand colour reads cleaner than yellow across the strip.
+const ICON_TONE = 'text-accent';
 const COMMODITY_VISUAL = {
   GRAM_ALTIN:        { Icon: GiGoldBar,       color: ICON_TONE },
   CEYREK_ALTIN:      { Icon: GiTwoCoins,      color: ICON_TONE },

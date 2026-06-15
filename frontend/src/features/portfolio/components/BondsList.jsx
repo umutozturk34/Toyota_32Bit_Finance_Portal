@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Landmark, Plus } from 'lucide-react';
 import { containerVariants } from '../../../shared/utils/animations';
 import EmptyState from '../../../shared/components/feedback/EmptyState';
@@ -83,12 +83,18 @@ export default function BondsList({ portfolioId }) {
         />
       ) : (
         <div className="space-y-3">
-          <motion.div variants={containerVariants(0.05)} initial="hidden" animate="show" className="space-y-3">
-            <AnimatePresence mode="popLayout">
-              {controls.pageItems.map((bond) => (
-                <BondRow key={bond.id} portfolioId={portfolioId} bond={bond} />
-              ))}
-            </AnimatePresence>
+          {/* No AnimatePresence/popLayout here: its FLIP layout animations thrash when the filtered set swaps on an
+              Open↔Sold toggle. A plain staggered container reveals rows cleanly and swaps without the jump. */}
+          <motion.div
+            key={`${controls.status}-${controls.pnl}-${controls.sort}-${controls.page}`}
+            variants={containerVariants(0.05)}
+            initial="hidden"
+            animate="show"
+            className="space-y-3"
+          >
+            {controls.pageItems.map((bond) => (
+              <BondRow key={bond.id} portfolioId={portfolioId} bond={bond} />
+            ))}
           </motion.div>
           <Pagination page={controls.page} totalPages={controls.totalPages} onPageChange={controls.setPage} />
         </div>

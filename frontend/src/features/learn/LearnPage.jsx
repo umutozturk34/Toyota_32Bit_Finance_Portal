@@ -130,11 +130,12 @@ export default function LearnPage() {
         </nav>
 
         <div className="min-w-0">
-          <div className="-mx-1 mb-4 flex gap-1.5 overflow-x-auto px-1 pb-1 lg:hidden sticky top-0 z-10 bg-bg-deep/80 backdrop-blur-sm py-2">
+          {/* Mobile category nav WRAPS to multiple rows instead of a horizontal-scroll strip (which read poorly). */}
+          <div className="mb-4 flex flex-wrap gap-1.5 lg:hidden">
             {categories.map((cat) => (
               <button key={cat} onClick={() => jump(cat)}
-                className={`shrink-0 rounded-lg px-3 py-1.5 text-[11px] font-semibold border-none cursor-pointer transition-colors ${
-                  activeCat === cat ? 'bg-accent/15 text-accent' : 'bg-surface/60 text-fg-muted'
+                className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold border-none cursor-pointer transition-colors ${
+                  activeCat === cat ? 'bg-accent/15 text-accent' : 'bg-surface/60 text-fg-muted hover:text-fg'
                 }`}>
                 {t(`learn.categories.${cat}`)}
               </button>

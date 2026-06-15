@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import ReactECharts from 'echarts-for-react';
@@ -155,6 +155,24 @@ export default function CouponCashflowChart({ portfolioId }) {
   const { data: deposits = [] } = useDeposits(portfolioId);
   const [nowMs] = useState(() => Date.now());
   const [selectedIdx, setSelectedIdx] = useState(null);
+  const chartRef = useRef(null);
+
+  // Make the WHOLE month column clickable (not just the thin bar segments). A click on the tall redemption bar OR
+  // the empty space above the small coupon bar maps to the same month: convert the pixel to the category index via
+  // the chart instance and toggle that month's drill-in. Bound on the zrender layer so it covers the full plot area.
+  const onChartReady = (chart) => {
+    chartRef.current = chart;
+    const zr = chart.getZr();
+    zr.off('click');
+    zr.on('click', (e) => {
+      const point = [e.offsetX, e.offsetY];
+      if (!chart.containPixel('grid', point)) return;
+      const idx = Math.round(chart.convertFromPixel({ xAxisIndex: 0 }, point[0]));
+      if (Number.isFinite(idx) && idx >= 0) {
+        setSelectedIdx((prev) => (prev === idx ? null : idx));
+      }
+    });
+  };
 
   const months = useMemo(() => buildBuckets(bonds, deposits, nowMs), [bonds, deposits, nowMs]);
   // Guard against a stale index after the book changes (e.g. switching portfolio shrinks the bucket list).
@@ -281,8 +299,8 @@ export default function CouponCashflowChart({ portfolioId }) {
               option={option}
               notMerge
               lazyUpdate
-              onEvents={{ click: (p) => setSelectedIdx((prev) => (prev === p.dataIndex ? null : p.dataIndex)) }}
-              style={{ height: 'min(40vh, 280px)', minHeight: 200, width: '100%' }}
+              onChartReady={onChartReady}
+              style={{ height: 'min(40vh, 280px)', minHeight: 200, width: '100%', cursor: 'pointer' }}
               opts={{ renderer: 'canvas' }}
             />
           ) : (

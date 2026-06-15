@@ -6,7 +6,7 @@ import { Calendar, ChevronRight } from 'lucide-react';
 import { formatDateTimeShort } from '../../../shared/utils/formatters';
 import { CategoryBadge } from '../lib/newsConfig.jsx';
 import { getFallbackImage } from '../lib/newsConfig';
-import AssetMentionTag from './AssetMentionTag';
+import AssetMentionTags from './AssetMentionTags';
 import Card from '../../../shared/components/card';
 
 const cardVariants = {
@@ -71,13 +71,7 @@ export default function NewsCard({ article, index }) {
                     {article.title}
                 </h3>
 
-                {mentions.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5">
-                        {mentions.map((a) => (
-                            <AssetMentionTag key={`${a.type}:${a.code}`} code={a.code} type={a.type} date={article.publishedAt} />
-                        ))}
-                    </div>
-                )}
+                <AssetMentionTags assets={mentions} date={article.publishedAt} limit={6} />
 
                 {article.description && (
                     <p className="text-fg-muted text-xs leading-relaxed line-clamp-2 break-words">

@@ -2545,6 +2545,9 @@
     "noSearchResults": "Aramayla eşleşen haber bulunamadı.",
     "emptyCategory": "Bu kategoride henüz haber bulunmuyor.",
     "readMore": "Devamını Oku",
+    "tags": {
+      "more": "+{{count}} daha"
+    },
     "empty": "Haber yok",
     "refreshHint": "Haberler periyodik olarak güncellenir.",
     "related": {

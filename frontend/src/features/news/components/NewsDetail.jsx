@@ -7,7 +7,7 @@ import { ArrowLeft, Calendar, ExternalLink, Building2 } from 'lucide-react';
 import { newsService } from '../services/newsService';
 import { formatDateTimeFull } from '../../../shared/utils/formatters';
 import { CategoryBadge } from '../lib/newsConfig.jsx';
-import AssetMentionTag from './AssetMentionTag';
+import AssetMentionTags from './AssetMentionTags';
 import { getFallbackImage } from '../lib/newsConfig';
 import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
@@ -98,13 +98,7 @@ export default function NewsDetail() {
                         {article.title}
                     </h1>
 
-                    {Array.isArray(article.assets) && article.assets.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            {article.assets.map((a) => (
-                                <AssetMentionTag key={`${a.type}:${a.code}`} code={a.code} type={a.type} date={article.publishedAt} />
-                            ))}
-                        </div>
-                    )}
+                    <AssetMentionTags assets={article.assets} date={article.publishedAt} limit={10} />
 
                     {article.description && !hasContent && (
                         <p className="text-fg-muted text-sm sm:text-base leading-relaxed break-words">

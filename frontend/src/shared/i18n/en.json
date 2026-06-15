@@ -2545,6 +2545,9 @@
     "noSearchResults": "No news matches the search.",
     "emptyCategory": "No news in this category yet.",
     "readMore": "Read more",
+    "tags": {
+      "more": "+{{count}} more"
+    },
     "empty": "No news",
     "refreshHint": "News is refreshed periodically.",
     "related": {

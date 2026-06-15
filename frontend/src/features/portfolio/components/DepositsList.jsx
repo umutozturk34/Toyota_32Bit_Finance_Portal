@@ -32,6 +32,7 @@ export default function DepositsList({ portfolioId, portfolioPicker }) {
     pnlOf: (d) => d.pnlTry,
     sorters: SORTERS,
     defaultSort: 'maturity',
+    urlKey: 'd',
   });
 
   const sortOptions = useMemo(() => [

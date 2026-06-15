@@ -31,6 +31,7 @@ export default function BondsList({ portfolioId }) {
     pnlOf: (b) => b.pnlTry,
     sorters: SORTERS,
     defaultSort: 'maturity',
+    urlKey: 'b',
   });
 
   const sortOptions = useMemo(() => [

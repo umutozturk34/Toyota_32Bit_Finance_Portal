@@ -87,8 +87,20 @@ public class FixedIncomeSummaryService {
         BigDecimal depositValue = BigDecimal.ZERO;
         BigDecimal depositCost = BigDecimal.ZERO;
         for (DepositHolding d : deposits) {
-            depositValue = depositValue.add(depositValueTry(d, today));
-            depositCost = depositCost.add(depositCostTry(d));
+            // Mirror history()'s per-holding FX-gap tolerance: a foreign deposit whose value (today's rate) or
+            // cost (its start-date rate) has no FX observation must degrade just that one leg to zero, NOT 500 the
+            // whole headline. The two legs convert at DIFFERENT dates, so each is guarded independently.
+            try {
+                depositValue = depositValue.add(depositValueTry(d, today));
+            } catch (FxRateUnavailableException ex) {
+                log.debug("No FX rate for deposit {} value at {} — omitting from headline value", d.getId(), today);
+            }
+            try {
+                depositCost = depositCost.add(depositCostTry(d));
+            } catch (FxRateUnavailableException ex) {
+                log.debug("No FX rate for deposit {} cost at {} — omitting from headline cost",
+                        d.getId(), d.getStartDate());
+            }
         }
 
         BigDecimal bondValue = BigDecimal.ZERO;

@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 /**
  * A hypothetical DEPOSIT (mevduat) holding: {@code principal} held in {@code currency}, earning a FROZEN
- * {@code annualRate} (compounded daily — see {@code DepositAccrualService}) from {@code startDate} to
+ * {@code annualRate} (SIMPLE interest, act/365, net of stopaj — see {@code DepositAccrualService}) from {@code startDate} to
  * {@code maturityDate}, after which the value freezes. The rate is frozen at create so the return is
  * deterministic (matching the rest of the hypothetical-lot portfolio); the macro deposit series only
  * prefills it in the form. Ownership flows through {@link Portfolio} (portfolio_id -> portfolios.user_sub) —

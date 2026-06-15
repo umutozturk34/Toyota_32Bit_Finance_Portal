@@ -226,6 +226,33 @@ class FixedIncomeSummaryServiceTest {
     }
 
     @Test
+    void shouldDegradeGracefully_whenDepositCostFxUnavailable_inSummary() {
+        // Arrange: an active USD deposit whose START-date FX rate is missing (cost cannot convert) while today's
+        // value rate IS available. Summary must omit just that cost leg, NOT 500 the whole headline — matching the
+        // per-holding FX-gap tolerance the history series already has.
+        ownsPortfolio();
+        LocalDate start = LocalDate.now().minusMonths(3);
+        DepositHolding usd = usdDeposit(1L, new BigDecimal("1000"), start);
+        when(depositHoldingRepository.findByPortfolioIdOrderByStartDateDescIdDesc(PORTFOLIO_ID)).thenReturn(List.of(usd));
+        when(bondHoldingRepository.findByPortfolioIdOrderByEntryDateDescIdDesc(PORTFOLIO_ID)).thenReturn(List.of());
+        when(depositAccrualService.realizedOrAccruedValue(eq(usd), any())).thenReturn(new BigDecimal("1050"));
+        // Cost @ start throws (no rate); value @ today converts to 33000 TRY.
+        when(currencyConverter.convertAtDate(eq(new BigDecimal("1000")), eq(Currency.USD), eq(Currency.TRY), eq(start)))
+                .thenThrow(new FxRateUnavailableException(Currency.USD, Currency.TRY, start));
+        when(currencyConverter.convertAtDate(eq(new BigDecimal("1050")), eq(Currency.USD), eq(Currency.TRY),
+                eq(LocalDate.now()))).thenReturn(new BigDecimal("33000"));
+
+        FixedIncomeSummaryResponse response = service.summary(PORTFOLIO_ID, USER_SUB);
+
+        // The headline still returns: value converted (33000), the unconvertible cost leg omitted (0).
+        assertThat(response.totalValueTry()).isEqualByComparingTo("33000");
+        assertThat(response.totalCostTry()).isEqualByComparingTo("0");
+        assertThat(response.totalPnlTry()).isEqualByComparingTo("33000");
+        // Cost is zero, so pnlPercent is undefined (null), never a divide-by-zero.
+        assertThat(response.pnlPercent()).isNull();
+    }
+
+    @Test
     void shouldReturnZerosAndNullPnlPercent_whenPortfolioEmpty() {
         ownsPortfolio();
         when(depositHoldingRepository.findByPortfolioIdOrderByStartDateDescIdDesc(PORTFOLIO_ID)).thenReturn(List.of());

@@ -284,7 +284,7 @@ const MainLayout = () => {
         )}
       </AnimatePresence>
 
-      <div className={`flex-1 flex flex-col min-w-0 relative overflow-x-hidden ${blurCls}`}>
+      <div className={`flex-1 flex flex-col min-w-0 relative overflow-x-clip ${blurCls}`}>
         <main className="flex-1 w-full">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:py-6 pt-[calc(4rem+env(safe-area-inset-top))] lg:pt-6">
             <Outlet />

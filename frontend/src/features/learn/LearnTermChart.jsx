@@ -6,6 +6,12 @@ import { useTheme } from '../../shared/context/useTheme';
 // Tiny illustrative chart for a learn term (NOT live data — a schematic so the reader sees what the indicator
 // looks like). Deterministic synthetic series, so it renders identically every time. Currently: RSI (oscillator
 // with 30/70 bands) and MACD (two lines + histogram).
+// [open, close, low, high] per bar — a deterministic up-then-down stretch for the candlestick schematic.
+const CANDLES = [
+  [20, 24, 19, 25], [24, 23, 22, 26], [23, 27, 22, 28], [27, 30, 26, 31], [30, 29, 28, 32],
+  [29, 33, 28, 34], [33, 32, 31, 35], [32, 30, 29, 33], [30, 27, 26, 31], [27, 28, 25, 29],
+  [28, 25, 24, 29], [25, 22, 21, 26], [22, 24, 21, 25], [24, 21, 20, 25], [21, 23, 20, 24],
+];
 const RSI = [52, 58, 64, 71, 76, 73, 66, 58, 49, 41, 33, 28, 31, 38, 46, 55, 63, 60];
 const MACD_FAST = [-0.4, -0.2, 0.1, 0.5, 0.9, 1.1, 1.0, 0.7, 0.3, -0.1, -0.5, -0.8, -0.7, -0.3, 0.2, 0.6, 0.9, 0.8];
 const MACD_SLOW = [-0.2, -0.2, -0.1, 0.1, 0.4, 0.7, 0.8, 0.7, 0.5, 0.2, -0.1, -0.4, -0.5, -0.4, -0.1, 0.2, 0.5, 0.6];
@@ -24,6 +30,17 @@ export default function LearnTermChart({ chart }) {
       tooltip: { show: false },
       animation: false,
     };
+    if (chart === 'candles') {
+      return {
+        ...base,
+        xAxis: { type: 'category', show: false, data: CANDLES.map((_, i) => i) },
+        yAxis: { type: 'value', scale: true, splitLine: { lineStyle: { color: grid } }, axisLabel: { color: muted, fontSize: 9 } },
+        series: [{
+          type: 'candlestick', data: CANDLES,
+          itemStyle: { color: '#34d399', color0: '#f87171', borderColor: '#34d399', borderColor0: '#f87171' },
+        }],
+      };
+    }
     if (chart === 'rsi') {
       return {
         ...base,

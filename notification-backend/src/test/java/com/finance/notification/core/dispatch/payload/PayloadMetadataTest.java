@@ -120,7 +120,7 @@ class PayloadMetadataTest {
         PortfolioUpdatedPayload payload = new PortfolioUpdatedPayload(
                 new BigDecimal("1000"), new BigDecimal("10"), new BigDecimal("1.0"),
                 2, List.of(new PortfolioUpdatedPayload.Line(
-                        7L, "Portföyüm", new BigDecimal("600"), new BigDecimal("6"), new BigDecimal("1.0"))),
+                        7L, "Portföyüm", "FIXED", new BigDecimal("600"), new BigDecimal("6"), new BigDecimal("1.0"))),
                 "scheduler");
 
         Map<String, Object> meta = payload.toMetadata();

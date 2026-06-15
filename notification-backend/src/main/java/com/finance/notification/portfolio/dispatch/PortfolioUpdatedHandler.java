@@ -51,7 +51,7 @@ public class PortfolioUpdatedHandler implements NotificationHandler {
         if (p.dailyPnl() != null) templateData.put("dailyPnl", p.dailyPnl());
         if (p.dailyPnlPercent() != null) templateData.put("dailyPnlPercent", p.dailyPnlPercent());
         templateData.put("portfolioCount", p.portfolioCount());
-        templateData.put("portfolios", emailRows(p.portfolios()));
+        templateData.put("portfolios", emailRows(p.portfolios(), locale));
         String emailSubject = translator.translate("notif.email.subject", locale, title);
         return new RenderedNotification(
                 title,
@@ -94,15 +94,20 @@ public class PortfolioUpdatedHandler implements NotificationHandler {
     }
 
     /**
-     * Flattens the per-portfolio lines into template maps (name + raw value/P/L) so the email can render each
-     * portfolio as its own themed row; the template formats the numbers and picks up/down colors itself.
+     * Flattens the per-portfolio lines into template maps (name + localized TYPE label + raw value/P/L) so the
+     * email can render each portfolio as its own themed row tagged with its kind (Spot vs Mevduat &amp; Tahvil);
+     * the template formats the numbers and picks up/down colors itself.
      */
-    private static List<Map<String, Object>> emailRows(List<PortfolioUpdatedPayload.Line> lines) {
+    private List<Map<String, Object>> emailRows(List<PortfolioUpdatedPayload.Line> lines, Locale locale) {
         if (lines == null || lines.isEmpty()) return List.of();
         List<Map<String, Object>> rows = new ArrayList<>(lines.size());
         for (PortfolioUpdatedPayload.Line line : lines) {
             Map<String, Object> row = new HashMap<>();
             row.put("name", line.name());
+            if (line.type() != null) {
+                row.put("type", line.type());
+                row.put("typeLabel", translator.translate("portfolio.type." + line.type(), locale));
+            }
             row.put("totalValue", line.totalValue());
             row.put("dailyPnl", line.dailyPnl());
             row.put("dailyPnlPercent", line.dailyPnlPercent());

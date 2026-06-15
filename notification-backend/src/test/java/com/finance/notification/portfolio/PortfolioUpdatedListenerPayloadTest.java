@@ -70,10 +70,10 @@ class PortfolioUpdatedListenerPayloadTest {
                 eq(Set.of("positive-user", "zero-user", "missing-user"))))
                 .thenReturn(Map.of(
                         "positive-user", List.of(
-                                new PortfolioLine(1L, "Spot", new BigDecimal("600"), new BigDecimal("30"), new BigDecimal("5")),
-                                new PortfolioLine(2L, "VIOP", new BigDecimal("400"), new BigDecimal("20"), new BigDecimal("5"))),
+                                new PortfolioLine(1L, "Spot", "SPOT", new BigDecimal("600"), new BigDecimal("30"), new BigDecimal("5")),
+                                new PortfolioLine(2L, "VIOP", "SPOT", new BigDecimal("400"), new BigDecimal("20"), new BigDecimal("5"))),
                         "zero-user", List.of(
-                                new PortfolioLine(3L, "Empty", BigDecimal.ZERO, BigDecimal.ZERO, null))));
+                                new PortfolioLine(3L, "Empty", "FIXED", BigDecimal.ZERO, BigDecimal.ZERO, null))));
 
         listener.onPortfolioUpdated(new PortfolioUpdatedEvent("evt-1", OffsetDateTime.now(), "scheduler"), ack);
 

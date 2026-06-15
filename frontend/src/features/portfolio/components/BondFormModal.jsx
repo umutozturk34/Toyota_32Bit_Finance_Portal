@@ -6,16 +6,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, Hash, Tag, Landmark, Percent, Repeat, RotateCcw, Lock } from 'lucide-react';
 import { AlertCircle } from '../../../shared/components/feedback/AnimatedIcons';
 import DatePickerPopover from '../../../shared/components/form/DatePickerPopover';
-import ProcessingSteps from '../../../shared/components/feedback/ProcessingSteps';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { extractApiError } from '../../../shared/utils/apiError';
-import useProcessingAnimation from '../../../shared/hooks/useProcessingAnimation';
 import {
   MAX_BOND_PRICE_TRY, MAX_QUANTITY, PRICE_DECIMALS, QUANTITY_DECIMALS,
   sanitizeNumberInput, toInputValue,
 } from '../../../shared/utils/numberInput';
 import {
-  PROCESSING_STEP_DEFS, SUCCESS_HOLD_MS, todayInputValue, isoToDateInput, toYearMonth,
+  SUCCESS_HOLD_MS, todayInputValue, isoToDateInput, toYearMonth,
 } from '../lib/positionFormHelpers';
 import { useAddBond, useUpdateBond } from '../hooks/useFixedIncomePositions';
 import { bondService } from '../../bond/services/bondService';
@@ -103,16 +101,12 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
   const [phase, setPhase] = useState('form');
   const [error, setError] = useState(null);
 
-  const processingSteps = useMemo(
-    () => PROCESSING_STEP_DEFS.map((s) => ({ label: t(`positionForm.steps.${s.labelKey}`), duration: s.duration })),
-    [t],
-  );
-  const { processingStep, runAnimation, reset: resetProcessing } = useProcessingAnimation();
-
   const addMutation = useAddBond(portfolioId);
   const updateMutation = useUpdateBond(portfolioId);
 
-  const dismissable = phase === 'form';
+  // The submit is in-flight: keep the form on screen (no separate "confirming" screen) but lock it down.
+  const submitting = addMutation.isPending || updateMutation.isPending;
+  const dismissable = phase === 'form' && !submitting;
   const isCpi = CPI_TYPES.has(bondType);
   const isDiscount = bondType === 'DISCOUNTED';
   const isFloating = bondType === 'FLOATING_TLREF' || bondType === 'FLOATING_AUCTION';
@@ -217,7 +211,6 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
       return;
     }
     setError(null);
-    setPhase('processing');
     const payload = {
       bondSeriesCode: seriesCode.trim(),
       quantity: Number(quantity),
@@ -233,13 +226,11 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
       ? () => updateMutation.mutateAsync({ bondId: bond.id, ...payload })
       : () => addMutation.mutateAsync(payload);
     try {
-      await Promise.all([mutate(), runAnimation(processingSteps)]);
+      await mutate();
       setPhase('success');
       setTimeout(() => { onComplete?.(); onClose(); }, SUCCESS_HOLD_MS);
     } catch (err) {
-      resetProcessing();
       setError(extractApiError(err, isEdit ? t('portfolio.bonds.errors.updateFailed') : t('portfolio.bonds.errors.addFailed')));
-      setPhase('form');
     }
   };
 
@@ -301,8 +292,6 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
             subtitle={t('portfolio.bonds.form.success.subtitle', { code: seriesCode })}
           />
         )}
-
-        {phase === 'processing' && <ProcessingSteps steps={processingSteps} currentStep={processingStep} />}
 
         {phase === 'form' && (
           <form onSubmit={handleSubmit} noValidate className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 sm:items-start">
@@ -530,9 +519,12 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
 
             <button
               type="submit"
-              className="sm:col-span-2 w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer"
+              disabled={submitting}
+              className="sm:col-span-2 w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
             >
-              <Landmark className="h-4 w-4" />
+              {submitting
+                ? <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                : <Landmark className="h-4 w-4" />}
               {isEdit ? t('portfolio.bonds.form.submitEdit') : t('portfolio.bonds.form.submitAdd')}
             </button>
           </form>

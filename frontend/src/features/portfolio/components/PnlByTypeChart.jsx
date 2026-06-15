@@ -21,12 +21,16 @@ const FETCH_SIZE = 500;
 export default function PnlByTypeChart({ portfolioId }) {
   const { t } = useTranslation();
   const { format: money, convert, currency: displayCurrency } = useMoney();
-  const [status, setStatus] = useState('open');
+  const [status, setStatus] = useState('all');
   const [typeFilter, setTypeFilter] = useState('ALL');
 
+  // 'all' omits the closed flag (open + closed lots) so the breakdown shows TOTAL P&L — realized (closed) plus
+  // unrealized (open) — per type; 'open'/'closed' pin it. The per-lot branch below values each lot correctly
+  // regardless (realized@exit-FX for closed, value−cost for open), so mixing them in 'all' simply sums to total.
   const queryParams = useMemo(() => ({
     size: FETCH_SIZE,
-    closed: status === 'closed',
+    ...(status === 'closed' && { closed: true }),
+    ...(status === 'open' && { closed: false }),
     ...(typeFilter !== 'ALL' && { assetType: typeFilter }),
   }), [status, typeFilter]);
 
@@ -124,6 +128,7 @@ export default function PnlByTypeChart({ portfolioId }) {
               size="sm"
               layoutId="pnltype-status"
               options={[
+                { id: 'all', label: t('portfolio.positions.statusAll') },
                 { id: 'open', label: t('portfolio.positions.statusOpen') },
                 { id: 'closed', label: t('portfolio.positions.statusClosed') },
               ]}

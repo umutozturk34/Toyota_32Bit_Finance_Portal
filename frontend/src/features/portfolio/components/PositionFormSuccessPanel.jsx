@@ -9,7 +9,7 @@ export default function PositionFormSuccessPanel({ title, subtitle }) {
     <motion.div
       initial={{ scale: 0.85, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      className="flex flex-col items-center justify-center gap-3 py-10"
+      className="mx-auto flex max-w-sm flex-col items-center justify-center gap-3 py-12"
     >
       <motion.div
         initial={{ scale: 0 }}

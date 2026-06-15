@@ -102,6 +102,6 @@ public class NewsWidgetProvider implements OverviewWidgetProvider {
                 : null;
         return new NewsData.NewsRow(
                 article.id(), article.title(), article.category(),
-                article.imageUrl(), article.sourceName(), publishedAt);
+                article.imageUrl(), article.sourceName(), publishedAt, article.assets());
     }
 }

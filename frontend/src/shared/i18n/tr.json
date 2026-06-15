@@ -1509,6 +1509,8 @@
       "subtitle": "Sabit getirili portföy",
       "allocation": "Dağılım",
       "asOf": "{{date}} itibarıyla",
+      "tryOnly": "TRY bazlı",
+      "tryOnlyHint": "Tahvil ve mevduat portföyü yalnızca TRY bazlıdır; Türkiye odaklıdır ve çapraz-kur (per-date FX) dönüşümü uygulanmaz.",
       "depositSplit": "Mevduat",
       "bondSplit": "Tahvil",
       "countLabel": "{{count}} adet",
@@ -2546,7 +2548,8 @@
     "emptyCategory": "Bu kategoride henüz haber bulunmuyor.",
     "readMore": "Devamını Oku",
     "tags": {
-      "more": "+{{count}} daha"
+      "more": "+{{count}} daha",
+      "less": "daha az"
     },
     "empty": "Haber yok",
     "refreshHint": "Haberler periyodik olarak güncellenir.",

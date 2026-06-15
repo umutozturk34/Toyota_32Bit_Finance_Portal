@@ -1509,6 +1509,8 @@
       "subtitle": "Fixed-income portfolio",
       "allocation": "Allocation",
       "asOf": "As of {{date}}",
+      "tryOnly": "TRY-based",
+      "tryOnlyHint": "The bond & deposit portfolio is TRY-based only; it is Türkiye-focused and does not apply per-date FX conversion.",
       "depositSplit": "Deposits",
       "bondSplit": "Bonds",
       "countLabel": "{{count}} item",
@@ -2546,7 +2548,8 @@
     "emptyCategory": "No news in this category yet.",
     "readMore": "Read more",
     "tags": {
-      "more": "+{{count}} more"
+      "more": "+{{count}} more",
+      "less": "less"
     },
     "empty": "No news",
     "refreshHint": "News is refreshed periodically.",

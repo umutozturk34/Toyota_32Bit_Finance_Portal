@@ -133,12 +133,20 @@ export default function FixedIncomeSummaryCard({ portfolioId }) {
                 <p className="text-[11px] text-fg-subtle truncate">{t('portfolio.fixedIncome.subtitle')}</p>
               </div>
             </div>
-            {asOfLabel && (
-              <span className="shrink-0 inline-flex items-center gap-1 rounded-md bg-bg-base/60 px-2 py-1 text-[10px] font-mono text-fg-muted ring-1 ring-inset ring-border-default/50">
-                <CalendarClock className="h-3 w-3" />
-                {t('portfolio.fixedIncome.asOf', { date: asOfLabel })}
+            <div className="flex shrink-0 items-center gap-1.5">
+              <span
+                title={t('portfolio.fixedIncome.tryOnlyHint')}
+                className="inline-flex items-center gap-1 rounded-md bg-bg-base/60 px-2 py-1 text-[10px] font-semibold text-fg-muted ring-1 ring-inset ring-border-default/50"
+              >
+                {t('portfolio.fixedIncome.tryOnly')}
               </span>
-            )}
+              {asOfLabel && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-bg-base/60 px-2 py-1 text-[10px] font-mono text-fg-muted ring-1 ring-inset ring-border-default/50">
+                  <CalendarClock className="h-3 w-3" />
+                  {t('portfolio.fixedIncome.asOf', { date: asOfLabel })}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-center">

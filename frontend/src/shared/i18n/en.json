@@ -2523,6 +2523,10 @@
     "readMore": "Read more",
     "empty": "No news",
     "refreshHint": "News is refreshed periodically.",
+    "related": {
+      "title": "Related News",
+      "viewAll": "See all"
+    },
     "categories": {
       "ALL": "All",
       "CRYPTO": "Crypto",

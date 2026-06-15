@@ -18,6 +18,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { bondService } from './services/bondService';
+import AssetRelatedNews from '../news/components/AssetRelatedNews';
 import { useTheme } from '../../shared/context/useTheme';
 import useSessionState from '../../shared/hooks/useSessionState';
 import useNavigationBack from '../../shared/hooks/useNavigationBack';
@@ -355,6 +356,8 @@ export default function BondDetail() {
           </AnimatePresence>
         </div>
       </div>
+
+      <AssetRelatedNews assetCode={bond.isinCode} assetName={bond.seriesCode} assetType="BOND" />
 
       {addOpen && (
         <MarketAddBondModal

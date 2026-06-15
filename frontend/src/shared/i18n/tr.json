@@ -2523,6 +2523,10 @@
     "readMore": "Devamını Oku",
     "empty": "Haber yok",
     "refreshHint": "Haberler periyodik olarak güncellenir.",
+    "related": {
+      "title": "İlgili Haberler",
+      "viewAll": "Tümünü gör"
+    },
     "categories": {
       "ALL": "Tümü",
       "CRYPTO": "Kripto",

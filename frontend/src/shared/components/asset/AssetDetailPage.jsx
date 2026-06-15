@@ -15,6 +15,7 @@ import MarketAddPositionModal from '../../../features/portfolio/components/Marke
 import LightweightChart from '../../../features/chart/components/LightweightChart';
 import AssetActionsBar from '../../../features/watch/components/AssetActionsBar';
 import MarketStatusBadge from '../layout/MarketStatusBadge';
+import AssetRelatedNews from '../../../features/news/components/AssetRelatedNews';
 import { transformCandles, transformFundCandles } from '../../utils/candleTransform';
 import { useRateHistory } from '../../hooks/useRateHistory';
 import { priceCurrencyOf, viopQuoteCurrency } from '../../utils/priceCurrency';
@@ -238,6 +239,12 @@ export default function AssetDetailPage({
           onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
         />
       </div>
+
+      <AssetRelatedNews
+        assetCode={assetCode}
+        assetName={asset?.name ?? asset?.assetName ?? asset?.shortName ?? asset?.longName ?? asset?.title ?? null}
+        assetType={assetType}
+      />
 
       {buyOpen && buyProps && (
         <BuyModalComponent

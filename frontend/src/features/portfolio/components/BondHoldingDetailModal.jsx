@@ -48,7 +48,7 @@ function StatCell({ icon: Icon, label, value, valueClass = 'text-fg', mono, wrap
       <span className="flex items-center gap-1.5 text-[11px] text-fg-muted">
         <Icon className="h-3.5 w-3.5 shrink-0" /> {label}
       </span>
-      <span className={`block text-sm ${mono ? 'font-mono' : 'font-medium'} ${valueClass} ${wrap ? 'whitespace-normal break-words' : 'truncate'}`}>{value}</span>
+      <span className={`block text-sm leading-snug ${mono ? 'font-mono' : 'font-medium'} ${valueClass} ${wrap ? 'whitespace-normal' : 'truncate'}`}>{value}</span>
     </div>
   );
 }
@@ -150,7 +150,7 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.97 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-lg sm:max-w-3xl max-h-[90dvh] flex flex-col overflow-clip rounded-2xl border border-border-default modal-panel"
+        className="relative w-full max-w-lg sm:max-w-4xl max-h-[90dvh] flex flex-col overflow-clip rounded-2xl border border-border-default modal-panel"
       >
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
         <div aria-hidden className="pointer-events-none absolute -top-20 -right-12 h-48 w-48 rounded-full bg-accent/15 blur-[90px] opacity-60" />
@@ -311,7 +311,7 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
                   <span className="flex items-center gap-1.5 text-[11px] text-fg-muted"><CalendarClock className="h-3.5 w-3.5 text-success shrink-0" />{t('portfolio.bonds.coupon.accrued')}</span>
                   <span className="block text-sm font-mono font-semibold text-success truncate">{money(accrued, 'TRY')}</span>
                   {couponPerPaymentTry != null && (
-                    <span className="text-[10px] text-fg-subtle truncate block">{money(couponPerPaymentTry, 'TRY')} {t('portfolio.bonds.coupon.perPayment')}</span>
+                    <span className="block text-[10px] leading-tight text-fg-subtle">{money(couponPerPaymentTry, 'TRY')} {t('portfolio.bonds.coupon.perPayment')}</span>
                   )}
                 </div>
               </div>
@@ -339,9 +339,9 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
               label={t('market.bond.couponDateLabel')}
               value={
                 <>
-                  {formatDate(bond.nextCouponDate, localeTag)}
+                  {formatDate(bond.nextCouponDate, localeTag)}{' '}
                   {couponDays != null && couponDays >= 0 && (
-                    <span className="ml-1.5 text-fg-subtle">({couponDays}{t('market.bond.daysSuffix')})</span>
+                    <span className="text-fg-subtle whitespace-nowrap">({couponDays}{t('market.bond.daysSuffix')})</span>
                   )}
                 </>
               }
@@ -354,9 +354,9 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
               label={t('market.bond.maturityLabel')}
               value={
                 <>
-                  {formatDate(bond.maturityEnd, localeTag)}
+                  {formatDate(bond.maturityEnd, localeTag)}{' '}
                   {maturityDays != null && maturityDays >= 0 && (
-                    <span className="ml-1.5 text-fg-subtle">({maturityDays}{t('market.bond.daysSuffix')})</span>
+                    <span className="text-fg-subtle whitespace-nowrap">({maturityDays}{t('market.bond.daysSuffix')})</span>
                   )}
                 </>
               }

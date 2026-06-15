@@ -112,4 +112,20 @@ class AssetMentionResolverImplTest {
 
         assertThat(result).extracting(ResolvedAsset::code).containsExactlyInAnyOrder("KRVGD.IS", "bitcoin");
     }
+
+    @Test
+    void shouldResolveGoldKeywordToMetalPair() {
+        List<ResolvedAsset> result = resolver.resolve("Gram altın fiyatı rekor kırdı", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).containsExactly("XAUTRYG");
+        assertThat(result).extracting(ResolvedAsset::type).containsExactly("FOREX");
+    }
+
+    @Test
+    void shouldNotMatchGold_insideAnotherWord() {
+        // "altında" (= under) must NOT trigger the "altın" gold keyword — bounded matching protects against it.
+        List<ResolvedAsset> result = resolver.resolve("Fiyat 100 liranın altında kaldı", null);
+
+        assertThat(result).isEmpty();
+    }
 }

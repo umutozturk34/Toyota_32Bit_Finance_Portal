@@ -46,6 +46,15 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
     private volatile Catalog catalog;
     private volatile long loadedAt;
 
+    /**
+     * Curated Turkish keyword → precious-metal/TRY pair links (gold/silver are quoted as FOREX-type XAU/XAG pairs).
+     * Matched as a bounded phrase like every other name, so "altın" hits but "altında" (under) does not.
+     */
+    private static final List<NameRef> KEYWORD_REFS = List.of(
+            new NameRef("altin", "XAUTRYG", "FOREX"),
+            new NameRef("gumus", "XAGTRYG", "FOREX")
+    );
+
     /** ticker/symbol → (code, type), plus the (name-phrase, code, type) list for name matching. */
     private record Catalog(Map<String, CodeType> byTicker, List<NameRef> byName) {}
     private record CodeType(String code, String type) {}
@@ -114,6 +123,7 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
                     byName.add(new NameRef(name, id, "CRYPTO"));
                 }
             }
+            byName.addAll(KEYWORD_REFS);
         } catch (RuntimeException e) {
             log.warn("Could not build asset catalog for news matching: {}", e.getMessage());
             return cached != null ? cached : new Catalog(Map.of(), List.of());

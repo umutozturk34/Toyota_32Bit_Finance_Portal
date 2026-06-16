@@ -399,12 +399,50 @@ public class FixedIncomeSummaryService {
                     BigDecimal couponBase = indexed
                             ? bond.currentValue(priceAt(priceSeries, e.date(), bond.getEntryPrice()), perUnit)
                             : bond.getQuantity().multiply(BigDecimal.valueOf(100));
-                    events.put(e.date(), bondCouponService.per100ToTry(e.ratePer100(), couponBase));
+                    // Credit the coupon on the day the price ACTUALLY drops (the ex-coupon date), not the calendar
+                    // coupon date: for a dirty-price series (the EVDS quote sheds its accrued interest at the coupon)
+                    // the drop lands ~1 day before our stepped date, leaving a one-day dip on the value-plus-coupons
+                    // line. Snapping the credit onto the drop keeps that line flat. A clean series has no such drop,
+                    // so the date is left unchanged.
+                    LocalDate creditDate = snapToExCouponDrop(priceSeries, e.date());
+                    events.merge(creditDate, bondCouponService.per100ToTry(e.ratePer100(), couponBase), BigDecimal::add);
                 }
             }
             eventsByBondId.put(bond.getId(), events);
         }
         return eventsByBondId;
+    }
+
+    // A coupon-sized one-day price fall (%) below which we treat a move as the ex-coupon drop of a dirty-price quote.
+    private static final BigDecimal EX_COUPON_DROP_PCT = new BigDecimal("-1");
+
+    /**
+     * Returns the ex-coupon DROP date near a scheduled coupon date for a dirty-price series, else the scheduled date.
+     * Scans observations in {@code [scheduled-7, scheduled+2]} for the single largest day-over-day fall; if that fall
+     * clears {@link #EX_COUPON_DROP_PCT} it is the day the quote shed its accrued interest, so the coupon credit is
+     * snapped there to keep the value-plus-coupons line flat. A clean series (no such fall) is left on its date.
+     */
+    private LocalDate snapToExCouponDrop(NavigableMap<LocalDate, BigDecimal> series, LocalDate scheduled) {
+        if (series == null || series.isEmpty()) {
+            return scheduled;
+        }
+        NavigableMap<LocalDate, BigDecimal> window =
+                series.subMap(scheduled.minusDays(7), true, scheduled.plusDays(2), true);
+        LocalDate dropDate = null;
+        BigDecimal worst = BigDecimal.ZERO;
+        BigDecimal prev = null;
+        for (Map.Entry<LocalDate, BigDecimal> en : window.entrySet()) {
+            if (prev != null && prev.signum() > 0 && en.getValue() != null) {
+                BigDecimal chgPct = en.getValue().subtract(prev)
+                        .multiply(HUNDRED).divide(prev, MoneyScale.PRICE, RoundingMode.HALF_UP);
+                if (chgPct.compareTo(worst) < 0) {
+                    worst = chgPct;
+                    dropDate = en.getKey();
+                }
+            }
+            prev = en.getValue();
+        }
+        return (dropDate != null && worst.compareTo(EX_COUPON_DROP_PCT) < 0) ? dropDate : scheduled;
     }
 
     /** Forward-filled price at {@code date} from the series (latest on/before), falling back to {@code fallback}. */

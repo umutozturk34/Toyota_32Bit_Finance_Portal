@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import ReactECharts from 'echarts-for-react';
-import { Landmark, FileText, BarChart3, CalendarClock } from 'lucide-react';
+import { Landmark, FileText, BarChart3, CalendarClock, Info } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../../shared/components/feedback/AnimatedIcons';
 import { containerVariants, cardVariants } from '../../../shared/utils/animations';
 import { formatPercentSmart, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
@@ -213,6 +213,10 @@ export default function FixedIncomeSummaryCard({ portfolioId }) {
               </div>
             </div>
           </div>
+          <p className="mt-4 flex items-start gap-1.5 border-t border-border-default/60 pt-3 text-[10px] leading-snug text-fg-subtle">
+            <Info className="mt-0.5 h-3 w-3 shrink-0" />
+            {t('portfolio.fixedIncome.tryOnlyHint')}
+          </p>
         </div>
       </Card>
     </motion.div>

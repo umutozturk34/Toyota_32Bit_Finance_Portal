@@ -117,23 +117,26 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
     ? t(`portfolio.bonds.detail.frequency.${bond.couponFrequency}`, { defaultValue: bond.couponFrequency })
     : '—';
 
-  // Value breakdown: how much is nominal (clean) vs coupon income (received + accrued).
+  // Value breakdown: how much is the market value vs coupon income. EVDS quotes Turkish DİBS on a DIRTY basis (the
+  // price carries the accrued coupon and sheds it at each coupon — verified against the rate history), so for a
+  // plain/floater bond the accrued is ALREADY INSIDE the market value (nominal); counting it again as separate
+  // income would double it. Only CPI/gold (whose indexed coupon is handled apart) keep accrued as its own line.
   const nominal = Number(bond.nominalValueTry ?? bond.currentValueTry) || 0;
   const accrued = Number(bond.accruedCouponTry) || 0;
   const received = Number(bond.couponsReceivedTry) || 0;
-  const couponIncome = accrued + received;
+  const accruedIsInValue = !isCpi && !isPerUnit;
+  const couponIncome = accruedIsInValue ? received : (accrued + received);
   const breakdownTotal = nominal + couponIncome;
   const nominalShare = breakdownTotal > 0 ? (nominal / breakdownTotal) * 100 : 100;
   const couponShare = 100 - nominalShare;
 
-  // Dirty (kirli) price = clean price + accrued coupon per 100. It's what you'd actually realize selling
-  // mid-period, because the işlemiş kupon settles with the trade — you don't have to wait for redemption to
-  // collect it. Only meaningful for an open, non-CPI coupon bond with accrued > 0.
+  // The EVDS quote IS the dirty (market) price — it already carries the accrued coupon. So the CLEAN price is that
+  // market price MINUS the per-adet accrued (not plus: the old code double-counted by adding accrued to an already
+  // dirty quote). Only meaningful for an open, non-CPI/non-gold coupon bond with accrued > 0.
   const qtyNum = Number(bond.quantity) || 0;
-  // Accrued coupon PER BOND (adet) — the clean price is per adet, so the dirty price adds the per-adet accrued.
   const accruedPerUnit = qtyNum > 0 ? accrued / qtyNum : 0;
-  const dirtyPrice = !isSold && !isCpi && !isPerUnit && accruedPerUnit > 0 && currentPrice != null
-    ? Number(currentPrice) + accruedPerUnit
+  const cleanPrice = !isSold && !isCpi && !isPerUnit && accruedPerUnit > 0 && currentPrice != null
+    ? Number(currentPrice) - accruedPerUnit
     : null;
 
   return createPortal(
@@ -206,17 +209,17 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
             )}
             <StatCell
               icon={Tag}
-              label={dirtyPrice != null ? t('portfolio.bonds.detail.cleanPrice') : t('portfolio.bonds.detail.currentPrice')}
+              label={cleanPrice != null ? t('portfolio.bonds.detail.dirtyPrice') : t('portfolio.bonds.detail.currentPrice')}
               value={money(currentPrice, 'TRY')}
               valueClass={isSold ? 'text-fg-muted italic' : 'text-fg'}
               mono
             />
-            {dirtyPrice != null && (
+            {cleanPrice != null && (
               <StatCell
                 icon={Coins}
-                label={t('portfolio.bonds.detail.dirtyPrice')}
-                value={money(dirtyPrice, 'TRY')}
-                valueClass="text-success"
+                label={t('portfolio.bonds.detail.cleanPrice')}
+                value={money(cleanPrice, 'TRY')}
+                valueClass="text-fg-muted"
                 mono
               />
             )}
@@ -308,9 +311,11 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
                   <span className="text-[10px] text-fg-subtle">{t('portfolio.bonds.coupon.payments', { count: bond.couponsReceivedCount ?? 0 })}</span>
                 </div>
                 <div className="min-w-0">
-                  <span className="flex items-center gap-1.5 text-[11px] text-fg-muted"><CalendarClock className="h-3.5 w-3.5 text-success shrink-0" />{t('portfolio.bonds.coupon.accrued')}</span>
-                  <span className="block text-sm font-mono font-semibold text-success truncate">{money(accrued, 'TRY')}</span>
-                  {couponPerPaymentTry != null && (
+                  <span className="flex items-center gap-1.5 text-[11px] text-fg-muted"><CalendarClock className="h-3.5 w-3.5 text-fg-muted shrink-0" />{t('portfolio.bonds.coupon.accrued')}</span>
+                  <span className={`block text-sm font-mono font-semibold truncate ${accruedIsInValue ? 'text-fg-muted' : 'text-success'}`}>{money(accrued, 'TRY')}</span>
+                  {accruedIsInValue ? (
+                    <span className="block text-[10px] leading-tight text-fg-subtle">{t('portfolio.bonds.coupon.inPrice')}</span>
+                  ) : couponPerPaymentTry != null && (
                     <span className="block text-[10px] leading-tight text-fg-subtle">{money(couponPerPaymentTry, 'TRY')} {t('portfolio.bonds.coupon.perPayment')}</span>
                   )}
                 </div>

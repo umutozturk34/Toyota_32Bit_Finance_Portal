@@ -13,6 +13,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.LinkedHashSet;
 import java.util.Optional;
 
 /** Read-through Redis cache for single articles keyed by id, with a configurable TTL; misses load from the DB and backfill the cache. */
@@ -44,15 +45,30 @@ public class NewsCacheService {
         String key = CACHE_ARTICLE + id;
         Object cached = redisTemplate.opsForValue().get(key);
         if (cached != null) {
-            return Optional.of(objectMapper.convertValue(cached, NewsArticle.class));
+            try {
+                return Optional.of(objectMapper.convertValue(cached, NewsArticle.class));
+            } catch (RuntimeException e) {
+                // A cache entry written before assets were normalised serialises that collection as a Hibernate
+                // PersistentSet, whose runtime class can't be deserialised back. Evict the bad entry and fall
+                // through to a fresh DB load + re-cache, so one stale article no longer 500s its detail page.
+                log.warn("Unreadable cache for article {} ({}); evicting and reloading from DB", id, e.getMessage());
+                redisTemplate.delete(key);
+            }
         }
         Optional<NewsArticle> article = articleRepository.findById(id);
-        article.ifPresent(a -> redisTemplate.opsForValue().set(key, a, cacheTtl));
+        article.ifPresent(this::cacheArticle);
         return article;
     }
 
     /** Writes (or overwrites) the article in Redis under its id key with the configured TTL. */
     public void cacheArticle(NewsArticle article) {
+        // Hibernate hands `assets` to us as a PersistentSet; the typed Redis serializer would write its runtime
+        // class (org.hibernate.collection.spi.PersistentSet), which deserialisation can't instantiate. Copy it into
+        // a plain LinkedHashSet so the cached JSON round-trips. cacheArticle runs outside an active transaction, so
+        // swapping the collection reference never triggers a dirty UPDATE.
+        if (article.getAssets() != null && !(article.getAssets() instanceof LinkedHashSet)) {
+            article.setAssets(new LinkedHashSet<>(article.getAssets()));
+        }
         redisTemplate.opsForValue().set(CACHE_ARTICLE + article.getId(), article, cacheTtl);
     }
 }

@@ -1,6 +1,7 @@
 package com.finance.app.news;
 
 import com.finance.market.crypto.repository.CryptoRepository;
+import com.finance.market.fund.repository.FundRepository;
 import com.finance.market.stock.repository.StockRepository;
 import com.finance.news.port.AssetMentionResolver.ResolvedAsset;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,12 +27,15 @@ class AssetMentionResolverImplTest {
     private StockRepository stockRepository;
     @Mock
     private CryptoRepository cryptoRepository;
+    @Mock
+    private FundRepository fundRepository;
 
     private AssetMentionResolverImpl resolver;
 
     @BeforeEach
     void setUp() {
-        resolver = new AssetMentionResolverImpl(stockRepository, cryptoRepository);
+        resolver = new AssetMentionResolverImpl(stockRepository, cryptoRepository, fundRepository);
+        when(fundRepository.findAllFundCodes()).thenReturn(List.of("AFA"));
         when(stockRepository.findAllSymbolsAndNames()).thenReturn(List.of(
                 new Object[]{"KRVGD.IS", "Kervan Gıda Sanayi ve Ticaret A.Ş."},
                 new Object[]{"THYAO.IS", "Türk Hava Yolları A.O."},
@@ -208,6 +212,15 @@ class AssetMentionResolverImplTest {
         // Both "brent" and "petrol" point to the same Brent contract, deduped to one link.
         assertThat(result).extracting(ResolvedAsset::code).containsExactly("BZ=F");
         assertThat(result).extracting(ResolvedAsset::type).containsExactly("COMMODITY");
+    }
+
+    @Test
+    void shouldResolveFundByParenthesisedCode() {
+        // Funds link by their short code in parentheses (validated against the catalog), not by their long name.
+        List<ResolvedAsset> result = resolver.resolve("Ak Portföy Amerika Fonu (AFA) güçlü getiri açıkladı", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).contains("AFA");
+        assertThat(result).filteredOn(r -> r.code().equals("AFA")).extracting(ResolvedAsset::type).containsExactly("FUND");
     }
 
     @Test

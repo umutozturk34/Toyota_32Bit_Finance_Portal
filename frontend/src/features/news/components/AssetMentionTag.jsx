@@ -4,7 +4,7 @@ import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
 
 // Each asset type's detail route; the resolved code is the route key (a BIST symbol or a crypto id).
-const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', COMMODITY: '/commodities' };
+const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', COMMODITY: '/commodities', FUND: '/funds' };
 const bareCode = (code) => String(code || '').replace(/\.IS$/i, '');
 
 /**

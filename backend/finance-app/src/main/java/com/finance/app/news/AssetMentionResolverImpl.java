@@ -1,6 +1,7 @@
 package com.finance.app.news;
 
 import com.finance.market.crypto.repository.CryptoRepository;
+import com.finance.market.fund.repository.FundRepository;
 import com.finance.market.stock.repository.StockRepository;
 import com.finance.news.port.AssetMentionResolver;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,7 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
 
     private final StockRepository stockRepository;
     private final CryptoRepository cryptoRepository;
+    private final FundRepository fundRepository;
     private volatile Catalog catalog;
     private volatile long loadedAt;
 
@@ -160,7 +162,7 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
         return hitCount;
     }
 
-    /** Lazily (re)builds both catalogs (stock + crypto), refreshing past the TTL. */
+    /** Lazily (re)builds the catalog (stock + crypto names/tickers, fund codes), refreshing past the TTL. */
     private Catalog catalog() {
         long now = System.currentTimeMillis();
         Catalog cached = catalog;
@@ -169,6 +171,7 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
         }
         Map<String, CodeType> byTicker = new LinkedHashMap<>();
         List<NameRef> byName = new ArrayList<>();
+        boolean marketLoaded = false; // stocks/cryptos present — the signal for caching (funds alone don't count)
         try {
             for (Object[] row : stockRepository.findAllSymbolsAndNames()) {
                 String symbol = str(row[0]);
@@ -201,6 +204,17 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
                     byName.add(new NameRef(name, id, "CRYPTO"));
                 }
             }
+            // Captured BEFORE funds so the cold-start cache guard still keys on the market catalog: funds alone
+            // must not pin an otherwise-empty catalog (stocks would then never link until a restart).
+            marketLoaded = !byTicker.isEmpty();
+            // Funds by CODE only (the parenthesised short code, e.g. "(AFA)"). Their long names are NOT indexed:
+            // they share company prefixes ("Ak Portföy …"), so name-matching would link dozens of funds to one
+            // mention. putIfAbsent keeps a colliding stock/crypto ticker as the winner.
+            for (String fundCode : fundRepository.findAllFundCodes()) {
+                if (fundCode != null && fundCode.length() >= 3) {
+                    byTicker.putIfAbsent(fundCode.toUpperCase(Locale.ROOT), new CodeType(fundCode, "FUND"));
+                }
+            }
             byName.addAll(KEYWORD_REFS);
         } catch (RuntimeException e) {
             log.warn("Could not build asset catalog for news matching: {}", e.getMessage());
@@ -212,7 +226,7 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
         // it would pin a keyword-only matcher for the full TTL, so every article enriched during warm-up would
         // miss its stocks until the next restart. Leaving it uncached makes the next resolve rebuild and pick the
         // catalog up the moment it lands. Keyword refs still resolve in the meantime.
-        if (!byTicker.isEmpty()) {
+        if (marketLoaded) {
             catalog = built;
             loadedAt = now;
         }

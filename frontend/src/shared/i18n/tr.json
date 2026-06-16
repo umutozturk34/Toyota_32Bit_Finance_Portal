@@ -15,6 +15,8 @@
     "bonds": "Tahvil",
     "viop": "VİOP",
     "portfolio": "Portföy",
+    "allPortfolios": "Tüm Portföyler",
+    "newPortfolio": "Yeni Portföy",
     "watch": "Takip",
     "adminTrackedAssets": "Takip Edilen Varlıklar",
     "adminUsers": "Kullanıcılar",
@@ -327,6 +329,7 @@
     "close": "Kapat",
     "retry": "Tekrar dene",
     "back": "Geri",
+    "backToTop": "Yukarı çık",
     "addToPortfolio": "Portföye Ekle",
     "sortDefault": "Varsayılan",
     "previous": "Önceki",
@@ -978,6 +981,8 @@
   "bankRates": {
     "tabCurrency": "Döviz",
     "tabGold": "Altın",
+    "sectionTitle": "Banka Kurları",
+    "viewDetail": "{{code}} detayı",
     "buy": "Alış",
     "sell": "Satış",
     "spread": "Makas",
@@ -1829,6 +1834,9 @@
       "kapLinkLabel": "KAP'ta aç",
       "viewDetail": "Fon Detayını Görüntüle",
       "detailTitle": "Fon Detayı",
+      "sectionTitle": "Fon Künyesi",
+      "riskLow": "Düşük",
+      "riskHigh": "Yüksek",
       "allocationTitle": "Varlık Dağılımı",
       "allocationEmpty": "Dağılım verisi yok",
       "allocationOther": "Diğer",
@@ -1855,7 +1863,9 @@
       "city": "Merkez",
       "exchange": "Borsa",
       "indices": "Dahil Olduğu Endeksler",
-      "constituents": "İçindeki Hisseler"
+      "constituents": "İçindeki Hisseler",
+      "constituentSearch": "Hisse ara…",
+      "constituentNoMatch": "Eşleşen hisse yok"
     },
     "compareAction": "Karşılaştır"
   },
@@ -2786,6 +2796,12 @@
       "more": "+{{count}} daha",
       "less": "daha az"
     },
+    "mentionedAssets": "Bahsedilen varlıklar",
+    "filterByAsset": "Varlığa göre filtrele",
+    "assetSearch": "Varlık ara…",
+    "clearFilter": "Temizle",
+    "assetsSelected": "{{count}} seçili",
+    "filteredByAsset": "{{code}} ile ilgili haberler",
     "empty": "Haber yok",
     "refreshHint": "Haberler periyodik olarak güncellenir.",
     "related": {

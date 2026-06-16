@@ -15,6 +15,8 @@
     "bonds": "Bonds",
     "viop": "VIOP",
     "portfolio": "Portfolio",
+    "allPortfolios": "All Portfolios",
+    "newPortfolio": "New Portfolio",
     "watch": "Watch",
     "adminTrackedAssets": "Tracked Assets",
     "adminUsers": "Users",
@@ -327,6 +329,7 @@
     "close": "Close",
     "retry": "Retry",
     "back": "Back",
+    "backToTop": "Back to top",
     "addToPortfolio": "Add to portfolio",
     "sortDefault": "Default",
     "previous": "Previous",
@@ -978,6 +981,8 @@
   "bankRates": {
     "tabCurrency": "Currency",
     "tabGold": "Gold",
+    "sectionTitle": "Bank Rates",
+    "viewDetail": "{{code}} detail",
     "buy": "Buy",
     "sell": "Sell",
     "spread": "Spread",
@@ -1829,6 +1834,9 @@
       "kapLinkLabel": "Open in KAP",
       "viewDetail": "View Fund Details",
       "detailTitle": "Fund Details",
+      "sectionTitle": "Fund Profile",
+      "riskLow": "Low",
+      "riskHigh": "High",
       "allocationTitle": "Asset Allocation",
       "allocationEmpty": "No allocation data",
       "allocationOther": "Other",
@@ -1855,7 +1863,9 @@
       "city": "HQ",
       "exchange": "Exchange",
       "indices": "Index Membership",
-      "constituents": "Constituents"
+      "constituents": "Constituents",
+      "constituentSearch": "Filter stocks…",
+      "constituentNoMatch": "No stocks match"
     },
     "compareAction": "Compare"
   },
@@ -2786,6 +2796,12 @@
       "more": "+{{count}} more",
       "less": "less"
     },
+    "mentionedAssets": "Mentioned assets",
+    "filterByAsset": "Filter by asset",
+    "assetSearch": "Search asset…",
+    "clearFilter": "Clear",
+    "assetsSelected": "{{count}} selected",
+    "filteredByAsset": "Showing news for {{code}}",
     "empty": "No news",
     "refreshHint": "News is refreshed periodically.",
     "related": {

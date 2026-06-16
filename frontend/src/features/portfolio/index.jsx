@@ -67,6 +67,14 @@ export default function Portfolio() {
     ?? portfolios?.[0]
     ?? null;
   const portfolioType = portfolio?.type === 'FIXED' ? 'fixed' : 'spot';
+  // The sidebar's "New portfolio" entry deep-links here with ?new=1 so a portfolio can be created without first
+  // navigating in; the switcher opens straight into create mode and we drop the flag so it fires once.
+  const wantsCreate = searchParams.get('new') === '1';
+  const clearCreateFlag = () => setSearchParams((prev) => {
+    const next = new URLSearchParams(prev);
+    next.delete('new');
+    return next;
+  }, { replace: true });
   const setActivePortfolio = (id) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -180,6 +188,8 @@ export default function Portfolio() {
             onSelectPortfolio={setActivePortfolio}
             hasPositions={false}
             showExtras={false}
+            autoCreatePortfolio={wantsCreate}
+            onAutoCreateConsumed={clearCreateFlag}
           />
 
           {portfolio?.id && (
@@ -210,6 +220,8 @@ export default function Portfolio() {
             pdfPending={pdfPending}
             pdfElapsedMs={pdfElapsedMs}
             hasPositions={viewPositions.length > 0}
+            autoCreatePortfolio={wantsCreate}
+            onAutoCreateConsumed={clearCreateFlag}
           />
 
           {summary && <SummaryCards summary={summary} portfolioId={portfolio?.id} />}

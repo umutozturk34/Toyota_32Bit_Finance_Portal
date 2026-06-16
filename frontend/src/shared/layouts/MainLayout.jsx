@@ -5,7 +5,7 @@ import { Outlet, Link, useLocation, useNavigationType } from 'react-router-dom';
 import { useAuth } from '../../features/auth/useAuth';
 import { useTheme } from '../context/useTheme';
 import useAppStore from '../stores/useAppStore';
-import { TrendingUp, Shield, Menu, FolderOpen, Search } from 'lucide-react';
+import { TrendingUp, Shield, Menu, FolderOpen, Search, Plus } from 'lucide-react';
 import {
   PiHouseDuotone, PiChartLineUpDuotone, PiTrendUpDuotone, PiCurrencyBtcDuotone,
   PiCurrencyDollarSimpleDuotone, PiBriefcaseDuotone, PiDiamondDuotone, PiBankDuotone,
@@ -25,6 +25,8 @@ import OnboardingGate from '../../features/onboarding/OnboardingGate';
 import KeycloakActionToast from '../../features/auth/components/KeycloakActionToast';
 import SidebarContent from './SidebarContent';
 import CommandPalette from '../components/modal/CommandPalette';
+import BackToTop from '../components/BackToTop';
+import { usePortfolioList } from '../../features/portfolio/hooks/usePortfolioData';
 
 const baseNavStructure = [
   { kind: 'item', to: '/market', labelKey: 'nav.overview', Icon: PiHouseDuotone },
@@ -52,18 +54,16 @@ const baseNavStructure = [
   { kind: 'item', to: '/learn', labelKey: 'nav.learn', Icon: PiGraduationCapDuotone },
 ];
 
-const adminGroup = {
-  kind: 'group', id: 'admin', labelKey: 'nav.groupAdmin', Icon: Shield,
-  items: [
-    { to: '/admin/tracked-assets', labelKey: 'nav.adminTrackedAssets', subKey: 'nav.subAdminTrackedAssets', Icon: PiDatabaseDuotone },
-    { to: '/admin/users',          labelKey: 'nav.adminUsers',         subKey: 'nav.subAdminUsers',         Icon: PiUsersThreeDuotone },
-  ],
-};
+// One "Admin" entry — the separate admin screens are unified behind the shared AdminTabBar, so the sidebar no
+// longer needs a sub-group. Lands on tracked-assets; the in-page tab bar reaches users.
+const adminGroup = { kind: 'item', to: '/admin/tracked-assets', labelKey: 'nav.groupAdmin', Icon: Shield };
 
 function findActiveGroupId(structure, pathname) {
   for (const node of structure) {
     if (node.kind !== 'group') continue;
-    if (node.items.some((i) => i.to === pathname)) return node.id;
+    // Compare on the pathname part only so query-parameterised items (e.g. /portfolio?portfolio=2) still
+    // resolve their owning group.
+    if (node.items.some((i) => i.to.split('?')[0] === pathname)) return node.id;
   }
   return null;
 }
@@ -133,9 +133,30 @@ const MainLayout = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [toggleSearch]);
 
-  const navStructure = useMemo(() => (
-    hasRole('ADMIN') ? [...baseNavStructure, adminGroup] : baseNavStructure
-  ), [hasRole]);
+  const { data: portfolios } = usePortfolioList();
+  // The "Portföy" entry expands into the user's actual portfolios so any one is one click from the sidebar
+  // (deep-links to /portfolio?portfolio=<id>, the same param the page reads). Watch becomes its own leaf.
+  const navStructure = useMemo(() => {
+    const list = Array.isArray(portfolios) ? portfolios : [];
+    // No "All portfolios" entry (there's no aggregate view — /portfolio just lands on the first one, which
+    // confused users). When the account has ≥1 portfolio we show a group: each portfolio + a "New portfolio"
+    // action (deep-links to /portfolio?new=1 so one can be created without navigating in first). With none yet,
+    // a plain "Portföy" leaf → /portfolio (the onboarding wizard handles the first create).
+    const portfolioItems = list.map((p) => ({
+      to: `/portfolio?portfolio=${p.id}`,
+      label: p.name,
+      sub: t(`portfolio.typeSwitcher.${p.type === 'FIXED' ? 'fixed' : 'spot'}`),
+      Icon: p.type === 'FIXED' ? PiBankDuotone : PiWalletDuotone,
+    }));
+    const newPortfolioItem = { to: '/portfolio?new=1', labelKey: 'nav.newPortfolio', Icon: Plus };
+    const portfoliosGroup = portfolioItems.length >= 1
+      ? { kind: 'group', id: 'portfolios', labelKey: 'nav.portfolio', Icon: PiWalletDuotone, items: [...portfolioItems, newPortfolioItem] }
+      : { kind: 'item', to: '/portfolio', labelKey: 'nav.portfolio', Icon: PiWalletDuotone };
+    const watchItem = { kind: 'item', to: '/watch', labelKey: 'nav.watch', Icon: PiEyeDuotone };
+    const base = baseNavStructure.flatMap((node) =>
+      node.kind === 'group' && node.id === 'my' ? [portfoliosGroup, watchItem] : [node]);
+    return hasRole('ADMIN') ? [...base, adminGroup] : base;
+  }, [portfolios, hasRole, t]);
 
   const [expandedGroups, setExpandedGroups] = useState(() => {
     const active = findActiveGroupId(navStructure, location.pathname);
@@ -167,7 +188,17 @@ const MainLayout = () => {
   const anyOverlayOpen = settingsOpen || notificationsOpen || tasksOpen || mobileOpen || profileOpen;
   const blurCls = anyOverlayOpen ? 'blur-sm pointer-events-none select-none' : '';
 
-  const isActive = (path) => location.pathname === path;
+  // Query-aware: a deep-linked portfolio item (/portfolio?portfolio=2) is active only when its id matches the
+  // current ?portfolio= param; the plain /portfolio ("All Portfolios") item is active only with no param set.
+  const isActive = (path) => {
+    const [p, q] = path.split('?');
+    if (location.pathname !== p) return false;
+    const qp = new URLSearchParams(q || '');
+    if (qp.has('new')) return false; // the "New portfolio" action is never a highlighted destination
+    const current = new URLSearchParams(location.search).get('portfolio');
+    if (q) return qp.get('portfolio') === current;
+    return p === '/portfolio' ? !current : true;
+  };
   // rem (not px) so the sidebar scales with the content on wider screens. The spacer must always match the
   // sidebar's actual width so content clears it: a previous Overview-only 4rem override left the page sliding
   // under the (now rem-scaled, up to ~1.8×) 14rem expanded sidebar on wide monitors.
@@ -307,6 +338,7 @@ const MainLayout = () => {
       <CommandPalette />
       <OnboardingGate />
       <KeycloakActionToast />
+      {!anyOverlayOpen && <BackToTop />}
     </div>
   );
 };

@@ -15,6 +15,8 @@ export default function PortfolioActions({
   pdfElapsedMs,
   hasPositions = true,
   showExtras = true,
+  autoCreatePortfolio = false,
+  onAutoCreateConsumed,
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -102,6 +104,8 @@ export default function PortfolioActions({
             portfolios={portfolios}
             activeId={portfolio?.id}
             onSelect={onSelectPortfolio}
+            autoCreate={autoCreatePortfolio}
+            onAutoCreateConsumed={onAutoCreateConsumed}
           />
         )}
       </div>

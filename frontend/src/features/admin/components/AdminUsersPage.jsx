@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Users, Search, Ban, ShieldCheck, AlertCircle, Mail, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import PageHeader from '../../../shared/components/layout/PageHeader';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
+import AdminTabBar from './AdminTabBar';
 import Spinner from '../../../shared/components/feedback/Spinner';
 import { toast } from '../../../shared/components/feedback/toastBus';
 import { useAuth } from '../../auth/useAuth';
@@ -91,6 +92,8 @@ export default function AdminUsersPage() {
         onRefresh={handleRefresh}
         loading={isFetching}
       />
+
+      <AdminTabBar />
 
       <form onSubmit={handleSearchSubmit} className="flex gap-2">
         <div className="relative flex-1">

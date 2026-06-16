@@ -146,7 +146,7 @@ function NavGroupExpanded({ group, t, expanded, onToggle, isActive, hasActive, i
                 <NavLeaf
                   key={item.to}
                   to={item.to}
-                  label={t(item.labelKey)}
+                  label={item.label ?? t(item.labelKey)}
                   Icon={item.Icon}
                   active={isActive(item.to)}
                   collapsed={false}
@@ -283,14 +283,14 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
                       />
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className={`text-[12.5px] font-semibold whitespace-nowrap ${
+                      <div className={`text-[12.5px] font-semibold truncate ${
                         active ? 'text-fg' : 'text-fg group-hover/item:text-fg'
                       }`}>
-                        {t(item.labelKey)}
+                        {item.label ?? t(item.labelKey)}
                       </div>
-                      {item.subKey && (
+                      {(item.sub || item.subKey) && (
                         <div className="text-[10px] text-fg-subtle font-mono mt-0.5 whitespace-nowrap truncate">
-                          {t(item.subKey, { defaultValue: '' })}
+                          {item.sub ?? t(item.subKey, { defaultValue: '' })}
                         </div>
                       )}
                     </div>
@@ -335,7 +335,7 @@ function SidebarNav({ structure, t, collapsed, isMobile, isActive, expandedGroup
             <NavLeaf
               key={node.to}
               to={node.to}
-              label={t(node.labelKey)}
+              label={node.label ?? t(node.labelKey)}
               Icon={node.Icon}
               active={isActive(node.to)}
               collapsed={collapsed}

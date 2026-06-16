@@ -192,21 +192,21 @@ export default function DepositRow({ deposit, portfolioId }) {
           {/* Actions */}
           <div className="flex justify-end gap-1.5">
             {!isClosed && (
-              <button onClick={() => setEditOpen(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')}>
+              <button onClick={() => setEditOpen(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')} title={t('common.edit')}>
                 <Pencil className="h-3.5 w-3.5" />
               </button>
             )}
             {!isClosed && (
-              <button onClick={() => { setCloseDate(todayInputValue()); setCloseOpen(true); }} className="flex items-center justify-center w-8 h-8 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('deposits.actions.close')}>
+              <button onClick={() => { setCloseDate(todayInputValue()); setCloseOpen(true); }} className="flex items-center justify-center w-8 h-8 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('deposits.actions.close')} title={t('deposits.actions.close')}>
                 <XCircle className="h-3.5 w-3.5" />
               </button>
             )}
             {isClosed && (
-              <button onClick={handleReopen} className="flex items-center justify-center w-8 h-8 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer" aria-label={t('deposits.actions.reopen')}>
+              <button onClick={handleReopen} className="flex items-center justify-center w-8 h-8 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer" aria-label={t('deposits.actions.reopen')} title={t('deposits.actions.reopen')}>
                 <RotateCcw className="h-3.5 w-3.5" />
               </button>
             )}
-            <button onClick={() => setDeleteOpen(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer" aria-label={t('common.delete')}>
+            <button onClick={() => setDeleteOpen(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer" aria-label={t('common.delete')} title={t('common.delete')}>
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>

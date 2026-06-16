@@ -240,25 +240,25 @@ export default function BondRow({ portfolioId, bond }) {
 
         {/* Actions */}
         <div className="flex justify-end gap-1.5">
-          <button onClick={() => setDetailOpen(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-fg-muted bg-surface/70 hover:text-fg hover:bg-surface transition-colors border-none cursor-pointer" aria-label={t('portfolio.bonds.detail.open', { code: bond.bondSeriesCode })}>
+          <button onClick={() => setDetailOpen(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-fg-muted bg-surface/70 hover:text-fg hover:bg-surface transition-colors border-none cursor-pointer" aria-label={t('portfolio.bonds.detail.open', { code: bond.bondSeriesCode })} title={t('portfolio.bonds.detail.open', { code: bond.bondSeriesCode })}>
             <Receipt className="h-3.5 w-3.5" />
           </button>
           {!isSold && (
-            <button onClick={() => setEditOpen(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')}>
+            <button onClick={() => setEditOpen(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')} title={t('common.edit')}>
               <Pencil className="h-3.5 w-3.5" />
             </button>
           )}
           {!isSold && !isRedeemed && (
-            <button onClick={() => setSellOpen(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.bonds.sell.title')}>
+            <button onClick={() => setSellOpen(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.bonds.sell.title')} title={t('portfolio.bonds.sell.title')}>
               <ShoppingBag className="h-3.5 w-3.5" />
             </button>
           )}
           {isSold && (
-            <button onClick={handleReopen} className="flex items-center justify-center w-8 h-8 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.bonds.reopen.title')}>
+            <button onClick={handleReopen} className="flex items-center justify-center w-8 h-8 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.bonds.reopen.title')} title={t('portfolio.bonds.reopen.title')}>
               <RotateCcw className="h-3.5 w-3.5" />
             </button>
           )}
-          <button onClick={() => setConfirmDelete(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer" aria-label={t('common.delete')}>
+          <button onClick={() => setConfirmDelete(true)} className="flex items-center justify-center w-8 h-8 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer" aria-label={t('common.delete')} title={t('common.delete')}>
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>

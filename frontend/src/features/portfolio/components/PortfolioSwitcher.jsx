@@ -48,7 +48,7 @@ function TypeBadge({ type }) {
   );
 }
 
-export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect }) {
+export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect, autoCreate = false, onAutoCreateConsumed }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState(null);
@@ -59,6 +59,21 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [error, setError] = useState(null);
   const ref = useRef(null);
+
+  // External trigger (e.g. the sidebar's "New portfolio" entry → /portfolio?new=1): open the dropdown straight
+  // into create mode, then tell the parent to clear the flag so it fires once. The state is then local, so
+  // clearing the flag doesn't re-close the form. (Legit prop→UI sync; the generic set-state-in-effect lint
+  // false-positives here.)
+  useEffect(() => {
+    if (!autoCreate) return;
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setOpen(true);
+    setCreating(true);
+    setNewType('SPOT');
+    setError(null);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    onAutoCreateConsumed?.();
+  }, [autoCreate, onAutoCreateConsumed]);
 
   const create = useCreatePortfolio();
   const rename = useRenamePortfolio();

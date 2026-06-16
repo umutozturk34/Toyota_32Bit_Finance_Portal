@@ -32,6 +32,42 @@ const lotEntryValueTry = (lot) => (lot.entryValueTry != null
   ? Number(lot.entryValueTry)
   : Number(lot.entryPrice) * Number(lot.quantity));
 
+// The per-lot edit / sell / reopen / delete buttons. Shared by the desktop row and the mobile card so both stay
+// in sync, and each button carries BOTH an aria-label (screen readers) and a title (the visible hover hint).
+function LotActionButtons({ lot, isLotClosed, t, onEditLot, onSellLot, onReopenLot, onDeleteLot }) {
+  const editLabel = t('common.edit');
+  const sellLabel = lot.assetType === 'VIOP'
+    ? t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')
+    : t('portfolio.sell.title', { code: lot.assetCode });
+  const reopenLabel = t('portfolio.reopen.title', 'Tekrar aç');
+  const deleteLabel = t('common.delete');
+  const btn = 'flex items-center justify-center w-7 h-7 md:w-6 md:h-6 rounded-md transition-colors border-none cursor-pointer';
+  return (
+    <div className="flex items-center justify-start gap-1">
+      {!isLotClosed && onEditLot && (
+        <button onClick={() => onEditLot(lot)} className={`${btn} text-accent bg-accent/10 hover:bg-accent/20`} aria-label={editLabel} title={editLabel}>
+          <Pencil className="h-3 w-3" />
+        </button>
+      )}
+      {!isLotClosed && onSellLot && (
+        <button onClick={() => onSellLot(lot)} className={`${btn} text-warning bg-warning/10 hover:bg-warning/20`} aria-label={sellLabel} title={sellLabel}>
+          {lot.assetType === 'VIOP' ? <XCircle className="h-3 w-3" /> : <ShoppingBag className="h-3 w-3" />}
+        </button>
+      )}
+      {isLotClosed && onReopenLot && (
+        <button onClick={() => onReopenLot(lot)} className={`${btn} text-success bg-success/10 hover:bg-success/20`} aria-label={reopenLabel} title={reopenLabel}>
+          <RotateCcw className="h-3 w-3" />
+        </button>
+      )}
+      {onDeleteLot && (
+        <button onClick={() => onDeleteLot(lot)} className={`${btn} text-danger bg-danger/10 hover:bg-danger/20`} aria-label={deleteLabel} title={deleteLabel}>
+          <Trash2 className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function LotsTable({ lots, t, money, bigMoney, nativeCurrency, frame, convertAt, onEditLot, onSellLot, onReopenLot, onDeleteLot }) {
   const today = new Date().toLocaleDateString('sv-SE');
   // Per-lot K/Z in the display-currency frame (entry cost @ entry-date FX, value @ today/exit FX) via the
@@ -100,48 +136,15 @@ export function LotsTable({ lots, t, money, bigMoney, nativeCurrency, frame, con
             : (isLotClosed ? money(lotFrame.pnl, 'TRY', { dateAt: lot.exitDate, natural: nativeCurrency }) : bigMoney(lotFrame.pnl));
           const lotValue = lotValueParts(lot, lotFrame, isLotClosed);
           const actions = (
-            <div className="flex items-center justify-start gap-1">
-              {!isLotClosed && onEditLot && (
-                <button
-                  onClick={() => onEditLot(lot)}
-                  className="flex items-center justify-center w-7 h-7 md:w-6 md:h-6 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer"
-                  aria-label={t('common.edit')}
-                >
-                  <Pencil className="h-3 w-3" />
-                </button>
-              )}
-              {!isLotClosed && onSellLot && (
-                <button
-                  onClick={() => onSellLot(lot)}
-                  className="flex items-center justify-center w-7 h-7 md:w-6 md:h-6 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer"
-                  aria-label={lot.assetType === 'VIOP'
-                    ? t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')
-                    : t('portfolio.sell.title', { code: lot.assetCode })}
-                >
-                  {lot.assetType === 'VIOP'
-                    ? <XCircle className="h-3 w-3" />
-                    : <ShoppingBag className="h-3 w-3" />}
-                </button>
-              )}
-              {isLotClosed && onReopenLot && (
-                <button
-                  onClick={() => onReopenLot(lot)}
-                  className="flex items-center justify-center w-7 h-7 md:w-6 md:h-6 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer"
-                  aria-label={t('portfolio.reopen.title', 'Tekrar aç')}
-                >
-                  <RotateCcw className="h-3 w-3" />
-                </button>
-              )}
-              {onDeleteLot && (
-                <button
-                  onClick={() => onDeleteLot(lot)}
-                  className="flex items-center justify-center w-7 h-7 md:w-6 md:h-6 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer"
-                  aria-label={t('common.delete')}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              )}
-            </div>
+            <LotActionButtons
+              lot={lot}
+              isLotClosed={isLotClosed}
+              t={t}
+              onEditLot={onEditLot}
+              onSellLot={onSellLot}
+              onReopenLot={onReopenLot}
+              onDeleteLot={onDeleteLot}
+            />
           );
           return (
             <motion.div
@@ -209,47 +212,16 @@ export function LotsTable({ lots, t, money, bigMoney, nativeCurrency, frame, con
                     {lot.exitDate ? ` → ${formatEntryDate(lot.exitDate)}` : ''}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  {!isLotClosed && onEditLot && (
-                    <button
-                      onClick={() => onEditLot(lot)}
-                      className="flex items-center justify-center w-7 h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer"
-                      aria-label={t('common.edit')}
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </button>
-                  )}
-                  {!isLotClosed && onSellLot && (
-                    <button
-                      onClick={() => onSellLot(lot)}
-                      className="flex items-center justify-center w-7 h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer"
-                      aria-label={lot.assetType === 'VIOP'
-                        ? t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')
-                        : t('portfolio.sell.title', { code: lot.assetCode })}
-                    >
-                      {lot.assetType === 'VIOP'
-                        ? <XCircle className="h-3 w-3" />
-                        : <ShoppingBag className="h-3 w-3" />}
-                    </button>
-                  )}
-                  {isLotClosed && onReopenLot && (
-                    <button
-                      onClick={() => onReopenLot(lot)}
-                      className="flex items-center justify-center w-7 h-7 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer"
-                      aria-label={t('portfolio.reopen.title', 'Tekrar aç')}
-                    >
-                      <RotateCcw className="h-3 w-3" />
-                    </button>
-                  )}
-                  {onDeleteLot && (
-                    <button
-                      onClick={() => onDeleteLot(lot)}
-                      className="flex items-center justify-center w-7 h-7 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer"
-                      aria-label={t('common.delete')}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  )}
+                <div className="shrink-0">
+                  <LotActionButtons
+                    lot={lot}
+                    isLotClosed={isLotClosed}
+                    t={t}
+                    onEditLot={onEditLot}
+                    onSellLot={onSellLot}
+                    onReopenLot={onReopenLot}
+                    onDeleteLot={onDeleteLot}
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 text-[11px]">

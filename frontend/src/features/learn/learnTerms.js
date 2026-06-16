@@ -39,6 +39,7 @@ export const LEARN_TERMS = [
   { key: 'deposit', category: 'deposits' },
   { key: 'simpleInterest', category: 'deposits' },
   { key: 'withholding', category: 'deposits' },
+  { key: 'valor', category: 'deposits', chart: 'valorTimeline' },
   { key: 'futures', category: 'viop' },
   { key: 'option', category: 'viop' },
   { key: 'callOption', category: 'viop', chart: 'callPayoff' },

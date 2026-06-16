@@ -1,8 +1,7 @@
-import { ASSET_TYPE_STYLES } from '../../constants/assetTypes';
+import { assetColorStyle } from '../../utils/assetColor';
 
-export default function AssetBadge({ assetType, assetCode, assetImage, size = 'md' }) {
+export default function AssetBadge({ assetCode, assetImage, size = 'md' }) {
   const dims = size === 'sm' ? 'w-7 h-7 text-xs' : 'w-9 h-9 text-sm';
-  const typeStyle = ASSET_TYPE_STYLES[assetType] || ASSET_TYPE_STYLES.CRYPTO;
   if (assetImage) {
     if (/^https?:\/\//i.test(assetImage)) {
       return (
@@ -19,9 +18,11 @@ export default function AssetBadge({ assetType, assetCode, assetImage, size = 'm
       </span>
     );
   }
+  // Per-asset deterministic colour (keyless logo substitute) instead of one flat per-type colour.
   return (
     <span
-      className={`flex items-center justify-center ${dims} rounded-lg ${typeStyle.bg} font-bold ${typeStyle.text} shrink-0`}
+      className={`flex items-center justify-center ${dims} rounded-lg font-bold shrink-0`}
+      style={assetColorStyle(assetCode ?? '')}
     >
       {(assetCode ?? '?').slice(0, 3).toUpperCase()}
     </span>

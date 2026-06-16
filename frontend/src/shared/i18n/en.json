@@ -57,53 +57,245 @@
       "general": "General"
     },
     "terms": {
-      "candlestick": { "title": "Candlestick", "short": "Each period's open-close-high-low price.", "long": "Each candle is one period (day/hour): the body spans open to close, the wicks the high and low. Green when the close is above the open (up), red when below (down). It reads price action at a glance." },
-      "ohlc": { "title": "OHLC", "short": "Open, High, Low, Close.", "long": "A period's four core prices: Open, High, Low, Close. They are the basis of candlestick and bar charts, and most technical indicators are computed from these four values." },
-      "supportResistance": { "title": "Support & Resistance", "short": "Levels where price tends to stall.", "long": "Support is a level where a falling price tends to hold; resistance is where a rising price tends to stall. A break of either is usually read as the start of a new move." },
-      "trend": { "title": "Trend", "short": "The general direction of price.", "long": "The dominant direction of price over time: up (higher highs and lows), down (lower highs and lows) or sideways. 'The trend is your friend' — trading with it is usually considered safer." },
-      "realVsNominal": { "title": "Real vs Nominal Return", "short": "Gain before and after inflation.", "long": "Nominal return is the gain/loss in TRY terms; real return is net of inflation — the true gain in purchasing power. A 50% nominal return is a real loss when inflation is 60%." },
-      "sharpe": { "title": "Sharpe Ratio", "short": "Return relative to the risk taken.", "long": "An investment's return above the risk-free rate divided by its volatility (risk). A higher Sharpe means more return for the same risk; it compares strategies fairly on a risk-adjusted basis." },
-      "diversification": { "title": "Diversification", "short": "Not putting all eggs in one basket.", "long": "Spreading capital across different assets, sectors and currencies to protect the portfolio from one asset doing badly. Weakly-correlated assets lower the total risk." },
-      "bondVsBill": { "title": "Bond vs Bill", "short": "Long maturity (bond) / short (bill).", "long": "Both are debt securities. One maturing in MORE than a year is a bond; in LESS (usually zero-coupon, at a discount) a bill. A Treasury bill is short-term, a government bond long-term government borrowing." },
-      "yield": { "title": "Yield", "short": "A bond's effective annual return.", "long": "The annual rate you earn buying a bond at today's price and holding it to maturity (yield to maturity). When the price falls the yield rises and vice versa — an inverse relationship." },
-      "nominalValue": { "title": "Face / Nominal Value", "short": "A bond's par value (100).", "long": "The value written on the bond, repaid at maturity — usually 100. The coupon is computed on it. The market price can sit below par (at a discount) or above (at a premium)." },
-      "floatingRate": { "title": "Floating Rate", "short": "A bond whose coupon resets periodically.", "long": "A bond whose coupon isn't fixed but resets each period to a reference (TLREF, auction rate). When rates rise the coupon rises too, keeping the price near par; it lowers interest-rate risk." },
-      "sukuk": { "title": "Lease Certificate (Sukuk)", "short": "An interest-free bond-like security.", "long": "A security backed by an asset's lease/income stream, compliant with interest-free finance. It is the Islamic counterpart of a government bond, with fixed, floating, CPI-linked and gold-linked variants." },
-      "secondaryMarket": { "title": "Secondary Market", "short": "Where it trades after issuance.", "long": "The market where a bond changes hands between investors after the initial issue (primary market). You can sell or buy here without waiting for maturity; the price moves with supply-demand and rates." },
-      "margin": { "title": "Margin", "short": "The collateral locked for a position.", "long": "The collateral posted to open a VIOP position. You put down only a small fraction of the full position (leverage). If losses grow, extra collateral (a margin call) may be required." },
-      "spread": { "title": "Spread", "short": "The gap between buy and sell price.", "long": "The difference between the best bid (buy) and best ask (sell) price. A tight spread means high liquidity and low trading cost; a wide spread means low liquidity." },
-      "liquidity": { "title": "Liquidity", "short": "Trading fast without moving the price.", "long": "How easily an asset can be turned into cash quickly without moving its price much. High liquidity = tight spread, easy entry/exit; low liquidity = risk of large price slippage." },
-      "marketCap": { "title": "Market Cap", "short": "Total value = price × quantity.", "long": "The total market value of an asset/company: current price × quantity in circulation. For stocks it shows company size; for crypto, the scale of the project." },
-      "movingAverage": { "title": "Moving Average", "short": "The average price over a window.", "long": "The mean of the last N days (SMA) or an exponential mean weighting recent days more (EMA). It filters noise to reveal the trend; price above the average reads as bullish, below as bearish." },
-      "rsi": { "title": "RSI (Relative Strength Index)", "short": "A 0–100 momentum gauge.", "long": "Ratios recent gains to losses to show whether price is 'overbought' (above 70) or 'oversold' (below 30). It is not a buy/sell signal on its own; it measures the strength of momentum." },
-      "macd": { "title": "MACD", "short": "Trend/momentum from two moving averages.", "long": "The gap between a fast and slow exponential average (the MACD line), its own average (the signal line), and the difference between them (histogram). MACD crossing above the signal reads as bullish momentum, below as bearish." },
-      "volume": { "title": "Volume", "short": "How much changes hands in a period.", "long": "The number/amount of an asset traded. High volume lends conviction to a price move; low-volume moves are more fragile. Trend reversals usually come with a surge in volume." },
-      "volatility": { "title": "Volatility", "short": "How much the return swings = risk.", "long": "How widely price/return scatters around its average, usually measured as the standard deviation of returns. High volatility means both bigger gains and bigger losses are possible — i.e. risk." },
-      "return": { "title": "Return", "short": "The percent gain/loss of an investment.", "long": "(Current value − cost) ÷ cost. 'Nominal' return is in TRY terms; 'real' return is net of inflation. In this app the portfolio return is computed cumulatively on the capital you deployed." },
-      "drawdown": { "title": "Maximum Drawdown", "short": "The biggest peak-to-trough loss.", "long": "The percent of the deepest fall from a prior high. It shows how much a strategy lost 'at its worst moment'; read it alongside return to gauge your risk tolerance." },
-      "benchmark": { "title": "Benchmark", "short": "What you compare your return against.", "long": "An investment's success is judged not alone but against a yardstick (inflation, deposit rate, TLREF, an index). 'Did you beat inflation?' is the core benchmark in this app." },
-      "coupon": { "title": "Coupon", "short": "A bond's periodic interest payment.", "long": "Interest paid on the bond's face value at set intervals (usually semi-annual). Fixed-coupon bonds keep a constant rate; floating/TLREF reset each period; CPI-linked coupons accrue on the indexed principal." },
-      "maturity": { "title": "Maturity", "short": "When the bond repays its principal.", "long": "The day the bond ends and its face value (usually 100) is repaid. As maturity nears, a plain bond's price converges to 100; CPI/gold-linked ones redeem at their index/gold value. 'Days to maturity' shows the time left." },
-      "cpiLinked": { "title": "CPI-Linked", "short": "A bond whose principal grows with inflation.", "long": "A bond whose principal is updated by the CPI index; the main return is inflation protection, plus a small 'real coupon'. Its price is the index level (can be thousands of TRY), not 100." },
-      "accruedCoupon": { "title": "Accrued Coupon", "short": "Interest building up until the next coupon.", "long": "Coupon interest accumulated since the last payment but not yet paid. If you sell the bond before maturity, this accrued coupon is also paid to you ('dirty price' = clean price + accrued coupon)." },
-      "par": { "title": "Par / Redemption", "short": "The face value repaid at maturity (100).", "long": "The bond's face/par value, usually 100. At maturity the Treasury repays it automatically ('redemption'). Plain TRY bonds redeem at par (100), while indexed/gold bonds redeem at their index/gold value." },
-      "discountBill": { "title": "Discount Bill", "short": "A zero-coupon bill bought at a discount.", "long": "A short-term Treasury bill that pays no coupon, bought below 100 (at a discount) and redeemed at 100 at maturity. The whole return is the gap between the purchase price and 100; the price climbs smoothly toward 100." },
-      "futures": { "title": "Futures (VIOP)", "short": "A contract for future delivery.", "long": "A contract to buy/sell an asset at a future date for a price fixed today. VIOP trades index, FX and commodity futures; they trade on margin (leveraged) and rarely settle physically." },
-      "leverage": { "title": "Leverage", "short": "A large position on small margin.", "long": "Holding a position a multiple of the margin you put down. It amplifies both gains and losses: a 1% move is a 10% P&L at 10x leverage. VIOP is leveraged by nature — high risk." },
-      "longShort": { "title": "Long / Short Position", "short": "Betting on a rise (long) or a fall (short).", "long": "A 'long' position gains when price rises; a 'short' position gains when price falls. With shorts in VIOP you can profit in a falling market, or hedge an existing position against risk." },
-      "allocation": { "title": "Allocation", "short": "How your portfolio splits across assets.", "long": "The percent breakdown of your portfolio value across asset types (stocks, crypto, FX, commodities, VIOP). Diversification lowers risk; over-concentrating in one asset raises it." },
-      "perDateFx": { "title": "Per-date FX", "short": "Converting each amount at its own date's rate.", "long": "In USD/EUR display, cost converts at the purchase-date rate, a closed position at its exit-date rate, each past point at its own date's rate — not today's. This way an FX move shows up correctly in P&L." },
-      "cleanDirtyPrice": { "title": "Clean & Dirty Price", "short": "Price with coupon (dirty) vs without (clean).", "long": "Dirty price = clean price + accrued coupon. The exchange/EVDS quote for most TRY bonds is the dirty price — you also pay the accrued coupon when buying; the clean price strips that accrued coupon out. For CPI/gold bonds the quote is already clean." },
-      "goldBond": { "title": "Gold-Linked Bond", "short": "A Treasury note indexed to grams of gold.", "long": "A Treasury lease certificate/bond whose principal is indexed to grams of gold and held in gold terms. Its price is the gold value, not 100; the main return comes from gold, with a small coupon on top. This app always shows it converted to TRY." },
-      "deposit": { "title": "Time Deposit", "short": "Money placed at a bank for a fixed term and rate.", "long": "Money deposited at a bank for a set term at a fixed rate. At maturity you get principal + net interest; the rate stays fixed for the whole term even if the market moves later. Can be opened in TRY, USD or EUR." },
-      "simpleInterest": { "title": "Simple Interest", "short": "Interest accrues only on the principal.", "long": "Deposit interest is simple interest: it accrues only on the principal, pro-rata to the number of days (principal × rate × days/365) — earned interest does not itself earn interest (not compound). Net at maturity = principal + gross interest − withholding tax." },
-      "withholding": { "title": "Withholding Tax", "short": "Tax deducted from interest income.", "long": "Income tax withheld at source from deposit interest, varying by term and currency. It is deducted from the gross interest; what you receive is the 'net' interest. This app computes returns on the after-withholding net." },
-      "option": { "title": "Option", "short": "A contract granting a RIGHT to buy/sell.", "long": "A contract giving the holder the RIGHT — but not the obligation — to buy (Call) or sell (Put) the underlying at a set price (strike) at expiry. You pay a 'premium' upfront for this right; unlike a future, the buyer's loss is capped at the premium." },
-      "callOption": { "title": "Call Option", "short": "The right to BUY at a set price.", "long": "The right to buy the underlying at the strike price at expiry. It gains value if the price rises above the strike; if it stays below, it expires unused and the buyer loses only the premium paid. The seller (short call) collects the premium but carries theoretically unlimited risk." },
-      "putOption": { "title": "Put Option", "short": "The right to SELL at a set price.", "long": "The right to sell the underlying at the strike price at expiry. It gains value if the price falls below the strike (like insurance against a drop); if it stays above, it expires unused and the buyer loses the premium." },
-      "strikePrice": { "title": "Strike Price", "short": "The price at which an option can be exercised.", "long": "The fixed price at which an option grants the right to buy (Call) or sell (Put) the underlying. At expiry the gap between the market price and the strike is the option's intrinsic value; a Call profits when market > strike, a Put when market < strike." },
-      "settlement": { "title": "Settlement & Expiry", "short": "Auto-close of a position at expiry.", "long": "VIOP contracts close at the exchange's settlement price at expiry (cash-settled — usually no physical delivery). In this app, positions whose contract has expired are auto-closed at the settlement price; for options that settlement price is the intrinsic value at expiry." }
-    }
+      "candlestick": {
+        "title": "Candlestick",
+        "short": "Each period's open-close-high-low price.",
+        "long": "Each candle is one period (day/hour): the body spans open to close, the wicks the high and low. Green when the close is above the open (up), red when below (down). It reads price action at a glance."
+      },
+      "ohlc": {
+        "title": "OHLC",
+        "short": "Open, High, Low, Close.",
+        "long": "A period's four core prices: Open, High, Low, Close. They are the basis of candlestick and bar charts, and most technical indicators are computed from these four values."
+      },
+      "supportResistance": {
+        "title": "Support & Resistance",
+        "short": "Levels where price tends to stall.",
+        "long": "Support is a level where a falling price tends to hold; resistance is where a rising price tends to stall. A break of either is usually read as the start of a new move."
+      },
+      "trend": {
+        "title": "Trend",
+        "short": "The general direction of price.",
+        "long": "The dominant direction of price over time: up (higher highs and lows), down (lower highs and lows) or sideways. 'The trend is your friend' — trading with it is usually considered safer."
+      },
+      "realVsNominal": {
+        "title": "Real vs Nominal Return",
+        "short": "Gain before and after inflation.",
+        "long": "Nominal return is the gain/loss in TRY terms; real return is net of inflation — the true gain in purchasing power. A 50% nominal return is a real loss when inflation is 60%."
+      },
+      "sharpe": {
+        "title": "Sharpe Ratio",
+        "short": "Return relative to the risk taken.",
+        "long": "An investment's return above the risk-free rate divided by its volatility (risk). A higher Sharpe means more return for the same risk; it compares strategies fairly on a risk-adjusted basis."
+      },
+      "diversification": {
+        "title": "Diversification",
+        "short": "Not putting all eggs in one basket.",
+        "long": "Spreading capital across different assets, sectors and currencies to protect the portfolio from one asset doing badly. Weakly-correlated assets lower the total risk."
+      },
+      "bondVsBill": {
+        "title": "Bond vs Bill",
+        "short": "Long maturity (bond) / short (bill).",
+        "long": "Both are debt securities. One maturing in MORE than a year is a bond; in LESS (usually zero-coupon, at a discount) a bill. A Treasury bill is short-term, a government bond long-term government borrowing."
+      },
+      "yield": {
+        "title": "Yield",
+        "short": "A bond's effective annual return.",
+        "long": "The annual rate you earn buying a bond at today's price and holding it to maturity (yield to maturity). When the price falls the yield rises and vice versa — an inverse relationship."
+      },
+      "nominalValue": {
+        "title": "Face / Nominal Value",
+        "short": "A bond's par value (100).",
+        "long": "The value written on the bond, repaid at maturity — usually 100. The coupon is computed on it. The market price can sit below par (at a discount) or above (at a premium)."
+      },
+      "floatingRate": {
+        "title": "Floating Rate",
+        "short": "A bond whose coupon resets periodically.",
+        "long": "A bond whose coupon isn't fixed but resets each period to a reference (TLREF, auction rate). When rates rise the coupon rises too, keeping the price near par; it lowers interest-rate risk."
+      },
+      "sukuk": {
+        "title": "Lease Certificate (Sukuk)",
+        "short": "An interest-free bond-like security.",
+        "long": "A security backed by an asset's lease/income stream, compliant with interest-free finance. It is the Islamic counterpart of a government bond, with fixed, floating, CPI-linked and gold-linked variants."
+      },
+      "secondaryMarket": {
+        "title": "Secondary Market",
+        "short": "Where it trades after issuance.",
+        "long": "The market where a bond changes hands between investors after the initial issue (primary market). You can sell or buy here without waiting for maturity; the price moves with supply-demand and rates."
+      },
+      "margin": {
+        "title": "Margin",
+        "short": "The collateral locked for a position.",
+        "long": "The collateral posted to open a VIOP position. You put down only a small fraction of the full position (leverage). If losses grow, extra collateral (a margin call) may be required."
+      },
+      "spread": {
+        "title": "Spread",
+        "short": "The gap between buy and sell price.",
+        "long": "The difference between the best bid (buy) and best ask (sell) price. A tight spread means high liquidity and low trading cost; a wide spread means low liquidity."
+      },
+      "liquidity": {
+        "title": "Liquidity",
+        "short": "Trading fast without moving the price.",
+        "long": "How easily an asset can be turned into cash quickly without moving its price much. High liquidity = tight spread, easy entry/exit; low liquidity = risk of large price slippage."
+      },
+      "marketCap": {
+        "title": "Market Cap",
+        "short": "Total value = price × quantity.",
+        "long": "The total market value of an asset/company: current price × quantity in circulation. For stocks it shows company size; for crypto, the scale of the project."
+      },
+      "movingAverage": {
+        "title": "Moving Average",
+        "short": "The average price over a window.",
+        "long": "The mean of the last N days (SMA) or an exponential mean weighting recent days more (EMA). It filters noise to reveal the trend; price above the average reads as bullish, below as bearish."
+      },
+      "rsi": {
+        "title": "RSI (Relative Strength Index)",
+        "short": "A 0–100 momentum gauge.",
+        "long": "Ratios recent gains to losses to show whether price is 'overbought' (above 70) or 'oversold' (below 30). It is not a buy/sell signal on its own; it measures the strength of momentum."
+      },
+      "macd": {
+        "title": "MACD",
+        "short": "Trend/momentum from two moving averages.",
+        "long": "The gap between a fast and slow exponential average (the MACD line), its own average (the signal line), and the difference between them (histogram). MACD crossing above the signal reads as bullish momentum, below as bearish."
+      },
+      "volume": {
+        "title": "Volume",
+        "short": "How much changes hands in a period.",
+        "long": "The number/amount of an asset traded. High volume lends conviction to a price move; low-volume moves are more fragile. Trend reversals usually come with a surge in volume."
+      },
+      "volatility": {
+        "title": "Volatility",
+        "short": "How much the return swings = risk.",
+        "long": "How widely price/return scatters around its average, usually measured as the standard deviation of returns. High volatility means both bigger gains and bigger losses are possible — i.e. risk."
+      },
+      "return": {
+        "title": "Return",
+        "short": "The percent gain/loss of an investment.",
+        "long": "(Current value − cost) ÷ cost. 'Nominal' return is in TRY terms; 'real' return is net of inflation. In this app the portfolio return is computed cumulatively on the capital you deployed."
+      },
+      "drawdown": {
+        "title": "Maximum Drawdown",
+        "short": "The biggest peak-to-trough loss.",
+        "long": "The percent of the deepest fall from a prior high. It shows how much a strategy lost 'at its worst moment'; read it alongside return to gauge your risk tolerance."
+      },
+      "benchmark": {
+        "title": "Benchmark",
+        "short": "What you compare your return against.",
+        "long": "An investment's success is judged not alone but against a yardstick (inflation, deposit rate, TLREF, an index). 'Did you beat inflation?' is the core benchmark in this app."
+      },
+      "coupon": {
+        "title": "Coupon",
+        "short": "A bond's periodic interest payment.",
+        "long": "Interest paid on the bond's face value at set intervals (usually semi-annual). Fixed-coupon bonds keep a constant rate; floating/TLREF reset each period; CPI-linked coupons accrue on the indexed principal."
+      },
+      "maturity": {
+        "title": "Maturity",
+        "short": "When the bond repays its principal.",
+        "long": "The day the bond ends and its face value (usually 100) is repaid. As maturity nears, a plain bond's price converges to 100; CPI/gold-linked ones redeem at their index/gold value. 'Days to maturity' shows the time left."
+      },
+      "cpiLinked": {
+        "title": "CPI-Linked",
+        "short": "A bond whose principal grows with inflation.",
+        "long": "A bond whose principal is updated by the CPI index; the main return is inflation protection, plus a small 'real coupon'. Its price is the index level (can be thousands of TRY), not 100."
+      },
+      "accruedCoupon": {
+        "title": "Accrued Coupon",
+        "short": "Interest building up until the next coupon.",
+        "long": "Coupon interest accumulated since the last payment but not yet paid. If you sell the bond before maturity, this accrued coupon is also paid to you ('dirty price' = clean price + accrued coupon)."
+      },
+      "par": {
+        "title": "Par / Redemption",
+        "short": "The face value repaid at maturity (100).",
+        "long": "The bond's face/par value, usually 100. At maturity the Treasury repays it automatically ('redemption'). Plain TRY bonds redeem at par (100), while indexed/gold bonds redeem at their index/gold value."
+      },
+      "discountBill": {
+        "title": "Discount Bill",
+        "short": "A zero-coupon bill bought at a discount.",
+        "long": "A short-term Treasury bill that pays no coupon, bought below 100 (at a discount) and redeemed at 100 at maturity. The whole return is the gap between the purchase price and 100; the price climbs smoothly toward 100."
+      },
+      "futures": {
+        "title": "Futures (VIOP)",
+        "short": "A contract for future delivery.",
+        "long": "A contract to buy/sell an asset at a future date for a price fixed today. VIOP trades index, FX and commodity futures; they trade on margin (leveraged) and rarely settle physically."
+      },
+      "leverage": {
+        "title": "Leverage",
+        "short": "A large position on small margin.",
+        "long": "Holding a position a multiple of the margin you put down. It amplifies both gains and losses: a 1% move is a 10% P&L at 10x leverage. VIOP is leveraged by nature — high risk."
+      },
+      "longShort": {
+        "title": "Long / Short Position",
+        "short": "Betting on a rise (long) or a fall (short).",
+        "long": "A 'long' position gains when price rises; a 'short' position gains when price falls. With shorts in VIOP you can profit in a falling market, or hedge an existing position against risk."
+      },
+      "allocation": {
+        "title": "Allocation",
+        "short": "How your portfolio splits across assets.",
+        "long": "The percent breakdown of your portfolio value across asset types (stocks, crypto, FX, commodities, VIOP). Diversification lowers risk; over-concentrating in one asset raises it."
+      },
+      "perDateFx": {
+        "title": "Per-date FX",
+        "short": "Converting each amount at its own date's rate.",
+        "long": "In USD/EUR display, cost converts at the purchase-date rate, a closed position at its exit-date rate, each past point at its own date's rate — not today's. This way an FX move shows up correctly in P&L."
+      },
+      "cleanDirtyPrice": {
+        "title": "Clean & Dirty Price",
+        "short": "Price with coupon (dirty) vs without (clean).",
+        "long": "Dirty price = clean price + accrued coupon. The exchange/EVDS quote for most TRY bonds is the dirty price — you also pay the accrued coupon when buying; the clean price strips that accrued coupon out. For CPI/gold bonds the quote is already clean."
+      },
+      "goldBond": {
+        "title": "Gold-Linked Bond",
+        "short": "A Treasury note indexed to grams of gold.",
+        "long": "A Treasury lease certificate/bond whose principal is indexed to grams of gold and held in gold terms. Its price is the gold value, not 100; the main return comes from gold, with a small coupon on top. This app always shows it converted to TRY."
+      },
+      "deposit": {
+        "title": "Time Deposit",
+        "short": "Money placed at a bank for a fixed term and rate.",
+        "long": "Money deposited at a bank for a set term at a fixed rate. At maturity you get principal + net interest; the rate stays fixed for the whole term even if the market moves later. Can be opened in TRY, USD or EUR."
+      },
+      "simpleInterest": {
+        "title": "Simple Interest",
+        "short": "Interest accrues only on the principal.",
+        "long": "Deposit interest is simple interest: it accrues only on the principal, pro-rata to the number of days (principal × rate × days/365) — earned interest does not itself earn interest (not compound). Net at maturity = principal + gross interest − withholding tax."
+      },
+      "withholding": {
+        "title": "Withholding Tax",
+        "short": "Tax deducted from interest income.",
+        "long": "Income tax withheld at source from deposit interest, varying by term and currency. It is deducted from the gross interest; what you receive is the 'net' interest. This app computes returns on the after-withholding net."
+      },
+      "option": {
+        "title": "Option",
+        "short": "A contract granting a RIGHT to buy/sell.",
+        "long": "A contract giving the holder the RIGHT — but not the obligation — to buy (Call) or sell (Put) the underlying at a set price (strike) at expiry. You pay a 'premium' upfront for this right; unlike a future, the buyer's loss is capped at the premium."
+      },
+      "callOption": {
+        "title": "Call Option",
+        "short": "The right to BUY at a set price.",
+        "long": "The right to buy the underlying at the strike price at expiry. It gains value if the price rises above the strike; if it stays below, it expires unused and the buyer loses only the premium paid. The seller (short call) collects the premium but carries theoretically unlimited risk."
+      },
+      "putOption": {
+        "title": "Put Option",
+        "short": "The right to SELL at a set price.",
+        "long": "The right to sell the underlying at the strike price at expiry. It gains value if the price falls below the strike (like insurance against a drop); if it stays above, it expires unused and the buyer loses the premium."
+      },
+      "strikePrice": {
+        "title": "Strike Price",
+        "short": "The price at which an option can be exercised.",
+        "long": "The fixed price at which an option grants the right to buy (Call) or sell (Put) the underlying. At expiry the gap between the market price and the strike is the option's intrinsic value; a Call profits when market > strike, a Put when market < strike."
+      },
+      "settlement": {
+        "title": "Settlement & Expiry",
+        "short": "Auto-close of a position at expiry.",
+        "long": "VIOP contracts close at the exchange's settlement price at expiry (cash-settled — usually no physical delivery). In this app, positions whose contract has expired are auto-closed at the settlement price; for options that settlement price is the intrinsic value at expiry."
+      },
+      "valor": {
+        "title": "Valor (Settlement)",
+        "short": "How many days a trade takes to settle/pay out.",
+        "long": "The day-offset between a trade executing and the cash actually moving. A deposit/fund \"sell valor of T+2\" means when you sell, the money lands in your account 2 business days later. The shorter the valor, the faster you reach your cash."
+      }
+    },
+    "valorTradeDay": "Trade",
+    "valorSettled": "Settled",
+    "countLabel": "topics"
   },
   "common": {
     "localeTag": "en-US",
@@ -1618,6 +1810,9 @@
       "fundType": "Fund Type",
       "categoryLabel": "Category",
       "riskLabel": "Risk",
+      "sellValor": "Sell Valor",
+      "buybackValor": "Buyback Valor",
+      "tradeHours": "Trading Hours",
       "marketShareLabel": "Market Share",
       "kapLinkLabel": "Open in KAP",
       "viewDetail": "View Fund Details",
@@ -1641,6 +1836,14 @@
       "priceTry": "Price (TRY)",
       "priceUsd": "Price (USD)",
       "price": "Price ({{currency}})"
+    },
+    "stock": {
+      "sector": "Sector",
+      "founded": "Founded",
+      "city": "HQ",
+      "exchange": "Exchange",
+      "indices": "Index Membership",
+      "constituents": "Constituents"
     },
     "compareAction": "Compare"
   },
@@ -1706,7 +1909,7 @@
       "policyRate": "Policy Rate",
       "tlrefRate": "TLREF",
       "tlrefIndex": "TLREF Index",
-      "cpiIndex": "CPI",
+      "cpiIndex": "CPI (Inflation)",
       "ppiIndex": "PPI",
       "depositTryTotal": "TRY Deposit",
       "depositUsdTotal": "USD Deposit",

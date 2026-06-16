@@ -57,53 +57,245 @@
       "general": "Genel"
     },
     "terms": {
-      "candlestick": { "title": "Mum Grafiği", "short": "Her dönemin açılış-kapanış-yüksek-düşük fiyatı.", "long": "Her mum bir dönemi (gün/saat) temsil eder: gövde açılış ile kapanış arasını, fitiller en yüksek ve en düşüğü gösterir. Kapanış açılıştan yüksekse yeşil (yükseliş), düşükse kırmızı (düşüş). Fiyat hareketini tek bakışta okutur." },
-      "ohlc": { "title": "OHLC (Aç-Y-D-K)", "short": "Açılış, Yüksek, Düşük, Kapanış.", "long": "Bir dönemin dört temel fiyatı: Açılış (Open), en Yüksek (High), en Düşük (Low), Kapanış (Close). Mum ve bar grafiklerinin temelidir; teknik göstergelerin çoğu bu dört değerden hesaplanır." },
-      "supportResistance": { "title": "Destek & Direnç", "short": "Fiyatın zorlandığı alt/üst seviyeler.", "long": "Destek, fiyatın düşerken tutunma eğiliminde olduğu seviye; direnç ise yükselirken zorlandığı seviye. Bu seviyelerin kırılması genelde yeni bir hareketin habercisi sayılır." },
-      "trend": { "title": "Trend", "short": "Fiyatın genel yönü.", "long": "Fiyatın zaman içindeki baskın yönü: yükseliş (yükselen tepe ve dipler), düşüş (alçalan tepe ve dipler) ya da yatay. 'Trend dostundur' — yöne uygun işlem genelde daha güvenli kabul edilir." },
-      "realVsNominal": { "title": "Reel vs Nominal Getiri", "short": "Enflasyon öncesi ve sonrası kazanç.", "long": "Nominal getiri TL bazında kâr/zarardır; reel getiri ise enflasyon düşülmüş, gerçek alım gücü kazancıdır. %50 nominal getiri, %60 enflasyon ortamında reel olarak kayıp demektir." },
-      "sharpe": { "title": "Sharpe Oranı", "short": "Alınan riske göre getiri.", "long": "Bir yatırımın risksiz faizin üstündeki getirisinin, volatilitesine (riskine) bölümü. Yüksek Sharpe = aynı risk için daha çok getiri; farklı stratejileri 'riske göre' adil kıyaslar." },
-      "diversification": { "title": "Çeşitlendirme", "short": "Yumurtaları tek sepete koymama.", "long": "Sermayeyi farklı varlık, sektör ve para birimine dağıtarak tek bir varlığın kötü gidişinden portföyü koruma. Birbiriyle az ilişkili varlıklar toplam riski düşürür." },
-      "bondVsBill": { "title": "Tahvil vs Bono", "short": "Vadesi uzun (tahvil) / kısa (bono).", "long": "İkisi de bir borçlanma senedidir. Vadesi 1 yıldan UZUN olana tahvil, KISA olana (genelde iskontolu, kuponsuz) bono denir. Hazine bonosu kısa vadeli, devlet tahvili uzun vadeli devlet borçlanmasıdır." },
-      "yield": { "title": "Verim (Getiri Oranı)", "short": "Tahvilin yıllık efektif getirisi.", "long": "Bir tahvili bugünkü fiyatından alıp vadeye kadar tutarsan kazanacağın yıllık oran (vadeye kadar getiri). Fiyat düşerse verim artar, fiyat yükselirse verim düşer — ters ilişki." },
-      "nominalValue": { "title": "Nominal Değer", "short": "Tahvilin yüz/itibari değeri (100).", "long": "Tahvilin üzerinde yazılı, vadede ödenecek değer — genelde 100. Kupon bu değer üzerinden hesaplanır. Piyasa fiyatı nominalin altında (iskontolu) ya da üstünde (primli) olabilir." },
-      "floatingRate": { "title": "Değişken Faizli", "short": "Kuponu periyodik güncellenen tahvil.", "long": "Kupon oranı sabit olmayıp bir referansa (TLREF, ihale faizi) göre her dönem yenilenen tahvil. Faizler yükselirken kupon da artar, böylece fiyatı par'a yakın kalır; faiz riskini azaltır." },
-      "sukuk": { "title": "Kira Sertifikası (Sukuk)", "short": "Faizsiz finans esaslı tahvil benzeri.", "long": "Bir varlığın kira/gelir akışına dayanan, faizsiz finans ilkelerine uygun menkul kıymet. Devlet tahvilinin İslami muadilidir; sabit, değişken, TÜFE'ye endeksli ve altına dayalı türleri vardır." },
-      "secondaryMarket": { "title": "İkincil Piyasa", "short": "İhraç sonrası alınıp satıldığı piyasa.", "long": "Tahvilin ilk ihraçtan (birincil piyasa) sonra yatırımcılar arasında el değiştirdiği piyasa. Vadeyi beklemeden buradan satabilir ya da alabilirsin; fiyat arz-talep ve faizle değişir." },
-      "margin": { "title": "Teminat (Margin)", "short": "Pozisyon için bloke edilen güvence.", "long": "VİOP'ta pozisyon açmak için yatırılan güvence tutarı. Pozisyonun tamamını değil küçük bir oranını yatırırsın (kaldıraç). Zarar büyürse ek teminat (margin call) istenebilir." },
-      "spread": { "title": "Makas (Spread)", "short": "Alış ile satış fiyatı farkı.", "long": "En iyi alış (bid) ile en iyi satış (ask) fiyatı arasındaki fark. Dar makas yüksek likidite ve düşük işlem maliyeti, geniş makas düşük likidite demektir." },
-      "liquidity": { "title": "Likidite", "short": "Hızlı ve fiyatı bozmadan alıp satabilme.", "long": "Bir varlığı fiyatını fazla etkilemeden hızlıca nakde çevirebilme kolaylığı. Yüksek likidite = dar makas, kolay giriş-çıkış; düşük likidite = büyük fiyat sapması riski." },
-      "marketCap": { "title": "Piyasa Değeri", "short": "Toplam değer = fiyat × adet.", "long": "Bir varlığın/şirketin toplam piyasa değeri: güncel fiyat × dolaşımdaki adet. Hisselerde şirket büyüklüğünü, kriptoda projenin ölçeğini gösterir." },
-      "movingAverage": { "title": "Hareketli Ortalama", "short": "Fiyatın belirli bir dönemdeki ortalaması.", "long": "Son N günün ortalaması (SMA) ya da yakın günlere daha çok ağırlık veren üssel ortalama (EMA). Gürültüyü süzerek trendi gösterir; fiyat ortalamanın üstündeyse yükseliş, altındaysa düşüş eğilimi olarak okunur." },
-      "rsi": { "title": "RSI (Göreli Güç Endeksi)", "short": "0–100 arası momentum göstergesi.", "long": "Son dönemdeki kazanç ve kayıpları oranlayarak fiyatın 'aşırı alım' (70 üstü) ya da 'aşırı satım' (30 altı) olduğunu gösterir. Tek başına al-sat sinyali değildir; momentumun gücünü ölçer." },
-      "macd": { "title": "MACD", "short": "İki ortalamanın farkıyla trend/momentum.", "long": "Hızlı ve yavaş üssel ortalamaların farkı (MACD çizgisi), onun ortalaması (sinyal) ve aradaki fark (histogram). MACD sinyalin üstüne çıkınca yükseliş, altına inince düşüş momentumu olarak yorumlanır." },
-      "volume": { "title": "Hacim", "short": "Belirli sürede el değiştiren miktar.", "long": "Bir varlıkta işlem gören adet/tutar. Yüksek hacim bir fiyat hareketinin inandırıcılığını artırır; düşük hacimli hareketler daha kırılgandır. Trend dönüşleri genelde hacim artışıyla gelir." },
-      "volatility": { "title": "Volatilite (Oynaklık)", "short": "Getirinin ne kadar dalgalandığı = risk.", "long": "Fiyat/getirinin ortalaması etrafında ne kadar saçıldığı; genelde getirilerin standart sapmasıyla ölçülür. Yüksek volatilite hem daha çok kazanç hem daha çok kayıp ihtimali — yani risk demektir." },
-      "return": { "title": "Getiri", "short": "Yatırımın yüzde kazanç/kaybı.", "long": "(Güncel değer − maliyet) ÷ maliyet. 'Nominal' getiri TL bazında, 'reel' getiri enflasyondan arındırılmış kazançtır. Bu uygulamada portföy getirisi, koyduğun sermaye üzerinden kümülatif hesaplanır." },
-      "drawdown": { "title": "Maksimum Düşüş", "short": "Zirveden dibe en büyük değer kaybı.", "long": "Bir yatırımın gördüğü en yüksek değerden sonraki en derin düşüşün yüzdesi. Bir stratejinin 'en kötü anında' ne kadar kaybettirdiğini gösterir; risk toleransını ölçmek için getiriyle birlikte bakılır." },
-      "benchmark": { "title": "Kıyaslama (Benchmark)", "short": "Getiriyi neyle karşılaştırdığın.", "long": "Bir yatırımın başarısı tek başına değil bir ölçütle (enflasyon, mevduat faizi, TLREF, bir endeks) karşılaştırılarak değerlendirilir. 'Enflasyonu yendin mi?' sorusu bu uygulamadaki temel kıyaslamadır." },
-      "coupon": { "title": "Kupon", "short": "Tahvilin periyodik faiz ödemesi.", "long": "Tahvilin nominal değeri üzerinden belirli aralıklarla (genelde 6 ayda bir) ödenen faiz. Sabit kuponluda oran sabittir; değişken/TLREF'te her dönem güncellenir; TÜFE'ye endekslide kupon endekslenmiş anaparaya işler." },
-      "maturity": { "title": "Vade", "short": "Tahvilin anaparayı geri ödediği tarih.", "long": "Tahvilin sona erip nominal değerinin (genelde 100) geri ödendiği gün. Vade yaklaştıkça nominal tahvilin fiyatı 100'e yaklaşır; TÜFE/altın endekslilerde endeks/altın değerine itfa olur. 'Vadeye kalan gün' kalan süreyi gösterir." },
-      "cpiLinked": { "title": "TÜFE'ye Endeksli", "short": "Anaparası enflasyonla büyüyen tahvil.", "long": "Anaparası TÜFE endeksiyle güncellenen tahvil; ana getiri enflasyon korumasından gelir, üzerine küçük bir 'reel kupon' ödenir. Fiyatı 100 değil endeks değeridir (binlerce TL olabilir)." },
-      "accruedCoupon": { "title": "İşlemiş Kupon", "short": "Bir sonraki kupona kadar biriken faiz.", "long": "Son kupon ödemesinden bugüne biriken ama henüz ödenmemiş kupon faizi. Tahvili vadesinden önce satarsan bu birikmiş kupon da sana ödenir ('kirli fiyat' = temiz fiyat + işlemiş kupon)." },
-      "par": { "title": "İtfa / Par Değer", "short": "Vadede ödenen nominal değer (100).", "long": "Tahvilin nominal/yüz değeri, genelde 100. Vadede Hazine bu değeri otomatik geri öder ('itfa'). Düz TL tahviller par'a (100) itfa olurken endeksli/altın tahviller endeks/altın değerine itfa olur." },
-      "discountBill": { "title": "İskontolu Bono", "short": "Kuponsuz, iskontoyla alınan kısa vadeli senet.", "long": "Kupon ödemeyen, 100'ün altında (iskontolu) alınıp vadede 100'e itfa olan kısa vadeli Hazine bonosu. Tüm getiri alış fiyatı ile 100 arasındaki farktan gelir; fiyat vadeye doğru düzgünce 100'e yaklaşır." },
-      "futures": { "title": "Vadeli İşlem (VİOP)", "short": "Gelecekte teslim üzerine sözleşme.", "long": "Bir varlığı ileri bir tarihte bugünden belirlenen fiyattan alma/satma sözleşmesi. VİOP'ta endeks, döviz, emtia üzerine işlem yapılır; teminatla (kaldıraçlı) işlem görür, fiziki teslim genelde olmaz." },
-      "leverage": { "title": "Kaldıraç", "short": "Az teminatla büyük pozisyon.", "long": "Yatırdığın teminatın katı büyüklükte pozisyon taşıma. Kazancı da kaybı da büyütür: %1'lik hareket 10x kaldıraçta %10 kâr/zarar demektir. VİOP doğası gereği kaldıraçlıdır — yüksek risk." },
-      "longShort": { "title": "Uzun / Kısa Pozisyon", "short": "Yükselişe (uzun) ya da düşüşe (kısa) oynama.", "long": "'Uzun' pozisyon fiyat yükselince, 'kısa' pozisyon fiyat düşünce kazandırır. VİOP'ta kısa ile düşen piyasada da kâr edilebilir ya da mevcut pozisyon riske karşı korunabilir." },
-      "allocation": { "title": "Dağılım (Allocation)", "short": "Portföyün varlıklara yüzde bölünüşü.", "long": "Portföydeki değerin varlık tiplerine (hisse, kripto, döviz, emtia, VİOP) yüzde dağılımı. Çeşitlendirme riski azaltır; tek bir varlığa aşırı yoğunlaşmak riski artırır." },
-      "perDateFx": { "title": "Tarihe Göre Kur", "short": "Her tutarı kendi tarihindeki kurla çevirme.", "long": "USD/EUR gösteriminde maliyet alış tarihindeki, kapanan pozisyon çıkış tarihindeki, geçmiş her nokta kendi tarihindeki kurla çevrilir — bugünün kuruyla değil. Böylece döviz hareketi kâr/zarara doğru yansır." },
-      "cleanDirtyPrice": { "title": "Temiz & Kirli Fiyat", "short": "Kupon dahil (kirli) ve hariç (temiz) fiyat.", "long": "Kirli fiyat = temiz fiyat + işlemiş kupon. Borsa/EVDS kotasyonu çoğu TL tahvilde kirli fiyattır — alırken biriken işlemiş kuponu da ödersin; temiz fiyat ondan işlemiş kupon çıkarılmış halidir. TÜFE/altın tahvillerinde kotasyon zaten temizdir." },
-      "goldBond": { "title": "Altına Dayalı Tahvil", "short": "Değeri gram altına endeksli Hazine senedi.", "long": "Anaparası gram altına endeksli, altın cinsinden saklanan Hazine kira sertifikası/tahvili. Fiyatı 100 değil altın değeridir; ana getiri altın fiyatından gelir, üzerine küçük bir kupon ödenebilir. Bu uygulamada her zaman TL'ye çevrilerek gösterilir." },
-      "deposit": { "title": "Mevduat", "short": "Bankaya vadeli yatırılan, faiz getiren para.", "long": "Belirli bir vade ve sabit faizle bankaya yatırılan para. Vade sonunda anapara + net faiz ödenir; vade boyunca faiz oranı sabit kalır (piyasa sonradan değişse de). TL, USD ve EUR cinsinden açılabilir." },
-      "simpleInterest": { "title": "Basit Faiz", "short": "Faiz yalnız anapara üzerinden işler.", "long": "Mevduat faizi basit faizdir: faiz yalnızca anapara üzerinden, gün sayısına orantılı işler (anapara × oran × gün/365) — kazanılan faiz tekrar faize girmez (bileşik değil). Vade sonu net = anapara + brüt faiz − stopaj." },
-      "withholding": { "title": "Stopaj (Gelir Vergisi)", "short": "Faiz gelirinden kesilen vergi.", "long": "Mevduat faizinden, vadeye ve para birimine göre kaynağında kesilen gelir vergisi. Brüt faizden düşülür; eline geçen 'net' faizdir. Bu uygulama getiriyi stopaj sonrası net üzerinden hesaplar." },
-      "option": { "title": "Opsiyon", "short": "Alma/satma HAKKI veren sözleşme.", "long": "Sahibine, dayanak varlığı vade sonunda belirli fiyattan (kullanım/strike) alma (Call) ya da satma (Put) HAKKI veren — ama yükümlülük getirmeyen — sözleşme. Bu hak için baştan 'prim' ödenir; vadeli işlemden farkı, alıcının zararı ödediği primle sınırlıdır." },
-      "callOption": { "title": "Alım Opsiyonu (Call)", "short": "Belirli fiyattan ALMA hakkı.", "long": "Dayanak varlığı vade sonunda kullanım fiyatından (strike) satın alma hakkı. Fiyat strike'ın üstüne çıkarsa değer kazanır; altında kalırsa kullanılmaz ve alıcı yalnız ödediği primi kaybeder. Satıcı (kısa call) primi alır ama teorik olarak sınırsız risk taşır." },
-      "putOption": { "title": "Satım Opsiyonu (Put)", "short": "Belirli fiyattan SATMA hakkı.", "long": "Dayanak varlığı vade sonunda kullanım fiyatından satma hakkı. Fiyat strike'ın altına inerse değer kazanır (düşüşe karşı sigorta gibi); üstünde kalırsa kullanılmaz ve alıcı primini kaybeder." },
-      "strikePrice": { "title": "Kullanım Fiyatı (Strike)", "short": "Opsiyonun alım/satım hakkını verdiği fiyat.", "long": "Bir opsiyonun, dayanak varlığı alma (Call) ya da satma (Put) hakkı tanıdığı sabit fiyat. Vade sonunda piyasa fiyatı ile strike arasındaki fark opsiyonun iç değeridir; Call için piyasa > strike, Put için piyasa < strike kârlıdır." },
-      "settlement": { "title": "Uzlaşma & Vade Sonu", "short": "Vade dolunca pozisyonun otomatik kapanışı.", "long": "VİOP sözleşmeleri vade sonunda borsanın açıkladığı uzlaşma fiyatından kapanır (nakdi uzlaşma — fiziki teslim genelde yoktur). Bu uygulamada vadesi geçen pozisyonlar uzlaşma fiyatıyla otomatik kapatılır; opsiyonlarda bu fiyat vade sonundaki iç değerdir." }
-    }
+      "candlestick": {
+        "title": "Mum Grafiği",
+        "short": "Her dönemin açılış-kapanış-yüksek-düşük fiyatı.",
+        "long": "Her mum bir dönemi (gün/saat) temsil eder: gövde açılış ile kapanış arasını, fitiller en yüksek ve en düşüğü gösterir. Kapanış açılıştan yüksekse yeşil (yükseliş), düşükse kırmızı (düşüş). Fiyat hareketini tek bakışta okutur."
+      },
+      "ohlc": {
+        "title": "OHLC (Aç-Y-D-K)",
+        "short": "Açılış, Yüksek, Düşük, Kapanış.",
+        "long": "Bir dönemin dört temel fiyatı: Açılış (Open), en Yüksek (High), en Düşük (Low), Kapanış (Close). Mum ve bar grafiklerinin temelidir; teknik göstergelerin çoğu bu dört değerden hesaplanır."
+      },
+      "supportResistance": {
+        "title": "Destek & Direnç",
+        "short": "Fiyatın zorlandığı alt/üst seviyeler.",
+        "long": "Destek, fiyatın düşerken tutunma eğiliminde olduğu seviye; direnç ise yükselirken zorlandığı seviye. Bu seviyelerin kırılması genelde yeni bir hareketin habercisi sayılır."
+      },
+      "trend": {
+        "title": "Trend",
+        "short": "Fiyatın genel yönü.",
+        "long": "Fiyatın zaman içindeki baskın yönü: yükseliş (yükselen tepe ve dipler), düşüş (alçalan tepe ve dipler) ya da yatay. 'Trend dostundur' — yöne uygun işlem genelde daha güvenli kabul edilir."
+      },
+      "realVsNominal": {
+        "title": "Reel vs Nominal Getiri",
+        "short": "Enflasyon öncesi ve sonrası kazanç.",
+        "long": "Nominal getiri TL bazında kâr/zarardır; reel getiri ise enflasyon düşülmüş, gerçek alım gücü kazancıdır. %50 nominal getiri, %60 enflasyon ortamında reel olarak kayıp demektir."
+      },
+      "sharpe": {
+        "title": "Sharpe Oranı",
+        "short": "Alınan riske göre getiri.",
+        "long": "Bir yatırımın risksiz faizin üstündeki getirisinin, volatilitesine (riskine) bölümü. Yüksek Sharpe = aynı risk için daha çok getiri; farklı stratejileri 'riske göre' adil kıyaslar."
+      },
+      "diversification": {
+        "title": "Çeşitlendirme",
+        "short": "Yumurtaları tek sepete koymama.",
+        "long": "Sermayeyi farklı varlık, sektör ve para birimine dağıtarak tek bir varlığın kötü gidişinden portföyü koruma. Birbiriyle az ilişkili varlıklar toplam riski düşürür."
+      },
+      "bondVsBill": {
+        "title": "Tahvil vs Bono",
+        "short": "Vadesi uzun (tahvil) / kısa (bono).",
+        "long": "İkisi de bir borçlanma senedidir. Vadesi 1 yıldan UZUN olana tahvil, KISA olana (genelde iskontolu, kuponsuz) bono denir. Hazine bonosu kısa vadeli, devlet tahvili uzun vadeli devlet borçlanmasıdır."
+      },
+      "yield": {
+        "title": "Verim (Getiri Oranı)",
+        "short": "Tahvilin yıllık efektif getirisi.",
+        "long": "Bir tahvili bugünkü fiyatından alıp vadeye kadar tutarsan kazanacağın yıllık oran (vadeye kadar getiri). Fiyat düşerse verim artar, fiyat yükselirse verim düşer — ters ilişki."
+      },
+      "nominalValue": {
+        "title": "Nominal Değer",
+        "short": "Tahvilin yüz/itibari değeri (100).",
+        "long": "Tahvilin üzerinde yazılı, vadede ödenecek değer — genelde 100. Kupon bu değer üzerinden hesaplanır. Piyasa fiyatı nominalin altında (iskontolu) ya da üstünde (primli) olabilir."
+      },
+      "floatingRate": {
+        "title": "Değişken Faizli",
+        "short": "Kuponu periyodik güncellenen tahvil.",
+        "long": "Kupon oranı sabit olmayıp bir referansa (TLREF, ihale faizi) göre her dönem yenilenen tahvil. Faizler yükselirken kupon da artar, böylece fiyatı par'a yakın kalır; faiz riskini azaltır."
+      },
+      "sukuk": {
+        "title": "Kira Sertifikası (Sukuk)",
+        "short": "Faizsiz finans esaslı tahvil benzeri.",
+        "long": "Bir varlığın kira/gelir akışına dayanan, faizsiz finans ilkelerine uygun menkul kıymet. Devlet tahvilinin İslami muadilidir; sabit, değişken, TÜFE'ye endeksli ve altına dayalı türleri vardır."
+      },
+      "secondaryMarket": {
+        "title": "İkincil Piyasa",
+        "short": "İhraç sonrası alınıp satıldığı piyasa.",
+        "long": "Tahvilin ilk ihraçtan (birincil piyasa) sonra yatırımcılar arasında el değiştirdiği piyasa. Vadeyi beklemeden buradan satabilir ya da alabilirsin; fiyat arz-talep ve faizle değişir."
+      },
+      "margin": {
+        "title": "Teminat (Margin)",
+        "short": "Pozisyon için bloke edilen güvence.",
+        "long": "VİOP'ta pozisyon açmak için yatırılan güvence tutarı. Pozisyonun tamamını değil küçük bir oranını yatırırsın (kaldıraç). Zarar büyürse ek teminat (margin call) istenebilir."
+      },
+      "spread": {
+        "title": "Makas (Spread)",
+        "short": "Alış ile satış fiyatı farkı.",
+        "long": "En iyi alış (bid) ile en iyi satış (ask) fiyatı arasındaki fark. Dar makas yüksek likidite ve düşük işlem maliyeti, geniş makas düşük likidite demektir."
+      },
+      "liquidity": {
+        "title": "Likidite",
+        "short": "Hızlı ve fiyatı bozmadan alıp satabilme.",
+        "long": "Bir varlığı fiyatını fazla etkilemeden hızlıca nakde çevirebilme kolaylığı. Yüksek likidite = dar makas, kolay giriş-çıkış; düşük likidite = büyük fiyat sapması riski."
+      },
+      "marketCap": {
+        "title": "Piyasa Değeri",
+        "short": "Toplam değer = fiyat × adet.",
+        "long": "Bir varlığın/şirketin toplam piyasa değeri: güncel fiyat × dolaşımdaki adet. Hisselerde şirket büyüklüğünü, kriptoda projenin ölçeğini gösterir."
+      },
+      "movingAverage": {
+        "title": "Hareketli Ortalama",
+        "short": "Fiyatın belirli bir dönemdeki ortalaması.",
+        "long": "Son N günün ortalaması (SMA) ya da yakın günlere daha çok ağırlık veren üssel ortalama (EMA). Gürültüyü süzerek trendi gösterir; fiyat ortalamanın üstündeyse yükseliş, altındaysa düşüş eğilimi olarak okunur."
+      },
+      "rsi": {
+        "title": "RSI (Göreli Güç Endeksi)",
+        "short": "0–100 arası momentum göstergesi.",
+        "long": "Son dönemdeki kazanç ve kayıpları oranlayarak fiyatın 'aşırı alım' (70 üstü) ya da 'aşırı satım' (30 altı) olduğunu gösterir. Tek başına al-sat sinyali değildir; momentumun gücünü ölçer."
+      },
+      "macd": {
+        "title": "MACD",
+        "short": "İki ortalamanın farkıyla trend/momentum.",
+        "long": "Hızlı ve yavaş üssel ortalamaların farkı (MACD çizgisi), onun ortalaması (sinyal) ve aradaki fark (histogram). MACD sinyalin üstüne çıkınca yükseliş, altına inince düşüş momentumu olarak yorumlanır."
+      },
+      "volume": {
+        "title": "Hacim",
+        "short": "Belirli sürede el değiştiren miktar.",
+        "long": "Bir varlıkta işlem gören adet/tutar. Yüksek hacim bir fiyat hareketinin inandırıcılığını artırır; düşük hacimli hareketler daha kırılgandır. Trend dönüşleri genelde hacim artışıyla gelir."
+      },
+      "volatility": {
+        "title": "Volatilite (Oynaklık)",
+        "short": "Getirinin ne kadar dalgalandığı = risk.",
+        "long": "Fiyat/getirinin ortalaması etrafında ne kadar saçıldığı; genelde getirilerin standart sapmasıyla ölçülür. Yüksek volatilite hem daha çok kazanç hem daha çok kayıp ihtimali — yani risk demektir."
+      },
+      "return": {
+        "title": "Getiri",
+        "short": "Yatırımın yüzde kazanç/kaybı.",
+        "long": "(Güncel değer − maliyet) ÷ maliyet. 'Nominal' getiri TL bazında, 'reel' getiri enflasyondan arındırılmış kazançtır. Bu uygulamada portföy getirisi, koyduğun sermaye üzerinden kümülatif hesaplanır."
+      },
+      "drawdown": {
+        "title": "Maksimum Düşüş",
+        "short": "Zirveden dibe en büyük değer kaybı.",
+        "long": "Bir yatırımın gördüğü en yüksek değerden sonraki en derin düşüşün yüzdesi. Bir stratejinin 'en kötü anında' ne kadar kaybettirdiğini gösterir; risk toleransını ölçmek için getiriyle birlikte bakılır."
+      },
+      "benchmark": {
+        "title": "Kıyaslama (Benchmark)",
+        "short": "Getiriyi neyle karşılaştırdığın.",
+        "long": "Bir yatırımın başarısı tek başına değil bir ölçütle (enflasyon, mevduat faizi, TLREF, bir endeks) karşılaştırılarak değerlendirilir. 'Enflasyonu yendin mi?' sorusu bu uygulamadaki temel kıyaslamadır."
+      },
+      "coupon": {
+        "title": "Kupon",
+        "short": "Tahvilin periyodik faiz ödemesi.",
+        "long": "Tahvilin nominal değeri üzerinden belirli aralıklarla (genelde 6 ayda bir) ödenen faiz. Sabit kuponluda oran sabittir; değişken/TLREF'te her dönem güncellenir; TÜFE'ye endekslide kupon endekslenmiş anaparaya işler."
+      },
+      "maturity": {
+        "title": "Vade",
+        "short": "Tahvilin anaparayı geri ödediği tarih.",
+        "long": "Tahvilin sona erip nominal değerinin (genelde 100) geri ödendiği gün. Vade yaklaştıkça nominal tahvilin fiyatı 100'e yaklaşır; TÜFE/altın endekslilerde endeks/altın değerine itfa olur. 'Vadeye kalan gün' kalan süreyi gösterir."
+      },
+      "cpiLinked": {
+        "title": "TÜFE'ye Endeksli",
+        "short": "Anaparası enflasyonla büyüyen tahvil.",
+        "long": "Anaparası TÜFE endeksiyle güncellenen tahvil; ana getiri enflasyon korumasından gelir, üzerine küçük bir 'reel kupon' ödenir. Fiyatı 100 değil endeks değeridir (binlerce TL olabilir)."
+      },
+      "accruedCoupon": {
+        "title": "İşlemiş Kupon",
+        "short": "Bir sonraki kupona kadar biriken faiz.",
+        "long": "Son kupon ödemesinden bugüne biriken ama henüz ödenmemiş kupon faizi. Tahvili vadesinden önce satarsan bu birikmiş kupon da sana ödenir ('kirli fiyat' = temiz fiyat + işlemiş kupon)."
+      },
+      "par": {
+        "title": "İtfa / Par Değer",
+        "short": "Vadede ödenen nominal değer (100).",
+        "long": "Tahvilin nominal/yüz değeri, genelde 100. Vadede Hazine bu değeri otomatik geri öder ('itfa'). Düz TL tahviller par'a (100) itfa olurken endeksli/altın tahviller endeks/altın değerine itfa olur."
+      },
+      "discountBill": {
+        "title": "İskontolu Bono",
+        "short": "Kuponsuz, iskontoyla alınan kısa vadeli senet.",
+        "long": "Kupon ödemeyen, 100'ün altında (iskontolu) alınıp vadede 100'e itfa olan kısa vadeli Hazine bonosu. Tüm getiri alış fiyatı ile 100 arasındaki farktan gelir; fiyat vadeye doğru düzgünce 100'e yaklaşır."
+      },
+      "futures": {
+        "title": "Vadeli İşlem (VİOP)",
+        "short": "Gelecekte teslim üzerine sözleşme.",
+        "long": "Bir varlığı ileri bir tarihte bugünden belirlenen fiyattan alma/satma sözleşmesi. VİOP'ta endeks, döviz, emtia üzerine işlem yapılır; teminatla (kaldıraçlı) işlem görür, fiziki teslim genelde olmaz."
+      },
+      "leverage": {
+        "title": "Kaldıraç",
+        "short": "Az teminatla büyük pozisyon.",
+        "long": "Yatırdığın teminatın katı büyüklükte pozisyon taşıma. Kazancı da kaybı da büyütür: %1'lik hareket 10x kaldıraçta %10 kâr/zarar demektir. VİOP doğası gereği kaldıraçlıdır — yüksek risk."
+      },
+      "longShort": {
+        "title": "Uzun / Kısa Pozisyon",
+        "short": "Yükselişe (uzun) ya da düşüşe (kısa) oynama.",
+        "long": "'Uzun' pozisyon fiyat yükselince, 'kısa' pozisyon fiyat düşünce kazandırır. VİOP'ta kısa ile düşen piyasada da kâr edilebilir ya da mevcut pozisyon riske karşı korunabilir."
+      },
+      "allocation": {
+        "title": "Dağılım (Allocation)",
+        "short": "Portföyün varlıklara yüzde bölünüşü.",
+        "long": "Portföydeki değerin varlık tiplerine (hisse, kripto, döviz, emtia, VİOP) yüzde dağılımı. Çeşitlendirme riski azaltır; tek bir varlığa aşırı yoğunlaşmak riski artırır."
+      },
+      "perDateFx": {
+        "title": "Tarihe Göre Kur",
+        "short": "Her tutarı kendi tarihindeki kurla çevirme.",
+        "long": "USD/EUR gösteriminde maliyet alış tarihindeki, kapanan pozisyon çıkış tarihindeki, geçmiş her nokta kendi tarihindeki kurla çevrilir — bugünün kuruyla değil. Böylece döviz hareketi kâr/zarara doğru yansır."
+      },
+      "cleanDirtyPrice": {
+        "title": "Temiz & Kirli Fiyat",
+        "short": "Kupon dahil (kirli) ve hariç (temiz) fiyat.",
+        "long": "Kirli fiyat = temiz fiyat + işlemiş kupon. Borsa/EVDS kotasyonu çoğu TL tahvilde kirli fiyattır — alırken biriken işlemiş kuponu da ödersin; temiz fiyat ondan işlemiş kupon çıkarılmış halidir. TÜFE/altın tahvillerinde kotasyon zaten temizdir."
+      },
+      "goldBond": {
+        "title": "Altına Dayalı Tahvil",
+        "short": "Değeri gram altına endeksli Hazine senedi.",
+        "long": "Anaparası gram altına endeksli, altın cinsinden saklanan Hazine kira sertifikası/tahvili. Fiyatı 100 değil altın değeridir; ana getiri altın fiyatından gelir, üzerine küçük bir kupon ödenebilir. Bu uygulamada her zaman TL'ye çevrilerek gösterilir."
+      },
+      "deposit": {
+        "title": "Mevduat",
+        "short": "Bankaya vadeli yatırılan, faiz getiren para.",
+        "long": "Belirli bir vade ve sabit faizle bankaya yatırılan para. Vade sonunda anapara + net faiz ödenir; vade boyunca faiz oranı sabit kalır (piyasa sonradan değişse de). TL, USD ve EUR cinsinden açılabilir."
+      },
+      "simpleInterest": {
+        "title": "Basit Faiz",
+        "short": "Faiz yalnız anapara üzerinden işler.",
+        "long": "Mevduat faizi basit faizdir: faiz yalnızca anapara üzerinden, gün sayısına orantılı işler (anapara × oran × gün/365) — kazanılan faiz tekrar faize girmez (bileşik değil). Vade sonu net = anapara + brüt faiz − stopaj."
+      },
+      "withholding": {
+        "title": "Stopaj (Gelir Vergisi)",
+        "short": "Faiz gelirinden kesilen vergi.",
+        "long": "Mevduat faizinden, vadeye ve para birimine göre kaynağında kesilen gelir vergisi. Brüt faizden düşülür; eline geçen 'net' faizdir. Bu uygulama getiriyi stopaj sonrası net üzerinden hesaplar."
+      },
+      "option": {
+        "title": "Opsiyon",
+        "short": "Alma/satma HAKKI veren sözleşme.",
+        "long": "Sahibine, dayanak varlığı vade sonunda belirli fiyattan (kullanım/strike) alma (Call) ya da satma (Put) HAKKI veren — ama yükümlülük getirmeyen — sözleşme. Bu hak için baştan 'prim' ödenir; vadeli işlemden farkı, alıcının zararı ödediği primle sınırlıdır."
+      },
+      "callOption": {
+        "title": "Alım Opsiyonu (Call)",
+        "short": "Belirli fiyattan ALMA hakkı.",
+        "long": "Dayanak varlığı vade sonunda kullanım fiyatından (strike) satın alma hakkı. Fiyat strike'ın üstüne çıkarsa değer kazanır; altında kalırsa kullanılmaz ve alıcı yalnız ödediği primi kaybeder. Satıcı (kısa call) primi alır ama teorik olarak sınırsız risk taşır."
+      },
+      "putOption": {
+        "title": "Satım Opsiyonu (Put)",
+        "short": "Belirli fiyattan SATMA hakkı.",
+        "long": "Dayanak varlığı vade sonunda kullanım fiyatından satma hakkı. Fiyat strike'ın altına inerse değer kazanır (düşüşe karşı sigorta gibi); üstünde kalırsa kullanılmaz ve alıcı primini kaybeder."
+      },
+      "strikePrice": {
+        "title": "Kullanım Fiyatı (Strike)",
+        "short": "Opsiyonun alım/satım hakkını verdiği fiyat.",
+        "long": "Bir opsiyonun, dayanak varlığı alma (Call) ya da satma (Put) hakkı tanıdığı sabit fiyat. Vade sonunda piyasa fiyatı ile strike arasındaki fark opsiyonun iç değeridir; Call için piyasa > strike, Put için piyasa < strike kârlıdır."
+      },
+      "settlement": {
+        "title": "Uzlaşma & Vade Sonu",
+        "short": "Vade dolunca pozisyonun otomatik kapanışı.",
+        "long": "VİOP sözleşmeleri vade sonunda borsanın açıkladığı uzlaşma fiyatından kapanır (nakdi uzlaşma — fiziki teslim genelde yoktur). Bu uygulamada vadesi geçen pozisyonlar uzlaşma fiyatıyla otomatik kapatılır; opsiyonlarda bu fiyat vade sonundaki iç değerdir."
+      },
+      "valor": {
+        "title": "Valör",
+        "short": "İşlemin kaç günde gerçekleştiği/ödendiği.",
+        "long": "Bir alım-satımın gerçekleşip paranın el değiştirdiği gün farkı. Mevduatta/fonda \"satış valörü T+2\" demek, sattığında paranın 2 iş günü sonra hesabına geçmesi demektir. Valör ne kadar kısaysa paraya o kadar hızlı erişirsin."
+      }
+    },
+    "valorTradeDay": "İşlem",
+    "valorSettled": "Hesapta",
+    "countLabel": "konu"
   },
   "common": {
     "localeTag": "tr-TR",
@@ -1618,6 +1810,9 @@
       "fundType": "Fon Türü",
       "categoryLabel": "Kategori",
       "riskLabel": "Risk",
+      "sellValor": "Satış Valörü",
+      "buybackValor": "Geri Alış Valörü",
+      "tradeHours": "İşlem Saati",
       "marketShareLabel": "Pazar Payı",
       "kapLinkLabel": "KAP'ta aç",
       "viewDetail": "Fon Detayını Görüntüle",
@@ -1641,6 +1836,14 @@
       "priceTry": "Fiyat (TRY)",
       "priceUsd": "Fiyat (USD)",
       "price": "Fiyat ({{currency}})"
+    },
+    "stock": {
+      "sector": "Sektör",
+      "founded": "Kuruluş",
+      "city": "Merkez",
+      "exchange": "Borsa",
+      "indices": "Dahil Olduğu Endeksler",
+      "constituents": "İçindeki Hisseler"
     },
     "compareAction": "Karşılaştır"
   },
@@ -1706,7 +1909,7 @@
       "policyRate": "Politika Faizi",
       "tlrefRate": "TLREF",
       "tlrefIndex": "TLREF Endeksi",
-      "cpiIndex": "TÜFE",
+      "cpiIndex": "TÜFE (Enflasyon)",
       "ppiIndex": "Yİ-ÜFE",
       "depositTryTotal": "TL Mevduat",
       "depositUsdTotal": "USD Mevduat",

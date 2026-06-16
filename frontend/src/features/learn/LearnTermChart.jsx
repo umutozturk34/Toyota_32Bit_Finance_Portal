@@ -58,6 +58,8 @@ export default function LearnTermChart({ chart }) {
       const strikeIdx = PAYOFF_X.indexOf(STRIKE);
       return {
         ...base,
+        // Extra top room so the strike markLine label is not clipped at the chart edge.
+        grid: { left: 6, right: 6, top: 22, bottom: 6, containLabel: true },
         xAxis: { type: 'category', show: false, data: PAYOFF_X },
         yAxis: { type: 'value', splitLine: { lineStyle: { color: grid } }, axisLabel: { color: muted, fontSize: 9 } },
         series: [
@@ -68,7 +70,13 @@ export default function LearnTermChart({ chart }) {
             markLine: {
               silent: true, symbol: 'none',
               lineStyle: { color: '#f59e0b', width: 1, type: 'dotted' },
-              data: [{ xAxis: strikeIdx, label: { show: true, formatter: t('learn.strikeLabel'), color: muted, fontSize: 9 } }],
+              // A solid amber chip with dark text reads clearly over the gridlines and never clips at this size.
+              label: {
+                show: true, formatter: t('learn.strikeLabel'), position: 'insideEndTop', distance: 3,
+                color: '#1a1205', backgroundColor: '#f59e0b', padding: [2, 5], borderRadius: 4,
+                fontSize: 9, fontWeight: 'bold',
+              },
+              data: [{ xAxis: strikeIdx }],
             },
           },
         ],
@@ -83,6 +91,29 @@ export default function LearnTermChart({ chart }) {
           { type: 'line', data: DIRTY, smooth: false, symbol: 'none', lineStyle: { color: '#8b5cf6', width: 2 }, name: t('learn.dirtyLabel') },
           { type: 'line', data: CLEAN, smooth: false, symbol: 'none', lineStyle: { color: '#34d399', width: 2, type: 'dashed' }, name: t('learn.cleanLabel') },
         ],
+      };
+    }
+    if (chart === 'valorTimeline') {
+      // Settlement (valör) timeline: trade on day T, cash lands T+2. A 3-stop line, the final stop highlighted.
+      return {
+        ...base,
+        grid: { left: 8, right: 8, top: 26, bottom: 22, containLabel: true },
+        xAxis: {
+          type: 'category', data: ['T', 'T+1', 'T+2'], boundaryGap: true,
+          axisLabel: { color: muted, fontSize: 10, fontWeight: 'bold' },
+          axisLine: { lineStyle: { color: grid } }, axisTick: { show: false },
+        },
+        yAxis: { type: 'value', show: false, min: 0, max: 2 },
+        series: [{
+          type: 'line', data: [1, 1, 1], symbol: 'circle', symbolSize: 11,
+          lineStyle: { color: '#2dd4bf', width: 2 },
+          itemStyle: { color: (p) => (p.dataIndex === 2 ? '#2dd4bf' : '#5b6472') },
+          label: {
+            show: true, position: 'top', fontSize: 9, fontWeight: 'bold', color: muted,
+            formatter: (p) => (p.dataIndex === 0 ? t('learn.valorTradeDay')
+              : p.dataIndex === 2 ? t('learn.valorSettled') : ''),
+          },
+        }],
       };
     }
     if (chart === 'rsi') {

@@ -52,6 +52,16 @@ function FundMetadata({ asset }) {
           value: `${meta.categoryRank}/${meta.categoryTotalFunds}`,
         },
         meta.marketShare != null && { label: t('marketDetail.fund.marketShareLabel'), value: `%${Number(meta.marketShare).toFixed(2)}` },
+        meta.riskValue != null && {
+          label: t('marketDetail.fund.riskLabel'),
+          value: <RiskBadge value={meta.riskValue} size="sm" />,
+        },
+        meta.sellValor != null && { label: t('marketDetail.fund.sellValor'), value: `T+${meta.sellValor}` },
+        meta.buybackValor != null && { label: t('marketDetail.fund.buybackValor'), value: `T+${meta.buybackValor}` },
+        (meta.tradeStartTime && meta.tradeEndTime) && {
+          label: t('marketDetail.fund.tradeHours'),
+          value: `${meta.tradeStartTime}–${meta.tradeEndTime}`,
+        },
         { label: t('market.fund.portfolioLabel'), value: moneyCompact(meta.portfolioSize) },
         meta.fundType === 'YAT' && meta.investorCount != null && { label: t('market.fund.investorLabel'), value: formatVolume(meta.investorCount) },
         meta.shareCount != null && { label: t('market.fund.shareCountLabel'), value: formatVolume(meta.shareCount) },

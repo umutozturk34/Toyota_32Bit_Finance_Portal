@@ -7,6 +7,10 @@ export const RECT_CUSHION = 6;
 export const DEFAULT_PADDING = 14;
 export const POLL_MAX_FRAMES = 20;
 export const POLL_MAX_FRAMES_SLOW = 36;
+// Frames to wait for a found target's rect to stop moving (scroll-into-view settling, or a drawer's slide-in)
+// before the spotlight commits to it. ~54 frames ≈ 900ms covers the longest drawer animation; a static target
+// settles in two frames and exits immediately.
+export const SETTLE_MAX_FRAMES = 54;
 export const ROUTE_SETTLE_MS = 420;
 export const ACTION_SETTLE_MS = 240;
 export const CLOSE_SETTLE_MS = 180;

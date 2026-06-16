@@ -6,6 +6,7 @@ import {
   POLL_MAX_FRAMES_SLOW,
   RECT_CUSHION,
   ROUTE_SETTLE_MS,
+  SETTLE_MAX_FRAMES,
 } from './constants';
 
 function isInFixedAncestor(el) {
@@ -61,6 +62,10 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
   const prevCloseSelectorRef = useRef(null);
   const stepIdRef = useRef(null);
   const resizeObserverRef = useRef(null);
+  // True while a step's rect is still settling (scrolling into view / a drawer sliding in). External re-measures
+  // (scroll, resize, the post-step rAF syncs) must NOT commit a half-settled rect during this window, or the ring
+  // flashes at an intermediate position — the settle routine is the sole writer until it stabilises.
+  const settlingRef = useRef(false);
 
   useEffect(() => {
     stepIdRef.current = step?.id ?? null;
@@ -68,6 +73,7 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
   const candidatesRef = useRef([]);
 
   const measure = useCallback(() => {
+    if (settlingRef.current) return;
     let el = targetRef.current;
     if (el && !document.body.contains(el)) {
       el = null;
@@ -122,6 +128,7 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
     let actionTimer = 0;
 
     targetRef.current = null;
+    settlingRef.current = false;
 
     const candidates = Array.isArray(step.selector)
       ? step.selector
@@ -170,6 +177,71 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
 
     const maxFrames = step.slowLoad ? POLL_MAX_FRAMES_SLOW : POLL_MAX_FRAMES;
 
+    const attachResizeObserver = (element) => {
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
+      }
+      if (typeof ResizeObserver === 'undefined') return;
+      const ro = new ResizeObserver(() => {
+        if (cancelled) return;
+        const r2 = element.getBoundingClientRect();
+        if (r2.width > 0 && r2.height > 0) {
+          setRectInfo({ rect: cushionRect(r2), stepId: step.id, status: 'found' });
+        }
+      });
+      ro.observe(element);
+      resizeObserverRef.current = ro;
+    };
+
+    // Commit the spotlight rect only once it stops moving. Two motions settle here: scrolling a below-the-fold
+    // target into view (re-scrolled each frame, since slow content above it — e.g. the chart — keeps pushing it
+    // as it loads), and a drawer sliding in from the right (a fixed target is waited out, never scrolled). This
+    // is why the ring no longer flashes at an intermediate position (mid-slide off to the right) and snaps left:
+    // nothing is committed until the rect is stable for two frames. A static target settles immediately.
+    const settleAndCommit = (el) => {
+      const fixedAncestor = isInFixedAncestor(el);
+      settlingRef.current = true;
+      let settleFrames = 0;
+      let stable = 0;
+      let last = null;
+      const tick = () => {
+        if (cancelled) { settlingRef.current = false; return; }
+        let r = el.getBoundingClientRect();
+        if (r.width < 4 || r.height < 8) {
+          settleFrames += 1;
+          if (settleFrames >= SETTLE_MAX_FRAMES) {
+            settlingRef.current = false;
+            setRectInfo({ rect: null, stepId: step.id, status: 'failed' });
+            return;
+          }
+          pollHandleRef.current = requestAnimationFrame(tick);
+          return;
+        }
+        if (!fixedAncestor && typeof el.scrollIntoView === 'function') {
+          const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+          if (vh && (r.top < 0 || r.bottom > vh)) {
+            el.scrollIntoView({ block: r.height > vh - 80 ? 'start' : 'center', behavior: 'instant' });
+            r = el.getBoundingClientRect();
+          }
+        }
+        const steady = last
+          && Math.abs(r.top - last.top) < 1 && Math.abs(r.left - last.left) < 1
+          && Math.abs(r.width - last.width) < 1 && Math.abs(r.height - last.height) < 1;
+        stable = steady ? stable + 1 : 0;
+        last = r;
+        if (stable >= 2 || settleFrames >= SETTLE_MAX_FRAMES) {
+          settlingRef.current = false;
+          setRectInfo({ rect: cushionRect(r), stepId: step.id, status: 'found' });
+          attachResizeObserver(el);
+          return;
+        }
+        settleFrames += 1;
+        pollHandleRef.current = requestAnimationFrame(tick);
+      };
+      pollHandleRef.current = requestAnimationFrame(tick);
+    };
+
     const tryFind = () => {
       if (cancelled) return;
       let el = null;
@@ -200,66 +272,7 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
           pollHandleRef.current = requestAnimationFrame(tryFind);
           return;
         }
-        const viewportH = window.innerHeight || document.documentElement.clientHeight || 0;
-        const viewportW = window.innerWidth || document.documentElement.clientWidth || 0;
-        const fixedAncestor = isInFixedAncestor(el);
-        const fullyVisible = r.top >= 0 && r.bottom <= viewportH;
-        const isSmallViewport = viewportW < 1024;
-        const tallerThanViewport = r.height > viewportH - 80;
-        const preferStartBlock = tallerThanViewport || (isSmallViewport && r.height > viewportH * 0.4);
-        const needsScroll = !fullyVisible
-          && !fixedAncestor
-          && typeof el.scrollIntoView === 'function';
-        const attachResizeObserver = (element) => {
-          if (resizeObserverRef.current) {
-            resizeObserverRef.current.disconnect();
-            resizeObserverRef.current = null;
-          }
-          if (typeof ResizeObserver === 'undefined') return;
-          const ro = new ResizeObserver(() => {
-            if (cancelled) return;
-            const r2 = element.getBoundingClientRect();
-            if (r2.width > 0 && r2.height > 0) {
-              setRectInfo({ rect: cushionRect(r2), stepId: step.id, status: 'found' });
-            }
-          });
-          ro.observe(element);
-          resizeObserverRef.current = ro;
-        };
-        const scheduleResizeCatch = () => {
-          attachResizeObserver(el);
-          actionTimer = window.setTimeout(() => {
-            if (cancelled) return;
-            const finalR = el.getBoundingClientRect();
-            if (finalR.width > 0 && finalR.height > 0) {
-              setRectInfo({ rect: cushionRect(finalR), stepId: step.id, status: 'found' });
-            }
-          }, 360);
-        };
-        if (needsScroll) {
-          el.scrollIntoView({ block: preferStartBlock ? 'start' : 'center', behavior: 'instant' });
-          const settled = el.getBoundingClientRect();
-          setRectInfo({ rect: cushionRect(settled), stepId: step.id, status: 'found' });
-          scheduleResizeCatch();
-          return;
-        }
-        if (fixedAncestor) {
-          actionTimer = window.setTimeout(() => {
-            if (cancelled) return;
-            requestAnimationFrame(() => {
-              if (cancelled) return;
-              const settled = el.getBoundingClientRect();
-              if (settled.width > 0 && settled.height > 0) {
-                setRectInfo({ rect: cushionRect(settled), stepId: step.id, status: 'found' });
-              } else {
-                setRectInfo({ rect: null, stepId: step.id, status: 'failed' });
-              }
-            });
-          }, 420);
-          return;
-        }
-        setRectInfo({ rect: cushionRect(r), stepId: step.id, status: 'found' });
-        scheduleResizeCatch();
+        settleAndCommit(el);
         return;
       }
       frames += 1;
@@ -304,6 +317,7 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
 
     return () => {
       cancelled = true;
+      settlingRef.current = false;
       if (routeTimer) window.clearTimeout(routeTimer);
       if (closeTimer) window.clearTimeout(closeTimer);
       if (actionTimer) window.clearTimeout(actionTimer);

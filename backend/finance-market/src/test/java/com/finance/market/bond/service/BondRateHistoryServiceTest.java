@@ -94,6 +94,21 @@ class BondRateHistoryServiceTest {
                 .build();
     }
 
+    /** A projection row for the batched latest-date lookup (replaces the old per-bond findTop...Desc). */
+    private BondRateHistoryRepository.IsinLatestRateDate latest(String isin, LocalDate date) {
+        return new BondRateHistoryRepository.IsinLatestRateDate() {
+            @Override
+            public String getIsinCode() {
+                return isin;
+            }
+
+            @Override
+            public LocalDate getMaxRateDate() {
+                return date;
+            }
+        };
+    }
+
     @Test
     void processBatch_persistsSnapshot_andSkipsRateHistory_forZeroCoupon() {
         BondSnapshotDto d = dto("S1", "ISIN1", BigDecimal.ZERO, LocalDate.of(2020, 1, 1));
@@ -190,10 +205,9 @@ class BondRateHistoryServiceTest {
         when(bondRepository.findById("S1")).thenReturn(Optional.of(existing));
         when(assetRegistry.upsert(MarketType.BOND, "S1")).thenReturn(bondAsset("S1"));
         when(bondRepository.save(existing)).thenReturn(existing);
-        when(rateHistoryRepository.findTopByIsinCodeOrderByRateDateDesc("ISIN1"))
-                .thenReturn(Optional.of(rateRecord("ISIN1", today, new BigDecimal("10"))));
+        when(rateHistoryRepository.findLatestRateDateByIsinCodeIn(any()))
+                .thenReturn(List.of(latest("ISIN1", today)));
         when(rateHistoryRepository.existsByIsinCodeAndRateDate("ISIN1", today)).thenReturn(false);
-        when(rateHistoryRepository.findByIsinCodeOrderByRateDateAsc("ISIN1")).thenReturn(List.of());
         stubTransactionTemplate();
 
         service.processBatch(List.of(d), LocalDateTime.now());
@@ -231,12 +245,11 @@ class BondRateHistoryServiceTest {
         when(bondRepository.findById("S1")).thenReturn(Optional.of(existing));
         when(assetRegistry.upsert(MarketType.BOND, "S1")).thenReturn(bondAsset("S1"));
         when(bondRepository.save(existing)).thenReturn(existing);
-        when(rateHistoryRepository.findTopByIsinCodeOrderByRateDateDesc("ISIN1"))
-                .thenReturn(Optional.of(rateRecord("ISIN1", today.minusDays(10), new BigDecimal("10"))));
+        when(rateHistoryRepository.findLatestRateDateByIsinCodeIn(any()))
+                .thenReturn(List.of(latest("ISIN1", today.minusDays(10))));
         when(rateFetcher.fetchBatch(any())).thenReturn(Map.of("ISIN1",
                 new java.util.ArrayList<>(List.of(rateRecord("ISIN1", today.minusDays(5), new BigDecimal("10"))))));
         when(rateHistoryRepository.existsByIsinCodeAndRateDate(eq("ISIN1"), any())).thenReturn(false);
-        when(rateHistoryRepository.findByIsinCodeOrderByRateDateAsc("ISIN1")).thenReturn(List.of());
         stubTransactionTemplate();
 
         service.processBatch(List.of(d), LocalDateTime.now());

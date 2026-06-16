@@ -84,14 +84,14 @@ class MacroMarketAssetProviderTest {
     void should_returnResponse_when_codeMatchesCategory() {
         // Arrange
         MacroIndicator ind = indicator("TP.RATE", "policyRate", MacroCategory.RATES, new BigDecimal("42.5"));
-        when(queryService.findByCode("TP.RATE")).thenReturn(ind);
+        when(queryService.findByPublicId("TP.RATE")).thenReturn(ind);
 
         // Act
         MarketAssetResponse response = provider.getByCode("TP.RATE");
 
         // Assert
         assertThat(response).isNotNull();
-        assertThat(response.code()).isEqualTo("TP.RATE");
+        assertThat(response.code()).isEqualTo("policyrate");
         assertThat(response.name()).isEqualTo("policyRate");
         assertThat(response.price()).isEqualByComparingTo("42.5");
         assertThat(response.type()).isEqualTo(MarketType.MACRO_RATE);
@@ -101,7 +101,7 @@ class MacroMarketAssetProviderTest {
     void should_returnNull_when_codeBelongsToDifferentCategory() {
         // Arrange
         MacroIndicator ind = indicator("TUFE", "cpiYoY", MacroCategory.INFLATION, new BigDecimal("60"));
-        when(queryService.findByCode("TUFE")).thenReturn(ind);
+        when(queryService.findByPublicId("TUFE")).thenReturn(ind);
 
         // Act
         MarketAssetResponse response = provider.getByCode("TUFE");
@@ -113,7 +113,7 @@ class MacroMarketAssetProviderTest {
     @Test
     void should_returnNull_when_queryServiceThrows() {
         // Arrange
-        when(queryService.findByCode("ZZZ")).thenThrow(new RuntimeException("not found"));
+        when(queryService.findByPublicId("ZZZ")).thenThrow(new RuntimeException("not found"));
 
         // Act
         MarketAssetResponse response = provider.getByCode("ZZZ");
@@ -154,7 +154,7 @@ class MacroMarketAssetProviderTest {
 
         // Assert
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).code()).isEqualTo("FAIZ");
+        assertThat(result.get(0).code()).isEqualTo("interestrate");
     }
 
     @Test
@@ -172,7 +172,7 @@ class MacroMarketAssetProviderTest {
 
         // Assert
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).code()).isEqualTo("TP.RATE");
+        assertThat(result.get(0).code()).isEqualTo("policyrate");
     }
 
     @Test
@@ -251,8 +251,8 @@ class MacroMarketAssetProviderTest {
 
         // Assert
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).code()).isEqualTo("B");
-        assertThat(result.get(1).code()).isEqualTo("D");
+        assertThat(result.get(0).code()).isEqualTo("b");
+        assertThat(result.get(1).code()).isEqualTo("d");
     }
 
     @Test
@@ -270,8 +270,8 @@ class MacroMarketAssetProviderTest {
 
         // Assert
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).code()).isEqualTo("A");
-        assertThat(result.get(1).code()).isEqualTo("C");
+        assertThat(result.get(0).code()).isEqualTo("a");
+        assertThat(result.get(1).code()).isEqualTo("c");
     }
 
     @Test
@@ -335,7 +335,7 @@ class MacroMarketAssetProviderTest {
 
         // Assert
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).code()).isEqualTo("TP.GENENDEKS.T1");
+        assertThat(result.get(0).code()).isEqualTo("cpiindex");
     }
 
     @Test
@@ -354,7 +354,7 @@ class MacroMarketAssetProviderTest {
 
         // Assert
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).code()).isEqualTo("TP.TUFE1YI.T1");
+        assertThat(result.get(0).code()).isEqualTo("ppiindex");
     }
 
     @Test
@@ -375,14 +375,14 @@ class MacroMarketAssetProviderTest {
 
         // Assert
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).code()).isEqualTo("TP.EURTAS.MT06");
+        assertThat(result.get(0).code()).isEqualTo("depositeurtotal");
     }
 
     @Test
     void should_returnNullName_when_indicatorLabelIsNull() {
         // Arrange
         MacroIndicator ind = indicator("CODE1", null, MacroCategory.RATES, new BigDecimal("3"));
-        when(queryService.findByCode("CODE1")).thenReturn(ind);
+        when(queryService.findByPublicId("CODE1")).thenReturn(ind);
 
         // Act
         MarketAssetResponse response = provider.getByCode("CODE1");

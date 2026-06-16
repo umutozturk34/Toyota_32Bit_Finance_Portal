@@ -194,6 +194,10 @@ class FundDetailEnrichmentServiceTest {
         assertThat(fund.getIsinCode()).isEqualTo("TRMAALWWWWW5");
         assertThat(fund.getKapLink()).isEqualTo("https://kap.org.tr/aal");
         assertThat(fund.getRiskValue()).isEqualTo(1);
+        assertThat(fund.getSellValor()).isZero();
+        assertThat(fund.getBuybackValor()).isZero();
+        assertThat(fund.getTradeStartTime()).isEqualTo("09:00");
+        assertThat(fund.getTradeEndTime()).isEqualTo("13:30");
     }
 
     @Test

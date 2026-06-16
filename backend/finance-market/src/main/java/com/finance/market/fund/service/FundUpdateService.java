@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -92,11 +93,17 @@ public class FundUpdateService implements MarketRefresher {
                 .collect(Collectors.toMap(
                         row -> (String) row[0],
                         row -> (LocalDateTime) row[2]));
+        // Pre-load every fund's previous close in ONE grouped query (instead of a prior-candle lookup per fund)
+        // so the whole-universe recompute over ~800 funds stays at a couple of queries, not ~800.
+        Map<String, BigDecimal> previousCloseByFund = fundCandleRepository.findPreviousClosePricePerFund().stream()
+                .collect(Collectors.toMap(
+                        row -> (String) row[0],
+                        row -> (BigDecimal) row[1]));
         int updated = 0;
         for (Fund fund : fundRepository.findAll()) {
             LocalDateTime latestDate = latestCandleDates.get(fund.getFundCode());
             if (latestDate == null) continue;
-            if (entityWriter.refreshChangePercent(fund, latestDate)) {
+            if (entityWriter.refreshChangePercent(fund, latestDate, previousCloseByFund.get(fund.getFundCode()))) {
                 fundCacheService.putSnapshot(fund.getFundCode(), fund);
                 updated++;
             }

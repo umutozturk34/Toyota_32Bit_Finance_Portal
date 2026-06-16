@@ -254,6 +254,10 @@ public class FundDetailEnrichmentService {
     private void applyProfile(Fund fund, TefasFundProfileDto profile) {
         fund.setIsinCode(profile.isinCode());
         fund.setKapLink(profile.kapLink());
+        fund.setSellValor(profile.sellValor());
+        fund.setBuybackValor(profile.buybackValor());
+        fund.setTradeStartTime(profile.tradeStartTime());
+        fund.setTradeEndTime(profile.tradeEndTime());
         if (profile.riskValue() != null) {
             Integer risk = parseRisk(profile.riskValue());
             if (risk != null) fund.setRiskValue(risk);

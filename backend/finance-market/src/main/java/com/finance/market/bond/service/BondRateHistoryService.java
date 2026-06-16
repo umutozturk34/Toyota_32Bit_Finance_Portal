@@ -21,10 +21,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Persists a batch of bond snapshots: upserts each bond, fetches missing rate history (from the last
@@ -96,6 +98,24 @@ public class BondRateHistoryService {
             }
         }
 
+        // Batch-load (one query each) the latest stored date and the full existing history per ISIN, so the
+        // per-bond loops below read from maps instead of querying per bond — turns a 2N-query refresh into 2.
+        List<String> batchIsins = batch.stream()
+                .map(BondSnapshotDto::isinCode)
+                .filter(isin -> isin != null && !isin.isBlank())
+                .distinct()
+                .toList();
+        Map<String, LocalDate> latestDateByIsin = batchIsins.isEmpty()
+                ? Map.of()
+                : rateHistoryRepository.findLatestRateDateByIsinCodeIn(batchIsins).stream()
+                        .collect(Collectors.toMap(
+                                BondRateHistoryRepository.IsinLatestRateDate::getIsinCode,
+                                BondRateHistoryRepository.IsinLatestRateDate::getMaxRateDate));
+        Map<String, List<BondRateHistory>> existingHistoryByIsin = batchIsins.isEmpty()
+                ? Map.of()
+                : rateHistoryRepository.findByIsinCodeInOrderByIsinCodeAscRateDateAsc(batchIsins).stream()
+                        .collect(Collectors.groupingBy(BondRateHistory::getIsinCode));
+
         List<BondRateFetcher.BondHistoryTarget> targets = new ArrayList<>();
         for (BondSnapshotDto dto : batch) {
             Bond bond = bondsBySeriesCode.get(dto.seriesCode());
@@ -105,16 +125,16 @@ public class BondRateHistoryService {
             // Its history is fetched and stored with a null coupon column (the .ORAN field for a bill is
             // days-to-maturity, not a coupon), so the price chart shows while the coupon chart stays empty.
             if (bond.getCouponRate() == null) continue;
-            Optional<BondRateHistory> latestOpt = rateHistoryRepository.findTopByIsinCodeOrderByRateDateDesc(dto.isinCode());
+            LocalDate latestDate = latestDateByIsin.get(dto.isinCode());
             LocalDate startDate;
-            if (latestOpt.isEmpty()) {
+            if (latestDate == null) {
                 if (dto.maturityStart() == null) {
                     log.debug("Skipping rate fetch for {} (no maturityStart)", dto.isinCode());
                     continue;
                 }
                 startDate = dto.maturityStart();
             } else {
-                startDate = latestOpt.get().getRateDate().plusDays(1);
+                startDate = latestDate.plusDays(1);
             }
             if (!startDate.isBefore(today)) continue;
             targets.add(new BondRateFetcher.BondHistoryTarget(dto.isinCode(), dto.seriesCode(), bond, startDate, today));
@@ -133,7 +153,14 @@ public class BondRateHistoryService {
                 if (!records.isEmpty()) {
                     transactionTemplate.executeWithoutResult(status -> rateHistoryRepository.saveAll(records));
                 }
-                applyClassification(bond, dto);
+                // Full history for classification = pre-loaded existing rows + the rows just saved this
+                // iteration (records start after the latest stored date, so there is no overlap); mirrors what
+                // a fresh findByIsinCodeOrderByRateDateAsc would have returned, without the per-bond query.
+                List<BondRateHistory> fullHistory =
+                        new ArrayList<>(existingHistoryByIsin.getOrDefault(dto.isinCode(), List.of()));
+                fullHistory.addAll(records);
+                fullHistory.sort(Comparator.comparing(BondRateHistory::getRateDate));
+                applyClassification(bond, dto, fullHistory);
                 transactionTemplate.executeWithoutResult(status -> bondRepository.save(bond));
                 bondCacheService.putSnapshot(bond.getSeriesCode(), bond);
             } catch (Exception e) {
@@ -158,9 +185,8 @@ public class BondRateHistoryService {
         return transactionTemplate.execute(status -> bondRepository.save(bond));
     }
 
-    /** Resolves bond type and simple yield from full rate history; clears coupon date for discount bonds. */
-    private void applyClassification(Bond bond, BondSnapshotDto dto) {
-        List<BondRateHistory> fullHistory = rateHistoryRepository.findByIsinCodeOrderByRateDateAsc(dto.isinCode());
+    /** Resolves bond type and simple yield from the (pre-loaded) full rate history; clears coupon date for bills. */
+    private void applyClassification(Bond bond, BondSnapshotDto dto, List<BondRateHistory> fullHistory) {
         bond.resolveType(fullHistory, auctionThreshold, cpiFixedThreshold, goldValueThreshold);
         bond.resolveSimpleYield(faceValue, daysInYear);
         if (bond.isDiscounted()) {

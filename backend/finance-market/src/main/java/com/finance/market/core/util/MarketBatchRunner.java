@@ -37,4 +37,33 @@ public final class MarketBatchRunner {
                 (stopped, e) -> log.warn("{} {} batch stopped early (circuit breaker open): {} success, {} failed",
                         marketName, operation, stopped.successCount(), stopped.failCount()));
     }
+
+    /**
+     * Concurrent variant of {@link #run}: processes items on a bounded pool of {@code parallelism} threads
+     * with the same per-item failure logging and circuit-breaker early-stop. For latency-bound per-item
+     * work (e.g. a per-symbol HTTP fetch); {@code parallelism <= 1} runs sequentially.
+     */
+    public static <T> BatchUpdateRunner.Result runParallel(
+            Iterable<T> items,
+            BatchUpdateRunner.ThrowingConsumer<T> processor,
+            Function<T, String> idExtractor,
+            Logger log,
+            String marketName,
+            String operation,
+            int minSample,
+            int parallelism) {
+
+        return BatchUpdateRunner.runParallel(
+                items,
+                processor,
+                idExtractor,
+                operation,
+                minSample,
+                (item, e) -> log.error("Failed to {} for {}: {}",
+                        operation, idExtractor.apply(item), e.getMessage(), e),
+                e -> e instanceof CallNotPermittedException,
+                (stopped, e) -> log.warn("{} {} batch stopped early (circuit breaker open): {} success, {} failed",
+                        marketName, operation, stopped.successCount(), stopped.failCount()),
+                parallelism);
+    }
 }

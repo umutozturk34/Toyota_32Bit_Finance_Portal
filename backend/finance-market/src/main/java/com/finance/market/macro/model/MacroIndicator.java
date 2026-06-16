@@ -116,6 +116,14 @@ public class MacroIndicator {
         updatedAt = LocalDateTime.now();
     }
 
+    /**
+     * Public, EVDS-free identifier derived from the label (e.g. {@code politika-faizi}); exposed as the API
+     * {@code code} so the raw EVDS code never reaches the frontend. Resolved back via the query service.
+     */
+    public String getSlug() {
+        return com.finance.market.macro.util.MacroSlug.slugify(label);
+    }
+
     /** Whether the latest point is older than the frequency allows (a new observation is overdue). */
     public boolean isStale(LocalDate today) {
         return frequency.isStale(lastDate, today);

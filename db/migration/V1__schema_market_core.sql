@@ -69,6 +69,32 @@ CREATE INDEX IF NOT EXISTS idx_stock_candles_date           ON public.stock_cand
 CREATE INDEX IF NOT EXISTS idx_stock_candles_symbol_date    ON public.stock_candles USING btree (stock_symbol, candle_date);
 CREATE INDEX IF NOT EXISTS idx_stock_candles_symbol_date_desc ON public.stock_candles USING btree (stock_symbol, candle_date DESC);
 
+-- Stock detail reference data, enriched from external sources (İş Yatırım company card + index pages) and
+-- reconciled by the scheduled stock refresh (never hardcoded). The company logo reuses stocks.image.
+-- Company künye: one row per stock symbol (stocks.symbol, e.g. 'GARAN.IS'). Soft reference (no FK) since
+-- the enrichment may run before/independently of stock discovery, so we never block on order.
+CREATE TABLE IF NOT EXISTS public.company_profile (
+    symbol       VARCHAR(20)  PRIMARY KEY,
+    legal_name   VARCHAR(255),
+    sector       VARCHAR(255),
+    founded_date DATE,
+    city         VARCHAR(120),
+    description  TEXT,
+    updated_at   TIMESTAMP    NOT NULL DEFAULT now()
+);
+
+-- Stock ↔ index membership (many-to-many) with the stock's weight in each index. stock_symbol is the tradable
+-- stock (e.g. 'GARAN.IS'); index_code is the BIST index it belongs to (e.g. 'XU030'), kept bare so the UI can
+-- link to the index's own stock row. Each enrichment run reconciles this set so it always mirrors the source.
+CREATE TABLE IF NOT EXISTS public.stock_index_membership (
+    stock_symbol VARCHAR(20)   NOT NULL,
+    index_code   VARCHAR(20)   NOT NULL,
+    weight       NUMERIC(9,4),
+    updated_at   TIMESTAMP     NOT NULL DEFAULT now(),
+    PRIMARY KEY (stock_symbol, index_code)
+);
+CREATE INDEX IF NOT EXISTS idx_sim_index_code ON public.stock_index_membership (index_code);
+
 CREATE TABLE IF NOT EXISTS public.cryptos (
     id                character varying(255) NOT NULL,
     image             character varying(255),

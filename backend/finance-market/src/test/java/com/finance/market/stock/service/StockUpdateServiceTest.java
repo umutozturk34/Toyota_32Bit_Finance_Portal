@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 class StockUpdateServiceTest {
 
     @Mock private StockSnapshotProcessor snapshotProcessor;
+    @Mock private StockEnrichmentService enrichmentService;
     @Mock private TrackedAssetQueryService trackedAssetQueryService;
     @Mock private TrackedAssetCommandService trackedAssetCommandService;
     @Mock private IsYatirimStockListProvider stockListProvider;
@@ -39,6 +40,7 @@ class StockUpdateServiceTest {
         when(stockProperties.getDiscovery()).thenReturn(new StockProperties.Discovery());
         service = new StockUpdateService(
                 snapshotProcessor,
+                enrichmentService,
                 trackedAssetQueryService,
                 trackedAssetCommandService,
                 stockListProvider,

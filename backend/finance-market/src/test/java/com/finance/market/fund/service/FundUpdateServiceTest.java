@@ -67,7 +67,8 @@ class FundUpdateServiceTest {
         rangeRows.add(new Object[]{"TYH", ts, ts});
         when(fundCandleRepository.findCandleDateRangePerFund()).thenReturn(rangeRows);
         when(fundRepository.findAll()).thenReturn(List.of(fund));
-        when(entityWriter.refreshChangePercent(fund, ts)).thenReturn(true);
+        // No previous-close row stubbed → the batch map is empty, so the pre-resolved prior price is null.
+        when(entityWriter.refreshChangePercent(fund, ts, null)).thenReturn(true);
 
         service.refreshAll();
 
@@ -82,7 +83,7 @@ class FundUpdateServiceTest {
         rangeRows.add(new Object[]{"TYH", ts, ts});
         when(fundCandleRepository.findCandleDateRangePerFund()).thenReturn(rangeRows);
         when(fundRepository.findAll()).thenReturn(List.of(fund));
-        when(entityWriter.refreshChangePercent(fund, ts)).thenReturn(false);
+        when(entityWriter.refreshChangePercent(fund, ts, null)).thenReturn(false);
 
         service.refreshAll();
 

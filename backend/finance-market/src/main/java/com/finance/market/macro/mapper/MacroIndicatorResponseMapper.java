@@ -17,7 +17,12 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface MacroIndicatorResponseMapper {
 
-    /** Maps a macro indicator entity to its response DTO; derived inflation rates are added downstream. */
+    /**
+     * Maps a macro indicator entity to its response DTO. The public {@code code} carries the EVDS-free slug
+     * (not the raw EVDS code), so the frontend never sees codes like {@code TP.BISPOLFAIZ.TUR}; derived
+     * inflation rates are added downstream.
+     */
+    @Mapping(target = "code", source = "slug")
     @Mapping(target = "yoyChangePct", ignore = true)
     @Mapping(target = "momChangePct", ignore = true)
     MacroIndicatorResponse toResponse(MacroIndicator indicator);

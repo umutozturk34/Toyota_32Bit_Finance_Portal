@@ -16,7 +16,7 @@ import java.util.Locale;
 public final class ViopDisplayNameBuilder {
 
     private static final DateTimeFormatter EXPIRY_FMT =
-            DateTimeFormatter.ofPattern("d MMM yy", new Locale("tr", "TR"));
+            DateTimeFormatter.ofPattern("d MMM yy", Locale.of("tr", "TR"));
 
     private ViopDisplayNameBuilder() { }
 

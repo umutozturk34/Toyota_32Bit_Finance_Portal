@@ -10,12 +10,17 @@ import com.finance.market.core.cache.MarketCacheService;
 
 
 import com.finance.shared.dto.response.GroupCount;
+import com.finance.shared.dto.response.StockMetadata;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.stock.mapper.StockResponseMapper;
 import com.finance.common.model.MarketType;
+import com.finance.market.stock.model.CompanyProfile;
 import com.finance.market.stock.model.Stock;
+import com.finance.market.stock.model.StockIndexMembership;
 import com.finance.common.model.StockSegment;
 import com.finance.common.model.TrackedAssetType;
+import com.finance.market.stock.repository.CompanyProfileRepository;
+import com.finance.market.stock.repository.StockIndexMembershipRepository;
 import com.finance.market.stock.repository.StockRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.jpa.domain.Specification;
@@ -37,15 +42,56 @@ public class StockMarketAssetProvider extends BaseTrackedMarketAssetProvider<Sto
     private final StockRepository stockRepository;
     private final MarketCacheService<Stock> stockCacheService;
     private final StockResponseMapper stockResponseMapper;
+    private final CompanyProfileRepository companyProfileRepository;
+    private final StockIndexMembershipRepository membershipRepository;
 
     public StockMarketAssetProvider(StockRepository stockRepository,
                                     MarketCacheService<Stock> stockCacheService,
                                     StockResponseMapper stockResponseMapper,
+                                    CompanyProfileRepository companyProfileRepository,
+                                    StockIndexMembershipRepository membershipRepository,
                                     TrackedAssetQueryService trackedAssetQueryService) {
         super(stockRepository, trackedAssetQueryService);
         this.stockRepository = stockRepository;
         this.stockCacheService = stockCacheService;
         this.stockResponseMapper = stockResponseMapper;
+        this.companyProfileRepository = companyProfileRepository;
+        this.membershipRepository = membershipRepository;
+    }
+
+    /**
+     * Single-asset detail: the base response enriched with the company künye and weighted index membership
+     * (one extra profile + membership query — detail only, never on the list path). Falls back to the base
+     * response when no enrichment exists yet, so a stock without a scraped profile still renders.
+     */
+    @Override
+    public MarketAssetResponse getByCode(String code) {
+        MarketAssetResponse base = super.getByCode(code);
+        if (base == null) return null;
+        Stock snapshot = getSnapshotByCode(code);
+        if (snapshot == null) return base;
+        String symbol = snapshot.getSymbol();
+        CompanyProfile profile = companyProfileRepository.findById(symbol).orElse(null);
+        List<StockIndexMembership> memberships = membershipRepository.findByIdStockSymbol(symbol);
+        // When the asset is itself an index, also load its constituents (the reverse view: which stocks make
+        // it up). Bare code without the exchange suffix, since membership stores index codes as e.g. 'XU030'.
+        List<StockIndexMembership> constituents = isIndex(snapshot)
+                ? membershipRepository.findByIdIndexCodeOrderByWeightDesc(stripSuffix(symbol))
+                : List.of();
+        if (profile == null && memberships.isEmpty() && constituents.isEmpty()) return base;
+        StockMetadata detail = stockResponseMapper.buildDetailMetadata(snapshot, profile, memberships, constituents);
+        return new MarketAssetResponse(base.code(), base.name(), base.image(), base.type(),
+                base.price(), base.changeAmount(), base.changePercent(), base.lastUpdated(), detail);
+    }
+
+    private static boolean isIndex(Stock stock) {
+        return stock.getStockSegment() == StockSegment.MAIN_INDEX
+                || stock.getStockSegment() == StockSegment.SECONDARY_INDEX;
+    }
+
+    private static String stripSuffix(String symbol) {
+        int dot = symbol.indexOf('.');
+        return dot > 0 ? symbol.substring(0, dot) : symbol;
     }
 
     @Override

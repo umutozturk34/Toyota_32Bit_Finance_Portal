@@ -49,6 +49,18 @@ public class Fund extends BaseAsset {
     @Column(name = "risk_value")
     private Integer riskValue;
 
+    @Column(name = "sell_valor")
+    private Integer sellValor;
+
+    @Column(name = "buyback_valor")
+    private Integer buybackValor;
+
+    @Column(name = "trade_start_time", length = 8)
+    private String tradeStartTime;
+
+    @Column(name = "trade_end_time", length = 8)
+    private String tradeEndTime;
+
     @Column(name = "category", length = 80)
     private String category;
 
@@ -69,12 +81,6 @@ public class Fund extends BaseAsset {
 
     @Column(name = "kap_link", length = 255)
     private String kapLink;
-
-    @Column(name = "management_fee", precision = 9, scale = 4)
-    private BigDecimal managementFee;
-
-    @Column(name = "expense_ratio", precision = 9, scale = 4)
-    private BigDecimal expenseRatio;
 
     @Column(name = "return_1m", precision = 12, scale = 4)
     private BigDecimal return1m;

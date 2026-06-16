@@ -55,7 +55,7 @@ public class MacroIndicatorQueryService {
             return findByCode(publicId);
         }
         return indicatorRepository.findAll().stream()
-                .filter(i -> MacroSlug.slugify(i.getLabel()).equals(publicId))
+                .filter(i -> i.getLabel() != null && MacroSlug.slugify(i.getLabel()).equals(publicId))
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "error.macro.indicatorNotFound", publicId));

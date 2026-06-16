@@ -77,7 +77,26 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
             new NameRef("avro", "EUR", "FOREX"),
             new NameRef("sterlin", "GBP", "FOREX"),
             new NameRef("yen", "JPY", "FOREX"),
-            new NameRef("frank", "CHF", "FOREX")
+            new NameRef("frank", "CHF", "FOREX"),
+            // The remaining tracked currencies, by the way TR news actually names them. Distinctive single words
+            // (yuan/ruble/manat/tenge/dirhem/won) stand alone; the rest use a bounded multi-word phrase so a generic
+            // word (dolar/kron/riyal/dinar/rupi/ley) doesn't over-match (e.g. "kanada dolari" → CAD, not USD).
+            new NameRef("yuan", "CNY", "FOREX"),
+            new NameRef("ruble", "RUB", "FOREX"),
+            new NameRef("won", "KRW", "FOREX"),
+            new NameRef("manat", "AZN", "FOREX"),
+            new NameRef("tenge", "KZT", "FOREX"),
+            new NameRef("dirhem", "AED", "FOREX"),
+            new NameRef("kanada dolari", "CAD", "FOREX"),
+            new NameRef("avustralya dolari", "AUD", "FOREX"),
+            new NameRef("isvec kronu", "SEK", "FOREX"),
+            new NameRef("norvec kronu", "NOK", "FOREX"),
+            new NameRef("danimarka kronu", "DKK", "FOREX"),
+            new NameRef("suudi riyali", "SAR", "FOREX"),
+            new NameRef("katar riyali", "QAR", "FOREX"),
+            new NameRef("kuveyt dinari", "KWD", "FOREX"),
+            new NameRef("pakistan rupisi", "PKR", "FOREX"),
+            new NameRef("rumen leyi", "RON", "FOREX")
     );
 
     /** ticker/symbol → (code, type), plus the (name-phrase, code, type) list for name matching. */

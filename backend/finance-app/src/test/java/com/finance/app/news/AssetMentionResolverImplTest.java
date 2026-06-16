@@ -211,6 +211,18 @@ class AssetMentionResolverImplTest {
     }
 
     @Test
+    void shouldResolveExtendedCurrencyKeywords() {
+        // Distinctive single words for the newly-covered currencies (base form, like the existing dolar/euro keys).
+        assertThat(resolver.resolve("yuan güçlenirken ruble değer kaybetti", null))
+                .extracting(ResolvedAsset::code).contains("CNY", "RUB");
+
+        // A bounded multi-word phrase links the right currency WITHOUT the generic "dolar" also matching USD.
+        List<ResolvedAsset> cad = resolver.resolve("Kanada doları rekor kırdı", null);
+        assertThat(cad).extracting(ResolvedAsset::code).contains("CAD");
+        assertThat(cad).extracting(ResolvedAsset::code).doesNotContain("USD");
+    }
+
+    @Test
     void shouldResolveEveryAssetInARealDayEndWrap_withTurkishCharacters() {
         // The actual "SON DAKİKA: Piyasalar Günü Sert Yükselişle Kapattı" article (news/218), verbatim with
         // its Turkish diacritics: it must link the stocks (Türk Hava Yolları, Akbank, ASELSAN), gold, the

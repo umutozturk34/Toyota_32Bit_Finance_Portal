@@ -5,6 +5,7 @@ import com.finance.news.service.article.NewsCacheService;
 import com.finance.shared.dto.response.GroupCount;
 import com.finance.news.dto.response.NewsArticleDetailResponse;
 import com.finance.news.dto.response.NewsArticleResponse;
+import com.finance.news.dto.response.NewsAssetCountResponse;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.shared.util.EnumParser;
@@ -61,6 +62,15 @@ public class NewsQueryService {
                 .toList();
     }
 
+    /** The {@code limit} most-mentioned assets across all news, with their article counts — drives the asset filter. */
+    @Transactional(readOnly = true)
+    public List<NewsAssetCountResponse> getAssetCounts(int limit) {
+        return articleRepository.countArticlesByAsset().stream()
+                .map(row -> new NewsAssetCountResponse(row[0].toString(), row[1].toString(), ((Number) row[2]).longValue()))
+                .limit(limit)
+                .toList();
+    }
+
     /** Composes optional category-equality, accent-insensitive multi-token text search, and an asset-mention filter. */
     private Specification<NewsArticle> buildSpecification(String category, String searchTerm, String assetCode) {
         Specification<NewsArticle> spec = (root, query, cb) -> cb.conjunction();
@@ -79,12 +89,16 @@ public class NewsQueryService {
         }
 
         if (assetCode != null && !assetCode.isBlank()) {
-            String code = assetCode;
-            // Articles whose resolved asset set contains this code — the backend news↔asset link, joined here.
-            spec = spec.and((root, query, cb) -> {
-                query.distinct(true);
-                return cb.equal(root.join("assets").get("assetCode"), code);
-            });
+            // Accept a comma-separated list so the news page can filter by SEVERAL assets at once (OR): an article
+            // matches if its resolved asset set contains ANY of the codes — the backend news↔asset link, joined here.
+            List<String> codes = java.util.Arrays.stream(assetCode.split(","))
+                    .map(String::trim).filter(s -> !s.isBlank()).distinct().toList();
+            if (!codes.isEmpty()) {
+                spec = spec.and((root, query, cb) -> {
+                    query.distinct(true);
+                    return root.join("assets").get("assetCode").in(codes);
+                });
+            }
         }
 
         return spec;

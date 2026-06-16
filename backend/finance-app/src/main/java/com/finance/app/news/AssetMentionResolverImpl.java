@@ -93,24 +93,52 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
         }
         String raw = (title == null ? "" : title) + " " + (description == null ? "" : description);
         // Dedup by code (a coin named both "(BTC)" and "Bitcoin" links once); insertion order = ticker hits first.
-        Map<String, String> hits = new LinkedHashMap<>();
+        // `type` keeps that order + the asset type; `count` accumulates how many times the article references the
+        // code (ticker occurrences + name-phrase occurrences) — a rough "how prominent" signal shown in the UI.
+        Map<String, String> type = new LinkedHashMap<>();
+        Map<String, Integer> count = new LinkedHashMap<>();
 
         Matcher m = TICKER.matcher(raw);
         while (m.find()) {
             CodeType ct = cat.byTicker().get(m.group(1).toUpperCase(Locale.ROOT));
             if (ct != null) {
-                hits.putIfAbsent(ct.code(), ct.type());
+                type.putIfAbsent(ct.code(), ct.type());
+                count.merge(ct.code(), 1, Integer::sum);
             }
         }
 
         String hay = " " + normalize(raw) + " ";
+        // A stock contributes two name refs (2-word core + brand first word) for the SAME code; counting both would
+        // double-count the same text, so take the MAX occurrences across a code's refs, then add to its tally.
+        Map<String, Integer> nameOcc = new LinkedHashMap<>();
+        Map<String, String> nameType = new LinkedHashMap<>();
         for (NameRef ref : cat.byName()) {
-            if (hay.contains(" " + ref.core() + " ")) {
-                hits.putIfAbsent(ref.code(), ref.type());
+            int occ = countOccurrences(hay, " " + ref.core() + " ");
+            if (occ > 0) {
+                nameOcc.merge(ref.code(), occ, Math::max);
+                nameType.putIfAbsent(ref.code(), ref.type());
             }
         }
+        nameOcc.forEach((code, occ) -> {
+            type.putIfAbsent(code, nameType.get(code));
+            count.merge(code, occ, Integer::sum);
+        });
 
-        return hits.entrySet().stream().map(e -> new ResolvedAsset(e.getKey(), e.getValue())).toList();
+        return type.entrySet().stream()
+                .map(e -> new ResolvedAsset(e.getKey(), e.getValue(), Math.max(1, count.getOrDefault(e.getKey(), 1))))
+                .toList();
+    }
+
+    /** Non-overlapping occurrences of {@code needle} in {@code hay}; the shared boundary space is reused so
+     *  back-to-back mentions ("akbank akbank") count as two. */
+    private static int countOccurrences(String hay, String needle) {
+        int hitCount = 0;
+        int idx = 0;
+        while ((idx = hay.indexOf(needle, idx)) >= 0) {
+            hitCount++;
+            idx += needle.length() - 1;
+        }
+        return hitCount;
     }
 
     /** Lazily (re)builds both catalogs (stock + crypto), refreshing past the TTL. */

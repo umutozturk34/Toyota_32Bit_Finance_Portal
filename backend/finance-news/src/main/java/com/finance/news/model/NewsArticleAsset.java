@@ -18,7 +18,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode
+@EqualsAndHashCode(exclude = "mentionCount")
 public class NewsArticleAsset {
 
     @Column(name = "asset_code", length = 32, nullable = false)
@@ -26,4 +26,13 @@ public class NewsArticleAsset {
 
     @Column(name = "asset_type", length = 20, nullable = false)
     private String assetType;
+
+    /** How many times the article references this asset (ticker + name occurrences) — a prominence hint for the UI.
+     *  Excluded from equality: the link's identity is the asset code, so the dedup Set keeps one row per asset. */
+    @Column(name = "mention_count", nullable = false)
+    private int mentionCount = 1;
+
+    public NewsArticleAsset(String assetCode, String assetType) {
+        this(assetCode, assetType, 1);
+    }
 }

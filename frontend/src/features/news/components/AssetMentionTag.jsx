@@ -40,8 +40,9 @@ function changeOnDate(candles, dateStr) {
  * tinted by the asset's move ON THE NEWS DATE — green ↗ up, red ↘ down, accent when flat/unknown. The history is
  * fetched once per asset and cached, so the same code across the news grid shares one request.
  */
-export default function AssetMentionTag({ code, type, date, lite = false, onNavigate }) {
+export default function AssetMentionTag({ code, type, date, count, lite = false, onNavigate }) {
   const navigate = useNavigate();
+  const mentions = Number(count) > 1 ? Number(count) : null;
   const { data } = useQuery({
     queryKey: ['assetHistoryMini', type, code],
     queryFn: () => unifiedMarketService.getHistory(type, code, '1Y'),
@@ -82,6 +83,14 @@ export default function AssetMentionTag({ code, type, date, lite = false, onNavi
       className="group/tag inline-flex items-center gap-1 rounded-md border border-border-default bg-bg-elevated/70 px-1.5 py-0.5 text-[10px] hover:border-accent/40 hover:bg-bg-elevated transition-colors cursor-pointer"
     >
       <span className="font-bold uppercase tracking-wider text-accent">{bareCode(code)}</span>
+      {mentions != null && (
+        <span
+          className="rounded-sm bg-accent/15 px-1 font-mono text-[9px] font-bold leading-tight text-accent-bright"
+          title={`${mentions}×`}
+        >
+          ×{mentions}
+        </span>
+      )}
       {changeLabel != null && (
         <span className={`inline-flex items-center gap-0.5 font-mono font-semibold ${changeTone}`}>
           {up && <ArrowUpRight className="h-2.5 w-2.5" strokeWidth={3} />}

@@ -83,6 +83,27 @@ class AssetMentionResolverImplTest {
     }
 
     @Test
+    void shouldCountMultipleMentionsOfSameAsset() {
+        // Arrange + Act: Akbank is referenced three ways — name (×2) plus the parenthesised ticker.
+        List<ResolvedAsset> result = resolver.resolve("Akbank güçlü bilanço açıkladı; Akbank (AKBNK) yükseldi", null);
+
+        // Assert: one link, mention count reflects the repeated references (name occurrences + ticker).
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).code()).isEqualTo("AKBNK.IS");
+        assertThat(result.get(0).mentionCount()).isGreaterThan(1);
+    }
+
+    @Test
+    void shouldReportSingleMention_whenAssetNamedOnce() {
+        // Arrange + Act: a lone reference.
+        List<ResolvedAsset> result = resolver.resolve("Türk Hava Yolları yeni sefer açtı", null);
+
+        // Assert: count is exactly one.
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).mentionCount()).isEqualTo(1);
+    }
+
+    @Test
     void shouldDropUnknownParenthesisedAcronyms() {
         // Arrange + Act: regulator/central-bank acronyms are parenthesised but are not stock codes.
         List<ResolvedAsset> result = resolver.resolve("TCMB faiz kararı (TCMB)", "(SPK) açıklaması");

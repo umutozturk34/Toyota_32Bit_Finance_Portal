@@ -15,4 +15,10 @@ export const newsService = {
     const response = await api.get('/news/categories');
     return response.data.data;
   },
+
+  // Most-mentioned assets across all news, with article counts — for the "filter by asset" rail.
+  getAssetCounts: async (limit = 24) => {
+    const response = await api.get('/news/assets', { params: { limit } });
+    return response.data.data;
+  },
 };

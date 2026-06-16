@@ -16,7 +16,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * One-time enrichment of pre-existing articles that were ingested before the news↔asset link existed (e.g. the demo
@@ -121,8 +123,15 @@ public class NewsAssetBackfill {
                 // enrich() overwrites with the fresh resolution when non-empty and leaves the article untouched
                 // when nothing matches (so a catalog that isn't loaded yet can never wipe existing links).
                 Set<NewsArticleAsset> before = new LinkedHashSet<>(article.getAssets());
+                // mentionCount is excluded from NewsArticleAsset.equals (the link identity is the asset code), so a
+                // re-resolve that only changed the counts looks "unchanged". Track the counts separately so the
+                // one-time catch-up also persists real mention counts onto articles linked before that feature.
+                Map<String, Integer> beforeCounts = before.stream()
+                        .collect(Collectors.toMap(NewsArticleAsset::getAssetCode, NewsArticleAsset::getMentionCount, (a, b) -> a));
                 assetEnricher.enrich(article);
-                if (!before.equals(article.getAssets())) {
+                boolean countsChanged = article.getAssets().stream()
+                        .anyMatch(a -> !Integer.valueOf(a.getMentionCount()).equals(beforeCounts.get(a.getAssetCode())));
+                if (!before.equals(article.getAssets()) || countsChanged) {
                     transactionTemplate.execute(status -> articleRepository.save(article));
                     updated++;
                 }

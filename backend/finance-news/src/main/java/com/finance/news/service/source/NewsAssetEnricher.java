@@ -43,7 +43,7 @@ public class NewsAssetEnricher {
             return false;
         }
         Set<NewsArticleAsset> assets = refs.stream()
-                .map(r -> new NewsArticleAsset(r.code(), r.type()))
+                .map(r -> new NewsArticleAsset(r.code(), r.type(), r.mentionCount()))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         article.setAssets(assets);
         return true;

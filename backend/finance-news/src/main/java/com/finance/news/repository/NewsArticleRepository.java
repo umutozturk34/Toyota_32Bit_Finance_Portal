@@ -27,6 +27,14 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Long>,
     List<Object[]> countByCategory();
 
     /**
+     * Returns {@code [assetCode, assetType, articleCount]} — how many articles mention each linked asset, most-
+     * mentioned first. Powers the news page's "filter by asset" rail (which asset is in how many stories).
+     */
+    @Query("SELECT a.assetCode, a.assetType, COUNT(a) FROM NewsArticle n JOIN n.assets a "
+            + "GROUP BY a.assetCode, a.assetType ORDER BY COUNT(a) DESC, a.assetCode ASC")
+    List<Object[]> countArticlesByAsset();
+
+    /**
      * All articles, id-ascending after {@code afterId} — a forward cursor for the startup re-enrichment so each
      * article is visited exactly once and re-resolved against the CURRENT matcher (logic/keyword changes then reach
      * already-tagged articles too, not just empty ones); the backfill only writes the ones whose link set changed.

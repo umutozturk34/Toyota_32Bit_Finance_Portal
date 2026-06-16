@@ -98,7 +98,12 @@ export default function NewsDetail() {
                         {article.title}
                     </h1>
 
-                    <AssetMentionTags assets={article.assets} date={article.publishedAt} limit={10} />
+                    {Array.isArray(article.assets) && article.assets.length > 0 && (
+                        <div className="space-y-2 rounded-xl border border-border-default bg-bg-elevated/40 p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-fg-subtle">{t('news.mentionedAssets')}</p>
+                            <AssetMentionTags assets={article.assets} date={article.publishedAt} limit={12} />
+                        </div>
+                    )}
 
                     {article.description && !hasContent && (
                         <p className="text-fg-muted text-sm sm:text-base leading-relaxed break-words">

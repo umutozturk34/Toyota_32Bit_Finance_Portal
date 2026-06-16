@@ -8,6 +8,7 @@ import { RefreshCw } from '../../shared/components/feedback/AnimatedIcons';
 import { newsService } from './services/newsService';
 import { COOLDOWN_MS } from './lib/newsConfig';
 import NewsFilters from './components/NewsFilters';
+import NewsAssetFilter from './components/NewsAssetFilter';
 import NewsCard from './components/NewsCard';
 import FeaturedCard from './components/FeaturedCard';
 import LoadingState from '../../shared/components/feedback/LoadingState';
@@ -29,14 +30,25 @@ export default function News() {
     const [remaining, setRemaining] = useState(() => Math.max(0, cooldownEnd - Date.now()));
     const listParams = useListParams({ defaultSize: 9 });
     const activeTab = listParams.filter || 'ALL';
+    // The asset filter rides on the `sub` param as a comma-separated list (MULTI-SELECT). It composes WITH the
+    // category tab (backend ANDs category + the asset OR-set), so you can narrow to e.g. "Borsa İstanbul" news
+    // that mention THYAO or AKBNK at the same time.
+    const activeAssets = listParams.subFilter ? listParams.subFilter.split(',').filter(Boolean) : [];
+    const toggleAsset = (code) => {
+        const next = activeAssets.includes(code)
+            ? activeAssets.filter((c) => c !== code)
+            : [...activeAssets, code];
+        listParams.setSubFilter(next.length ? next.join(',') : null);
+    };
 
     const queryParams = {
         ...listParams.params,
         ...(activeTab !== 'ALL' && { category: activeTab }),
+        ...(activeAssets.length > 0 && { assetCode: activeAssets.join(',') }),
     };
 
     const { data, isLoading: loading, error, refetch } = useQuery({
-        queryKey: ['news', activeTab, listParams.params],
+        queryKey: ['news', activeTab, listParams.subFilter, listParams.params],
         queryFn: () => newsService.search(queryParams),
         placeholderData: (prev) => prev,
     });
@@ -130,6 +142,12 @@ export default function News() {
                 onTabChange={handleTabChange}
             />
 
+            <NewsAssetFilter
+                activeAssets={activeAssets}
+                onToggle={toggleAsset}
+                onClear={() => listParams.setSubFilter(null)}
+            />
+
             {articles.length === 0 ? (
                 <motion.div
                     initial={{ opacity: 0, scale: 0.97 }}
@@ -147,7 +165,7 @@ export default function News() {
             ) : (
                 <AnimatePresence mode="wait">
                     <motion.div
-                        key={`${activeTab}-${listParams.page}`}
+                        key={`${activeTab}-${listParams.subFilter || 'all'}-${listParams.page}`}
                         data-tour="news-list"
                         variants={containerVariants}
                         initial="hidden"

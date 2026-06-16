@@ -7,6 +7,7 @@ import com.finance.common.i18n.Translator;
 import com.finance.shared.dto.response.GroupCount;
 import com.finance.news.dto.response.NewsArticleDetailResponse;
 import com.finance.news.dto.response.NewsArticleResponse;
+import com.finance.news.dto.response.NewsAssetCountResponse;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.news.service.article.NewsQueryService;
 import jakarta.validation.constraints.Size;
@@ -33,7 +34,7 @@ public class NewsController {
     public ApiResponse<PagedResponse<NewsArticleResponse>> getNews(
             @RequestParam(required = false) @Size(max = 100) String category,
             @RequestParam(required = false) @Size(max = 100) String search,
-            @RequestParam(required = false) @Size(max = 32) String assetCode,
+            @RequestParam(required = false) @Size(max = 512) String assetCode,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "desc") String direction,
             @RequestParam(defaultValue = "0") int page,
@@ -50,6 +51,16 @@ public class NewsController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<GroupCount>> getCategoryCounts() {
         return ApiResponse.success(translator.translate("api.news.categoriesRetrieved"), newsQueryService.getCategoryCounts());
+    }
+
+    /** The most-mentioned assets across all news with their article counts — powers the "filter by asset" rail. */
+    @GetMapping("/assets")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<List<NewsAssetCountResponse>> getAssetCounts(
+            @RequestParam(defaultValue = "24") int limit) {
+        int resolved = Math.max(1, Math.min(limit, 60));
+        return ApiResponse.success(translator.translate("api.news.categoriesRetrieved"),
+                newsQueryService.getAssetCounts(resolved));
     }
 
     @GetMapping("/{id}")

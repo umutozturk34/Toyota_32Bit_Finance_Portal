@@ -47,7 +47,7 @@ function NewsRow({ article, onClick }) {
         {assets.length > 0 && (
           <div className="flex items-center gap-1 mt-1.5 flex-wrap">
             {assets.slice(0, 3).map((a) => (
-              <AssetMentionTag key={`${a.type}:${a.code}`} code={a.code} type={a.type} lite />
+              <AssetMentionTag key={`${a.type}:${a.code}`} code={a.code} type={a.type} date={article.publishedAt} count={a.mentionCount} />
             ))}
           </div>
         )}

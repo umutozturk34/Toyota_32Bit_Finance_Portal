@@ -6,6 +6,7 @@ import { Calendar, ChevronRight } from 'lucide-react';
 import { formatDateTimeShort } from '../../../shared/utils/formatters';
 import { CategoryBadge } from '../lib/newsConfig.jsx';
 import { getFallbackImage } from '../lib/newsConfig';
+import AssetMentionTags from './AssetMentionTags';
 import Card from '../../../shared/components/card';
 
 const cardVariants = {
@@ -75,6 +76,11 @@ export default function FeaturedCard({ article, index }) {
                             {t('news.readMore')}
                         </span>
                     </div>
+                    {Array.isArray(article.assets) && article.assets.length > 0 && (
+                        <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                            <AssetMentionTags assets={article.assets} date={article.publishedAt} limit={4} />
+                        </div>
+                    )}
                 </div>
             </div>
         </Card>

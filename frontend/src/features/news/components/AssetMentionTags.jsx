@@ -20,7 +20,7 @@ export default function AssetMentionTags({ assets, date, limit = 6, lite = false
   return (
     <div className={`flex flex-wrap items-center gap-1.5 ${className}`}>
       {shown.map((a) => (
-        <AssetMentionTag key={`${a.type}:${a.code}`} code={a.code} type={a.type} date={date} lite={lite} onNavigate={onNavigate} />
+        <AssetMentionTag key={`${a.type}:${a.code}`} code={a.code} type={a.type} date={date} count={a.mentionCount} lite={lite} onNavigate={onNavigate} />
       ))}
       {collapsible && (
         <button

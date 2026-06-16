@@ -57,7 +57,7 @@ export default function FeaturedCard({ article, index }) {
 
                 <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 min-w-0">
                     <div className="mb-2">
-                        <CategoryBadge category={article.category} />
+                        <CategoryBadge category={article.category} overlay />
                     </div>
                     <h3 className="text-fg text-base sm:text-lg font-bold leading-snug line-clamp-2 break-words group-hover:text-accent-bright transition-colors duration-150 drop-shadow-lg">
                         {article.title}

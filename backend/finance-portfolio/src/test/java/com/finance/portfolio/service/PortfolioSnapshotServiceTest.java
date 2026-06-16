@@ -91,7 +91,7 @@ class PortfolioSnapshotServiceTest {
                 new com.finance.portfolio.dto.response.FixedIncomeSummaryResponse(
                         new BigDecimal("100000"), new BigDecimal("112000"), new BigDecimal("12000"),
                         new BigDecimal("12.0000"), 2, 1,
-                        new BigDecimal("70000"), new BigDecimal("42000"), LocalDate.now()));
+                        new BigDecimal("70000"), new BigDecimal("42000"), new BigDecimal("1500"), LocalDate.now()));
         when(dailySnapshotRepository.findRecentByPortfolioId(eq(2L), any())).thenReturn(List.of());
 
         service.generateDailySnapshots("morning");

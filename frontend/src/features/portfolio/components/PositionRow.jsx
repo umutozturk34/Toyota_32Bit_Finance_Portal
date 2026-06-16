@@ -165,7 +165,7 @@ export default function PositionRow({ pos, pending, elapsed, selected, onToggleS
             </button>
           )}
           {showSellButton && (
-            <button onClick={(e) => { e.stopPropagation(); sellClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.sell.title', 'Sell')} title={t('portfolio.sell.title', 'Sell')}>
+            <button onClick={(e) => { e.stopPropagation(); sellClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.sell.title', { code: assetCodeLabel(pos.assetType, pos.assetCode), defaultValue: 'Sell' })} title={t('portfolio.sell.title', { code: assetCodeLabel(pos.assetType, pos.assetCode), defaultValue: 'Sell' })}>
               <ShoppingBag className="h-3 w-3" />
             </button>
           )}
@@ -224,7 +224,7 @@ export default function PositionRow({ pos, pending, elapsed, selected, onToggleS
               </button>
             )}
             {showSellButton && (
-              <button onClick={(e) => { e.stopPropagation(); sellClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.sell.title', 'Sell')} title={t('portfolio.sell.title', 'Sell')}>
+              <button onClick={(e) => { e.stopPropagation(); sellClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.sell.title', { code: assetCodeLabel(pos.assetType, pos.assetCode), defaultValue: 'Sell' })} title={t('portfolio.sell.title', { code: assetCodeLabel(pos.assetType, pos.assetCode), defaultValue: 'Sell' })}>
                 <ShoppingBag className="h-3 w-3" />
               </button>
             )}

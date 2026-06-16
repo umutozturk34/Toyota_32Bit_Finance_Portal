@@ -143,7 +143,6 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
 
     /** Writes a full per-asset + aggregate snapshot for every portfolio; {@code source} labels the trigger (e.g. morning/evening). */
     public void generateDailySnapshots(String source) {
-        LocalDate today = LocalDate.now();
         List<Portfolio> portfolios = portfolioRepository.findAll();
 
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(

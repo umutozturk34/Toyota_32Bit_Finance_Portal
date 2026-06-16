@@ -47,7 +47,6 @@ class PortfolioSnapshotServiceTest {
     @Mock private PortfolioDailySnapshotRepository dailySnapshotRepository;
     @Mock private com.finance.portfolio.derivative.repository.DerivativePositionRepository derivativePositionRepository;
     @Mock private TransactionTemplate transactionTemplate;
-    @SuppressWarnings("unchecked")
     @Mock private ObjectProvider<EventPublisherPort> events;
     @Mock private EventPublisherPort eventPublisher;
     @Mock private com.finance.portfolio.fixedincome.FixedIncomeSummaryService fixedIncomeSummaryService;

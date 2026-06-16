@@ -243,7 +243,8 @@ class UnifiedMarketServiceTest {
         MarketAssetResponse stockIndex = new MarketAssetResponse(
                 "BIST100", "BIST 100", null, MarketType.STOCK,
                 new BigDecimal("100"), BigDecimal.ZERO, BigDecimal.ZERO, null,
-                new StockMetadata(StockSegment.MAIN_INDEX, 1000L, "BIST", null, null, null));
+                new StockMetadata(StockSegment.MAIN_INDEX, 1000L, "BIST", null, null, null,
+                        null, null, null, java.util.List.of(), java.util.List.of()));
         when(stockProvider.getTopMovers(10, true)).thenReturn(List.of());
         when(stockProvider.getTopMovers(10, false)).thenReturn(List.of());
         when(stockProvider.search(any(), any(), anyString(), anyString(), anyInt(), anyInt()))

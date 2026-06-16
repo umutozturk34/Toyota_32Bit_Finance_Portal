@@ -58,6 +58,8 @@ public abstract class NewsArticleMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "fetchedAt", source = "now")
+    @Mapping(target = "source", ignore = true)
+    @Mapping(target = "assets", ignore = true)
     public abstract NewsArticle toEntity(NewsArticleDto dto, LocalDateTime now);
 
     private boolean isBlank(String value) {

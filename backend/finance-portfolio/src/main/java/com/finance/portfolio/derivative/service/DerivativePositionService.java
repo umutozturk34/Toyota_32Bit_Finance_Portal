@@ -434,6 +434,13 @@ public class DerivativePositionService {
     /**
      * Force-closes any still-open positions whose contract has expired, using the contract's settlement
      * price (falling back to last price), converted to TRY at expiry. Skips positions with no price.
+     * <p>
+     * This is correct for OPTIONS too, and does NOT need a separate {@code max(0, spot - strike)} intrinsic
+     * branch: a VIOP contract is quoted by its own price (an option by its premium, not the underlying spot),
+     * so {@code settlementPrice}/{@code lastPrice} here is the option's settlement PREMIUM — which the exchange
+     * already fixes to the option's intrinsic value at expiry (0 when out-of-the-money). Closing at that premium
+     * therefore yields the right P&L: an in-the-money option realises (intrinsic − premium paid), an OTM one
+     * loses exactly the premium. Subtracting the strike from this premium-basis number would corrupt the close.
      *
      * @return the number of positions auto-closed
      */

@@ -52,10 +52,10 @@ public class MacroIndicatorController {
     @GetMapping("/{code}/history")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<MacroIndicatorPointResponse>> history(
-            @PathVariable @Size(max = 32) String code,
+            @PathVariable @Size(max = 64) String code,
             @RequestParam(required = false) LocalDate from,
             @RequestParam(required = false) LocalDate to) {
-        MacroIndicator indicator = queryService.findByCode(code);
+        MacroIndicator indicator = queryService.findByPublicId(code);
         LocalDate effectiveTo = to == null ? LocalDate.now() : to;
         LocalDate effectiveFrom = from == null
                 ? effectiveTo.minusYears(macroProperties.defaultHistoryYears()) : from;

@@ -13,6 +13,7 @@ public abstract class PortfolioSnapshotMapper {
 
     @Mapping(target = "timestamp", source = "createdAt")
     @Mapping(target = "events", ignore = true)
+    @Mapping(target = "withEvents", ignore = true)
     public abstract AssetSeriesPoint toAssetSeriesPoint(PortfolioAssetDailySnapshot snapshot);
 
     public abstract List<AssetSeriesPoint> toAssetSeriesPoints(List<PortfolioAssetDailySnapshot> snapshots);

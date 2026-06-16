@@ -180,7 +180,7 @@ function StockConstituents({ asset }) {
   if (!constituents.length) return null;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border-default bg-bg-elevated/50 p-3.5 backdrop-blur">
+    <div className="overflow-hidden rounded-2xl border border-border-default bg-bg-elevated/50 p-3.5 backdrop-blur" data-tour="index-constituents">
       <div className="mb-3 flex flex-wrap items-center gap-2.5">
         <span className="h-2 w-2 rounded-full bg-accent" style={{ boxShadow: '0 0 10px var(--color-accent-glow)' }} />
         <p className="text-[11px] font-bold uppercase tracking-wider text-fg">{t('marketDetail.stock.constituents')}</p>

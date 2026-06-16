@@ -2268,6 +2268,14 @@
         "title": "Draw on the chart",
         "desc": "Use the always-on tool rail on the left — trendlines for direction, Fibonacci retracements, parallel channels and horizontal support/resistance. Your drawings are saved."
       },
+      "stockDetail": {
+        "title": "Stock profile",
+        "desc": "Below the chart sits the company profile — sector, founding year, HQ and the BIST indices it belongs to (with weight). Each index chip links to its own detail page."
+      },
+      "indexLeaderboard": {
+        "title": "Index constituents",
+        "desc": "On an index (e.g. BIST 100), below the chart its constituent stocks appear as a weight-ranked leaderboard — at a glance you see which stocks carry the index most, and you can search it."
+      },
       "fundDetail": {
         "title": "Fund detail card",
         "desc": "For mixed and diversified funds like ACD - İSTANBUL PORTFÖY İKİNCİ DEĞİŞKEN FON you see allocation, period returns, risk level, category and the KAP link in one view."

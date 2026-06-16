@@ -2268,6 +2268,14 @@
         "title": "Grafik üzerine çiz",
         "desc": "Soldaki her zaman açık çizim rayını kullan — trendline ile yön, Fibonacci ile geri çekilme, paralel kanallar ve yatay destek/direnç. Çizimlerin kaydedilir."
       },
+      "stockDetail": {
+        "title": "Hisse detay künyesi",
+        "desc": "Grafiğin altında şirketin künyesi yer alır — sektör, kuruluş yılı, merkez ve dahil olduğu BIST endeksleri (ağırlığıyla). Her endeks chip'i kendi detay sayfasına gider."
+      },
+      "indexLeaderboard": {
+        "title": "Endeks bileşenleri",
+        "desc": "Bir endekste (örneğin BIST 100) grafiğin altında bileşen hisseler ağırlığa göre sıralı bir lider tablosu olarak çıkar — tek bakışta endeksi en çok hangi hisseler taşıyor görürsün, aratabilirsin."
+      },
       "fundDetail": {
         "title": "Fon detay kartı",
         "desc": "Örnek olarak ACD - İSTANBUL PORTFÖY İKİNCİ DEĞİŞKEN FON gibi karma fonlarda varlık dağılımı, dönemsel getiri, risk seviyesi ve KAP bağlantısını tek ekranda görürsün."

@@ -131,8 +131,11 @@ function buildBuckets(bonds, deposits, nowMs) {
   const maxKey = Math.max(...cashKeys);
   const span = maxKey - startKey;
   const bucketMonths = span <= 23 ? 1 : span <= 71 ? 3 : 12;
+  // For the yearly view, align buckets to the CALENDAR YEAR (Jan–Dec) instead of a today-anchored Jun–Jun window:
+  // otherwise an early-Y+1 payment (e.g. a February coupon) lands under the "Y" bar and reads as the wrong year.
+  const loopStart = bucketMonths === 12 ? Math.floor(startKey / 12) * 12 : startKey;
   const buckets = [];
-  for (let k = startKey; k <= maxKey; k += bucketMonths) {
+  for (let k = loopStart; k <= maxKey; k += bucketMonths) {
     let coupon = 0;
     let redemption = 0;
     const items = [];
@@ -203,6 +206,8 @@ export default function CouponCashflowChart({ portfolioId }) {
     const localeTag = i18n.t('common.localeTag');
     const labels = months.map((m) => {
       const d = new Date(m.ts);
+      // Yearly buckets are calendar years — label them just "2026", not "Oca 26".
+      if (m.bucketMonths >= 12) return String(d.getFullYear());
       return `${d.toLocaleString(localeTag, { month: 'short' })} ${String(d.getFullYear()).slice(2)}`;
     });
     return {

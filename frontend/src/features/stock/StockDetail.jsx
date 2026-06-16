@@ -146,7 +146,7 @@ export default function StockDetail() {
       excludeCompare={[historySym]}
       renderHeader={(asset) => <StockHeader asset={asset} />}
       renderMetadata={(asset) => <StockMetadata asset={asset} />}
-      renderSidebar={(asset) => <StockConstituents asset={asset} />}
+      renderBelowChart={(asset) => <StockConstituents asset={asset} />}
       showBuyButton={true}
       getBuyProps={(asset) => ({
         assetType: 'STOCK',

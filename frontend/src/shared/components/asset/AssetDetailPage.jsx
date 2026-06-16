@@ -93,6 +93,7 @@ export default function AssetDetailPage({
   renderHeader,
   renderMetadata,
   renderSidebar,
+  renderBelowChart,
   getBuyProps,
   showBuyButton = true,
   buyModalComponent: BuyModalComponent = MarketAddPositionModal,
@@ -239,6 +240,10 @@ export default function AssetDetailPage({
           onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
         />
       </div>
+
+      {/* Supporting content that belongs UNDER the chart (e.g. an index's constituent stocks) — the price is
+          the primary view, so this sits below it, above the news. */}
+      {renderBelowChart && renderBelowChart(asset)}
 
       <AssetRelatedNews
         assetCode={assetCode}

@@ -221,8 +221,24 @@ public class InflationBeaterService {
         return PERIOD_MONTHS.keySet();
     }
 
-    private static String resolveBenchmarkCode(String benchmarkCode) {
-        return (benchmarkCode != null && !benchmarkCode.isBlank()) ? benchmarkCode : DEFAULT_BENCHMARK;
+    /**
+     * Canonicalises the requested benchmark to its raw EVDS code. The API speaks EVDS-free public slugs
+     * ({@code cpiindex}, {@code deposittry1m}), but the cache, the scheduled warm-up and the universe all key on
+     * the raw EVDS code ({@code TP.GENENDEKS.T1}). Without this translation a slug request 404s in
+     * {@link #compute} (findByCode only knows EVDS codes) and misses the warm cache the scheduler filled under
+     * the EVDS key. {@link MacroIndicatorQueryService#findByPublicId} accepts either form, so this is idempotent
+     * for the default/warm-up EVDS path. On a cold DB (no indicators yet) it falls back to the raw request, which
+     * the {@code dataReady()} gate then degrades to an empty ranking instead of an error.
+     */
+    private String resolveBenchmarkCode(String benchmarkCode) {
+        String requested = (benchmarkCode != null && !benchmarkCode.isBlank()) ? benchmarkCode : DEFAULT_BENCHMARK;
+        try {
+            MacroIndicator indicator = macroQueryService.findByPublicId(requested);
+            String canonical = indicator == null ? null : indicator.getCode();
+            return (canonical != null && !canonical.isBlank()) ? canonical : requested;
+        } catch (RuntimeException e) {
+            return requested;
+        }
     }
 
     private static Currency parseCurrencyOverride(String raw) {
@@ -280,8 +296,10 @@ public class InflationBeaterService {
         int beating = (int) entries.stream().filter(InflationBeaterEntry::beatsBenchmark).count();
         log.info("Beaters ranked period={} benchmark={} currency={} return={} total={} beating={}",
                 period, code, comparisonCurrency, benchmarkReturn, entries.size(), beating);
+        // Expose the EVDS-free public slug (not the raw EVDS code) so the frontend can match the benchmark
+        // against its slug-keyed catalog — mirrors the API's slugs-only contract everywhere else.
         return new InflationBeaterResponse(
-                startDate, endDate, code, benchmark.getLabel(),
+                startDate, endDate, benchmark.getSlug(), benchmark.getLabel(),
                 benchmarkReturn, beating, entries.size(), comparisonCurrency, entries);
     }
 

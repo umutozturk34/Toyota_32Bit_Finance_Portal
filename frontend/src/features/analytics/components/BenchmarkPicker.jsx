@@ -35,6 +35,32 @@ function labelOf(opt, t) {
   return t(`marketOverview.macro.${opt.label}`, { defaultValue: opt.label });
 }
 
+// Extra search aliases per indicator so the EVDS-free slug never has to be typed: the localized name and common
+// abbreviations both find it (e.g. "cpi" / "tüfe" / "enflasyon" → TÜFE). Keyed by the stable backend label id.
+const SEARCH_ALIASES = {
+  cpiIndex: ['cpi', 'tüfe', 'tufe', 'enflasyon', 'inflation', 'consumer'],
+  ppiIndex: ['ppi', 'üfe', 'ufe', 'yi-üfe', 'yiufe', 'producer', 'üretici', 'uretici'],
+  policyRate: ['politika faizi', 'policy rate', 'tcmb', 'one week repo', 'haftalık repo'],
+  tlrefIndex: ['tlref', 'tlref endeksi', 'tlref index'],
+  tlrefRate: ['tlref', 'tlref oranı', 'tlref rate'],
+};
+
+// Fold to a Turkish-I-safe lower-case key so "CPI" (→ dotless "cpı" under tr locale) still matches the alias
+// "cpi": lower-case in tr, then collapse dotless ı → i so both spellings unify.
+const fold = (s) => (s || '').toLocaleLowerCase('tr-TR').replace(/ı/g, 'i');
+
+// All terms a query can match an indicator on: its localized name, language-neutral category words and any
+// curated abbreviations — never the raw slug. i18n-aware because the localized name flows through t().
+function searchHaystack(opt, t) {
+  const terms = [labelOf(opt, t), opt.label || ''];
+  if (opt.category === 'INFLATION') terms.push('enflasyon', 'inflation');
+  if (opt.category === 'RATES') terms.push('faiz', 'rate', 'interest', 'getiri');
+  if (opt.category === 'DEPOSIT') terms.push('mevduat', 'deposit', opt.currency || '');
+  const aliases = SEARCH_ALIASES[opt.label];
+  if (aliases) terms.push(...aliases);
+  return fold(terms.join(' '));
+}
+
 export default function BenchmarkPicker({ value, onChange, options, t, defaultLabel }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -56,17 +82,12 @@ export default function BenchmarkPicker({ value, onChange, options, t, defaultLa
   }, [options]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = fold(search.trim());
     if (!q) return grouped;
     return grouped
       .map((g) => ({
         ...g,
-        items: g.items.filter((opt) => {
-          const localized = labelOf(opt, t).toLowerCase();
-          const lbl = (opt.label || '').toLowerCase();
-          const code = (opt.code || '').toLowerCase();
-          return localized.includes(q) || lbl.includes(q) || code.includes(q);
-        }),
+        items: g.items.filter((opt) => searchHaystack(opt, t).includes(q)),
       }))
       .filter((g) => g.items.length > 0);
   }, [grouped, search, t]);
@@ -154,7 +175,6 @@ export default function BenchmarkPicker({ value, onChange, options, t, defaultLa
   }
 
   const triggerLabel = activeOption ? labelOf(activeOption, t) : defaultLabel;
-  const triggerCode = activeOption?.code;
 
   return (
     <div ref={containerRef} className="relative" onKeyDown={handleKey}>
@@ -170,9 +190,6 @@ export default function BenchmarkPicker({ value, onChange, options, t, defaultLa
         />
         <span className="flex-1 min-w-0 text-left flex items-baseline gap-2">
           <span className="font-semibold text-fg truncate">{triggerLabel}</span>
-          {triggerCode && (
-            <span className="font-mono text-[10px] text-fg-subtle tracking-[0.05em] truncate">{triggerCode}</span>
-          )}
         </span>
         {activeOption && (
           <span
@@ -273,9 +290,6 @@ export default function BenchmarkPicker({ value, onChange, options, t, defaultLa
                                   }`}
                                 >
                                   {labelOf(opt, t)}
-                                </span>
-                                <span className="block text-[10px] font-mono text-fg-subtle tracking-[0.05em] truncate">
-                                  {opt.code}
                                 </span>
                               </span>
                               {isActive && (

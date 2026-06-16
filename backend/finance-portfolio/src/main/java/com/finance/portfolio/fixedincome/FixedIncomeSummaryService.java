@@ -418,16 +418,18 @@ public class FixedIncomeSummaryService {
 
     /**
      * Returns the ex-coupon DROP date near a scheduled coupon date for a dirty-price series, else the scheduled date.
-     * Scans observations in {@code [scheduled-7, scheduled+2]} for the single largest day-over-day fall; if that fall
+     * Scans observations in {@code [scheduled-7, scheduled]} for the single largest day-over-day fall; if that fall
      * clears {@link #EX_COUPON_DROP_PCT} it is the day the quote shed its accrued interest, so the coupon credit is
-     * snapped there to keep the value-plus-coupons line flat. A clean series (no such fall) is left on its date.
+     * snapped there to keep the value-plus-coupons line flat. The window stops AT the scheduled date — never after —
+     * so a coupon is never credited later than its date (which would also push a just-received coupon past
+     * {@code today} and drop it from the received total). A clean series (no such fall) is left on its date.
      */
     private LocalDate snapToExCouponDrop(NavigableMap<LocalDate, BigDecimal> series, LocalDate scheduled) {
         if (series == null || series.isEmpty()) {
             return scheduled;
         }
         NavigableMap<LocalDate, BigDecimal> window =
-                series.subMap(scheduled.minusDays(7), true, scheduled.plusDays(2), true);
+                series.subMap(scheduled.minusDays(7), true, scheduled, true);
         LocalDate dropDate = null;
         BigDecimal worst = BigDecimal.ZERO;
         BigDecimal prev = null;

@@ -59,13 +59,13 @@ export default function AssetMentionTag({ code, type, date, lite = false, onNavi
   const up = magnitude != null && change > 0 && !flat;
   const down = magnitude != null && change < 0 && !flat;
   const changeTone = up ? 'text-success' : down ? 'text-danger' : 'text-fg-muted';
-  // Small-but-real moves (a slow forex/commodity pair) keep two decimals so they don't collapse to "0.0%";
-  // larger moves stay at one decimal.
+  // Two decimals everywhere: a slow pair shouldn't collapse to "0.0%", and a "3.79%" move shouldn't round up to
+  // a misleading "3.8%". Only a truly-flat (<0.005%) move shows a plain directionless "0%".
   const changeLabel = magnitude == null
     ? null
     : flat
       ? '0%'
-      : `${magnitude < 0.1 ? magnitude.toFixed(2) : magnitude.toFixed(1)}%`;
+      : `${magnitude.toFixed(2)}%`;
 
   const open = (e) => {
     e.stopPropagation();

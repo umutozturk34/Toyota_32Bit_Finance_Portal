@@ -108,6 +108,8 @@ public class DerivativePositionFormatter {
             if (LONG_DIRECTION.equals(position.getDirection().name())) maxLoss = f.entryNotional();
             else maxGain = f.entryNotional();
         }
+        String optionSide = position.getViopContract().getOptionSide() != null
+                ? position.getViopContract().getOptionSide().name() : null;
         return new DerivativeMeta(
                 position.getDirection().name(),
                 kindName,
@@ -117,6 +119,7 @@ public class DerivativePositionFormatter {
                 position.getViopContract().resolvePriceCurrency(),
                 f.closed(),
                 position.getViopContract().getStrikePrice(),
+                optionSide,
                 maxLoss,
                 maxGain,
                 position.getViopContract().getDisplayName());

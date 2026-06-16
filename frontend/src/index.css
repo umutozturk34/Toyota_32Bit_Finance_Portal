@@ -20,6 +20,13 @@
   --color-success: #34d399;
   --color-danger: #f87171;
   --color-warning: #fbbf24;
+  /* Gold "prestige" accent for the BIST size-index (BIST 30/50/100) tier. Theme-flipping so it reads on both
+     surfaces. A bright yellow-gold (not the muddy amber that looked bronze) on dark; a clearer golden amber on
+     light. Only the award icon + weight % use it now — the label text is neutral, so contrast is never an issue. */
+  --color-gold: #fcd34d;
+  --color-gold-soft: #fde68a;
+  --color-gold-bg: rgba(252, 211, 77, 0.12);
+  --color-gold-border: rgba(252, 211, 77, 0.34);
   --spacing: 0.25rem;
   /* Wider page shell for large monitors (≥1536px): page content caps at 7xl (1280px) up through xl, then
      expands to 8xl (1920px) at 2xl so big displays fill instead of sitting in a narrow centered column.
@@ -536,6 +543,10 @@ button {
   --color-success: #16a34a;
   --color-danger: #dc2626;
   --color-warning: #d97706;
+  --color-gold: #d97706;
+  --color-gold-soft: #92400e;
+  --color-gold-bg: rgba(217, 119, 6, 0.14);
+  --color-gold-border: rgba(217, 119, 6, 0.40);
   --sidebar-bg: rgba(242, 246, 251, 0.97);
   --sidebar-blur: blur(20px);
 }

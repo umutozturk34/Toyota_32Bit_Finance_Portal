@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { ArrowDown, ArrowUp, ArrowUpDown, Banknote, ChevronLeft, ChevronRight, Clock, Coins, DollarSign, RefreshCw, Search, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, ArrowUpRight, Banknote, ChevronLeft, ChevronRight, Clock, Coins, DollarSign, RefreshCw, Search, X } from 'lucide-react';
 import { useBankRates, useBankRateCurrencies } from './hooks/useBankRates';
 import Card from '../../shared/components/card';
 import CurrencyMarker from '../../shared/components/currency/CurrencyMarker';
@@ -13,6 +13,13 @@ import { formatDateTimeShort } from '../../shared/utils/formatters';
 import { commodityVisual } from '../../shared/icons/commodities';
 
 const DEFAULT_CURRENCY_BY_KIND = { CURRENCY: 'USD', GOLD: 'GRAM_ALTIN' };
+
+// Reverse link "bank rate → asset detail": the currencies that exist as forex assets (seed) get a /forex/<code>
+// detail; the only consumer gold with a tracked commodity is gram gold. Anything else has no detail → no link.
+const FOREX_DETAIL_CODES = new Set(['USD', 'EUR', 'AED', 'AUD', 'AZN', 'CNY', 'DKK', 'KRW', 'GBP', 'SEK', 'CHF', 'JPY', 'CAD', 'QAR', 'KZT', 'KWD', 'NOK', 'PKR', 'RON', 'RUB', 'SAR', 'XDR']);
+const GOLD_DETAIL_ROUTE = { GRAM_ALTIN: '/commodities/XAUTRYG' };
+const assetDetailRoute = (kind, code) =>
+  kind === 'GOLD' ? (GOLD_DETAIL_ROUTE[code] ?? null) : (FOREX_DETAIL_CODES.has(code) ? `/forex/${code}` : null);
 
 // Sort the bank list by a rate column; clicking an active chip flips its arrow, mirroring the returns page.
 const SORT_CHIPS = [
@@ -67,7 +74,7 @@ function BankCard({ row, t, displayCurrency, money }) {
           />
         ) : (
           <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold ${
-            isMarket ? 'bg-warning/15 text-warning' : 'bg-accent/10 text-accent'
+            isMarket ? 'bg-warning/15 text-warning' : 'bg-surface text-fg-muted'
           }`}>
             {isMarket ? <Coins className="h-5 w-5" /> : (row.bankCode || '?').slice(0, 3).toUpperCase()}
           </div>
@@ -137,6 +144,7 @@ export default function BankRatesPanel() {
   const kindParam = searchParams.get('kind');
   const kind = kindParam === 'GOLD' ? 'GOLD' : 'CURRENCY';
   const currency = searchParams.get('rate') || DEFAULT_CURRENCY_BY_KIND[kind];
+  const detailRoute = assetDetailRoute(kind, currency);
   const setKind = useCallback((nextKind) => {
     const next = new URLSearchParams(searchParams);
     if (nextKind === 'CURRENCY') next.delete('kind'); else next.set('kind', nextKind);
@@ -321,7 +329,16 @@ export default function BankRatesPanel() {
             )}
           </div>
 
-          <span className="w-full text-right sm:w-auto sm:ml-auto shrink-0 text-[10px] font-mono text-fg-muted">
+          {detailRoute && (
+            <Link
+              to={detailRoute}
+              className="inline-flex items-center gap-1 rounded-lg border border-accent/30 bg-accent/10 px-2.5 py-1.5 text-[11px] font-semibold text-accent no-underline transition-colors hover:bg-accent/15 sm:ml-auto"
+            >
+              {t('bankRates.viewDetail', { code: labelFor(currency) })} <ArrowUpRight className="h-3 w-3" />
+            </Link>
+          )}
+
+          <span className={`w-full text-right shrink-0 text-[10px] font-mono text-fg-muted sm:w-auto ${detailRoute ? '' : 'sm:ml-auto'}`}>
             {kind === 'GOLD'
               ? t('bankRates.goldCount', { count: filteredCurrencies.length, total: orderedCurrencies.length })
               : t('bankRates.currencyCount', { count: filteredCurrencies.length, total: orderedCurrencies.length })}

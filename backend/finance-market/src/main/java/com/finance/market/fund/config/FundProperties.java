@@ -33,4 +33,6 @@ public class FundProperties {
     private int holidayLookbackDays = 5;
     private int gapDetectionLookbackDays = 30;
     private int allocationWalkbackDays = 7;
+    /** Bounded pool size for the per-fund TEFAS profile (valör/ISIN/risk) bulk back-fill. */
+    private int profileEnrichParallelism = 6;
 }

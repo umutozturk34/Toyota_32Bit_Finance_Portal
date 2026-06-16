@@ -11,28 +11,42 @@ const PERIODS = [
   { key: 'return5y', labelKey: 'marketDetail.fund.return.5y' },
 ];
 
+// Each period is a tinted tile: green/red by sign, with a fill bar whose length is the return magnitude
+// normalised to the strongest period on the card — so the best/worst stretches pop at a glance.
 export default function ReturnsList({ metadata }) {
   const { t } = useTranslation();
   if (!metadata) return null;
-  const rows = PERIODS.filter(p => metadata[p.key] != null);
+  const rows = PERIODS.filter((p) => metadata[p.key] != null)
+    .map((p) => ({ ...p, value: Number(metadata[p.key]) }));
   if (rows.length === 0) return null;
+  const maxAbs = Math.max(...rows.map((r) => Math.abs(r.value)), 0.01);
+
   return (
     <Card padding="md" radius="xl">
-      <h3 className="text-sm font-semibold text-fg mb-3">{t('marketDetail.fund.returnsTitle')}</h3>
-      <ul className="space-y-1.5">
-        {rows.map(p => {
-          const v = Number(metadata[p.key]);
-          const positive = v >= 0;
+      <h3 className="mb-3 text-sm font-semibold text-fg">{t('marketDetail.fund.returnsTitle')}</h3>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {rows.map((p) => {
+          const positive = p.value >= 0;
+          const tone = positive ? 'var(--color-success)' : 'var(--color-danger)';
+          const fillPct = Math.max(6, (Math.abs(p.value) / maxAbs) * 100);
           return (
-            <li key={p.key} className="flex items-center justify-between gap-2 text-xs">
-              <span className="text-fg-muted">{t(p.labelKey)}</span>
-              <span className={`font-mono font-semibold ${positive ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {positive ? '+' : ''}{v.toFixed(2)}%
-              </span>
-            </li>
+            <div
+              key={p.key}
+              className="relative overflow-hidden rounded-xl border border-border-default bg-bg-base/40 px-2.5 py-2"
+            >
+              <span
+                aria-hidden
+                className="absolute inset-y-0 left-0"
+                style={{ width: `${fillPct}%`, background: `linear-gradient(90deg, color-mix(in srgb, ${tone} 18%, transparent), transparent)` }}
+              />
+              <p className="relative text-[10px] font-semibold uppercase tracking-wider text-fg-muted">{t(p.labelKey)}</p>
+              <p className="relative mt-0.5 font-mono text-sm font-bold tabular-nums" style={{ color: tone }}>
+                {positive ? '+' : ''}{p.value.toFixed(2)}%
+              </p>
+            </div>
           );
         })}
-      </ul>
+      </div>
     </Card>
   );
 }

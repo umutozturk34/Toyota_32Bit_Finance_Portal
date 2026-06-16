@@ -92,7 +92,6 @@ export default function AssetDetailPage({
   backRoute,
   renderHeader,
   renderMetadata,
-  renderSidebar,
   renderBelowChart,
   getBuyProps,
   showBuyButton = true,
@@ -221,14 +220,6 @@ export default function AssetDetailPage({
         </div>
       </motion.div>
 
-      {renderMetadata && renderMetadata(asset)}
-
-      {/* Asset-specific extra (e.g. the fund's "Fon Detayını Görüntüle" card) sits ABOVE the chart so it's always
-          visible — it used to be passed into the chart's Lens, which is collapsed by default and hid it. */}
-      {renderSidebar && (
-        <div data-tour="detail-sidebar">{renderSidebar(asset)}</div>
-      )}
-
       <div data-tour="detail-chart">
         <LightweightChart
           data={chartData}
@@ -241,8 +232,11 @@ export default function AssetDetailPage({
         />
       </div>
 
-      {/* Supporting content that belongs UNDER the chart (e.g. an index's constituent stocks) — the price is
-          the primary view, so this sits below it, above the news. */}
+      {/* Everything that isn't the price chart sits BELOW it — the asset's property strip first, then any
+          asset-specific supporting block (fund profile, index constituents), then the news. This order is the
+          same on every detail page so the chart is always the primary, top-of-page view. */}
+      {renderMetadata && <div data-tour="detail-metadata">{renderMetadata(asset)}</div>}
+
       {renderBelowChart && renderBelowChart(asset)}
 
       <AssetRelatedNews

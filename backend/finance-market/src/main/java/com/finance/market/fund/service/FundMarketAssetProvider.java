@@ -36,20 +36,44 @@ public class FundMarketAssetProvider extends BaseTrackedMarketAssetProvider<Fund
     private final FundRepository fundRepository;
     private final MarketCacheService<Fund> fundCacheService;
     private final FundResponseMapper fundResponseMapper;
+    private final FundDetailEnrichmentService detailEnrichmentService;
+    /** Fund codes whose lazy profile enrichment has already been attempted this run, so a fund with no TEFAS
+     *  profile (isinCode stays null) is not re-fetched on every detail open / focus-refetch. */
+    private final java.util.Set<String> profileEnrichAttempted = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     public FundMarketAssetProvider(FundRepository fundRepository,
                                    MarketCacheService<Fund> fundCacheService,
                                    FundResponseMapper fundResponseMapper,
-                                   TrackedAssetQueryService trackedAssetQueryService) {
+                                   TrackedAssetQueryService trackedAssetQueryService,
+                                   FundDetailEnrichmentService detailEnrichmentService) {
         super(fundRepository, trackedAssetQueryService);
         this.fundRepository = fundRepository;
         this.fundCacheService = fundCacheService;
         this.fundResponseMapper = fundResponseMapper;
+        this.detailEnrichmentService = detailEnrichmentService;
     }
 
     @Override
     public MarketType getType() {
         return MarketType.FUND;
+    }
+
+    /**
+     * Single-fund detail open. The settlement valör / ISIN / trade-window fields come from a per-fund TEFAS
+     * profile call that the bulk refresh deliberately skips (it would be 2000+ HTTP calls per cycle). isinCode
+     * is profile-only, so a null one means the profile has never been fetched: kick the fetch off on a
+     * background thread (at most ONCE per fund per run — the {@code profileEnrichAttempted} guard) and return the
+     * current snapshot immediately, so the page never blocks and a profile-less fund is not re-fetched on every
+     * open. The enriched fields persist and surface on the next view/refetch.
+     */
+    @Override
+    public MarketAssetResponse getByCode(String code) {
+        Fund snapshot = getSnapshotByCode(code);
+        if (snapshot == null) return null;
+        if (snapshot.getIsinCode() == null && profileEnrichAttempted.add(code)) {
+            detailEnrichmentService.enrichSingleFundDetailsAsync(code);
+        }
+        return super.getByCode(code);
     }
 
     @Override

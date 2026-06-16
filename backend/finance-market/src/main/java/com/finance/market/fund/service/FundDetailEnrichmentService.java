@@ -16,8 +16,11 @@ import com.finance.market.fund.model.FundType;
 import com.finance.market.fund.repository.FundAllocationRepository;
 import com.finance.market.fund.repository.FundRepository;
 import com.finance.market.fund.util.TefasHelper;
+import com.finance.market.core.util.MarketBatchRunner;
+import com.finance.shared.util.BatchUpdateRunner;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -46,6 +49,9 @@ public class FundDetailEnrichmentService {
     private final FundProperties fundProperties;
     private final ZoneId appZone;
     private final int eodCutoverHour;
+
+    /** Min sample before the batch failure-rate guard engages on the profile back-fill. */
+    private static final int PROFILE_BATCH_MIN_SAMPLE = 25;
 
     public FundDetailEnrichmentService(TefasClient tefasClient,
                                        FundRepository fundRepository,
@@ -86,6 +92,48 @@ public class FundDetailEnrichmentService {
         }
         log.info("Fund returns/risk enrichment: {} rows updated (tracked={}, source=TEFAS)", updated, existingCodes.size());
         return updated;
+    }
+
+    /**
+     * Bulk back-fills the per-fund TEFAS profile (settlement valör, ISIN, KAP link, trade window, risk) for
+     * every tracked fund still missing it. Unlike returns/risk — which arrive in one bulk TEFAS call — the
+     * profile endpoint is per-fund, so the fetches run on a bounded pool. {@code isinCode} is profile-only,
+     * so an enriched fund is skipped on later cycles: the first refresh is the only heavy one, and a newly
+     * added fund is filled on the next refresh. (Valör/seans are effectively static, so re-fetching enriched
+     * funds every cycle would be wasteful; the lazy detail-open path covers the instant case.)
+     *
+     * @return number of funds whose profile was filled this pass
+     */
+    public int enrichMissingProfiles() {
+        Set<String> tracked = loadExistingFundCodes();
+        if (tracked.isEmpty()) return 0;
+        List<String> targets = fundRepository.findFundCodesMissingProfile().stream()
+                .filter(tracked::contains)
+                .toList();
+        if (targets.isEmpty()) {
+            log.info("Fund profile back-fill: all tracked funds already enriched");
+            return 0;
+        }
+        log.info("Fund profile back-fill: {} funds missing profile (parallelism={})",
+                targets.size(), fundProperties.getProfileEnrichParallelism());
+        BatchUpdateRunner.Result result = MarketBatchRunner.runParallel(
+                targets, this::enrichProfileOnly, code -> code,
+                log, "Fund", "profile-enrich", PROFILE_BATCH_MIN_SAMPLE,
+                fundProperties.getProfileEnrichParallelism());
+        log.info("Fund profile back-fill done: {} enriched, {} failed", result.successCount(), result.failCount());
+        return result.successCount();
+    }
+
+    /** Fetches and applies only the TEFAS profile for one fund (one HTTP call); persists + refreshes cache. */
+    private void enrichProfileOnly(String fundCode) {
+        Fund fund = fundRepository.findById(fundCode).orElse(null);
+        if (fund == null) return;
+        FundType type = fund.getFundType() != null ? fund.getFundType() : FundType.YAT;
+        TefasFundProfileDto profile = tefasClient.fetchProfile(type, fundCode);
+        if (profile == null) return;
+        applyProfile(fund, profile);
+        Fund saved = fundRepository.save(fund);
+        fundCacheService.putSnapshot(saved.getFundCode(), saved);
     }
 
     @Transactional
@@ -157,6 +205,21 @@ public class FundDetailEnrichmentService {
         } catch (Exception e) {
             log.warn("Single-fund allocation enrichment failed for {}: {}", fundCode, e.getMessage());
             return 0;
+        }
+    }
+
+    /**
+     * Fire-and-forget variant of {@link #enrichSingleFundDetails(String)} for the detail-open path: it runs on
+     * the shared task executor so the read request returns immediately instead of blocking on two sequential
+     * TEFAS calls. The fetched profile is persisted + cached, so it surfaces on the next view/refetch. Failures
+     * are logged and swallowed — a background enrichment must never fail the request that triggered it.
+     */
+    @Async("taskExecutor")
+    public void enrichSingleFundDetailsAsync(String fundCode) {
+        try {
+            enrichSingleFundDetails(fundCode);
+        } catch (Exception e) {
+            log.debug("Async fund detail enrichment failed for {}: {}", fundCode, e.getMessage());
         }
     }
 

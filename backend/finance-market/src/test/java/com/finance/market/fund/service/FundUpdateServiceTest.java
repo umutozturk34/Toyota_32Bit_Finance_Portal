@@ -60,6 +60,16 @@ class FundUpdateServiceTest {
     }
 
     @Test
+    void refreshAll_backFillsMissingFundProfiles() {
+        when(fundCandleRepository.findCandleDateRangePerFund()).thenReturn(List.of());
+        when(fundRepository.findAll()).thenReturn(List.of());
+
+        service.refreshAll();
+
+        verify(detailEnrichmentService).enrichMissingProfiles();
+    }
+
+    @Test
     void refreshAll_updatesCacheForFundsWithChangedPercent() {
         Fund fund = fundWithCode("TYH");
         LocalDateTime ts = LocalDateTime.now();

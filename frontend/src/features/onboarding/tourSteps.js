@@ -105,7 +105,7 @@ const tourSteps = [
   {
     id: 'fund-detail',
     path: '/funds/ACD',
-    selector: '[data-tour="fund-detail-card"]',
+    selector: '[data-tour="fund-profile"]',
     titleKey: 'onboarding.tour.fundDetail.title',
     descKey: 'onboarding.tour.fundDetail.desc',
     placement: 'auto',
@@ -115,12 +115,10 @@ const tourSteps = [
   {
     id: 'fund-allocation',
     path: '/funds/ACD',
-    clickSelector: '[data-tour="fund-detail-card"]',
-    closeSelector: '[data-tour-close="fund-detail"]',
     selector: '[data-tour="fund-allocation"]',
     titleKey: 'onboarding.tour.fundAllocation.title',
     descKey: 'onboarding.tour.fundAllocation.desc',
-    placement: 'left',
+    placement: 'auto',
     padding: 10,
     slowLoad: true,
   },

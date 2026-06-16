@@ -45,7 +45,8 @@ public class FundUpdateService implements MarketRefresher {
 
     /**
      * Runs the full fund refresh in order: snapshots, bulk candle sync, change-percent recompute,
-     * returns/risk enrichment, then allocation enrichment as of today.
+     * returns/risk enrichment, allocation enrichment as of today, then a profile (valör/ISIN/seans)
+     * back-fill for any funds still missing it.
      */
     public void refreshAll() {
         long totalStart = System.currentTimeMillis();
@@ -54,6 +55,7 @@ public class FundUpdateService implements MarketRefresher {
         recomputeChangePercents();
         detailEnrichmentService.enrichReturnsAndRisk();
         detailEnrichmentService.enrichAllocations(LocalDate.now());
+        detailEnrichmentService.enrichMissingProfiles();
         log.info("[TIMING] Total fund update took {}s", (System.currentTimeMillis() - totalStart) / 1000);
     }
 

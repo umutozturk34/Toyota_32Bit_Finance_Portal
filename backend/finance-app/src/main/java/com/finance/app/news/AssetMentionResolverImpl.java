@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 /**
  * The monolith-side implementation of {@link AssetMentionResolver}: it bridges finance-news with finance-market,
  * which the leaf news module can't reach itself. It links an article to every asset it names — STOCKS, CRYPTOS,
- * COMMODITIES and CURRENCIES — by three signals:
+ * FUNDS, COMMODITIES and CURRENCIES — by three signals:
  *   1. a parenthesised ticker/symbol — a BIST ticker "(KRVGD)" or a coin symbol "(BTC)" — validated against the
  *      live catalog so unknown acronyms (TCMB, SPK, …) are dropped;
  *   2. the asset NAME — "Kervan Gıda", "Bitcoin" — matched as a whole, accent-insensitive phrase, so an article
@@ -41,6 +41,16 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
     private static final Pattern DIACRITICS = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
     private static final Pattern NON_ALNUM = Pattern.compile("[^a-z0-9]+");
     private static final Set<String> NAME_STOPWORDS = Set.of("ve", "the", "a.s", "as", "ao");
+    // Institutional / economic acronyms that read like a parenthesised ticker but never denote a tradable asset —
+    // news writes "Avrupa Merkez Bankası (ECB)", "Para Politikası Kurulu (PPK)", "(KDV)". Many collide HEAD-ON with
+    // a real money-market fund code (funds coded ECB/PPK/KDV/GDP/IMF/CFO exist), so the parenthesised-ticker signal
+    // must drop them outright; such a fund still links via its full name. ASCII-only by design: the ticker regex is
+    // [A-Z0-9], so Turkish-letter acronyms (ÖTV, TÜFE, GSYİH) never reach here. Compared upper-cased.
+    private static final Set<String> BLOCKED_TICKERS = Set.of(
+            // central banks / regulators / bodies
+            "ECB", "FED", "FOMC", "IMF", "OPEC", "OECD", "NATO", "TCMB", "SPK", "BDDK", "TMSF", "TUIK", "BIST", "KAP",
+            // macro / policy / corporate-title acronyms that appear in finance copy
+            "PPK", "KDV", "GDP", "GSYH", "CPI", "PPI", "PMI", "ABD", "CEO", "CFO");
     // First words too generic to match a stock on their OWN (need a second word) — geo/common leads that head many
     // unrelated firms and appear constantly in finance text.
     private static final Set<String> GENERIC_FIRST_WORDS = Set.of(
@@ -49,6 +59,11 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
     // while still dropping 3-4 char fragments that would over-match.
     private static final int STOCK_CORE_MIN = 5;
     private static final int CRYPTO_NAME_MIN = 4;
+    // A fund's long name is only indexed when it's distinctive enough to be safe as a whole phrase: a real fund
+    // title runs many words ("Ak Portföy Yeni Teknolojiler Yabancı Hisse Senedi Fonu"), so requiring a long,
+    // multi-word phrase keeps a short generic name ("Para Piyasası Fonu") from linking unrelated mentions.
+    private static final int FUND_NAME_MIN_CHARS = 18;
+    private static final int FUND_NAME_MIN_WORDS = 4;
     private static final long TTL_MS = 60 * 60 * 1000;
 
     private final StockRepository stockRepository;
@@ -121,7 +136,11 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
 
         Matcher m = TICKER.matcher(raw);
         while (m.find()) {
-            CodeType ct = cat.byTicker().get(m.group(1).toUpperCase(Locale.ROOT));
+            String ticker = m.group(1).toUpperCase(Locale.ROOT);
+            if (BLOCKED_TICKERS.contains(ticker)) {
+                continue;
+            }
+            CodeType ct = cat.byTicker().get(ticker);
             if (ct != null) {
                 type.putIfAbsent(ct.code(), ct.type());
                 count.merge(ct.code(), 1, Integer::sum);
@@ -207,12 +226,19 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
             // Captured BEFORE funds so the cold-start cache guard still keys on the market catalog: funds alone
             // must not pin an otherwise-empty catalog (stocks would then never link until a restart).
             marketLoaded = !byTicker.isEmpty();
-            // Funds by CODE only (the parenthesised short code, e.g. "(AFA)"). Their long names are NOT indexed:
-            // they share company prefixes ("Ak Portföy …"), so name-matching would link dozens of funds to one
-            // mention. putIfAbsent keeps a colliding stock/crypto ticker as the winner.
-            for (String fundCode : fundRepository.findAllFundCodes()) {
-                if (fundCode != null && fundCode.length() >= 3) {
-                    byTicker.putIfAbsent(fundCode.toUpperCase(Locale.ROOT), new CodeType(fundCode, "FUND"));
+            // Funds by their parenthesised short code ("(AFA)") and, when distinctive, their full long name. The
+            // shared "Ak Portföy …" prefix makes a 2-word core useless, so a fund's name is matched ONLY as the
+            // WHOLE phrase (qualifier tail dropped) — safe because an article that writes a fund's entire title
+            // really is about that fund. putIfAbsent keeps a colliding stock/crypto ticker as the winner.
+            for (Object[] row : fundRepository.findAllFundCodesAndNames()) {
+                String fundCode = str(row[0]);
+                if (fundCode == null || fundCode.length() < 3) {
+                    continue;
+                }
+                byTicker.putIfAbsent(fundCode.toUpperCase(Locale.ROOT), new CodeType(fundCode, "FUND"));
+                String fundName = fundNameCore(str(row[1]));
+                if (fundName != null) {
+                    byName.add(new NameRef(fundName, fundCode, "FUND"));
                 }
             }
             byName.addAll(KEYWORD_REFS);
@@ -272,6 +298,25 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
             return (w.length() >= 6 && !GENERIC_FIRST_WORDS.contains(w)) ? w : null;
         }
         return null;
+    }
+
+    /**
+     * A fund's long name as a single match phrase, or null when it isn't distinctive enough to be safe. The
+     * parenthetical qualifier ("(Hisse Senedi Yoğun Fon)") is dropped first, since news omits it; the remainder is
+     * normalised and kept only if it stays long and multi-word — short generic titles are rejected to avoid
+     * over-matching. The whole phrase must appear verbatim to link, so only an article naming the fund in full hits.
+     */
+    private static String fundNameCore(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        int paren = name.indexOf('(');
+        String head = paren > 0 ? name.substring(0, paren) : name;
+        String core = normalize(head);
+        if (core.length() < FUND_NAME_MIN_CHARS || core.split(" ").length < FUND_NAME_MIN_WORDS) {
+            return null;
+        }
+        return core;
     }
 
     /** Lower-case, strip Turkish diacritics (ı/İ → i), reduce punctuation to single spaces. */

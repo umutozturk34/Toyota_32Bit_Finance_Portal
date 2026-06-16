@@ -7,6 +7,8 @@ import com.finance.news.port.AssetMentionResolver.ResolvedAsset;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -35,7 +37,12 @@ class AssetMentionResolverImplTest {
     @BeforeEach
     void setUp() {
         resolver = new AssetMentionResolverImpl(stockRepository, cryptoRepository, fundRepository);
-        when(fundRepository.findAllFundCodes()).thenReturn(List.of("AFA"));
+        when(fundRepository.findAllFundCodesAndNames()).thenReturn(List.<Object[]>of(
+                new Object[]{"AFA", "Ak Portföy Amerika Yabancı Hisse Senedi Fonu"},
+                // Real money-market funds whose codes collide with institutional/economic acronyms.
+                new Object[]{"ECB", "Global MD Portföy Para Piyasası (TL) Fonu"},
+                new Object[]{"PPK", "QNB Portföy Para Piyasası Katılım (TL) Fonu"},
+                new Object[]{"KDV", "Kuveyt Türk Portföy Dokuzuncu Katılım Serbest (Döviz) Fon"}));
         when(stockRepository.findAllSymbolsAndNames()).thenReturn(List.of(
                 new Object[]{"KRVGD.IS", "Kervan Gıda Sanayi ve Ticaret A.Ş."},
                 new Object[]{"THYAO.IS", "Türk Hava Yolları A.O."},
@@ -216,11 +223,44 @@ class AssetMentionResolverImplTest {
 
     @Test
     void shouldResolveFundByParenthesisedCode() {
-        // Funds link by their short code in parentheses (validated against the catalog), not by their long name.
+        // Funds link by their short code in parentheses, validated against the catalog.
         List<ResolvedAsset> result = resolver.resolve("Ak Portföy Amerika Fonu (AFA) güçlü getiri açıkladı", null);
 
         assertThat(result).extracting(ResolvedAsset::code).contains("AFA");
         assertThat(result).filteredOn(r -> r.code().equals("AFA")).extracting(ResolvedAsset::type).containsExactly("FUND");
+    }
+
+    @Test
+    void shouldResolveFundByFullLongName() {
+        // A fund also links when an article writes its entire long title (no code), matched as a whole phrase.
+        List<ResolvedAsset> result = resolver.resolve(
+                "Ak Portföy Amerika Yabancı Hisse Senedi Fonu yatırımcısına güçlü getiri sağladı", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).contains("AFA");
+        assertThat(result).filteredOn(r -> r.code().equals("AFA")).extracting(ResolvedAsset::type).containsExactly("FUND");
+    }
+
+    @Test
+    void shouldNotResolveFundFromAPartialOrGenericNameMention() {
+        // Only the full title links — a bare "Ak Portföy" company mention must NOT pull in the fund.
+        List<ResolvedAsset> result = resolver.resolve("Ak Portföy yeni bir fon halka arz etti", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).doesNotContain("AFA");
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "Avrupa Merkez Bankası (ECB) faiz kararını sabit tuttu,           ECB",
+            "TCMB Para Politikası Kurulu (PPK) toplantısı sonrası faiz arttı, PPK",
+            "Hükümet (KDV) oranını indirdi,                                   KDV",
+    })
+    void shouldNotResolveInstitutionalAcronymCollidingWithAFundCode(String headline, String blockedCode) {
+        // The parenthesised token is an institution/economic acronym (European Central Bank, the central bank's
+        // rate-setting committee, value-added tax) — NOT the money-market fund that happens to share the code. The
+        // blocklist must drop it even though the fund IS in the catalog.
+        List<ResolvedAsset> result = resolver.resolve(headline, null);
+
+        assertThat(result).extracting(ResolvedAsset::code).doesNotContain(blockedCode);
     }
 
     @Test

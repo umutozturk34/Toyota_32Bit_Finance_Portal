@@ -35,6 +35,15 @@ public interface FundRepository extends JpaRepository<Fund, String>, JpaSpecific
     List<String> findAllFundCodes();
 
     /**
+     * Every fund's code paired with its long name, for news mention-matching (a fund can be named either by its
+     * parenthesised code or, more rarely, by its full title). Projection-only so the catalog build stays cheap.
+     *
+     * @return rows of {@code [fundCode, name]}
+     */
+    @Query("SELECT f.fundCode, f.name FROM Fund f")
+    List<Object[]> findAllFundCodesAndNames();
+
+    /**
      * Fund codes whose static profile (settlement valör, ISIN, KAP link, trade window) has never been fetched.
      * {@code isinCode} is set only by profile enrichment, so a null one marks a fund still missing its profile;
      * the bulk back-fill targets exactly these so already-enriched funds are skipped on later refresh cycles.

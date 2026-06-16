@@ -291,6 +291,16 @@
         "title": "Valor (Settlement)",
         "short": "How many days a trade takes to settle/pay out.",
         "long": "The day-offset between a trade executing and the cash actually moving. A deposit/fund \"sell valor of T+2\" means when you sell, the money lands in your account 2 business days later. The shorter the valor, the faster you reach your cash."
+      },
+      "settlementT2": {
+        "title": "Settlement (T+2)",
+        "short": "The day a trade completes and asset & cash change hands.",
+        "long": "When you buy or sell, the actual transfer of the security and the cash happens on the settlement day. BIST stocks settle T+2: a stock bought today truly lands in your account 2 business days later, and cash from a sale becomes usable 2 days on. Valor is the deposit/fund version of the same idea."
+      },
+      "tradingSession": {
+        "title": "Trading Session (Hours)",
+        "short": "The window when the exchange accepts orders.",
+        "long": "The time window in which the exchange/broker processes buy-sell orders. BIST equities trade roughly 10:00–18:00; funds have a daily cut-off (e.g. 09:00–13:30) — an order placed after it counts for the next day. You can place orders outside hours, but execution waits for the next session."
       }
     },
     "valorTradeDay": "Trade",

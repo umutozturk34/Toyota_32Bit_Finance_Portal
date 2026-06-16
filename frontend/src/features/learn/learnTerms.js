@@ -53,6 +53,8 @@ export const LEARN_TERMS = [
   { key: 'spread', category: 'general' },
   { key: 'liquidity', category: 'general' },
   { key: 'marketCap', category: 'general' },
+  { key: 'settlementT2', category: 'general', chart: 'valorTimeline' },
+  { key: 'tradingSession', category: 'general' },
   { key: 'perDateFx', category: 'general' },
 ];
 

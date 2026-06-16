@@ -291,6 +291,16 @@
         "title": "Valör",
         "short": "İşlemin kaç günde gerçekleştiği/ödendiği.",
         "long": "Bir alım-satımın gerçekleşip paranın el değiştirdiği gün farkı. Mevduatta/fonda \"satış valörü T+2\" demek, sattığında paranın 2 iş günü sonra hesabına geçmesi demektir. Valör ne kadar kısaysa paraya o kadar hızlı erişirsin."
+      },
+      "settlementT2": {
+        "title": "Takas (T+2)",
+        "short": "İşlemin tamamlanıp varlık ile paranın el değiştirdiği gün.",
+        "long": "Bir alım-satım yapıldığında menkul kıymetin ve paranın fiilen el değiştirmesi takas günüdür. BIST hisselerinde takas T+2’dir: bugün aldığın hisse 2 iş günü sonra hesabına gerçekten geçer, sattığında para 2 gün sonra kullanılabilir olur. Valör, aynı mantığın mevduat/fon karşılığıdır."
+      },
+      "tradingSession": {
+        "title": "Seans (İşlem Saati)",
+        "short": "Borsanın emir işleme aldığı saat aralığı.",
+        "long": "Borsanın/aracının alım-satım emirlerini işleme aldığı zaman penceresi. BIST pay piyasası yaklaşık 10:00–18:00 arası açıktır; fonlarda günlük bir kesim saati (ör. 09:00–13:30) vardır — o saatten sonraki emir ertesi güne sayılır. Seans dışında emir verebilirsin ama gerçekleşme bir sonraki seansa kalır."
       }
     },
     "valorTradeDay": "İşlem",

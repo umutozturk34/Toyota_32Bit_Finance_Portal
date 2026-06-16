@@ -63,11 +63,13 @@ public class NewsCacheService {
     /** Writes (or overwrites) the article in Redis under its id key with the configured TTL. */
     public void cacheArticle(NewsArticle article) {
         // Hibernate hands `assets` to us as a PersistentSet; the typed Redis serializer would write its runtime
-        // class (org.hibernate.collection.spi.PersistentSet), which deserialisation can't instantiate. Copy it into
-        // a plain LinkedHashSet so the cached JSON round-trips. cacheArticle runs outside an active transaction, so
-        // swapping the collection reference never triggers a dirty UPDATE.
+        // class (org.hibernate.collection.spi.PersistentSet), which deserialisation can't instantiate. Rather than
+        // MUTATE the (possibly managed) entity to normalise the collection — which we never want to risk turning
+        // into a DB write — simply SKIP caching when it isn't a plain set. Such an article (one with no mentions,
+        // so the enricher never replaced its collection) just loads fresh from the DB each time, uncached but
+        // always correct. Enriched articles carry a LinkedHashSet and cache normally.
         if (article.getAssets() != null && !(article.getAssets() instanceof LinkedHashSet)) {
-            article.setAssets(new LinkedHashSet<>(article.getAssets()));
+            return;
         }
         redisTemplate.opsForValue().set(CACHE_ARTICLE + article.getId(), article, cacheTtl);
     }

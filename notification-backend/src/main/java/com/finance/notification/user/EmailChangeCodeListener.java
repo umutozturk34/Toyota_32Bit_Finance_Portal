@@ -21,8 +21,9 @@ import java.util.Map;
 
 /**
  * Kafka consumer that, on an email-change-code request, enqueues a verification-code email to the
- * user's OLD address (where they can still receive mail). Deduplicates by event id, suppresses
- * inactive users, and uses the user's preferred locale; the row goes through the outbox for delivery.
+ * user's NEW address — the change is only applied once they prove they can receive mail there.
+ * Deduplicates by event id, suppresses inactive users, and uses the user's preferred locale; the row
+ * goes through the outbox for delivery.
  */
 @Log4j2
 @Component
@@ -61,7 +62,7 @@ public class EmailChangeCodeListener {
     /**
      * Handles one email-change-code event: skips duplicates (by event id) and inactive users,
      * otherwise builds the localized template model (code, old/new email, minutes until expiry,
-     * floored to at least one) and persists a PENDING outbox row addressed to the OLD email. The
+     * floored to at least one) and persists a PENDING outbox row addressed to the NEW email. The
      * event id is recorded as processed and the offset is acknowledged in every terminal path, so
      * a handled message is never reprocessed.
      *
@@ -92,7 +93,7 @@ public class EmailChangeCodeListener {
         String subject = translator.translate("email.changeCode.subject", locale);
 
         EmailOutbox row = EmailOutbox.builder()
-                .recipientEmail(event.oldEmail())
+                .recipientEmail(event.newEmail())
                 .subject(subject)
                 .templateName("email-change-code")
                 .model(objectMapper.valueToTree(model))
@@ -105,6 +106,6 @@ public class EmailChangeCodeListener {
         processedEventIds.put(event.eventId(), Boolean.TRUE);
         ack.acknowledge();
         log.info("Email change code enqueued user={} to={} outboxId={}",
-                event.userSub(), event.oldEmail(), row.getId());
+                event.userSub(), event.newEmail(), row.getId());
     }
 }

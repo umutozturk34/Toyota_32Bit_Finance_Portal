@@ -1,10 +1,9 @@
--- BIST indices (main: XU030/XU100/XU500; sub-sector: XBANK/XGIDA/XHOLD/XUSIN/XUTEK/...) — STOCK type,
+-- BIST indices (main: XU030/XU050/XU100; sub-sector: XBANK/XGIDA/XHOLD/XUSIN/XUTEK/...) — STOCK type,
 -- index_asset=true. Seeded in Flyway (base, both modes) NOT the demo dump, because indices have no
 -- runtime discovery: the İş Yatırım scraper finds tradable tickers, not index codes — so empty/prod
 -- mode (make up, no demo dump) needs them here, same rationale as crypto+commodity in V13.
 INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (1, 'STOCK', 'XU030.IS', true, now(), now()) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (2, 'STOCK', 'XU100.IS', true, now(), now()) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (3, 'STOCK', 'XU500.IS', true, now(), now()) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (4, 'STOCK', 'XU050.IS', true, now(), now()) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (64, 'STOCK', 'XBANK.IS', true, now(), now()) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (65, 'STOCK', 'XUSIN.IS', true, now(), now()) ON CONFLICT (id) DO NOTHING;
@@ -19,7 +18,6 @@ INSERT INTO public.instruments (id, instrument_type, asset_code, active, created
 INSERT INTO public.instruments (id, instrument_type, asset_code, active, created_at, updated_at) VALUES (74, 'STOCK', 'XMANA.IS', true, now(), now()) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.tracked_assets (id, asset_type, asset_code, display_name, stock_segment, sort_order, created_at, updated_at, binance_symbol, index_asset, compare_only, asset_id, enabled) VALUES (13, 'STOCK', 'XU030.IS', NULL, 'MAIN_INDEX', 0, now(), now(), NULL, true, false, 1, true) ON CONFLICT DO NOTHING;
 INSERT INTO public.tracked_assets (id, asset_type, asset_code, display_name, stock_segment, sort_order, created_at, updated_at, binance_symbol, index_asset, compare_only, asset_id, enabled) VALUES (14, 'STOCK', 'XU100.IS', NULL, 'MAIN_INDEX', 1, now(), now(), NULL, true, false, 2, true) ON CONFLICT DO NOTHING;
-INSERT INTO public.tracked_assets (id, asset_type, asset_code, display_name, stock_segment, sort_order, created_at, updated_at, binance_symbol, index_asset, compare_only, asset_id, enabled) VALUES (15, 'STOCK', 'XU500.IS', NULL, 'MAIN_INDEX', 2, now(), now(), NULL, true, true, 3, true) ON CONFLICT DO NOTHING;
 INSERT INTO public.tracked_assets (id, asset_type, asset_code, display_name, stock_segment, sort_order, created_at, updated_at, binance_symbol, index_asset, compare_only, asset_id, enabled) VALUES (16, 'STOCK', 'XU050.IS', NULL, 'MAIN_INDEX', 3, now(), now(), NULL, true, false, 4, true) ON CONFLICT DO NOTHING;
 INSERT INTO public.tracked_assets (id, asset_type, asset_code, display_name, stock_segment, sort_order, created_at, updated_at, binance_symbol, index_asset, compare_only, asset_id, enabled) VALUES (76, 'STOCK', 'XBANK.IS', NULL, 'SECONDARY_INDEX', 100, now(), now(), NULL, true, true, 64, true) ON CONFLICT DO NOTHING;
 INSERT INTO public.tracked_assets (id, asset_type, asset_code, display_name, stock_segment, sort_order, created_at, updated_at, binance_symbol, index_asset, compare_only, asset_id, enabled) VALUES (77, 'STOCK', 'XUSIN.IS', NULL, 'SECONDARY_INDEX', 101, now(), now(), NULL, true, true, 65, true) ON CONFLICT DO NOTHING;

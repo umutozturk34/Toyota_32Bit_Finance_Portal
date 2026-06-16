@@ -1047,7 +1047,7 @@
       "AYAR_14": "14K Gold",
       "AYAR_18": "18K Gold",
       "AYAR_22_BILEZIK": "22K Bracelet",
-      "GUMUS": "Silver"
+      "GUMUS": "Gram Silver"
     }
   },
   "theme": {
@@ -1804,6 +1804,7 @@
     "error": "Failed to load data",
     "notFound": "Asset not found",
     "addToPortfolio": "Add to Portfolio",
+    "priceChart": "Price Chart",
     "priceLabel": "Price",
     "changeLabel": "Change",
     "changeAmountTRY": "Change (TRY)",

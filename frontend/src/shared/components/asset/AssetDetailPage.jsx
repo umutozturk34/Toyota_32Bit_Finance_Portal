@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, GitCompare } from 'lucide-react';
+import { ArrowLeft, GitCompare, ChevronDown, LineChart } from 'lucide-react';
 import { ShoppingCart } from '../feedback/AnimatedIcons';
 import useChartRange from '../../hooks/useChartRange';
 import useNavigationBack from '../../hooks/useNavigationBack';
@@ -97,6 +97,7 @@ export default function AssetDetailPage({
   showBuyButton = true,
   buyModalComponent: BuyModalComponent = MarketAddPositionModal,
   clientSideRangeFilter = false,
+  collapsibleChart = false,
   dataTour,
 }) {
   const { t } = useTranslation();
@@ -108,6 +109,17 @@ export default function AssetDetailPage({
   const resolvedNotFound = notFoundMessage ?? t('marketDetail.notFound');
   const [buyOpen, setBuyOpen] = useState(false);
   const [showSecondaryLines, setShowSecondaryLines] = useState(true);
+  // The user's open/closed choice for THIS asset; null means "use the per-asset default". Reset on every asset
+  // switch below so each detail page starts from its own default instead of inheriting the previous one.
+  const [chartOpenOverride, setChartOpenOverride] = useState(null);
+  const [chartOverrideFor, setChartOverrideFor] = useState(assetCode);
+  if (chartOverrideFor !== assetCode) {
+    // Navigated to a different asset within the same mounted page (route param changed, no remount) — drop the
+    // previous asset's manual toggle so the new asset's default applies. Set-state-during-render is the React-
+    // endorsed way to reset state on a prop change (re-renders immediately, before paint).
+    setChartOverrideFor(assetCode);
+    setChartOpenOverride(null);
+  }
   const [timeRange, setTimeRange] = useChartRange();
   const effectiveRange = clientSideRangeFilter && !CLIENT_FILTER_RANGES.has(timeRange) ? '1Y' : timeRange;
 
@@ -115,6 +127,14 @@ export default function AssetDetailPage({
     queryKey: [queryKeyPrefix, assetCode],
     queryFn: () => fetchAsset(assetCode),
   });
+
+  // Whether this asset's chart is collapsible + collapsed by default. A predicate form lets the caller decide
+  // from the LOADED asset (e.g. a stock is an index when its segment isn't EQUITY) so detection never depends on
+  // a hand-kept code list. The chart shows open unless the user toggled it (override) for this asset.
+  const collapsibleChartActive = typeof collapsibleChart === 'function'
+    ? Boolean(collapsibleChart(asset))
+    : Boolean(collapsibleChart);
+  const chartOpen = chartOpenOverride !== null ? chartOpenOverride : !collapsibleChartActive;
 
   const fetchRange = clientSideRangeFilter ? '5Y' : timeRange;
   const { data: historyRaw } = useQuery({
@@ -220,17 +240,33 @@ export default function AssetDetailPage({
         </div>
       </motion.div>
 
-      <div data-tour="detail-chart">
-        <LightweightChart
-          data={chartData}
-          symbol={assetCode}
-          assetType={chartAssetType || assetType}
-          timeRange={effectiveRange}
-          onTimeRangeChange={setTimeRange}
-          showSecondaryLines={showSecondaryLines}
-          onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
-        />
-      </div>
+      {collapsibleChartActive && (
+        <button
+          type="button"
+          onClick={() => setChartOpenOverride(!chartOpen)}
+          className="flex w-full items-center gap-2.5 rounded-2xl border border-border-default bg-bg-elevated/50 px-4 py-3 text-left backdrop-blur transition-colors hover:bg-surface/40 cursor-pointer"
+        >
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/15 text-accent">
+            <LineChart className="h-4 w-4" />
+          </span>
+          <span className="text-sm font-bold uppercase tracking-wider text-fg">{t('marketDetail.priceChart')}</span>
+          <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-fg-subtle transition-transform duration-200 ${chartOpen ? 'rotate-180' : ''}`} />
+        </button>
+      )}
+
+      {chartOpen && (
+        <div data-tour="detail-chart">
+          <LightweightChart
+            data={chartData}
+            symbol={assetCode}
+            assetType={chartAssetType || assetType}
+            timeRange={effectiveRange}
+            onTimeRangeChange={setTimeRange}
+            showSecondaryLines={showSecondaryLines}
+            onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
+          />
+        </div>
+      )}
 
       {/* Everything that isn't the price chart sits BELOW it — the asset's property strip first, then any
           asset-specific supporting block (fund profile, index constituents), then the news. This order is the

@@ -5,9 +5,9 @@ import { commodityName } from '../../shared/utils/commodityName';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import BankRatesSection from '../bankRates/BankRatesSection';
 
-// Commodity → the bank "gold" product whose buy/sell rates the banks publish. Only consumer gold has bank rates
-// (gram gold is the tracked commodity XAUTRYG); other metals/energy have none, so they simply show no section.
-const COMMODITY_BANK_GOLD = { XAUTRYG: 'GRAM_ALTIN' };
+// Commodity → the bank "gold/silver" product whose buy/sell rates the banks publish. Gram gold (XAUTRYG) and gram
+// silver (XAGTRYG) both have bank rates; other metals/energy have none, so they simply show no section.
+const COMMODITY_BANK_GOLD = { XAUTRYG: 'GRAM_ALTIN', XAGTRYG: 'GUMUS' };
 
 function CommodityHeader({ asset }) {
   const { t } = useTranslation();

@@ -17,7 +17,7 @@ const DEFAULT_CURRENCY_BY_KIND = { CURRENCY: 'USD', GOLD: 'GRAM_ALTIN' };
 // Reverse link "bank rate → asset detail": the currencies that exist as forex assets (seed) get a /forex/<code>
 // detail; the only consumer gold with a tracked commodity is gram gold. Anything else has no detail → no link.
 const FOREX_DETAIL_CODES = new Set(['USD', 'EUR', 'AED', 'AUD', 'AZN', 'CNY', 'DKK', 'KRW', 'GBP', 'SEK', 'CHF', 'JPY', 'CAD', 'QAR', 'KZT', 'KWD', 'NOK', 'PKR', 'RON', 'RUB', 'SAR', 'XDR']);
-const GOLD_DETAIL_ROUTE = { GRAM_ALTIN: '/commodities/XAUTRYG' };
+const GOLD_DETAIL_ROUTE = { GRAM_ALTIN: '/commodities/XAUTRYG', GUMUS: '/commodities/XAGTRYG' };
 const assetDetailRoute = (kind, code) =>
   kind === 'GOLD' ? (GOLD_DETAIL_ROUTE[code] ?? null) : (FOREX_DETAIL_CODES.has(code) ? `/forex/${code}` : null);
 
@@ -180,9 +180,10 @@ export default function BankRatesPanel() {
       'SGD', 'NZD', 'CZK', 'HUF', 'INR', 'THB', 'MXN', 'BRL',
     ];
     const goldOrder = [
-      'GRAM_ALTIN', 'CEYREK_ALTIN', 'YARIM_ALTIN', 'TAM_ALTIN', 'ATA_ALTIN',
+      // Gram silver sits right after gram gold — the two per-gram spot values belong side by side.
+      'GRAM_ALTIN', 'GUMUS', 'CEYREK_ALTIN', 'YARIM_ALTIN', 'TAM_ALTIN', 'ATA_ALTIN',
       'CUMHURIYET_ALTINI', 'HAMIT_ALTIN', 'RESAT_ALTIN', 'BESLI_ALTIN', 'GRAM_HAS_ALTIN',
-      'AYAR_14', 'AYAR_18', 'AYAR_22_BILEZIK', 'GUMUS',
+      'AYAR_14', 'AYAR_18', 'AYAR_22_BILEZIK',
     ];
     const wanted = kind === 'GOLD' ? goldOrder : known;
     const set = new Set(currencies);

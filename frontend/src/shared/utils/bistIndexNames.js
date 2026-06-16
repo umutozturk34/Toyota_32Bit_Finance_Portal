@@ -49,3 +49,9 @@ export function indexFriendlyName(code) {
   const bare = bareIndexCode(code);
   return SIZE_INDEX_NAMES[bare] || SECTOR_INDEX_NAMES[bare] || bare;
 }
+
+/** True when the code is a known BIST index (size or sector) rather than an ordinary stock. */
+export function isIndexCode(code) {
+  const bare = bareIndexCode(code);
+  return Boolean(SIZE_INDEX_NAMES[bare] || SECTOR_INDEX_NAMES[bare]);
+}

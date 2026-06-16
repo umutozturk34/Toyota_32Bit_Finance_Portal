@@ -261,6 +261,13 @@ export default function StockDetail() {
       renderHeader={(asset) => <StockHeader asset={asset} />}
       renderMetadata={(asset) => <StockMetadata asset={asset} />}
       renderBelowChart={(asset) => <StockConstituents asset={asset} />}
+      // An index (main or sector/sub) opens with its chart collapsed — its constituents are the real content and
+      // many indices have only a point or two of price history. Driven by the loaded asset's segment (not a code
+      // list), so EVERY index is covered; an ordinary EQUITY stock keeps its chart open.
+      collapsibleChart={(asset) => {
+        const segment = asset?.metadata?.stockSegment;
+        return Boolean(segment) && segment !== 'EQUITY';
+      }}
       showBuyButton={true}
       getBuyProps={(asset) => ({
         assetType: 'STOCK',

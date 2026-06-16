@@ -1047,7 +1047,7 @@
       "AYAR_14": "14 Ayar Altın",
       "AYAR_18": "18 Ayar Altın",
       "AYAR_22_BILEZIK": "22 Ayar Bilezik",
-      "GUMUS": "Gümüş"
+      "GUMUS": "Gram Gümüş"
     }
   },
   "theme": {
@@ -1804,6 +1804,7 @@
     "error": "Veri yüklenirken hata oluştu",
     "notFound": "Varlık bulunamadı",
     "addToPortfolio": "Portföye Ekle",
+    "priceChart": "Fiyat Grafiği",
     "priceLabel": "Fiyat",
     "changeLabel": "Değişim",
     "changeAmountTRY": "Değişim (TL)",

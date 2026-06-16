@@ -16,6 +16,18 @@ const RSI = [52, 58, 64, 71, 76, 73, 66, 58, 49, 41, 33, 28, 31, 38, 46, 55, 63,
 const MACD_FAST = [-0.4, -0.2, 0.1, 0.5, 0.9, 1.1, 1.0, 0.7, 0.3, -0.1, -0.5, -0.8, -0.7, -0.3, 0.2, 0.6, 0.9, 0.8];
 const MACD_SLOW = [-0.2, -0.2, -0.1, 0.1, 0.4, 0.7, 0.8, 0.7, 0.5, 0.2, -0.1, -0.4, -0.5, -0.4, -0.1, 0.2, 0.5, 0.6];
 
+// Option payoff at expiry: underlying price 80→120, strike 100, premium 4. Call = max(0, price−strike) − premium;
+// Put = max(0, strike−price) − premium. The classic hockey-stick: loss capped at the premium, breakeven offset by it.
+const PAYOFF_X = [80, 84, 88, 92, 96, 100, 104, 108, 112, 116, 120];
+const STRIKE = 100;
+const PREMIUM = 4;
+const CALL_PAYOFF = PAYOFF_X.map((p) => Math.max(0, p - STRIKE) - PREMIUM);
+const PUT_PAYOFF = PAYOFF_X.map((p) => Math.max(0, STRIKE - p) - PREMIUM);
+// Clean vs dirty price over two coupon periods: the dirty (quoted) price ramps up as the coupon accrues then
+// drops on the ex-coupon date (sawtooth); the clean price stays flat. dirty − clean = accrued coupon.
+const CLEAN = [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100];
+const DIRTY = [100, 100.9, 101.8, 102.7, 103.6, 100, 100.9, 101.8, 102.7, 103.6, 100, 100.9];
+
 export default function LearnTermChart({ chart }) {
   const { isDark } = useTheme();
   const { t } = useTranslation();
@@ -39,6 +51,38 @@ export default function LearnTermChart({ chart }) {
           type: 'candlestick', data: CANDLES,
           itemStyle: { color: '#34d399', color0: '#f87171', borderColor: '#34d399', borderColor0: '#f87171' },
         }],
+      };
+    }
+    if (chart === 'callPayoff' || chart === 'putPayoff') {
+      const data = chart === 'callPayoff' ? CALL_PAYOFF : PUT_PAYOFF;
+      const strikeIdx = PAYOFF_X.indexOf(STRIKE);
+      return {
+        ...base,
+        xAxis: { type: 'category', show: false, data: PAYOFF_X },
+        yAxis: { type: 'value', splitLine: { lineStyle: { color: grid } }, axisLabel: { color: muted, fontSize: 9 } },
+        series: [
+          { type: 'line', data: data.map(() => 0), symbol: 'none', lineStyle: { color: muted, width: 1, type: 'dashed' } },
+          {
+            type: 'line', data, smooth: false, symbol: 'none', lineStyle: { color: '#6366f1', width: 2 },
+            areaStyle: { color: 'rgba(99,102,241,0.12)' },
+            markLine: {
+              silent: true, symbol: 'none',
+              lineStyle: { color: '#f59e0b', width: 1, type: 'dotted' },
+              data: [{ xAxis: strikeIdx, label: { show: true, formatter: t('learn.strikeLabel'), color: muted, fontSize: 9 } }],
+            },
+          },
+        ],
+      };
+    }
+    if (chart === 'cleanDirty') {
+      return {
+        ...base,
+        xAxis: { type: 'category', show: false, data: DIRTY.map((_, i) => i) },
+        yAxis: { type: 'value', scale: true, splitLine: { lineStyle: { color: grid } }, axisLabel: { color: muted, fontSize: 9 } },
+        series: [
+          { type: 'line', data: DIRTY, smooth: false, symbol: 'none', lineStyle: { color: '#8b5cf6', width: 2 }, name: t('learn.dirtyLabel') },
+          { type: 'line', data: CLEAN, smooth: false, symbol: 'none', lineStyle: { color: '#34d399', width: 2, type: 'dashed' }, name: t('learn.cleanLabel') },
+        ],
       };
     }
     if (chart === 'rsi') {
@@ -67,7 +111,7 @@ export default function LearnTermChart({ chart }) {
         { type: 'line', data: MACD_SLOW, symbol: 'none', smooth: true, lineStyle: { color: '#f59e0b', width: 2 } },
       ],
     };
-  }, [chart, grid, muted]);
+  }, [chart, grid, muted, t]);
 
   return (
     <div className="mt-2 rounded-lg border border-border-default bg-bg-base/40 p-1.5">

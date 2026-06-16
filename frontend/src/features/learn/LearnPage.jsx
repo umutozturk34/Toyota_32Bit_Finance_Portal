@@ -11,7 +11,7 @@ import { useMacroIndicators } from '../macro/hooks/useMacroIndicators';
 
 // Accent per macro category so the live charts carry the same colour language as the market overview.
 const MACRO_COLOR = { RATES: '#5E6AD2', INFLATION: '#f59e0b', DEPOSIT: '#10b981' };
-const TERM_CATEGORIES = ['technical', 'returnsRisk', 'bonds', 'viop', 'general'];
+const TERM_CATEGORIES = ['technical', 'returnsRisk', 'bonds', 'deposits', 'viop', 'general'];
 
 // Financial-literacy hub (/learn): every macro indicator the app tracks (live EVDS data) plus the jargon terms
 // used across the app, grouped by topic, with a sticky scroll-spy nav to jump between sections.

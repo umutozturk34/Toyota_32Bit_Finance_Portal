@@ -42,6 +42,9 @@
     "learnMore": "Learn more",
     "explainTerm": "What is {{term}}?",
     "chartSchematic": "Schematic illustration (example)",
+    "strikeLabel": "Strike",
+    "dirtyLabel": "Dirty",
+    "cleanLabel": "Clean",
     "chartLive": "Real data — recent years",
     "macroFallback": "A macro indicator the app tracks — its live series is below.",
     "categories": {
@@ -49,6 +52,7 @@
       "technical": "Technical Indicators",
       "returnsRisk": "Return & Risk",
       "bonds": "Bonds & Bills",
+      "deposits": "Deposits & Interest",
       "viop": "Derivatives (VIOP)",
       "general": "General"
     },
@@ -88,7 +92,17 @@
       "leverage": { "title": "Leverage", "short": "A large position on small margin.", "long": "Holding a position a multiple of the margin you put down. It amplifies both gains and losses: a 1% move is a 10% P&L at 10x leverage. VIOP is leveraged by nature — high risk." },
       "longShort": { "title": "Long / Short Position", "short": "Betting on a rise (long) or a fall (short).", "long": "A 'long' position gains when price rises; a 'short' position gains when price falls. With shorts in VIOP you can profit in a falling market, or hedge an existing position against risk." },
       "allocation": { "title": "Allocation", "short": "How your portfolio splits across assets.", "long": "The percent breakdown of your portfolio value across asset types (stocks, crypto, FX, commodities, VIOP). Diversification lowers risk; over-concentrating in one asset raises it." },
-      "perDateFx": { "title": "Per-date FX", "short": "Converting each amount at its own date's rate.", "long": "In USD/EUR display, cost converts at the purchase-date rate, a closed position at its exit-date rate, each past point at its own date's rate — not today's. This way an FX move shows up correctly in P&L." }
+      "perDateFx": { "title": "Per-date FX", "short": "Converting each amount at its own date's rate.", "long": "In USD/EUR display, cost converts at the purchase-date rate, a closed position at its exit-date rate, each past point at its own date's rate — not today's. This way an FX move shows up correctly in P&L." },
+      "cleanDirtyPrice": { "title": "Clean & Dirty Price", "short": "Price with coupon (dirty) vs without (clean).", "long": "Dirty price = clean price + accrued coupon. The exchange/EVDS quote for most TRY bonds is the dirty price — you also pay the accrued coupon when buying; the clean price strips that accrued coupon out. For CPI/gold bonds the quote is already clean." },
+      "goldBond": { "title": "Gold-Linked Bond", "short": "A Treasury note indexed to grams of gold.", "long": "A Treasury lease certificate/bond whose principal is indexed to grams of gold and held in gold terms. Its price is the gold value, not 100; the main return comes from gold, with a small coupon on top. This app always shows it converted to TRY." },
+      "deposit": { "title": "Time Deposit", "short": "Money placed at a bank for a fixed term and rate.", "long": "Money deposited at a bank for a set term at a fixed rate. At maturity you get principal + net interest; the rate stays fixed for the whole term even if the market moves later. Can be opened in TRY, USD or EUR." },
+      "simpleInterest": { "title": "Simple Interest", "short": "Interest accrues only on the principal.", "long": "Deposit interest is simple interest: it accrues only on the principal, pro-rata to the number of days (principal × rate × days/365) — earned interest does not itself earn interest (not compound). Net at maturity = principal + gross interest − withholding tax." },
+      "withholding": { "title": "Withholding Tax", "short": "Tax deducted from interest income.", "long": "Income tax withheld at source from deposit interest, varying by term and currency. It is deducted from the gross interest; what you receive is the 'net' interest. This app computes returns on the after-withholding net." },
+      "option": { "title": "Option", "short": "A contract granting a RIGHT to buy/sell.", "long": "A contract giving the holder the RIGHT — but not the obligation — to buy (Call) or sell (Put) the underlying at a set price (strike) at expiry. You pay a 'premium' upfront for this right; unlike a future, the buyer's loss is capped at the premium." },
+      "callOption": { "title": "Call Option", "short": "The right to BUY at a set price.", "long": "The right to buy the underlying at the strike price at expiry. It gains value if the price rises above the strike; if it stays below, it expires unused and the buyer loses only the premium paid. The seller (short call) collects the premium but carries theoretically unlimited risk." },
+      "putOption": { "title": "Put Option", "short": "The right to SELL at a set price.", "long": "The right to sell the underlying at the strike price at expiry. It gains value if the price falls below the strike (like insurance against a drop); if it stays above, it expires unused and the buyer loses the premium." },
+      "strikePrice": { "title": "Strike Price", "short": "The price at which an option can be exercised.", "long": "The fixed price at which an option grants the right to buy (Call) or sell (Put) the underlying. At expiry the gap between the market price and the strike is the option's intrinsic value; a Call profits when market > strike, a Put when market < strike." },
+      "settlement": { "title": "Settlement & Expiry", "short": "Auto-close of a position at expiry.", "long": "VIOP contracts close at the exchange's settlement price at expiry (cash-settled — usually no physical delivery). In this app, positions whose contract has expired are auto-closed at the settlement price; for options that settlement price is the intrinsic value at expiry." }
     }
   },
   "common": {

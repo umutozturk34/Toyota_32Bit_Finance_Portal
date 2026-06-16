@@ -42,6 +42,9 @@
     "learnMore": "Detaylı öğren",
     "explainTerm": "{{term}} nedir?",
     "chartSchematic": "Şematik gösterim (örnek)",
+    "strikeLabel": "Strike",
+    "dirtyLabel": "Kirli",
+    "cleanLabel": "Temiz",
     "chartLive": "Gerçek veri — son yıllar",
     "macroFallback": "Uygulamanın takip ettiği bir makro gösterge — canlı verisi aşağıda.",
     "categories": {
@@ -49,6 +52,7 @@
       "technical": "Teknik Göstergeler",
       "returnsRisk": "Getiri & Risk",
       "bonds": "Tahvil & Bono",
+      "deposits": "Mevduat & Faiz",
       "viop": "VİOP & Türev",
       "general": "Genel"
     },
@@ -88,7 +92,17 @@
       "leverage": { "title": "Kaldıraç", "short": "Az teminatla büyük pozisyon.", "long": "Yatırdığın teminatın katı büyüklükte pozisyon taşıma. Kazancı da kaybı da büyütür: %1'lik hareket 10x kaldıraçta %10 kâr/zarar demektir. VİOP doğası gereği kaldıraçlıdır — yüksek risk." },
       "longShort": { "title": "Uzun / Kısa Pozisyon", "short": "Yükselişe (uzun) ya da düşüşe (kısa) oynama.", "long": "'Uzun' pozisyon fiyat yükselince, 'kısa' pozisyon fiyat düşünce kazandırır. VİOP'ta kısa ile düşen piyasada da kâr edilebilir ya da mevcut pozisyon riske karşı korunabilir." },
       "allocation": { "title": "Dağılım (Allocation)", "short": "Portföyün varlıklara yüzde bölünüşü.", "long": "Portföydeki değerin varlık tiplerine (hisse, kripto, döviz, emtia, VİOP) yüzde dağılımı. Çeşitlendirme riski azaltır; tek bir varlığa aşırı yoğunlaşmak riski artırır." },
-      "perDateFx": { "title": "Tarihe Göre Kur", "short": "Her tutarı kendi tarihindeki kurla çevirme.", "long": "USD/EUR gösteriminde maliyet alış tarihindeki, kapanan pozisyon çıkış tarihindeki, geçmiş her nokta kendi tarihindeki kurla çevrilir — bugünün kuruyla değil. Böylece döviz hareketi kâr/zarara doğru yansır." }
+      "perDateFx": { "title": "Tarihe Göre Kur", "short": "Her tutarı kendi tarihindeki kurla çevirme.", "long": "USD/EUR gösteriminde maliyet alış tarihindeki, kapanan pozisyon çıkış tarihindeki, geçmiş her nokta kendi tarihindeki kurla çevrilir — bugünün kuruyla değil. Böylece döviz hareketi kâr/zarara doğru yansır." },
+      "cleanDirtyPrice": { "title": "Temiz & Kirli Fiyat", "short": "Kupon dahil (kirli) ve hariç (temiz) fiyat.", "long": "Kirli fiyat = temiz fiyat + işlemiş kupon. Borsa/EVDS kotasyonu çoğu TL tahvilde kirli fiyattır — alırken biriken işlemiş kuponu da ödersin; temiz fiyat ondan işlemiş kupon çıkarılmış halidir. TÜFE/altın tahvillerinde kotasyon zaten temizdir." },
+      "goldBond": { "title": "Altına Dayalı Tahvil", "short": "Değeri gram altına endeksli Hazine senedi.", "long": "Anaparası gram altına endeksli, altın cinsinden saklanan Hazine kira sertifikası/tahvili. Fiyatı 100 değil altın değeridir; ana getiri altın fiyatından gelir, üzerine küçük bir kupon ödenebilir. Bu uygulamada her zaman TL'ye çevrilerek gösterilir." },
+      "deposit": { "title": "Mevduat", "short": "Bankaya vadeli yatırılan, faiz getiren para.", "long": "Belirli bir vade ve sabit faizle bankaya yatırılan para. Vade sonunda anapara + net faiz ödenir; vade boyunca faiz oranı sabit kalır (piyasa sonradan değişse de). TL, USD ve EUR cinsinden açılabilir." },
+      "simpleInterest": { "title": "Basit Faiz", "short": "Faiz yalnız anapara üzerinden işler.", "long": "Mevduat faizi basit faizdir: faiz yalnızca anapara üzerinden, gün sayısına orantılı işler (anapara × oran × gün/365) — kazanılan faiz tekrar faize girmez (bileşik değil). Vade sonu net = anapara + brüt faiz − stopaj." },
+      "withholding": { "title": "Stopaj (Gelir Vergisi)", "short": "Faiz gelirinden kesilen vergi.", "long": "Mevduat faizinden, vadeye ve para birimine göre kaynağında kesilen gelir vergisi. Brüt faizden düşülür; eline geçen 'net' faizdir. Bu uygulama getiriyi stopaj sonrası net üzerinden hesaplar." },
+      "option": { "title": "Opsiyon", "short": "Alma/satma HAKKI veren sözleşme.", "long": "Sahibine, dayanak varlığı vade sonunda belirli fiyattan (kullanım/strike) alma (Call) ya da satma (Put) HAKKI veren — ama yükümlülük getirmeyen — sözleşme. Bu hak için baştan 'prim' ödenir; vadeli işlemden farkı, alıcının zararı ödediği primle sınırlıdır." },
+      "callOption": { "title": "Alım Opsiyonu (Call)", "short": "Belirli fiyattan ALMA hakkı.", "long": "Dayanak varlığı vade sonunda kullanım fiyatından (strike) satın alma hakkı. Fiyat strike'ın üstüne çıkarsa değer kazanır; altında kalırsa kullanılmaz ve alıcı yalnız ödediği primi kaybeder. Satıcı (kısa call) primi alır ama teorik olarak sınırsız risk taşır." },
+      "putOption": { "title": "Satım Opsiyonu (Put)", "short": "Belirli fiyattan SATMA hakkı.", "long": "Dayanak varlığı vade sonunda kullanım fiyatından satma hakkı. Fiyat strike'ın altına inerse değer kazanır (düşüşe karşı sigorta gibi); üstünde kalırsa kullanılmaz ve alıcı primini kaybeder." },
+      "strikePrice": { "title": "Kullanım Fiyatı (Strike)", "short": "Opsiyonun alım/satım hakkını verdiği fiyat.", "long": "Bir opsiyonun, dayanak varlığı alma (Call) ya da satma (Put) hakkı tanıdığı sabit fiyat. Vade sonunda piyasa fiyatı ile strike arasındaki fark opsiyonun iç değeridir; Call için piyasa > strike, Put için piyasa < strike kârlıdır." },
+      "settlement": { "title": "Uzlaşma & Vade Sonu", "short": "Vade dolunca pozisyonun otomatik kapanışı.", "long": "VİOP sözleşmeleri vade sonunda borsanın açıkladığı uzlaşma fiyatından kapanır (nakdi uzlaşma — fiziki teslim genelde yoktur). Bu uygulamada vadesi geçen pozisyonlar uzlaşma fiyatıyla otomatik kapatılır; opsiyonlarda bu fiyat vade sonundaki iç değerdir." }
     }
   },
   "common": {

@@ -1,16 +1,15 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { X, Trash2, ShieldCheck } from 'lucide-react';
-import { AlertTriangle, Check, AlertCircle } from '../../../shared/components/feedback/AnimatedIcons';
+import { X, Trash2 } from 'lucide-react';
+import { AlertTriangle, AlertCircle } from '../../../shared/components/feedback/AnimatedIcons';
 import ProcessingSteps from '../../../shared/components/feedback/ProcessingSteps';
 import useProcessingAnimation from '../../../shared/hooks/useProcessingAnimation';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { assetCodeLabel } from '../../../shared/utils/assetCode';
+import { toast } from '../../../shared/components/feedback/toastBus';
 import { useDeletePosition } from '../hooks/usePortfolioData';
 import { useDeleteDerivativePosition } from '../hooks/useDerivativePositions';
-
-const SUCCESS_HOLD_MS = 1100;
 
 export default function PositionDeleteDialog({ portfolioId, position, onClose, onComplete }) {
   const { t } = useTranslation();
@@ -40,8 +39,9 @@ export default function PositionDeleteDialog({ portfolioId, position, onClose, o
         deleteMutation.mutateAsync(position.id),
         runAnimation(processingSteps),
       ]);
-      setPhase('success');
-      setTimeout(() => { onClose(); onComplete?.(); }, SUCCESS_HOLD_MS);
+      toast.success(t('positionDelete.successTitle'), displayCode);
+      onClose();
+      onComplete?.();
     } catch (err) {
       resetProcessing();
       setError(err?.response?.data?.message || t('positionDelete.failed'));
@@ -74,41 +74,6 @@ export default function PositionDeleteDialog({ portfolioId, position, onClose, o
           >
             <X className="h-3.5 w-3.5" />
           </button>
-        )}
-
-        {phase === 'success' && (
-          <motion.div
-            initial={{ scale: 0.85, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="flex flex-col items-center justify-center gap-3 py-8"
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              className="flex items-center justify-center w-14 h-14 rounded-full bg-success/15"
-            >
-              <Check className="h-7 w-7 text-success" strokeWidth={2.5} />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-center space-y-1"
-            >
-              <p className="text-sm font-semibold text-fg">{t('positionDelete.successTitle')}</p>
-              <p className="text-xs text-fg-muted">{displayCode}</p>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.35 }}
-              className="flex items-center gap-1.5 text-[11px] text-success/70"
-            >
-              <ShieldCheck className="h-3.5 w-3.5" />
-              {t('positionDelete.successDone')}
-            </motion.div>
-          </motion.div>
         )}
 
         {phase === 'processing' && <ProcessingSteps steps={processingSteps} currentStep={processingStep} />}

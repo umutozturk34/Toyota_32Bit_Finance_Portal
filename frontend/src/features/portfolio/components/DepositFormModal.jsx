@@ -6,7 +6,7 @@ import { X, Calendar, Percent, Landmark, Tag, Wallet, ChevronDown, Check } from 
 import { AlertTriangle, AlertCircle } from '../../../shared/components/feedback/AnimatedIcons';
 import DatePickerPopover from '../../../shared/components/form/DatePickerPopover';
 import ProcessingSteps from '../../../shared/components/feedback/ProcessingSteps';
-import PositionFormSuccessPanel from './PositionFormSuccessPanel';
+import { toast } from '../../../shared/components/feedback/toastBus';
 import useProcessingAnimation from '../../../shared/hooks/useProcessingAnimation';
 import { useAddDeposit, useUpdateDeposit } from '../hooks/useFixedIncomePositions';
 import { useDepositRates } from '../hooks/useDepositRates';
@@ -15,7 +15,7 @@ import { extractApiError } from '../../../shared/utils/apiError';
 import { currencySymbolOf } from '../../../shared/utils/priceCurrency';
 import { currentLocaleTag } from '../../../shared/utils/formatters';
 import {
-  PROCESSING_STEP_DEFS, SUCCESS_HOLD_MS, todayInputValue, isoToDateInput,
+  PROCESSING_STEP_DEFS, todayInputValue, isoToDateInput,
 } from '../lib/positionFormHelpers';
 import {
   MAX_MONEY, MAX_PERCENT, PRICE_DECIMALS, clampNumberInput, sanitizeNumberInput, toInputValue,
@@ -226,8 +226,10 @@ export default function DepositFormModal({ mode = 'add', portfolioId, portfolioP
       : () => addMutation.mutateAsync(payload);
     try {
       await Promise.all([mutate(), runAnimation(processingSteps)]);
-      setPhase('success');
-      setTimeout(() => { onComplete?.(); onClose(); }, SUCCESS_HOLD_MS);
+      toast.success(isEdit ? t('deposits.form.success.titleEdit') : t('deposits.form.success.titleAdd'),
+        t('deposits.form.success.subtitle'));
+      onComplete?.();
+      onClose();
     } catch (err) {
       resetProcessing();
       setError(extractApiError(err, isEdit ? t('deposits.errors.updateFailed') : t('deposits.errors.addFailed')));
@@ -280,13 +282,6 @@ export default function DepositFormModal({ mode = 'add', portfolioId, portfolioP
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pb-4 sm:pb-6">
-        {phase === 'success' && (
-          <PositionFormSuccessPanel
-            title={isEdit ? t('deposits.form.success.titleEdit') : t('deposits.form.success.titleAdd')}
-            subtitle={t('deposits.form.success.subtitle')}
-          />
-        )}
-
         {phase === 'processing' && <ProcessingSteps steps={processingSteps} currentStep={processingStep} />}
 
         {phase === 'confirm' && (

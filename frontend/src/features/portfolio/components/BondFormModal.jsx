@@ -13,12 +13,12 @@ import {
   sanitizeNumberInput, toInputValue,
 } from '../../../shared/utils/numberInput';
 import {
-  SUCCESS_HOLD_MS, todayInputValue, isoToDateInput, toYearMonth,
+  todayInputValue, isoToDateInput, toYearMonth,
 } from '../lib/positionFormHelpers';
 import { useAddBond, useUpdateBond } from '../hooks/useFixedIncomePositions';
 import { bondService } from '../../bond/services/bondService';
 import BondSeriesPicker from './BondSeriesPicker';
-import PositionFormSuccessPanel from './PositionFormSuccessPanel';
+import { toast } from '../../../shared/components/feedback/toastBus';
 
 const CPI_TYPES = new Set(['FLOATING_CPI', 'SUKUK_CPI']);
 // Par-floaters carry a periodic ex-coupon price drop the backend can read to infer the real cadence; for these,
@@ -98,7 +98,7 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
   const [quantity, setQuantity] = useState(bond?.quantity != null ? String(bond.quantity) : '');
   const [entryDate, setEntryDate] = useState(isEdit && bond?.entryDate ? isoToDateInput(bond.entryDate) : todayInputValue());
   const [, setViewMonth] = useState(() => toYearMonth(isEdit && bond?.entryDate ? isoToDateInput(bond.entryDate) : todayInputValue()));
-  const [phase, setPhase] = useState('form');
+  const phase = 'form';
   const [error, setError] = useState(null);
 
   const addMutation = useAddBond(portfolioId);
@@ -227,8 +227,10 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
       : () => addMutation.mutateAsync(payload);
     try {
       await mutate();
-      setPhase('success');
-      setTimeout(() => { onComplete?.(); onClose(); }, SUCCESS_HOLD_MS);
+      toast.success(isEdit ? t('portfolio.bonds.form.success.titleEdit') : t('portfolio.bonds.form.success.titleAdd'),
+        t('portfolio.bonds.form.success.subtitle', { code: seriesCode }));
+      onComplete?.();
+      onClose();
     } catch (err) {
       setError(extractApiError(err, isEdit ? t('portfolio.bonds.errors.updateFailed') : t('portfolio.bonds.errors.addFailed')));
     }
@@ -286,13 +288,6 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pb-4 sm:pb-6">
-        {phase === 'success' && (
-          <PositionFormSuccessPanel
-            title={isEdit ? t('portfolio.bonds.form.success.titleEdit') : t('portfolio.bonds.form.success.titleAdd')}
-            subtitle={t('portfolio.bonds.form.success.subtitle', { code: seriesCode })}
-          />
-        )}
-
         {phase === 'form' && (
           <form onSubmit={handleSubmit} noValidate className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 sm:items-start">
             {portfolioPicker && <div className="sm:col-span-2">{portfolioPicker}</div>}

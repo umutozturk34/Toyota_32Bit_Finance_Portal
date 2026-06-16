@@ -2,11 +2,12 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import useProcessingAnimation from '../../../shared/hooks/useProcessingAnimation';
+import { toast } from '../../../shared/components/feedback/toastBus';
 import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { useAddPosition, usePortfolioLimits, useUpdatePosition } from './usePortfolioData';
 import {
-  FRACTIONAL_TYPES, ONE_HOUR_MS, SUCCESS_HOLD_MS, PROCESSING_STEP_DEFS,
+  FRACTIONAL_TYPES, ONE_HOUR_MS, PROCESSING_STEP_DEFS,
   todayInputValue, dateInputToIso, isoToDateInput, buildInitialState,
   resolveTarget, toYearMonth, buildPriceIndex, latestPriceAtOrBefore, resolveNativeCurrency,
 } from '../lib/positionFormHelpers';
@@ -235,8 +236,9 @@ export function usePositionForm({ mode, portfolioId, asset, position, onClose, o
       : () => addMutation.mutateAsync(payload);
     try {
       await Promise.all([mutate(), runAnimation(processingSteps)]);
-      setPhase('success');
-      setTimeout(() => { onComplete?.(); onClose(); }, SUCCESS_HOLD_MS);
+      toast.success(isEdit ? t('positionForm.success.titleEdit') : t('positionForm.success.titleAdd'));
+      onComplete?.();
+      onClose();
     } catch (err) {
       resetProcessing();
       setError(err?.response?.data?.message || (isEdit ? t('positionForm.errors.updateFailed') : t('positionForm.errors.addFailed')));

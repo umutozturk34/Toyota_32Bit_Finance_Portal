@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { X, Trash2 } from 'lucide-react';
 import { AlertTriangle, AlertCircle } from '../../../shared/components/feedback/AnimatedIcons';
+import { toast } from '../../../shared/components/feedback/toastBus';
 import { useBulkDeletePositions } from '../hooks/usePortfolioData';
 import { useBulkDeleteDerivativePositions } from '../hooks/useDerivativePositions';
 
@@ -36,6 +37,7 @@ export default function BulkDeleteDialog({ portfolioId, positions, onClose, onCo
             const derivativeIds = positions.filter((p) => p.assetType === 'VIOP').map((p) => p.id);
             if (spotIds.length > 0) await bulkSpotDelete.mutateAsync(spotIds);
             if (derivativeIds.length > 0) await bulkDerivativeDelete.mutateAsync(derivativeIds);
+            toast.success(t('portfolio.bulk.deletedTitle'), t('portfolio.bulk.deletedDesc', { count }));
             onComplete?.(count);
             onClose();
         } catch {

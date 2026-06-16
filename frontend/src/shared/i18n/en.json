@@ -1446,7 +1446,9 @@
       "confirmBody": "positions will be permanently deleted. This cannot be undone.",
       "partialError": "{{failed}}/{{total}} positions failed. Others deleted.",
       "selectAcrossPages": "Select all ({{n}})",
-      "selectAcrossPagesTitle": "Select positions on all pages"
+      "selectAcrossPagesTitle": "Select positions on all pages",
+      "deletedTitle": "Deleted",
+      "deletedDesc": "{{count}} positions deleted"
     },
     "sell": {
       "title": "Sell {{code}}",

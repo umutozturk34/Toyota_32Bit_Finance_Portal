@@ -1446,7 +1446,9 @@
       "confirmBody": "pozisyon kalıcı silinecek. Bu işlem geri alınamaz.",
       "partialError": "{{failed}}/{{total}} pozisyon silinemedi. Diğerleri silindi.",
       "selectAcrossPages": "Tümünü seç ({{n}})",
-      "selectAcrossPagesTitle": "Tüm sayfalardaki pozisyonları seç"
+      "selectAcrossPagesTitle": "Tüm sayfalardaki pozisyonları seç",
+      "deletedTitle": "Silindi",
+      "deletedDesc": "{{count}} pozisyon silindi"
     },
     "sell": {
       "title": "{{code}} pozisyonunu sat",

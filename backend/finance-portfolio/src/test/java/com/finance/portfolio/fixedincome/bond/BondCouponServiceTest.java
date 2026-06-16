@@ -100,11 +100,13 @@ class BondCouponServiceTest {
     @Test
     void shouldBuildSchedule_pricingEachCouponAtItsHistoricalRate() {
         // Arrange: a SEMI_ANNUAL floater, issued+entered 2026-01-01, maturing 2028-01-01 (coupons Jul-01/Jan-01).
-        // Its reset history steps 10.00 → 14.00 on 2026-08-01, so the first coupon (2026-07-01) is priced at 10 and
-        // every later one at 14. As-of 2026-09-01 → only the first coupon has been received.
+        // A floater coupon pays the rate fixed at its PERIOD START (the previous coupon date), not the rate current
+        // on the payment day. The reset steps 10.00 → 14.00 at the 2026-07-01 coupon, so the first coupon (period
+        // start 2026-01-01) is priced at 10 and every later one (period start ≥ 2026-07-01) at 14. As-of 2026-09-01
+        // → only the first coupon has been received.
         NavigableMap<LocalDate, BigDecimal> rates = new TreeMap<>();
         rates.put(LocalDate.of(2026, 1, 1), new BigDecimal("10.00"));
-        rates.put(LocalDate.of(2026, 8, 1), new BigDecimal("14.00"));
+        rates.put(LocalDate.of(2026, 7, 1), new BigDecimal("14.00"));
 
         List<BondCouponService.ScheduleEntry> schedule = service.schedule(rates, new BigDecimal("9.00"),
                 CouponFrequency.SEMI_ANNUAL, LocalDate.of(2026, 1, 1), LocalDate.of(2028, 1, 1),

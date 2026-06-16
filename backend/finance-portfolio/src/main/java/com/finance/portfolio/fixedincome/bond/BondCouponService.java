@@ -215,8 +215,13 @@ public class BondCouponService {
         if (frequency == null || !frequency.paysCoupon() || maturityStart == null || maturityEnd == null) {
             return out;
         }
-        for (LocalDate couponDate : couponDates(maturityStart, maturityEnd, frequency.stepMonths())) {
-            BigDecimal rate = rateAt(perPeriodRateByDate, couponDate, fallbackPerPeriod);
+        int step = frequency.stepMonths();
+        for (LocalDate couponDate : couponDates(maturityStart, maturityEnd, step)) {
+            // A floating coupon pays the rate FIXED AT ITS PERIOD START (the previous coupon date), not the rate
+            // that is current ON the payment day — that one belongs to the NEXT period. Looking it up at couponDate
+            // shifted every floater coupon one reset too late (e.g. a 19.16% period printing the next period's
+            // 17.20%). The period start is couponDate minus one step (maturityStart for the first coupon).
+            BigDecimal rate = rateAt(perPeriodRateByDate, couponDate.minusMonths(step), fallbackPerPeriod);
             if (rate != null && rate.signum() > 0) {
                 String status;
                 if (entryDate != null && !couponDate.isAfter(entryDate)) {

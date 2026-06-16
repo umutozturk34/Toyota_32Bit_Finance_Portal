@@ -99,6 +99,29 @@ public class KeycloakAdminClient {
     }
 
     /**
+     * The user's REALM role-mapping names (e.g. {@code USER}, {@code ADMIN}). Returns every realm role as-is —
+     * including Keycloak's built-in defaults ({@code offline_access}, {@code default-roles-*}); the caller decides
+     * which to keep. Empty when the user has no realm roles or the mapping can't be read.
+     */
+    @CircuitBreaker(name = "keycloak-admin")
+    @Retry(name = "keycloak-admin")
+    @SuppressWarnings("unchecked")
+    public List<String> getRealmRoleNames(String userId) {
+        List<Map<String, Object>> roles = executeWithRetry("getRealmRoles", token -> webClient.get()
+                .uri("/admin/realms/{realm}/users/{id}/role-mappings/realm", properties.getRealm(), userId)
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .bodyToMono(List.class)
+                .block());
+        if (roles == null) return List.of();
+        return roles.stream()
+                .map(r -> r.get("name"))
+                .filter(java.util.Objects::nonNull)
+                .map(Object::toString)
+                .toList();
+    }
+
+    /**
      * Idempotently ensures the named client allows the given redirect URIs, merging them into the
      * existing set (preserving order) and PUTting back only when something actually changed.
      */

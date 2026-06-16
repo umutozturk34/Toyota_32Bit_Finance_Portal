@@ -2142,6 +2142,7 @@
       "email": "Email",
       "signupDate": "Signup",
       "status": "Status",
+      "roles": "Role",
       "action": "Action"
     },
     "toast": {

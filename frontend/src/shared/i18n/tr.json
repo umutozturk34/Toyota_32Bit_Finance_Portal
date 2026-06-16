@@ -2142,6 +2142,7 @@
       "email": "E-posta",
       "signupDate": "Kayıt",
       "status": "Durum",
+      "roles": "Rol",
       "action": "İşlem"
     },
     "toast": {

@@ -394,7 +394,7 @@ public class FixedIncomeSummaryService {
             // later coupons), else maturity. schedule() then tags every coupon ≤ cutoff and > entry as RECEIVED.
             LocalDate cutoff = bond.isClosed() ? bond.getExitDate() : catalogBond.getMaturityEnd();
             for (BondCouponService.ScheduleEntry e : bondCouponService.schedule(rateMap, fallbackPerPeriod, frequency,
-                    catalogBond.getMaturityStart(), catalogBond.getMaturityEnd(), bond.getEntryDate(), cutoff)) {
+                    catalogBond.getMaturityStart(), catalogBond.getMaturityEnd(), bond.getEntryDate(), cutoff, priceSeries)) {
                 if ("RECEIVED".equals(e.status())) {
                     BigDecimal couponBase = indexed
                             ? bond.currentValue(priceAt(priceSeries, e.date(), bond.getEntryPrice()), perUnit)

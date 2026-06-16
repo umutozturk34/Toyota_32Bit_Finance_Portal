@@ -189,10 +189,13 @@ public class BondHoldingService {
         // value on its own coupon date; a plain/floater coupon is on the constant face nominal.
         boolean indexed = type.isCpiLinked() || type.isGoldLinked();
         boolean perUnit = type.isPerUnit();
-        NavigableMap<LocalDate, BigDecimal> priceSeries = indexed ? loadPriceHistory(holding.getBondIsin()) : null;
+        // The price series feeds two things: the CPI/gold coupon base, AND (for a floater) the ex-coupon DROP that
+        // pins each coupon's rate to the day before it — so load it whenever the bond is indexed OR floating.
+        NavigableMap<LocalDate, BigDecimal> priceSeries = (indexed || floating)
+                ? loadPriceHistory(holding.getBondIsin()) : null;
         LocalDate asOf = holding.isClosed() ? holding.getExitDate() : LocalDate.now();
         return bondCouponService.schedule(rateMap, fallbackPerPeriod, frequency,
-                        bond.getMaturityStart(), bond.getMaturityEnd(), holding.getEntryDate(), asOf).stream()
+                        bond.getMaturityStart(), bond.getMaturityEnd(), holding.getEntryDate(), asOf, priceSeries).stream()
                 .map(e -> {
                     BigDecimal couponBase = indexed
                             ? holding.currentValue(priceAt(priceSeries, e.date(), holding.getEntryPrice()), perUnit)

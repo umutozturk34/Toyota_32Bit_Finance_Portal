@@ -29,6 +29,8 @@ import java.util.NavigableMap;
 public class BondCouponService {
 
     private static final BigDecimal HUNDRED = new BigDecimal("100");
+    // A day-over-day price fall (%) below which a move counts as a floating bond's ex-coupon crash.
+    private static final BigDecimal EX_COUPON_DROP_PCT = new BigDecimal("-1");
 
     /**
      * Accrued coupon for the holding as of {@code asOf}, plus the per-day accrual and the surrounding coupon
@@ -210,18 +212,27 @@ public class BondCouponService {
     public List<ScheduleEntry> schedule(NavigableMap<LocalDate, BigDecimal> perPeriodRateByDate,
                                         BigDecimal fallbackPerPeriod, CouponFrequency frequency,
                                         LocalDate maturityStart, LocalDate maturityEnd,
-                                        LocalDate entryDate, LocalDate asOf) {
+                                        LocalDate entryDate, LocalDate asOf,
+                                        NavigableMap<LocalDate, BigDecimal> priceSeries) {
         List<ScheduleEntry> out = new ArrayList<>();
         if (frequency == null || !frequency.paysCoupon() || maturityStart == null || maturityEnd == null) {
             return out;
         }
         int step = frequency.stepMonths();
         for (LocalDate couponDate : couponDates(maturityStart, maturityEnd, step)) {
-            // A floating coupon pays the rate FIXED AT ITS PERIOD START (the previous coupon date), not the rate
-            // that is current ON the payment day — that one belongs to the NEXT period. Looking it up at couponDate
-            // shifted every floater coupon one reset too late (e.g. a 19.16% period printing the next period's
-            // 17.20%). The period start is couponDate minus one step (maturityStart for the first coupon).
-            BigDecimal rate = rateAt(perPeriodRateByDate, couponDate.minusMonths(step), fallbackPerPeriod);
+            BigDecimal rate;
+            if (perPeriodRateByDate != null && priceSeries != null) {
+                // A floating coupon pays the rate the EVDS .ORAN shows on the day the PRICE PEAKS — the trading day
+                // right before its ex-coupon crash. A TLREF coupon RAMPS its rate over the period (so the period
+                // START rate understates it: 7.55% start vs the 8.87% it reaches by payment), while an auction
+                // coupon holds flat then resets AT the drop — BOTH read correctly at "the day before the drop". We
+                // anchor on the REAL drop found in the price series, since the calendar coupon date drifts a day or
+                // two off it. Falls back to the coupon date itself when no drop is found (a clean/quiet series).
+                LocalDate drop = exCouponDropDate(priceSeries, couponDate);
+                rate = rateAt(perPeriodRateByDate, (drop != null ? drop : couponDate).minusDays(1), fallbackPerPeriod);
+            } else {
+                rate = rateAt(perPeriodRateByDate, couponDate.minusMonths(step), fallbackPerPeriod);
+            }
             if (rate != null && rate.signum() > 0) {
                 String status;
                 if (entryDate != null && !couponDate.isAfter(entryDate)) {
@@ -272,6 +283,35 @@ public class BondCouponService {
             }
         }
         return fallback;
+    }
+
+    /**
+     * The day a floating bond's price actually crashed near a scheduled coupon date — its real ex-coupon date.
+     * Scans {@code [scheduled-10, scheduled+5]} for the single largest day-over-day fall; returns it when the fall
+     * clears {@link #EX_COUPON_DROP_PCT}, else null (a quiet/clean series with no crash). The coupon rate is then
+     * read on the day BEFORE this, where the price still sat at its peak.
+     */
+    private static LocalDate exCouponDropDate(NavigableMap<LocalDate, BigDecimal> priceSeries, LocalDate scheduled) {
+        if (priceSeries == null || priceSeries.isEmpty()) {
+            return null;
+        }
+        NavigableMap<LocalDate, BigDecimal> window =
+                priceSeries.subMap(scheduled.minusDays(10), true, scheduled.plusDays(5), true);
+        LocalDate dropDate = null;
+        BigDecimal worst = BigDecimal.ZERO;
+        BigDecimal prev = null;
+        for (Map.Entry<LocalDate, BigDecimal> e : window.entrySet()) {
+            if (prev != null && prev.signum() > 0 && e.getValue() != null) {
+                BigDecimal chgPct = e.getValue().subtract(prev)
+                        .multiply(HUNDRED).divide(prev, MoneyScale.PRICE, RoundingMode.HALF_UP);
+                if (chgPct.compareTo(worst) < 0) {
+                    worst = chgPct;
+                    dropDate = e.getKey();
+                }
+            }
+            prev = e.getValue();
+        }
+        return (dropDate != null && worst.compareTo(EX_COUPON_DROP_PCT) < 0) ? dropDate : null;
     }
 
     /** Converts a per-100-nominal figure to a full-position TRY amount for the given nominal {@code quantity}. */

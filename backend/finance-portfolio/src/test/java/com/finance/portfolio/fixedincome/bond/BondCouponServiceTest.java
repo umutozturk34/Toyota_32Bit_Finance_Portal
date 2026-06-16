@@ -110,7 +110,7 @@ class BondCouponServiceTest {
 
         List<BondCouponService.ScheduleEntry> schedule = service.schedule(rates, new BigDecimal("9.00"),
                 CouponFrequency.SEMI_ANNUAL, LocalDate.of(2026, 1, 1), LocalDate.of(2028, 1, 1),
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 9, 1));
+                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 9, 1), null);
 
         // Assert: 4 coupons; the first RECEIVED at the pre-reset rate, the rest UPCOMING at the reset rate.
         assertThat(schedule).hasSize(4);
@@ -124,12 +124,37 @@ class BondCouponServiceTest {
     }
 
     @Test
+    void shouldPriceFloatingCouponAtTheRateTheDayBeforeTheExCouponPriceDrop() {
+        // A TLREF floater whose .ORAN RAMPS within the period: 5.00 at the period start, stepping to 8.87 just
+        // before the coupon. The price peaks then CRASHES on 2024-03-20 (the real ex-coupon date, a day off the
+        // calendar 2024-03-21). The 2024-03-21 coupon must price at 8.87 — the rate the day BEFORE the crash, where
+        // the price still sat at its peak — NOT the 5.00 period-start rate, which would understate a ramping coupon.
+        NavigableMap<LocalDate, BigDecimal> rates = new TreeMap<>();
+        rates.put(LocalDate.of(2023, 12, 21), new BigDecimal("5.00"));
+        rates.put(LocalDate.of(2024, 3, 19), new BigDecimal("8.87"));
+        rates.put(LocalDate.of(2024, 3, 20), new BigDecimal("9.53"));
+        NavigableMap<LocalDate, BigDecimal> prices = new TreeMap<>();
+        prices.put(LocalDate.of(2024, 3, 18), new BigDecimal("107.0"));
+        prices.put(LocalDate.of(2024, 3, 19), new BigDecimal("107.3"));
+        prices.put(LocalDate.of(2024, 3, 20), new BigDecimal("99.1"));
+        prices.put(LocalDate.of(2024, 3, 21), new BigDecimal("99.3"));
+
+        List<BondCouponService.ScheduleEntry> schedule = service.schedule(rates, new BigDecimal("4.00"),
+                CouponFrequency.QUARTERLY, LocalDate.of(2023, 9, 21), LocalDate.of(2025, 9, 21),
+                LocalDate.of(2023, 9, 21), LocalDate.of(2024, 4, 1), prices);
+
+        BondCouponService.ScheduleEntry marCoupon = schedule.stream()
+                .filter(e -> e.date().equals(LocalDate.of(2024, 3, 21))).findFirst().orElseThrow();
+        assertThat(marCoupon.ratePer100()).isEqualByComparingTo("8.87");
+    }
+
+    @Test
     void shouldPayFinalCouponAtMaturity_whenStepLandsPastMaturity() {
         // Arrange: SEMI_ANNUAL, issued 2026-01-28, maturing 2027-01-27 — the second coupon would step to 2027-01-28,
         // a day PAST maturity, so the final coupon must instead be paid AT maturity (2027-01-27) with the principal.
         List<BondCouponService.ScheduleEntry> schedule = service.schedule(new TreeMap<>(), new BigDecimal("0.40"),
                 CouponFrequency.SEMI_ANNUAL, LocalDate.of(2026, 1, 28), LocalDate.of(2027, 1, 27),
-                LocalDate.of(2026, 1, 28), LocalDate.of(2026, 6, 1));
+                LocalDate.of(2026, 1, 28), LocalDate.of(2026, 6, 1), null);
 
         // Assert: two coupons — the regular 2026-07-28 and a final one AT maturity, not a dropped/clamped step.
         assertThat(schedule).hasSize(2);

@@ -59,6 +59,9 @@ function BankCard({ row, t, displayCurrency, money }) {
           <img
             src={row.bankLogoUrl}
             alt={displayName}
+            width={40}
+            height={40}
+            loading="lazy"
             className="w-10 h-10 rounded-lg object-contain"
             onError={(e) => { e.target.style.display = 'none'; }}
           />
@@ -254,8 +257,14 @@ export default function BankRatesPanel() {
     };
   }, [filteredCurrencies.length, kind]);
   useEffect(() => {
-    const activeChip = stripRef.current?.querySelector('[data-active="true"]');
-    activeChip?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+    const strip = stripRef.current;
+    const activeChip = strip?.querySelector('[data-active="true"]');
+    if (!strip || !activeChip) return;
+    // Centre the active chip by adjusting ONLY the strip's own horizontal scroll. The previous scrollIntoView
+    // also scrolled every ancestor (the whole page jumping when you switched currency/kind) — this contains the
+    // motion to the chip rail.
+    const target = activeChip.offsetLeft - (strip.clientWidth - activeChip.clientWidth) / 2;
+    strip.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
   }, [currency, kind]);
 
   return (

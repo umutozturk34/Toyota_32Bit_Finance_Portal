@@ -51,7 +51,7 @@ export default function BulkSelectionBar({
                                     animate={{ y: 0, opacity: 1 }}
                                     exit={{ y: -4, opacity: 0 }}
                                     transition={{ type: 'spring', stiffness: 560, damping: 26 }}
-                                    className="font-mono text-sm font-bold tabular-nums text-fg leading-none"
+                                    className="inline-block min-w-[1.5ch] text-center font-mono text-sm font-bold tabular-nums text-fg leading-none"
                                 >
                                     {count}
                                 </motion.span>

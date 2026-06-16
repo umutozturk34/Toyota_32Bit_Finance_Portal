@@ -100,7 +100,9 @@ class PortfolioSnapshotServiceTest {
         verify(dailySnapshotRepository).deleteByPortfolioIdAndSnapshotDate(2L, LocalDate.now());
         verify(dailySnapshotRepository).save(captor.capture());
         PortfolioDailySnapshot saved = captor.getValue();
-        assertThat(saved.getTotalValueTry()).isEqualByComparingTo("112000");
+        // Coupon cash (1500) is folded in to match the live headline: value 112000 + 1500 = 113500, pnl 12000 + 1500.
+        assertThat(saved.getTotalValueTry()).isEqualByComparingTo("113500");
+        assertThat(saved.getTotalPnlTry()).isEqualByComparingTo("13500");
         assertThat(saved.getTotalCostTry()).isEqualByComparingTo("100000");
         assertThat(saved.getCashTry()).isEqualByComparingTo("0");
         // The spot per-asset path is never touched for a FIXED portfolio.

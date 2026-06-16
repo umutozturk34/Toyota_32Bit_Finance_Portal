@@ -252,11 +252,19 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
         Long pid = portfolio.getId();
         LocalDate today = LocalDate.now();
         FixedIncomeSummaryResponse summary = fixedIncomeSummaryService.summary(pid, portfolio.getUserSub());
-        BigDecimal totalValue = nz(summary.totalValueTry());
+        // Match the live headline EXACTLY: it folds the received coupon cash into the holder's total value and K/Z
+        // (the bond clean-price value alone is only the mark-to-market leg). Snapshotting the clean total would make
+        // the daily digest and history diverge from what the user sees on the card, so add the coupons in here too.
+        BigDecimal coupons = nz(summary.bondCouponsReceivedTry());
+        BigDecimal totalValue = nz(summary.totalValueTry()).add(coupons);
         BigDecimal totalCost = nz(summary.totalCostTry());
         if (totalValue.signum() == 0 && totalCost.signum() == 0) {
             return null;
         }
+        BigDecimal totalPnl = nz(summary.totalPnlTry()).add(coupons);
+        BigDecimal pnlPercent = totalCost.signum() == 0
+                ? null
+                : totalPnl.multiply(HUNDRED).divide(totalCost, 4, RoundingMode.HALF_UP);
 
         BigDecimal priorValue = priorValueBeforeToday(pid, today);
         BigDecimal dailyPnl = priorValue == null ? BigDecimal.ZERO : totalValue.subtract(priorValue);
@@ -270,8 +278,8 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
                 .totalValueTry(totalValue)
                 .cashTry(BigDecimal.ZERO)
                 .totalCostTry(totalCost)
-                .totalPnlTry(nz(summary.totalPnlTry()))
-                .pnlPercent(nz(summary.pnlPercent()))
+                .totalPnlTry(totalPnl)
+                .pnlPercent(pnlPercent)
                 .dailyPnlTry(dailyPnl)
                 .dailyPnlPercent(dailyPnlPercent)
                 .version(0L)

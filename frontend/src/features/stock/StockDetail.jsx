@@ -1,8 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Briefcase, CalendarDays, MapPin, Landmark } from 'lucide-react';
 import { stockService } from './services/stockService';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
-import MetadataTiles from '../../shared/components/asset/MetadataTiles';
 import { assetRoute } from '../watch/lib/watchConstants';
 import { assetColorStyle, assetColor } from '../../shared/utils/assetColor';
 
@@ -37,39 +37,73 @@ function StockMetadata({ asset }) {
   const indices = meta.indexMemberships || [];
   const foundedYear = meta.foundedDate ? new Date(meta.foundedDate).getFullYear() : null;
 
-  const tiles = [
-    meta.sector && { label: t('marketDetail.stock.sector'), value: meta.sector },
-    foundedYear && { label: t('marketDetail.stock.founded'), value: foundedYear },
-    meta.city && { label: t('marketDetail.stock.city'), value: meta.city },
-    meta.exchange && { label: t('marketDetail.stock.exchange'), value: meta.exchange },
+  const stats = [
+    foundedYear && { label: t('marketDetail.stock.founded'), value: foundedYear, Icon: CalendarDays, color: '#fbbf24' },
+    meta.city && { label: t('marketDetail.stock.city'), value: meta.city, Icon: MapPin, color: '#2dd4bf' },
+    meta.exchange && { label: t('marketDetail.stock.exchange'), value: meta.exchange, Icon: Landmark, color: '#38bdf8' },
   ].filter(Boolean);
 
-  if (!tiles.length && !indices.length) return null;
+  const hasKunye = Boolean(meta.sector) || stats.length > 0;
+  if (!hasKunye && !indices.length) return null;
 
   return (
     <div className="space-y-3">
-      <MetadataTiles tiles={tiles} />
+      {hasKunye && (
+        <div className="space-y-3 rounded-2xl border border-border-default bg-bg-elevated/50 p-4 backdrop-blur">
+          {meta.sector && (
+            <KunyeStat Icon={Briefcase} color="#818cf8" label={t('marketDetail.stock.sector')} value={meta.sector} wrap />
+          )}
+          {stats.length > 0 && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {stats.map((s) => (
+                <KunyeStat key={s.label} Icon={s.Icon} color={s.color} label={s.label} value={s.value} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {indices.length > 0 && (
-        <div>
-          <p className="mb-1.5 text-[10px] uppercase tracking-wider text-fg-subtle">
+        <div className="rounded-2xl border border-border-default bg-bg-elevated/40 p-3.5 backdrop-blur">
+          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-wider text-fg-subtle">
             {t('marketDetail.stock.indices')}
           </p>
           <div className="flex flex-wrap gap-1.5">
-            {indices.map((ix) => (
-              <Link
-                key={ix.indexCode}
-                to={assetRoute('STOCK', `${ix.indexCode}.IS`)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-accent/20 bg-accent/10 px-2 py-1 text-[11px] font-semibold text-accent-bright transition-colors hover:border-accent/50 hover:bg-accent/15"
-              >
-                <span className="font-mono">{ix.indexCode}</span>
-                {ix.weight != null && (
-                  <span className="font-normal text-fg-muted">%{Number(ix.weight).toFixed(2)}</span>
-                )}
-              </Link>
-            ))}
+            {indices.map((ix) => {
+              const color = assetColor(ix.indexCode);
+              return (
+                <Link
+                  key={ix.indexCode}
+                  to={assetRoute('STOCK', `${ix.indexCode}.IS`)}
+                  style={{ '--c': color }}
+                  className="group inline-flex items-center gap-1.5 rounded-md border border-border-default bg-bg-base/40 px-2 py-1 transition-all duration-200 hover:-translate-y-0.5 hover:border-[color:var(--c)] hover:shadow-[0_6px_16px_-10px_var(--c)]"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+                  <span className="font-mono text-[11px] font-bold text-fg">{ix.indexCode}</span>
+                  {ix.weight != null && (
+                    <span className="font-mono text-[10px] font-bold tabular-nums" style={{ color }}>%{Number(ix.weight).toFixed(2)}</span>
+                  )}
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// One künye stat: a colour-keyed icon + label + value. The sector wraps (it can be a long sentence) instead of
+// truncating, so it stays readable; short stats (year/city/exchange) sit in a responsive row.
+function KunyeStat({ Icon, color, label, value, wrap }) {
+  return (
+    <div className="flex items-start gap-2.5">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: `${color}22`, color }}>
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[10px] uppercase tracking-wider text-fg-subtle">{label}</p>
+        <p className={`mt-0.5 text-sm font-semibold text-fg ${wrap ? 'leading-snug' : 'truncate'}`}>{value}</p>
+      </div>
     </div>
   );
 }

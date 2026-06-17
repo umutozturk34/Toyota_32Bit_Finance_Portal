@@ -30,11 +30,13 @@ public class UserLayoutController {
     private final UserLayoutService service;
     private final Translator translator;
 
+    /** The user's saved dashboard layout, or an empty layout if none has been stored yet. */
     @GetMapping
     public ApiResponse<UserLayoutResponse> getLayout(@AuthenticationPrincipal Jwt jwt) {
         return ApiResponse.success(translator.translate("api.layout.retrieved"), service.getOrEmpty(jwt.getSubject()));
     }
 
+    /** Replaces the overview layout with the supplied opaque JSON blob (widget grid persisted as-is). */
     @PutMapping("/overview")
     public ApiResponse<UserLayoutResponse> updateOverview(
             @AuthenticationPrincipal Jwt jwt,

@@ -47,6 +47,7 @@ public class AnalyticsController {
     private final PortfolioSeriesProvider portfolioSeriesProvider;
     private final Translator translator;
 
+    /** Runs a what-if scenario (shocks applied to a hypothetical holding set) and returns the projected outcome. */
     @PostMapping("/scenarios")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<ScenarioResponse> simulate(@Valid @RequestBody ScenarioRequest request) {
@@ -54,6 +55,10 @@ public class AnalyticsController {
                 scenarioService.simulate(request));
     }
 
+    /**
+     * Ranks tracked assets by real return against a macro benchmark over the given period. When
+     * {@code targetCurrency} is null the comparison currency is derived from the benchmark.
+     */
     @GetMapping("/inflation-beaters")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<InflationBeaterResponse> inflationBeaters(
@@ -67,6 +72,7 @@ public class AnalyticsController {
                 inflationBeaterService.rank(period, benchmark, targetCurrency));
     }
 
+    /** Realized-return ranking of the tracked spot asset types (per-currency, multi-period). */
     @GetMapping("/returns")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<AssetReturnsResponse> assetReturns() {
@@ -74,6 +80,11 @@ public class AnalyticsController {
                 assetReturnsService.getReturns());
     }
 
+    /**
+     * Daily series for a portfolio over {@code [from, to]}, scoped to the JWT subject. Returns cumulative
+     * P/L in TRY when {@code pnl} is set, the capital-weighted return index when {@code twr} is set (pnl
+     * wins if both are set), otherwise the raw daily value.
+     */
     @GetMapping("/portfolio-series/{portfolioId}")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<HistoryPoint>> portfolioSeries(

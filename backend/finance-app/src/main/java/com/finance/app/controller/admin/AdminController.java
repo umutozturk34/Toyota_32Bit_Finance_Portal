@@ -33,6 +33,7 @@ public class AdminController {
     private final TaskTrackingService taskTrackingService;
     private final Translator translator;
 
+    /** Triggers an async price/quote snapshot refresh for the given {@code type} market; returns 202 immediately. */
     @PostMapping("/trigger/{type}/snapshot")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<TaskTriggerResponse> triggerSnapshot(@PathVariable String type) {
@@ -40,6 +41,7 @@ public class AdminController {
         return ApiResponse.success(translator.translate("api.admin.snapshotTriggered", capitalize(type)), adminTaskService.triggerSnapshot(marketType));
     }
 
+    /** Triggers an async historical-candle backfill for the given {@code type} market; returns 202 immediately. */
     @PostMapping("/trigger/{type}/candles")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<TaskTriggerResponse> triggerCandles(@PathVariable String type) {
@@ -47,6 +49,7 @@ public class AdminController {
         return ApiResponse.success(translator.translate("api.admin.candlesTriggered", capitalize(type)), adminTaskService.triggerCandles(marketType));
     }
 
+    /** Triggers an async full refresh (snapshot + candles) for the given {@code type} market; returns 202 immediately. */
     @PostMapping("/trigger/{type}/full")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<TaskTriggerResponse> triggerFull(@PathVariable String type) {
@@ -54,29 +57,34 @@ public class AdminController {
         return ApiResponse.success(translator.translate("api.admin.fullUpdateTriggered", capitalize(type)), adminTaskService.triggerFull(marketType));
     }
 
+    /** Triggers an async bond (Hazine tahvil/bono) data refresh; returns 202 immediately. */
     @PostMapping("/trigger/bond/update")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<TaskTriggerResponse> triggerBondUpdate() {
         return ApiResponse.success(translator.translate("api.admin.bondUpdateTriggered"), adminTaskService.triggerBondUpdate());
     }
 
+    /** Triggers an async news-feed fetch across configured sources; returns 202 immediately. */
     @PostMapping("/trigger/news/update")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<TaskTriggerResponse> triggerNewsUpdate() {
         return ApiResponse.success(translator.translate("api.admin.newsUpdateTriggered"), adminTaskService.triggerNewsUpdate());
     }
 
+    /** Triggers an async macro-indicator (EVDS inflation/rates) refresh; returns 202 immediately. */
     @PostMapping("/trigger/macro/refresh")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<TaskTriggerResponse> triggerMacroRefresh() {
         return ApiResponse.success(translator.translate("api.admin.macroRefreshTriggered"), adminTaskService.triggerMacroRefresh());
     }
 
+    /** Server-sent event stream pushing live status of running background tasks. */
     @GetMapping(path = "/tasks/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamTaskStatus() {
         return taskTrackingService.subscribeToStatus();
     }
 
+    /** One-shot current status of background tasks (the non-streaming counterpart to {@code /tasks/stream}). */
     @GetMapping("/tasks/status")
     public ApiResponse<com.finance.shared.dto.response.TaskStatusResponse> getTaskStatus() {
         return ApiResponse.success(translator.translate("api.admin.taskStatusFetched"), taskTrackingService.getTypedStatus());

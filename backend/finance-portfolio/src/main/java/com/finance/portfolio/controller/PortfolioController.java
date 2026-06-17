@@ -65,17 +65,23 @@ public class PortfolioController {
     private final PortfolioBackfillTracker backfillTracker;
     private final Translator translator;
 
+    /** Lists the authenticated user's portfolios. */
     @GetMapping
     public ApiResponse<List<PortfolioResponse>> listPortfolios(@AuthenticationPrincipal Jwt jwt) {
         return ApiResponse.success(translator.translate("api.portfolio.listRetrieved"),
                 portfolioFacade.listPortfolios(jwt.getSubject()));
     }
 
+    /** Returns the global lot constraints (min/max quantity, price, date bounds) the client validates new positions against. */
     @GetMapping("/limits")
     public ApiResponse<LotLimitsResponse> getLotLimits() {
         return ApiResponse.success(translator.translate("api.portfolio.lotLimitsRetrieved"), portfolioFacade.getLotLimits());
     }
 
+    /**
+     * Server-sent event stream of historical-price backfill progress for the portfolio.
+     * Verifies the caller owns the portfolio before subscribing.
+     */
     @GetMapping(path = "/{portfolioId}/backfill-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamBackfillStatus(
             @AuthenticationPrincipal Jwt jwt,
@@ -84,6 +90,7 @@ public class PortfolioController {
         return backfillTracker.subscribe(portfolioId);
     }
 
+    /** Creates a portfolio owned by the authenticated user. */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<PortfolioResponse> createPortfolio(
@@ -93,6 +100,7 @@ public class PortfolioController {
                 portfolioFacade.createPortfolio(jwt.getSubject(), request));
     }
 
+    /** Adds a position (lot) to the owned portfolio. */
     @PostMapping("/{portfolioId}/positions")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<PositionResponse> addPosition(
@@ -103,6 +111,7 @@ public class PortfolioController {
                 portfolioFacade.addPosition(jwt.getSubject(), portfolioId, request));
     }
 
+    /** Updates an existing position in the owned portfolio. */
     @PutMapping("/{portfolioId}/positions/{positionId}")
     public ApiResponse<PositionResponse> updatePosition(
             @AuthenticationPrincipal Jwt jwt,
@@ -113,6 +122,7 @@ public class PortfolioController {
                 portfolioFacade.updatePosition(jwt.getSubject(), portfolioId, positionId, request));
     }
 
+    /** Permanently removes a single position from the owned portfolio. */
     @DeleteMapping("/{portfolioId}/positions/{positionId}")
     public ApiResponse<Void> deletePosition(
             @AuthenticationPrincipal Jwt jwt,
@@ -122,6 +132,7 @@ public class PortfolioController {
         return ApiResponse.success(translator.translate("api.portfolio.positionDeleted"), null);
     }
 
+    /** Removes several positions at once; the request body carries the position id list. */
     @PostMapping("/{portfolioId}/positions/bulk-delete")
     public ApiResponse<Void> bulkDeletePositions(
             @AuthenticationPrincipal Jwt jwt,
@@ -131,6 +142,7 @@ public class PortfolioController {
         return ApiResponse.success(translator.translate("api.portfolio.positionDeleted"), null);
     }
 
+    /** Closes (sells) a position at the given exit date/price, realising its profit and loss. */
     @PostMapping("/{portfolioId}/positions/{positionId}/sell")
     public ApiResponse<PositionResponse> sellPosition(
             @AuthenticationPrincipal Jwt jwt,
@@ -141,6 +153,7 @@ public class PortfolioController {
                 portfolioFacade.sellPosition(jwt.getSubject(), portfolioId, positionId, request));
     }
 
+    /** Reverts a previously sold position back to open, discarding its realised exit. */
     @PostMapping("/{portfolioId}/positions/{positionId}/reopen")
     public ApiResponse<PositionResponse> reopenPosition(
             @AuthenticationPrincipal Jwt jwt,
@@ -150,6 +163,7 @@ public class PortfolioController {
                 portfolioFacade.reopenPosition(jwt.getSubject(), portfolioId, positionId));
     }
 
+    /** Renames the owned portfolio. */
     @PutMapping("/{portfolioId}")
     public ApiResponse<PortfolioResponse> renamePortfolio(
             @AuthenticationPrincipal Jwt jwt,
@@ -159,6 +173,7 @@ public class PortfolioController {
                 portfolioFacade.renamePortfolio(jwt.getSubject(), portfolioId, request));
     }
 
+    /** Deletes the owned portfolio and all of its positions. */
     @DeleteMapping("/{portfolioId}")
     public ApiResponse<Void> deletePortfolio(
             @AuthenticationPrincipal Jwt jwt,
@@ -167,6 +182,10 @@ public class PortfolioController {
         return ApiResponse.success(translator.translate("api.portfolio.deleted"), null);
     }
 
+    /**
+     * Aggregate view (quantity, cost, value, P/L) of one asset within the portfolio.
+     * {@code direction} narrows derivative holdings to a single LONG/SHORT side.
+     */
     @GetMapping("/{portfolioId}/assets/{assetType}/{assetCode}/summary")
     public ApiResponse<AssetAggregateResponse> getAssetAggregate(
             @AuthenticationPrincipal Jwt jwt,
@@ -178,6 +197,10 @@ public class PortfolioController {
                 portfolioFacade.getAssetAggregate(jwt.getSubject(), portfolioId, assetType, assetCode, direction));
     }
 
+    /**
+     * Paged, searchable, sortable list of the portfolio's positions.
+     * {@code closed} filters by open/closed state; page size defaults and is clamped to the configured max.
+     */
     @GetMapping("/{portfolioId}/positions")
     public ApiResponse<PagedResponse<PositionResponse>> getPositions(
             @AuthenticationPrincipal Jwt jwt,
@@ -195,6 +218,7 @@ public class PortfolioController {
                         search, assetType, sort, direction, closed, page, resolvedSize));
     }
 
+    /** All positions for one asset (type + code) in the portfolio, unpaged. */
     @GetMapping("/{portfolioId}/positions/by-asset")
     public ApiResponse<List<PositionResponse>> getPositionsByAsset(
             @AuthenticationPrincipal Jwt jwt,
@@ -205,6 +229,7 @@ public class PortfolioController {
                 portfolioFacade.getPositionsByAsset(jwt.getSubject(), portfolioId, assetType, assetCode));
     }
 
+    /** Portfolio totals (value, cost, P/L); optional {@code assetType} restricts the rollup to one asset class. */
     @GetMapping("/{portfolioId}/summary")
     public ApiResponse<PortfolioSummaryResponse> getSummary(
             @AuthenticationPrincipal Jwt jwt,
@@ -214,6 +239,10 @@ public class PortfolioController {
                 portfolioFacade.getSummary(jwt.getSubject(), portfolioId, assetType));
     }
 
+    /**
+     * Allocation breakdown of the portfolio by {@code mode} (default {@code assetType}).
+     * {@code limit} caps the returned slices; an {@code assetType} filter drills into one class.
+     */
     @GetMapping("/{portfolioId}/allocation")
     public ApiResponse<List<AllocationItem>> getAllocation(
             @AuthenticationPrincipal Jwt jwt,
@@ -225,6 +254,10 @@ public class PortfolioController {
                 portfolioFacade.getAllocation(jwt.getSubject(), portfolioId, mode, assetType, limit));
     }
 
+    /**
+     * Composite dashboard payload assembled in one round trip; {@code include} is a comma-separated
+     * set of sections (summary,positions,allocation by default) selecting which blocks to compute.
+     */
     @GetMapping("/{portfolioId}/view")
     public ApiResponse<PortfolioViewResponse> getPortfolioView(
             @AuthenticationPrincipal Jwt jwt,
@@ -237,6 +270,10 @@ public class PortfolioController {
                 portfolioFacade.getPortfolioView(jwt.getSubject(), portfolioId, includes));
     }
 
+    /**
+     * Time-series data for a chart of the given {@code type} over {@code range} (default {@code 1M}).
+     * Optional asset filters scope the series to a single holding/direction instead of the whole portfolio.
+     */
     @GetMapping("/{portfolioId}/chart")
     public ApiResponse<?> getChart(
             @AuthenticationPrincipal Jwt jwt,

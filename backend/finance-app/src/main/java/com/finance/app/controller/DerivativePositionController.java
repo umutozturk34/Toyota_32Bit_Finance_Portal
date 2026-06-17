@@ -41,6 +41,7 @@ public class DerivativePositionController {
     private final DerivativePositionService service;
     private final Translator translator;
 
+    /** Lists the portfolio's derivative positions; pass {@code openOnly=true} to exclude closed ones. */
     @GetMapping
     public ApiResponse<List<DerivativePositionResponse>> list(@PathVariable Long portfolioId,
                                                               @RequestParam(defaultValue = "false") boolean openOnly,
@@ -51,6 +52,7 @@ public class DerivativePositionController {
         return ApiResponse.success(data);
     }
 
+    /** Opens a new derivative position in the portfolio. */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<DerivativePositionResponse> open(@PathVariable Long portfolioId,
@@ -80,6 +82,7 @@ public class DerivativePositionController {
         return ApiResponse.success(translator.translate("api.derivative.closeUpdated"), updated);
     }
 
+    /** Amends the entry details of an open position. */
     @PutMapping("/{positionId}")
     public ApiResponse<DerivativePositionResponse> update(@PathVariable Long portfolioId,
                                                            @PathVariable Long positionId,
@@ -89,6 +92,7 @@ public class DerivativePositionController {
         return ApiResponse.success(translator.translate("api.derivative.updated"), updated);
     }
 
+    /** Reverses a {@code close}, returning a closed position to the open state. */
     @PatchMapping("/{positionId}/reopen")
     public ApiResponse<DerivativePositionResponse> reopen(@PathVariable Long portfolioId,
                                                            @PathVariable Long positionId,
@@ -97,6 +101,7 @@ public class DerivativePositionController {
         return ApiResponse.success(translator.translate("api.derivative.reopened"), updated);
     }
 
+    /** Permanently removes a single position; responds {@code 204 No Content}. */
     @DeleteMapping("/{positionId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long portfolioId,
@@ -105,6 +110,7 @@ public class DerivativePositionController {
         service.delete(positionId, portfolioId, jwt.getSubject());
     }
 
+    /** Permanently removes every position whose id is in the request body; responds {@code 204 No Content}. */
     @PostMapping("/bulk-delete")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void bulkDelete(@PathVariable Long portfolioId,

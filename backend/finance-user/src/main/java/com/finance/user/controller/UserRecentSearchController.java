@@ -35,11 +35,13 @@ public class UserRecentSearchController {
     private final UserRecentSearchService service;
     private final Translator translator;
 
+    /** The user's recent search selections, newest first. */
     @GetMapping
     public ApiResponse<List<RecentSearchItem>> getRecentSearches(@AuthenticationPrincipal Jwt jwt) {
         return ApiResponse.success(translator.translate("api.recentSearches.retrieved"), service.getItems(jwt.getSubject()));
     }
 
+    /** Records a search selection (deduplicating and capping history), returning the updated list. */
     @PostMapping
     public ApiResponse<List<RecentSearchItem>> recordRecentSearch(
             @AuthenticationPrincipal Jwt jwt,
@@ -47,12 +49,14 @@ public class UserRecentSearchController {
         return ApiResponse.success(translator.translate("api.recentSearches.recorded"), service.record(jwt.getSubject(), request));
     }
 
+    /** Clears the user's entire recent-search history. */
     @DeleteMapping
     public ApiResponse<Void> clearRecentSearches(@AuthenticationPrincipal Jwt jwt) {
         service.clear(jwt.getSubject());
         return ApiResponse.success(translator.translate("api.recentSearches.cleared"), null);
     }
 
+    /** Removes a single recent search identified by {@code type}/{@code code}, returning the updated list. */
     @DeleteMapping("/{type}/{code}")
     public ApiResponse<List<RecentSearchItem>> removeRecentSearch(
             @AuthenticationPrincipal Jwt jwt,

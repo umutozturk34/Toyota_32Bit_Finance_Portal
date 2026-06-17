@@ -40,6 +40,10 @@ public class UnifiedMarketController {
     private final UnifiedMarketService unifiedMarketService;
     private final Translator translator;
 
+    /**
+     * Paged search across all asset classes with optional type/segment/sub-type/fund filters, sorting and
+     * gainer/loser filtering. {@code type} is comma-separated; page size is clamped to the configured market bounds.
+     */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<PagedResponse<MarketAssetResponse>> getMarketAssets(
@@ -74,6 +78,7 @@ public class UnifiedMarketController {
                 unifiedMarketService.search(types, code, segment, subType, search, sort, direction, filter, page, resolvedSize, subCategory, riskValue));
     }
 
+    /** Returns the candle history for a single instrument ({@code type}+{@code code}) over the given period (defaults to {@code ALL}). */
     @GetMapping("/history")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<?>> getMarketHistory(
@@ -86,6 +91,7 @@ public class UnifiedMarketController {
                 unifiedMarketService.getHistory(type, code, period));
     }
 
+    /** Returns per-group instrument counts for the given market {@code type} (used to size the client's filter facets). */
     @GetMapping("/group-counts")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<GroupCount>> getGroupCounts(
@@ -94,6 +100,7 @@ public class UnifiedMarketController {
                 unifiedMarketService.getGroupCounts(type));
     }
 
+    /** Reports which days within {@code yearMonth} (yyyy-MM) have price data for the instrument ({@code type}+{@code code}). */
     @GetMapping("/availability")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<MarketAvailabilityResponse> getMonthlyAvailability(

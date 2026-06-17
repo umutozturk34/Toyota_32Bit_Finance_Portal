@@ -28,6 +28,7 @@ public class BondController {
     private final BondQueryService bondQueryService;
     private final Translator translator;
 
+    /** Paged bond list with optional name/code {@code search}, {@code bondType} filter, and sort. */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<PagedResponse<BondResponse>> getAllBonds(
@@ -41,6 +42,7 @@ public class BondController {
                 bondQueryService.search(search, bondType, sort, direction, page, size));
     }
 
+    /** The distinct bond types with how many bonds each holds — drives the type filter facets. */
     @GetMapping("/types")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<GroupCount>> getDistinctBondTypes() {
@@ -48,6 +50,7 @@ public class BondController {
                 bondQueryService.getTypeCounts());
     }
 
+    /** Single bond looked up by its series code. */
     @GetMapping("/{seriesCode}")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<BondResponse> getBondByCode(@PathVariable String seriesCode) {
@@ -55,6 +58,7 @@ public class BondController {
                 bondQueryService.getByCode(seriesCode));
     }
 
+    /** Rate (yield) history for a bond keyed by ISIN over the given {@code period} (default {@code ALL}). */
     @GetMapping("/rate-history/{isinCode}")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<BondRateResponse>> getRateHistory(

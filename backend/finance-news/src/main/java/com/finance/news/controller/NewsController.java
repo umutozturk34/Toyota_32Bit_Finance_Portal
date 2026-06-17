@@ -47,6 +47,7 @@ public class NewsController {
         return ApiResponse.success(translator.translate("api.news.listRetrieved"), result);
     }
 
+    /** The available news categories with each one's article count — powers the category filter rail. */
     @GetMapping("/categories")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<GroupCount>> getCategoryCounts() {
@@ -63,6 +64,7 @@ public class NewsController {
                 newsQueryService.getAssetCounts(resolved));
     }
 
+    /** Full detail of a single article by id, including body and mentioned-asset data. */
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<NewsArticleDetailResponse> getNewsById(@PathVariable Long id) {

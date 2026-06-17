@@ -35,6 +35,7 @@ public class UserChartDataController {
     private final UserChartDataFacade facade;
     private final Translator translator;
 
+    /** Combined chart-config and drawings bundle for the {@code type}/{@code code} asset; {@code range} selects the saved timeframe variant. */
     @GetMapping("/{type}/{code}")
     public ApiResponse<UserChartBundleResponse> get(
             @AuthenticationPrincipal Jwt jwt,
@@ -45,6 +46,7 @@ public class UserChartDataController {
                 facade.getBundle(jwt.getSubject(), type, code, range));
     }
 
+    /** Upserts the chart preferences (indicators, styling) for the {@code type}/{@code code} asset. */
     @PutMapping("/{type}/{code}/preferences")
     public ApiResponse<UserChartPreferenceResponse> updatePreferences(
             @AuthenticationPrincipal Jwt jwt,
@@ -55,6 +57,7 @@ public class UserChartDataController {
                 facade.upsertPreferences(jwt.getSubject(), type, code, request.config()));
     }
 
+    /** Replaces the saved drawings (trendlines, annotations) for the {@code type}/{@code code} asset. */
     @PutMapping("/{type}/{code}/drawings")
     public ApiResponse<UserChartDrawingResponse> updateDrawings(
             @AuthenticationPrincipal Jwt jwt,

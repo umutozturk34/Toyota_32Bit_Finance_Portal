@@ -19,6 +19,7 @@ public class FundDetailController {
 
     private final FundRepository fundRepository;
 
+    /** Returns the distinct fund sub-categories present in the catalog, for use as client-side filter options. */
     @GetMapping("/sub-categories")
     public ApiResponse<List<String>> getSubCategories() {
         return ApiResponse.success(fundRepository.findDistinctSubCategories());

@@ -47,6 +47,7 @@ public class BondHoldingController {
     private final BondHoldingService service;
     private final Translator translator;
 
+    /** All bond holdings (open and closed) of the portfolio. */
     @GetMapping
     public ApiResponse<List<BondHoldingResponse>> list(@PathVariable Long portfolioId,
                                                        @AuthenticationPrincipal Jwt jwt) {
@@ -63,6 +64,7 @@ public class BondHoldingController {
         return ApiResponse.success(translator.translate("api.portfolio.bond.couponSchedule"), data);
     }
 
+    /** Adds a new bond holding to the portfolio. */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<BondHoldingResponse> add(@PathVariable Long portfolioId,
@@ -72,6 +74,7 @@ public class BondHoldingController {
         return ApiResponse.success(translator.translate("api.portfolio.bond.created"), created);
     }
 
+    /** Edits an existing bond holding (e.g. quantity or entry details). */
     @PutMapping("/{holdingId}")
     public ApiResponse<BondHoldingResponse> update(@PathVariable Long portfolioId,
                                                    @PathVariable Long holdingId,
@@ -93,6 +96,7 @@ public class BondHoldingController {
         return ApiResponse.success(translator.translate("api.portfolio.bond.sold"), sold);
     }
 
+    /** Reverses a {@code sell}, returning a closed holding to the open state. */
     @PostMapping("/{holdingId}/reopen")
     public ApiResponse<BondHoldingResponse> reopen(@PathVariable Long portfolioId,
                                                    @PathVariable Long holdingId,
@@ -101,6 +105,7 @@ public class BondHoldingController {
         return ApiResponse.success(translator.translate("api.portfolio.bond.reopened"), reopened);
     }
 
+    /** Permanently removes a bond holding from the portfolio. */
     @DeleteMapping("/{holdingId}")
     public ApiResponse<Void> delete(@PathVariable Long portfolioId,
                                     @PathVariable Long holdingId,

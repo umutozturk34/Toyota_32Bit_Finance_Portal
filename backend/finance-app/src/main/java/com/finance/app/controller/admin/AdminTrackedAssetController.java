@@ -39,6 +39,10 @@ public class AdminTrackedAssetController {
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final Translator translator;
 
+    /**
+     * Lists tracked-asset entries, optionally filtered by a comma-separated {@code type} list and a free-text
+     * {@code search}, sorted by {@code sort}/{@code direction} (defaults to ascending registry sort order).
+     */
     @GetMapping
     public ApiResponse<List<TrackedAssetResponse>> getTrackedAssets(
             @RequestParam(required = false) String type,
@@ -52,6 +56,7 @@ public class AdminTrackedAssetController {
         return ApiResponse.success(translator.translate("api.trackedAsset.listRetrieved"), data);
     }
 
+    /** Creates or updates a tracked-asset entry (keyed by type + code). */
     @PostMapping
     public ApiResponse<TrackedAssetResponse> upsertTrackedAsset(
             @Valid @RequestBody UpsertTrackedAssetRequest request
@@ -60,6 +65,7 @@ public class AdminTrackedAssetController {
         return ApiResponse.success(translator.translate("api.trackedAsset.saved"), data);
     }
 
+    /** Bulk-reorders tracked assets, applying the new display sort order from a single drag-and-drop save. */
     @PatchMapping("/order")
     public ApiResponse<Void> updateSortOrders(
             @Valid @RequestBody BulkTrackedAssetOrderUpdateRequest request
@@ -68,6 +74,7 @@ public class AdminTrackedAssetController {
         return ApiResponse.success(translator.translate("api.trackedAsset.orderUpdated"), null);
     }
 
+    /** Enables or disables the tracked asset; a disabled entry is hidden but survives auto-discovery (unlike delete). */
     @PatchMapping("/{type}/{code}/enabled")
     public ApiResponse<Void> setEnabled(
             @PathVariable TrackedAssetType type,
@@ -78,6 +85,7 @@ public class AdminTrackedAssetController {
         return ApiResponse.success(translator.translate("api.trackedAsset.statusUpdated"), null);
     }
 
+    /** Deletes the tracked asset; auto-discovered entries may reappear on the next discovery run (use disable to suppress). */
     @DeleteMapping("/{type}/{code}")
     public ApiResponse<Void> deleteTrackedAsset(
             @PathVariable TrackedAssetType type,

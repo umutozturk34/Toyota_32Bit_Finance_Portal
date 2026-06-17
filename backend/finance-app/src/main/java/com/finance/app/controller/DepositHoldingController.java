@@ -40,6 +40,7 @@ public class DepositHoldingController {
     private final DepositHoldingService service;
     private final Translator translator;
 
+    /** All deposit holdings (active and closed) of the portfolio. */
     @GetMapping
     public ApiResponse<List<DepositHoldingResponse>> list(@PathVariable Long portfolioId,
                                                           @AuthenticationPrincipal Jwt jwt) {
@@ -47,6 +48,7 @@ public class DepositHoldingController {
         return ApiResponse.success(translator.translate("api.portfolio.deposit.listed"), data);
     }
 
+    /** Adds a new deposit holding to the portfolio. */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<DepositHoldingResponse> add(@PathVariable Long portfolioId,
@@ -56,6 +58,7 @@ public class DepositHoldingController {
         return ApiResponse.success(translator.translate("api.portfolio.deposit.created"), created);
     }
 
+    /** Edits an existing deposit holding (e.g. principal, rate, or term). */
     @PutMapping("/{holdingId}")
     public ApiResponse<DepositHoldingResponse> update(@PathVariable Long portfolioId,
                                                       @PathVariable Long holdingId,
@@ -79,6 +82,7 @@ public class DepositHoldingController {
         return ApiResponse.success(translator.translate("api.portfolio.deposit.closed"), closed);
     }
 
+    /** Reverses a {@code close}, returning a closed deposit to the active state so it resumes accruing. */
     @PostMapping("/{holdingId}/reopen")
     public ApiResponse<DepositHoldingResponse> reopen(@PathVariable Long portfolioId,
                                                       @PathVariable Long holdingId,
@@ -87,6 +91,7 @@ public class DepositHoldingController {
         return ApiResponse.success(translator.translate("api.portfolio.deposit.reopened"), reopened);
     }
 
+    /** Permanently removes a deposit holding from the portfolio. */
     @DeleteMapping("/{holdingId}")
     public ApiResponse<Void> delete(@PathVariable Long portfolioId,
                                     @PathVariable Long holdingId,

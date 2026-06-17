@@ -25,11 +25,13 @@ public class UserPreferenceController {
     private final UserPreferenceService service;
     private final Translator translator;
 
+    /** The user's preferences, falling back to system defaults if none have been saved. */
     @GetMapping
     public ApiResponse<UserPreferenceResponse> getPreferences(@AuthenticationPrincipal Jwt jwt) {
         return ApiResponse.success(translator.translate("api.preferences.retrieved"), service.getOrDefault(jwt.getSubject()));
     }
 
+    /** Applies a partial update; only the fields present in the request are changed (others are left untouched). */
     @PatchMapping
     public ApiResponse<UserPreferenceResponse> updatePreferences(
             @AuthenticationPrincipal Jwt jwt,

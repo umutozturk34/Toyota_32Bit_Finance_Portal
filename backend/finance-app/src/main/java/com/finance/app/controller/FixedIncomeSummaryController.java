@@ -37,6 +37,7 @@ public class FixedIncomeSummaryController {
     private final FixedIncomeSummaryService service;
     private final Translator translator;
 
+    /** Headline fixed-income summary for the portfolio: totals plus per-kind (deposit/bond) allocation. */
     @GetMapping("/summary")
     public ApiResponse<FixedIncomeSummaryResponse> summary(@PathVariable Long portfolioId,
                                                            @AuthenticationPrincipal Jwt jwt) {
@@ -44,6 +45,10 @@ public class FixedIncomeSummaryController {
         return ApiResponse.success(translator.translate("api.portfolio.fixedIncome.summaryRetrieved"), data);
     }
 
+    /**
+     * Fixed-income value-over-time series for the portfolio over the requested {@code period}
+     * (one of {@code 1M/6M/1Y/3Y/5Y/ALL}, defaulting to {@value #DEFAULT_PERIOD}).
+     */
     @GetMapping("/history")
     public ApiResponse<List<FixedIncomeHistoryPoint>> history(
             @PathVariable Long portfolioId,

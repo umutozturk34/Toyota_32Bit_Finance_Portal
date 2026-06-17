@@ -32,6 +32,10 @@ public class MarketOverviewController {
     private final WidgetDefinitionService widgetDefinitionService;
     private final Translator translator;
 
+    /**
+     * Renders the authenticated user's overview widgets (resolved from the JWT subject), optionally
+     * scoped to the dashboard page identified by {@code pageId}.
+     */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<RenderedWidget>> getOverview(@AuthenticationPrincipal Jwt jwt,
@@ -40,6 +44,7 @@ public class MarketOverviewController {
                 marketOverviewService.render(jwt.getSubject(), pageId));
     }
 
+    /** Returns the catalog of available widget definitions the client uses to configure dashboard layouts. */
     @GetMapping("/widget-definitions")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<WidgetDefinitionResponse> getWidgetDefinitions() {

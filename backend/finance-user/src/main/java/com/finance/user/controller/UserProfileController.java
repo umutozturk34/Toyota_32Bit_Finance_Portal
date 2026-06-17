@@ -29,11 +29,13 @@ public class UserProfileController {
     private final UserProfileService service;
     private final Translator translator;
 
+    /** The authenticated user's profile (identity fields read from Keycloak). */
     @GetMapping
     public ApiResponse<ProfileResponse> get(@AuthenticationPrincipal Jwt jwt) {
         return ApiResponse.success(translator.translate("api.profile.retrieved"), service.get(jwt.getSubject()));
     }
 
+    /** Updates the user's profile identity fields, writing through to Keycloak. */
     @PutMapping
     public ApiResponse<ProfileResponse> update(
             @AuthenticationPrincipal Jwt jwt,

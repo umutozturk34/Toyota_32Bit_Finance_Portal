@@ -26,6 +26,7 @@ public class AdminNewsSourceController {
     private final NewsSourceAdminService newsSourceAdminService;
     private final Translator translator;
 
+    /** Lists all news sources; disabled ones are included unless {@code includeDisabled} is false. */
     @GetMapping
     public ApiResponse<List<NewsSourceResponse>> getAll(
             @RequestParam(defaultValue = "true") boolean includeDisabled
@@ -34,12 +35,14 @@ public class AdminNewsSourceController {
         return ApiResponse.success(translator.translate("api.newsSource.listRetrieved"), data);
     }
 
+    /** Fetches a single news source by id. */
     @GetMapping("/{id}")
     public ApiResponse<NewsSourceResponse> getById(@PathVariable Long id) {
         NewsSourceResponse data = newsSourceService.getById(id);
         return ApiResponse.success(translator.translate("api.newsSource.retrieved"), data);
     }
 
+    /** Creates a new news source from the request. */
     @PostMapping
     public ApiResponse<NewsSourceResponse> create(
             @Valid @RequestBody UpsertNewsSourceRequest request
@@ -48,6 +51,7 @@ public class AdminNewsSourceController {
         return ApiResponse.success(translator.translate("api.newsSource.created"), data);
     }
 
+    /** Replaces the configuration of the news source with the given id. */
     @PutMapping("/{id}")
     public ApiResponse<NewsSourceResponse> update(
             @PathVariable Long id,
@@ -57,6 +61,7 @@ public class AdminNewsSourceController {
         return ApiResponse.success(translator.translate("api.newsSource.updated"), data);
     }
 
+    /** Enables or disables the news source (a disabled source is skipped during news fetches). */
     @PatchMapping("/{id}/enabled")
     public ApiResponse<Void> setEnabled(
             @PathVariable Long id,
@@ -66,6 +71,7 @@ public class AdminNewsSourceController {
         return ApiResponse.success(translator.translate("api.newsSource.statusUpdated"), null);
     }
 
+    /** Permanently removes the news source. */
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         newsSourceAdminService.delete(id);

@@ -488,7 +488,12 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
                 <Th align="right">{t('analytics.verdict', { defaultValue: 'Sonuç' })}</Th>
               </tr>
             </thead>
-            <tbody>
+            <motion.tbody
+              key={`${sortKey}-${sortDir}-${verdictFilter}-${typeFilter}-${page}`}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+            >
               {pageEntries.map((entry) => (
                 <tr
                   key={`${entry.type}|${entry.code}`}
@@ -575,7 +580,7 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
                   </td>
                 </tr>
               )}
-            </tbody>
+            </motion.tbody>
           </table>
         </div>
 

@@ -13,6 +13,7 @@ import com.finance.portfolio.dto.response.BondHoldingResponse;
 import com.finance.portfolio.dto.response.DepositHoldingResponse;
 import com.finance.portfolio.dto.response.FixedIncomeHistoryPoint;
 import com.finance.portfolio.dto.response.FixedIncomeSummaryResponse;
+import com.finance.portfolio.fixedincome.bond.BondCouponEventBuilder;
 import com.finance.portfolio.fixedincome.bond.BondCouponService;
 import com.finance.portfolio.fixedincome.bond.BondHolding;
 import com.finance.portfolio.fixedincome.bond.BondHoldingRepository;
@@ -75,7 +76,8 @@ class FixedIncomeSummaryServiceTest {
     @BeforeEach
     void setUp() {
         service = new FixedIncomeSummaryService(portfolioRepository, depositHoldingRepository,
-                bondHoldingRepository, depositAccrualService, bondValuationService, new BondCouponService(),
+                bondHoldingRepository, depositAccrualService, bondValuationService,
+                new BondCouponEventBuilder(new BondCouponService(), bondRateHistoryRepository),
                 bondRateHistoryRepository, bondRepository, currencyConverter);
         // The per-row grid services share the SAME mocks as the summary service, so a single arrange-once book
         // can be valued through all three surfaces and asserted to reconcile.

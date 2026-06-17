@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Info, ArrowLeft, Search, LineChart, Briefcase, ChevronDown, GitCompare } from 'lucide-react';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import Card from '../../../shared/components/card';
-import Spinner from '../../../shared/components/feedback/Spinner';
+import { SkeletonChart } from '../../../shared/components/feedback/Skeleton';
 import EmptyState from '../../../shared/components/feedback/EmptyState';
 import SearchSuggestions from '../../../shared/components/form/SearchSuggestions';
 import { usePortfolioList } from '../../portfolio/hooks/usePortfolioData';
@@ -898,8 +898,8 @@ export default function ComparePage() {
 
         <div className="relative rounded-xl border border-border-default/60 bg-bg-base/40 overflow-hidden h-[280px] sm:h-[380px] lg:h-[460px]">
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Spinner size="md" tone="accent" />
+            <div className="absolute inset-0">
+              <SkeletonChart h="100%" />
             </div>
           )}
           {!isLoading && seriesData.some((s) => s.points.length > 0) && (

@@ -3,6 +3,7 @@ import ReactECharts from 'echarts-for-react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../shared/context/useTheme';
 import { useMacroIndicatorHistory } from '../macro/hooks/useMacroIndicators';
+import { SkeletonChart } from '../../shared/components/feedback/Skeleton';
 
 // Plots the app's OWN live macro series (real EVDS data) for a learn card. Takes the indicator CODE directly and
 // reads each point's `observedAt` date (the macro history shape) on a time axis, so labels format themselves
@@ -54,7 +55,7 @@ export default function LearnMacroChart({ code, color = '#6366f1' }) {
   return (
     <div className="mt-3 rounded-xl border border-border-default bg-bg-base/40 p-2">
       {isLoading ? (
-        <div className="flex h-[140px] items-center justify-center text-[11px] text-fg-subtle">{t('common.loading', { defaultValue: '…' })}</div>
+        <SkeletonChart h="140px" />
       ) : (
         <ReactECharts key={isDark} option={option} style={{ height: 140, width: '100%' }} opts={{ renderer: 'canvas' }} notMerge />
       )}

@@ -9,7 +9,7 @@ import {
 import useSessionState from '../../../shared/hooks/useSessionState';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import Card from '../../../shared/components/card';
-import LoadingState from '../../../shared/components/feedback/LoadingState';
+import { SkeletonList } from '../../../shared/components/feedback/Skeleton';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
 import EmptyState from '../../../shared/components/feedback/EmptyState';
 import { useAssetReturns, useAssetDisplayMeta } from '../hooks/useAnalytics';
@@ -212,7 +212,7 @@ export default function ReturnsPage() {
         ))}
       </div>
 
-      {isLoading && <LoadingState message={t('analytics.loading', { defaultValue: 'Hesaplanıyor...' })} />}
+      {isLoading && <SkeletonList rows={8} cols={4} className="mt-2" />}
       {isError && <ErrorState message={t('analytics.loadError', { defaultValue: 'Yüklenirken hata oluştu' })} onRetry={refetch} />}
 
       {data && (data.assets?.length ?? 0) === 0 && (

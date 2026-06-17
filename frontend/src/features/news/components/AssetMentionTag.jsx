@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
+import useDeferredVisibility from '../../../shared/hooks/useDeferredVisibility';
 
 // Each asset type's detail route; the resolved code is the route key (a BIST symbol or a crypto id).
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', COMMODITY: '/commodities', FUND: '/funds' };
@@ -43,11 +44,17 @@ function changeOnDate(candles, dateStr) {
 export default function AssetMentionTag({ code, type, date, count, lite = false, onNavigate }) {
   const navigate = useNavigate();
   const mentions = Number(count) > 1 ? Number(count) : null;
+  // Only fetch the direction-tint history once the chip scrolls within ~200px of the viewport. On a news page a
+  // single render mounts dozens of these; fetching them all on mount (and ALL at once after an F5 wipes the
+  // cache) fired a burst that tripped the gateway rate limit. Deferring to in-view spreads the calls as the user
+  // scrolls — above-the-fold chips still tint immediately, the rest fill in on demand. react-query dedupes by
+  // (type, code) and caches 10 min, so a repeated asset is fetched once regardless of how many chips show it.
+  const [ref, inView] = useDeferredVisibility(0, { rootMargin: '200px' });
   const { data } = useQuery({
     queryKey: ['assetHistoryMini', type, code],
     queryFn: () => unifiedMarketService.getHistory(type, code, '1Y'),
     // `lite` (e.g. the overview widget) skips the history fetch — just the clickable code, no direction tint.
-    enabled: !lite && !!code && !!type,
+    enabled: !lite && inView && !!code && !!type,
     staleTime: 10 * 60 * 1000,
   });
 
@@ -77,6 +84,7 @@ export default function AssetMentionTag({ code, type, date, count, lite = false,
   // segment, so the ticker is always legible and only the move is coloured green ↗ / red ↘.
   return (
     <button
+      ref={ref}
       type="button"
       onClick={open}
       title={change != null ? `${bareCode(code)} · ${change > 0 ? '+' : ''}${change.toFixed(2)}%` : code}

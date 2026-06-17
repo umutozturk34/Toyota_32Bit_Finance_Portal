@@ -86,6 +86,24 @@
   100% { background-position: 200% 0; }
 }
 
+/* Minimal button ripple — a soft circle expanding from the press point, tinted by the button's own text colour
+   (currentColor) so it suits every variant, then fading out. Kept subtle (low opacity) on purpose. */
+@keyframes btn-ripple-kf {
+  from { transform: scale(0); opacity: 0.28; }
+  to { transform: scale(2.2); opacity: 0; }
+}
+.btn-ripple {
+  position: absolute;
+  border-radius: 9999px;
+  background: currentColor;
+  pointer-events: none;
+  transform: scale(0);
+  animation: btn-ripple-kf 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-ripple { animation: none; display: none; }
+}
+
 /* The premium skeleton surface: a clearly-visible tonal base with a soft sheen that glides across on a smooth
    ease, theme-aware via tokens. Reads as "content materialising", not a flat grey box. */
 @keyframes skeleton-shimmer-kf {

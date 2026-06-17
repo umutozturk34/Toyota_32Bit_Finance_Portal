@@ -25,7 +25,7 @@ import { useTheme } from '../../shared/context/useTheme';
 import useSessionState from '../../shared/hooks/useSessionState';
 import useNavigationBack from '../../shared/hooks/useNavigationBack';
 import IconButton from '../../shared/components/buttons/IconButton';
-import LoadingState from '../../shared/components/feedback/LoadingState';
+import { Skeleton, SkeletonChart, SkeletonStat } from '../../shared/components/feedback/Skeleton';
 import ErrorState from '../../shared/components/feedback/ErrorState';
 import MarketStatusBadge from '../../shared/components/layout/MarketStatusBadge';
 import MarketAddBondModal from '../portfolio/components/MarketAddBondModal';
@@ -215,7 +215,23 @@ export default function BondDetail() {
     [history, rateColor, isDark],
   );
 
-  if (bondLoading) return <LoadingState message={t('market.bond.loading')} />;
+  if (bondLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton w="3.25rem" h="3.25rem" circle />
+          <div className="space-y-2">
+            <Skeleton w="10rem" h="1.5rem" className="rounded-lg" />
+            <Skeleton w="6rem" h="0.85rem" />
+          </div>
+        </div>
+        <SkeletonChart h="20rem" />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => <SkeletonStat key={i} />)}
+        </div>
+      </div>
+    );
+  }
   if (bondError || !bond) {
     return <ErrorState message={t('market.bond.error')} onRetry={refetch} />;
   }

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, GitCompare, ChevronDown, LineChart } from 'lucide-react';
@@ -272,19 +272,32 @@ export default function AssetDetailPage({
         </button>
       )}
 
-      {chartOpen && (
-        <div data-tour="detail-chart">
-          <LightweightChart
-            data={chartData}
-            symbol={assetCode}
-            assetType={chartAssetType || assetType}
-            timeRange={effectiveRange}
-            onTimeRangeChange={setTimeRange}
-            showSecondaryLines={showSecondaryLines}
-            onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
-          />
-        </div>
-      )}
+      {/* The chart expands/collapses with a height glide instead of snapping — the chart's own ResizeObserver
+          re-measures as the container grows, so the canvas sizes correctly. initial={false} keeps a normal
+          (always-open) detail page's chart static on first load; only a toggle on an index page animates. */}
+      <AnimatePresence initial={false}>
+        {chartOpen && (
+          <motion.div
+            key="detail-chart"
+            data-tour="detail-chart"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            style={{ overflow: 'hidden' }}
+          >
+            <LightweightChart
+              data={chartData}
+              symbol={assetCode}
+              assetType={chartAssetType || assetType}
+              timeRange={effectiveRange}
+              onTimeRangeChange={setTimeRange}
+              showSecondaryLines={showSecondaryLines}
+              onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Everything that isn't the price chart sits BELOW it — the asset's property strip first, then any
           asset-specific supporting block (fund profile, index constituents), then the news. This order is the

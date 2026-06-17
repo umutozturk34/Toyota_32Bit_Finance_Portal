@@ -91,6 +91,27 @@ class FundSnapshotProcessorTest {
     }
 
     @Test
+    void refreshAll_usesMostRecentUsableRow_whenLatestDayNavMissing() {
+        // Window holds two rows for one YAT fund: the latest day has no NAV, the prior day does. The snapshot must
+        // persist the prior day's valid NAV (its most recent usable price) instead of dropping the fund.
+        TefasFundDto older = new TefasFundDto("YF1", "name YF1",
+                LocalDateTime.of(2026, 5, 11, 0, 0), new BigDecimal("5.00"), null, null, null, null);
+        TefasFundDto newerNull = new TefasFundDto("YF1", "name YF1",
+                LocalDateTime.of(2026, 5, 12, 0, 0), null, null, null, null, null);
+        when(tefasClient.bulkFetch(eq(FundType.YAT), any(), any())).thenReturn(List.of(older, newerNull));
+        when(tefasClient.bulkFetch(eq(FundType.BYF), any(), any())).thenReturn(List.of());
+        stubTransactionTemplate();
+        when(entityWriter.saveSnapshot(any(), eq(FundType.YAT))).thenReturn(fund("YF1"));
+
+        processor.refreshAll();
+
+        ArgumentCaptor<TefasFundDto> captor = ArgumentCaptor.forClass(TefasFundDto.class);
+        verify(entityWriter).saveSnapshot(captor.capture(), eq(FundType.YAT));
+        assertThat(captor.getValue().price()).isEqualByComparingTo("5.00");
+        assertThat(captor.getValue().date()).isEqualTo(LocalDateTime.of(2026, 5, 11, 0, 0));
+    }
+
+    @Test
     void refreshAll_tracksByf_whenNavMissingButBulletinPresent_withoutFakingNav() {
         // An ETF whose NAV (fiyat) wasn't published that day but has a valid exchange bulletin price must still be
         // TRACKED so it shows in the list (the cause of "only 10 of 30" was dropping these) — WITHOUT faking the

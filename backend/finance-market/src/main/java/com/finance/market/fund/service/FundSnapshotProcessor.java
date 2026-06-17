@@ -24,7 +24,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 /**
@@ -165,27 +167,55 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
         return dto != null && dto.price() != null && dto.price().signum() != 0;
     }
 
-    /** Bulk-fetches and persists one fund type for a date; returns saved count, or -1 if the breaker is open. */
+    /** A row carries a usable snapshot price — a NAV, or (for an exchange-traded BYF) a bulletin price. */
+    private static boolean hasUsablePrice(TefasFundDto dto) {
+        return hasValidPrice(dto)
+                || (dto != null && dto.bulletinPrice() != null && dto.bulletinPrice().signum() != 0);
+    }
+
+    /**
+     * Bulk-fetches one fund type over a short WINDOW (not a single day) and persists each fund's most recent
+     * usable observation, so a fund whose latest-day NAV isn't published yet snapshots at its last available
+     * price instead of being dropped — the cause of a fresh-DB cold start capturing only the funds that had
+     * already published that day (e.g. 10 of 30 ETFs). Returns the saved count, or -1 if the breaker is open.
+     */
     private int executeBulk(FundType fundType, LocalDate today,
                             Predicate<TefasFundDto> include,
                             Predicate<TefasFundDto> persist) {
         try {
-            List<TefasFundDto> bulk = tefasClient.bulkFetch(fundType, today, today);
-            int saved = 0;
+            LocalDate from = today.minusDays(holidayLookbackDays);
+            List<TefasFundDto> bulk = tefasClient.bulkFetch(fundType, from, today);
+            Map<String, TefasFundDto> latestPerFund = new LinkedHashMap<>();
             for (TefasFundDto dto : bulk) {
-                if (!include.test(dto)) continue;
+                if (dto == null || dto.fundCode() == null || !include.test(dto) || !hasUsablePrice(dto)) {
+                    continue;
+                }
+                TefasFundDto prev = latestPerFund.get(dto.fundCode());
+                if (prev == null || isNewer(dto, prev)) {
+                    latestPerFund.put(dto.fundCode(), dto);
+                }
+            }
+            int saved = 0;
+            for (TefasFundDto dto : latestPerFund.values()) {
                 try {
                     if (persist.test(dto)) saved++;
                 } catch (Exception e) {
-                    log.error("Failed to persist {} snapshot for fund {}",
-                            fundType, dto.fundCode(), e);
+                    log.error("Failed to persist {} snapshot for fund {}", fundType, dto.fundCode(), e);
                 }
             }
-            log.info("Bulk {} snapshot: {} rows fetched, {} saved", fundType, bulk.size(), saved);
+            log.info("Bulk {} snapshot: {} rows fetched, {} distinct funds, {} saved",
+                    fundType, bulk.size(), latestPerFund.size(), saved);
             return saved;
         } catch (CallNotPermittedException e) {
             log.warn("TEFAS circuit breaker is OPEN, aborting {} snapshot", fundType);
             return -1;
         }
+    }
+
+    /** True when {@code candidate} is a strictly more recent observation than {@code current} (null dates last). */
+    private static boolean isNewer(TefasFundDto candidate, TefasFundDto current) {
+        if (candidate.date() == null) return false;
+        if (current.date() == null) return true;
+        return candidate.date().isAfter(current.date());
     }
 }

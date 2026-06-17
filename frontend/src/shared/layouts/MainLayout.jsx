@@ -320,24 +320,17 @@ const MainLayout = () => {
       <div className={`flex-1 flex flex-col min-w-0 relative overflow-x-clip ${blurCls}`}>
         <main className="flex-1 w-full">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:py-6 pt-[calc(4rem+env(safe-area-inset-top))] lg:pt-6">
-            {/* Route-level transition: a quick cross-fade + lift so pages glide in — on navigation AND on first
-                mount (F5/hard refresh), since `initial` is allowed to play. Keyed on pathname only (not search) so
-                in-page tab/filter changes don't replay it. Uses the shared panelVariants so a page-load lift and an
-                in-page MotionSwap feel like one system; reduced-motion renders the page plainly. */}
+            {/* Route-level transition: a keyed ENTRANCE only (no AnimatePresence/exit). Wrapping <Outlet> in
+                AnimatePresence mode="wait" is a known pitfall — the exiting page's Outlet already renders the NEW
+                route's content (Outlet reads the live location), which flashed a blank/mismatched frame when
+                navigating back. Remounting on pathname change plays the entrance fresh (so pages still land on F5
+                and on navigation) while the new content replaces the old instantly. */}
             {reduceMotion ? (
               <Outlet />
             ) : (
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={location.pathname}
-                  variants={panelVariants}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                >
-                  <Outlet />
-                </motion.div>
-              </AnimatePresence>
+              <motion.div key={location.pathname} variants={panelVariants} initial="initial" animate="animate">
+                <Outlet />
+              </motion.div>
             )}
           </div>
         </main>

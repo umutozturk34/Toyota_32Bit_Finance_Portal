@@ -106,6 +106,25 @@
   animation: skeleton-sweep-kf 2.8s linear infinite;
 }
 
+/* The premium skeleton surface: a clearly-visible tonal base with a soft sheen that glides across on a smooth
+   ease, theme-aware via tokens. Reads as "content materialising", not a flat grey box. */
+@keyframes skeleton-shimmer-kf {
+  0% { background-position: 160% 0; }
+  100% { background-position: -160% 0; }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--skeleton-base);
+  background-image: linear-gradient(100deg, transparent 28%, var(--skeleton-sheen) 50%, transparent 72%);
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  animation: skeleton-shimmer-kf 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+}
+
 @keyframes widget-rise-kf {
   0% { opacity: 0; transform: translate3d(0, 14px, 0); }
   100% { opacity: 1; transform: translate3d(0, 0, 0); }
@@ -313,11 +332,17 @@ button {
 :root {
   --scrollbar-thumb: rgba(255, 255, 255, 0.06);
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.18);
+  /* Skeleton placeholder tones — a visible base block + a brighter sheen that sweeps across. Tuned per theme so
+     the shape always reads against the card it sits in, with a soft (not flat) surface. */
+  --skeleton-base: rgba(255, 255, 255, 0.06);
+  --skeleton-sheen: rgba(255, 255, 255, 0.13);
 }
 
 [data-theme="light"] {
   --scrollbar-thumb: rgba(15, 23, 42, 0.14);
   --scrollbar-thumb-hover: rgba(15, 23, 42, 0.32);
+  --skeleton-base: rgba(15, 23, 42, 0.07);
+  --skeleton-sheen: rgba(15, 23, 42, 0.13);
 }
 
 ::-webkit-scrollbar {

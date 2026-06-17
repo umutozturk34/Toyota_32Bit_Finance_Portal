@@ -2,9 +2,9 @@ import { motion } from 'framer-motion';
 
 const cx = (...parts) => parts.filter(Boolean).join(' ');
 
-// The shared placeholder surface: a faint tonal block with a slow light-sweep (skeleton-sweep). One look, used
-// everywhere, so loading states read as a coherent "content is materialising" beat rather than a blank gap.
-const BASE = 'relative overflow-hidden rounded-lg bg-surface/70 skeleton-sweep';
+// The shared placeholder surface: a visible tonal block with a soft sheen gliding across (theme-aware .skeleton).
+// One look, used everywhere, so loading states read as a coherent "content is materialising" beat, not a blank gap.
+const BASE = 'skeleton';
 
 /**
  * A single skeleton block. Pass {@code w}/{@code h} (any CSS length) or Tailwind classes via {@code className};
@@ -14,7 +14,7 @@ export function Skeleton({ w, h, circle = false, className, style }) {
   return (
     <span
       aria-hidden="true"
-      className={cx(BASE, circle ? 'rounded-full' : '', 'block', className)}
+      className={cx(BASE, circle ? 'rounded-full' : 'rounded-lg', 'block', className)}
       style={{ width: w, height: h, ...style }}
     />
   );
@@ -78,7 +78,7 @@ export function SkeletonChart({ h = '20rem', className }) {
   return (
     <div
       aria-hidden="true"
-      className={cx(BASE, 'rounded-2xl border border-border-default bg-bg-elevated/50', className)}
+      className={cx(BASE, 'rounded-2xl border border-border-default', className)}
       style={{ height: h }}
     >
       <div className="absolute inset-0 flex flex-col justify-between p-6 opacity-40">

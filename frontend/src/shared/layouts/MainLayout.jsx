@@ -318,16 +318,16 @@ const MainLayout = () => {
       <div className={`flex-1 flex flex-col min-w-0 relative overflow-x-clip ${blurCls}`}>
         <main className="flex-1 w-full">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:py-6 pt-[calc(4rem+env(safe-area-inset-top))] lg:pt-6">
-            {/* Route-level transition: a quick cross-fade + lift so navigating between pages glides instead of the
-                content snapping in. Keyed on pathname only (not search) so in-page tab/filter changes — which use
-                query params — don't replay the whole-page transition. */}
-            <AnimatePresence mode="wait" initial={false}>
+            {/* Route-level transition: a quick cross-fade + lift so pages glide in — on navigation AND on first
+                mount (F5/hard refresh), since `initial` is allowed to play (no initial={false}). Keyed on pathname
+                only (not search) so in-page tab/filter changes — which use query params — don't replay it. */}
+            <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
               >
                 <Outlet />
               </motion.div>

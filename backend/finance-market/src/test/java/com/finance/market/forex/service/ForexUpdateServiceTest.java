@@ -145,6 +145,86 @@ class ForexUpdateServiceTest {
         verify(snapshotProcessor).refreshOne("USD");
     }
 
+    @Test
+    void should_reportForexMarketType() {
+        assertThat(service.getMarketType()).isEqualTo(com.finance.common.model.MarketType.FOREX);
+    }
+
+    @Test
+    void should_returnFalse_when_isActiveCurrencyResolverDenies() {
+        when(evdsClient.fetchDovizSerieList()).thenReturn(List.of());
+        when(currencyResolver.isActiveCurrencyCode(any(), eq("ZZZ"))).thenReturn(false);
+
+        assertThat(service.isActiveCurrency("ZZZ")).isFalse();
+    }
+
+    @Test
+    void should_backfillGapBelowSnapshotWindow_when_noPriorCandleAndForexExists() {
+        // Arrange: no prior candle => gap starts at the configured backfill start date.
+        forexProperties.setBackfillStartDate(LocalDate.now().minusDays(30));
+        forexProperties.setBackfillWindowDays(7);
+        forexProperties.setEvdsRowCap(1000);
+        ForexSerieMetadata usd = meta("USD", true);
+        stubResolver(List.of(usd));
+        EvdsDataResponse response = backfillableResponse(LocalDate.now().minusDays(20));
+        when(evdsClient.fetchForexData(any(), anyString(), anyString())).thenReturn(response);
+        when(snapshotProcessor.findLastCandleDate("USD")).thenReturn(Optional.empty());
+        Forex forex = Forex.builder().currencyCode("USD").build();
+        when(forexRepository.findById("USD")).thenReturn(Optional.of(forex));
+        when(entityWriter.getScale()).thenReturn(4);
+        when(entityWriter.upsertCandles(any(), any())).thenReturn(1);
+
+        // Act
+        service.refreshAll();
+
+        // Assert: the backfill phase persisted candles for the currency.
+        verify(entityWriter, org.mockito.Mockito.atLeastOnce()).upsertCandles(eq(forex), any());
+    }
+
+    @Test
+    void should_skipBackfill_when_forexEntityMissing() {
+        // Arrange: snapshot passes but the Forex row is absent => backfill returns early.
+        forexProperties.setBackfillStartDate(LocalDate.now().minusDays(30));
+        ForexSerieMetadata usd = meta("USD", true);
+        stubResolver(List.of(usd));
+        EvdsDataResponse response = backfillableResponse(LocalDate.now().minusDays(20));
+        when(evdsClient.fetchForexData(any(), anyString(), anyString())).thenReturn(response);
+        when(snapshotProcessor.findLastCandleDate("USD")).thenReturn(Optional.empty());
+        when(forexRepository.findById("USD")).thenReturn(Optional.empty());
+
+        // Act
+        service.refreshAll();
+
+        // Assert: no candle persistence happened because the entity was missing.
+        verify(entityWriter, never()).upsertCandles(any(), any());
+    }
+
+    @Test
+    void should_continueRefresh_when_bankRatesPiggybackThrows() {
+        ForexSerieMetadata usd = meta("USD", true);
+        stubResolver(List.of(usd));
+        EvdsDataResponse response = new EvdsDataResponse(1, List.of(Map.of(
+                "Tarih", LocalDate.now().toString(),
+                "TP_DK_USD_S_YTL", "45.27")));
+        when(evdsClient.fetchForexData(any(), anyString(), anyString())).thenReturn(response);
+        when(snapshotProcessor.findLastCandleDate("USD")).thenReturn(Optional.of(LocalDate.now()));
+        when(forexRepository.findById("USD")).thenReturn(Optional.of(Forex.builder().currencyCode("USD").build()));
+        when(bankRatesService.refreshAll()).thenThrow(new RuntimeException("bank down"));
+
+        org.assertj.core.api.Assertions.assertThatCode(() -> service.refreshAll()).doesNotThrowAnyException();
+        verify(snapshotProcessor).applyLatestSnapshot(eq(usd), eq(response));
+    }
+
+    private EvdsDataResponse backfillableResponse(LocalDate date) {
+        String evdsDate = date.format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+        // Carries the snapshot YTL keys (so the smoke filter keeps the currency) plus a dated, priced
+        // row in EVDS dd-MM-yyyy form so the backfill mapper produces a candle.
+        return new EvdsDataResponse(1, List.of(java.util.Map.of(
+                "Tarih", evdsDate,
+                "TP_DK_USD_A_YTL", "45.10",
+                "TP_DK_USD_S_YTL", "45.27")));
+    }
+
     private void stubResolver(List<ForexSerieMetadata> active) {
         when(evdsClient.fetchDovizSerieList()).thenReturn(List.of());
         when(evdsClient.fetchEfektifSerieList()).thenReturn(List.of());

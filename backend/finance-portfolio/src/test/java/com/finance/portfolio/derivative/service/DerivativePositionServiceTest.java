@@ -811,4 +811,228 @@ class DerivativePositionServiceTest {
 
         assertThat(position.getClosePrice()).isEqualByComparingTo(new BigDecimal("3486.0000"));
     }
+
+    @Test
+    void should_fullyCloseAndRebuildSnapshots_when_closeRequestHasNoPartialQuantity() {
+        // Arrange: an open lot closed in full (no closeQuantityLot) with an explicit TRY price.
+        DerivativePosition position = openPosition();
+        CloseDerivativePositionRequest req = new CloseDerivativePositionRequest(
+                LocalDate.of(2026, 5, 1), new BigDecimal("36.00"));
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID))
+                .thenReturn(Optional.of(position));
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(position));
+
+        // Act
+        service.close(POSITION_ID, PORTFOLIO_ID, USER_SUB, req);
+
+        // Assert: the same position object is closed in place (no split slice) and snapshots are wiped.
+        assertThat(position.isOpen()).isFalse();
+        assertThat(position.getClosePrice()).isEqualByComparingTo("36.00");
+        assertThat(position.getCloseDate()).isEqualTo(LocalDate.of(2026, 5, 1));
+        assertThat(position.getQuantityLot()).isEqualByComparingTo("1");
+        verify(positionRepository, never()).save(any(DerivativePosition.class));
+        verify(assetSnapshotRepository).deleteByPortfolioIdAndAssetTypeAndAssetCode(
+                eq(PORTFOLIO_ID), any(), eq("F_USDTRY0626"));
+    }
+
+    @Test
+    void should_throwBadRequest_when_closePriceCannotBeResolvedFromHistory() {
+        // Arrange: no close price supplied and the resolver finds no candle on the close date.
+        DerivativePosition position = openPosition();
+        CloseDerivativePositionRequest req = new CloseDerivativePositionRequest(
+                LocalDate.of(2026, 5, 1), null);
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID))
+                .thenReturn(Optional.of(position));
+        when(candleRepository.findFirstBySymbolAndCandleDateLessThanEqualOrderByCandleDateDesc(
+                eq("F_USDTRY0626"), any())).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> service.close(POSITION_ID, PORTFOLIO_ID, USER_SUB, req))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("error.viop.closePriceUnavailable");
+        assertThat(position.isOpen()).isTrue();
+    }
+
+    @Test
+    void should_throwBadRequest_when_updateCloseClosePriceCannotBeResolved() {
+        // Arrange: re-closing a closed lot but no price supplied and no candle available.
+        DerivativePosition position = closedPosition();
+        CloseDerivativePositionRequest req = new CloseDerivativePositionRequest(
+                LocalDate.of(2026, 5, 10), null);
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID))
+                .thenReturn(Optional.of(position));
+        when(candleRepository.findFirstBySymbolAndCandleDateLessThanEqualOrderByCandleDateDesc(
+                eq("F_USDTRY0626"), any())).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> service.updateClose(POSITION_ID, PORTFOLIO_ID, USER_SUB, req))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("error.viop.closePriceUnavailable");
+    }
+
+    @Test
+    void should_throwBadRequest_when_updateOpenEntryPriceCannotBeResolved() {
+        // Arrange: editing an open lot without an entry price; the resolver returns no candle.
+        DerivativePosition position = openPosition();
+        UpdateDerivativePositionRequest req = new UpdateDerivativePositionRequest(
+                DerivativeDirection.LONG, LocalDate.of(2026, 4, 10), null, new BigDecimal("1"));
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID))
+                .thenReturn(Optional.of(position));
+        when(candleRepository.findFirstBySymbolAndCandleDateLessThanEqualOrderByCandleDateDesc(
+                eq("F_USDTRY0626"), any())).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> service.updateOpen(POSITION_ID, PORTFOLIO_ID, USER_SUB, req))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("error.viop.entryPriceUnavailable");
+    }
+
+    @Test
+    void should_throwBadRequest_when_openPriceCurrencyIsUnsupported() {
+        // Arrange: a price currency code that maps to no known Currency must be rejected before save.
+        OpenDerivativePositionRequest req = new OpenDerivativePositionRequest(
+                "F_USDTRY0626", DerivativeDirection.LONG, LocalDate.of(2026, 4, 1),
+                new BigDecimal("35.20"), new BigDecimal("1"), null, null, "ZZZ");
+        when(contractRepository.findBySymbol("F_USDTRY0626")).thenReturn(Optional.of(contract));
+
+        // Act + Assert
+        assertThatThrownBy(() -> service.open(PORTFOLIO_ID, USER_SUB, req))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("error.portfolio.unsupportedCurrency");
+        verify(positionRepository, never()).save(any(DerivativePosition.class));
+    }
+
+    @Test
+    void should_backfillRemainingPeers_when_deletingOneLotOfAMultiLotSymbol() {
+        // Arrange: deleting POSITION_ID leaves a peer on the SAME contract that must be re-backfilled.
+        DerivativePosition position = openPosition();
+        DerivativePosition peer = DerivativePosition.builder()
+                .id(200L).portfolio(portfolio).viopContract(contract)
+                .direction(DerivativeDirection.SHORT)
+                .entryDate(LocalDate.of(2026, 4, 5))
+                .entryPrice(new BigDecimal("35.40"))
+                .quantityLot(new BigDecimal("2"))
+                .build();
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID))
+                .thenReturn(Optional.of(position));
+        // delete() iterates findByPortfolioId for survivors of the same symbol.
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(peer));
+
+        // Act
+        service.delete(POSITION_ID, PORTFOLIO_ID, USER_SUB);
+
+        // Assert: the deleted lot is removed, the symbol's snapshots are wiped, and survivors are re-scanned
+        // (delete() iterates findByPortfolioId to re-backfill peers sharing the contract).
+        verify(positionRepository).delete(position);
+        verify(positionRepository).findByPortfolioId(PORTFOLIO_ID);
+        verify(assetSnapshotRepository).deleteByPortfolioIdAndAssetTypeAndAssetCode(
+                eq(PORTFOLIO_ID), any(), eq("F_USDTRY0626"));
+    }
+
+    @Test
+    void should_returnEarly_when_deleteAllReceivesEmptyList() {
+        // Arrange + Act: an empty id list is a no-op and must not even touch ownership/repositories.
+        service.deleteAll(List.of(), PORTFOLIO_ID, USER_SUB);
+
+        // Assert
+        verify(portfolioRepository, never()).findById(anyLong());
+        verify(positionRepository, never()).deleteAll(any());
+    }
+
+    @Test
+    void should_returnEarly_when_deleteAllReceivesNullList() {
+        // Arrange + Act
+        service.deleteAll(null, PORTFOLIO_ID, USER_SUB);
+
+        // Assert
+        verify(portfolioRepository, never()).findById(anyLong());
+        verify(positionRepository, never()).deleteAll(any());
+    }
+
+    @Test
+    void should_returnWithoutDeleting_when_deleteAllIdsAllMissing() {
+        // Arrange: the requested ids resolve to no owned positions → nothing to delete, ownership still checked.
+        when(positionRepository.findByIdAndPortfolioId(anyLong(), eq(PORTFOLIO_ID)))
+                .thenReturn(Optional.empty());
+
+        // Act
+        service.deleteAll(List.of(POSITION_ID, 200L), PORTFOLIO_ID, USER_SUB);
+
+        // Assert
+        verify(portfolioRepository).findById(PORTFOLIO_ID);
+        verify(positionRepository, never()).deleteAll(any());
+    }
+
+    @Test
+    void should_bulkDeleteCoalescingByEarliestEntry_when_deleteAllHasTwoLotsOfSameSymbol() {
+        // Arrange: two lots of the SAME symbol with different entries; the rebuild must coalesce to one
+        // pass keyed on the EARLIER entry date, and a surviving peer of that symbol must be re-backfilled.
+        DerivativePosition early = openPosition(); // entry 2026-04-01
+        DerivativePosition late = DerivativePosition.builder()
+                .id(200L).portfolio(portfolio).viopContract(contract)
+                .direction(DerivativeDirection.SHORT)
+                .entryDate(LocalDate.of(2026, 4, 20))
+                .entryPrice(new BigDecimal("35.80"))
+                .quantityLot(new BigDecimal("2"))
+                .build();
+        DerivativePosition survivor = DerivativePosition.builder()
+                .id(300L).portfolio(portfolio).viopContract(contract)
+                .direction(DerivativeDirection.LONG)
+                .entryDate(LocalDate.of(2026, 4, 25))
+                .entryPrice(new BigDecimal("35.90"))
+                .quantityLot(new BigDecimal("1"))
+                .build();
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID))
+                .thenReturn(Optional.of(early));
+        when(positionRepository.findByIdAndPortfolioId(200L, PORTFOLIO_ID))
+                .thenReturn(Optional.of(late));
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(survivor));
+
+        // Act
+        service.deleteAll(List.of(POSITION_ID, 200L), PORTFOLIO_ID, USER_SUB);
+
+        // Assert: both lots removed in one batch, snapshots for the symbol wiped, peer rebuilt, and the
+        // backfill event carries the EARLIEST of the two deleted entries (2026-04-01).
+        org.mockito.ArgumentCaptor<List<DerivativePosition>> delCap =
+                org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(positionRepository).deleteAll(delCap.capture());
+        assertThat(delCap.getValue()).containsExactlyInAnyOrder(early, late);
+        verify(assetSnapshotRepository).deleteByPortfolioIdAndAssetTypeAndAssetCode(
+                eq(PORTFOLIO_ID), any(), eq("F_USDTRY0626"));
+
+        org.mockito.ArgumentCaptor<Object> evCap = org.mockito.ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, org.mockito.Mockito.atLeastOnce()).publishEvent(evCap.capture());
+        com.finance.portfolio.service.PortfolioBackfillService.LotChangedEvent ev = evCap.getAllValues().stream()
+                .filter(o -> o instanceof com.finance.portfolio.service.PortfolioBackfillService.LotChangedEvent)
+                .map(o -> (com.finance.portfolio.service.PortfolioBackfillService.LotChangedEvent) o)
+                .findFirst().orElseThrow();
+        assertThat(ev.fromDate()).isEqualTo(LocalDate.of(2026, 4, 1));
+        assertThat(ev.assetCode()).isEqualTo("F_USDTRY0626");
+    }
+
+    @Test
+    void should_skipBackfillEvent_when_deleteAllDeletedLotHasNullEntryDate() {
+        // Arrange: a deleted lot with a null entry date contributes no rebuild window, so no LotChangedEvent
+        // is published for its symbol (snapshots are still wiped/consolidated though).
+        DerivativePosition noEntry = DerivativePosition.builder()
+                .id(POSITION_ID).portfolio(portfolio).viopContract(contract)
+                .direction(DerivativeDirection.LONG)
+                .entryDate(null)
+                .entryPrice(new BigDecimal("35.20"))
+                .quantityLot(new BigDecimal("1"))
+                .build();
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID))
+                .thenReturn(Optional.of(noEntry));
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
+
+        // Act
+        service.deleteAll(List.of(POSITION_ID), PORTFOLIO_ID, USER_SUB);
+
+        // Assert: deleted in batch, snapshots wiped, but NO LotChangedEvent published.
+        verify(positionRepository).deleteAll(any());
+        verify(assetSnapshotRepository).deleteByPortfolioIdAndAssetTypeAndAssetCode(
+                eq(PORTFOLIO_ID), any(), eq("F_USDTRY0626"));
+        verify(eventPublisher, never()).publishEvent(
+                any(com.finance.portfolio.service.PortfolioBackfillService.LotChangedEvent.class));
+    }
 }

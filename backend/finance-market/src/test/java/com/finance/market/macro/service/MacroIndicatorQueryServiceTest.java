@@ -39,6 +39,26 @@ class MacroIndicatorQueryServiceTest {
     }
 
     @Test
+    void should_returnAllIndicators_when_listingEverything() {
+        MacroIndicator indicator = buildIndicator();
+        when(indicatorRepository.findAll()).thenReturn(List.of(indicator));
+
+        List<MacroIndicator> result = service.listAll();
+
+        assertThat(result).containsExactly(indicator);
+    }
+
+    @Test
+    void should_returnIndicatorsForCategory_when_filteringByCategory() {
+        MacroIndicator indicator = buildIndicator();
+        when(indicatorRepository.findByCategory(MacroCategory.RATES)).thenReturn(List.of(indicator));
+
+        List<MacroIndicator> result = service.listByCategory(MacroCategory.RATES);
+
+        assertThat(result).containsExactly(indicator);
+    }
+
+    @Test
     void should_returnProminentIndicators_when_listingForDashboard() {
         MacroIndicator indicator = buildIndicator();
         when(indicatorRepository.findByProminentTrueOrderByCategoryAsc()).thenReturn(List.of(indicator));
@@ -79,6 +99,42 @@ class MacroIndicatorQueryServiceTest {
         List<MacroIndicatorPoint> result = service.history(indicator, from, to);
 
         assertThat(result).containsExactly(point);
+    }
+
+    @Test
+    void should_resolveByRawCode_when_publicIdHasEvdsPrefix() {
+        MacroIndicator indicator = buildIndicator();
+        when(indicatorRepository.findByCode("TP.RATE")).thenReturn(Optional.of(indicator));
+
+        MacroIndicator result = service.findByPublicId("TP.RATE");
+
+        assertThat(result).isSameAs(indicator);
+    }
+
+    @Test
+    void should_resolveBySlug_when_publicIdIsSlug() {
+        MacroIndicator indicator = buildLabeledIndicator("Politika Faizi");
+        when(indicatorRepository.findAll()).thenReturn(List.of(buildLabeledIndicator(null), indicator));
+
+        MacroIndicator result = service.findByPublicId("politika-faizi");
+
+        assertThat(result).isSameAs(indicator);
+    }
+
+    @Test
+    void should_throwResourceNotFound_when_slugMatchesNoIndicator() {
+        when(indicatorRepository.findAll()).thenReturn(List.of(buildLabeledIndicator("Politika Faizi")));
+
+        assertThatThrownBy(() -> service.findByPublicId("does-not-exist"))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    private MacroIndicator buildLabeledIndicator(String label) {
+        Instrument instrument = Instrument.create(MarketType.MACRO_RATE, "TP.RATE");
+        return MacroIndicator.builder()
+                .instrument(instrument).code("TP.RATE").label(label)
+                .category(MacroCategory.RATES).unit(MacroUnit.PERCENT)
+                .frequency(MacroFrequency.DAILY).prominent(true).build();
     }
 
     private MacroIndicator buildIndicator() {

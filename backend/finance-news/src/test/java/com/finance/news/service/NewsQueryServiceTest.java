@@ -23,11 +23,21 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -187,5 +197,153 @@ class NewsQueryServiceTest {
 
         assertThat(counts).hasSize(2);
         assertThat(counts.get(0).count()).isEqualTo(12L);
+    }
+
+    @Test
+    void should_mapAssetCountsFromRepositoryRows_when_getAssetCountsCalled() {
+        when(articleRepository.countArticlesByAsset()).thenReturn(List.of(
+                new Object[]{"THYAO.IS", "STOCK", 9L},
+                new Object[]{"BTC-USD", "CRYPTO", 4L}));
+
+        List<com.finance.news.dto.response.NewsAssetCountResponse> result = service.getAssetCounts(10);
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).code()).isEqualTo("THYAO.IS");
+        assertThat(result.get(0).type()).isEqualTo("STOCK");
+        assertThat(result.get(0).count()).isEqualTo(9L);
+        assertThat(result.get(1).code()).isEqualTo("BTC-USD");
+        assertThat(result.get(1).count()).isEqualTo(4L);
+    }
+
+    @Test
+    void should_truncateAssetCountsToLimit_when_moreRowsThanLimit() {
+        when(articleRepository.countArticlesByAsset()).thenReturn(List.of(
+                new Object[]{"THYAO.IS", "STOCK", 9L},
+                new Object[]{"BTC-USD", "CRYPTO", 4L},
+                new Object[]{"EREGL.IS", "STOCK", 2L}));
+
+        List<com.finance.news.dto.response.NewsAssetCountResponse> result = service.getAssetCounts(2);
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).code()).isEqualTo("THYAO.IS");
+        assertThat(result.get(1).code()).isEqualTo("BTC-USD");
+    }
+
+    @Test
+    void should_returnEmptyAssetCounts_when_noRows() {
+        when(articleRepository.countArticlesByAsset()).thenReturn(List.of());
+
+        List<com.finance.news.dto.response.NewsAssetCountResponse> result = service.getAssetCounts(10);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void should_returnEmptyCategoryCounts_when_noRows() {
+        when(articleRepository.countByCategory()).thenReturn(List.of());
+
+        List<com.finance.shared.dto.response.GroupCount> result = service.getCategoryCounts();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void should_rejectUnknownCategory_when_searchCalledWithInvalidCategory() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                        service.search("NOT_A_CATEGORY", null, null, "publishedAt", "desc", 0, 10))
+                .isInstanceOf(com.finance.common.exception.BadRequestException.class);
+
+        verify(articleRepository, never()).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    @Test
+    void should_applyAssetCodeFilter_when_searchCalledWithAssetCode() {
+        when(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+        when(responseMapper.toResponses(List.of())).thenReturn(List.of());
+
+        service.search(null, null, "THYAO.IS", "publishedAt", "desc", 0, 10);
+
+        Specification<NewsArticle> spec = captureSpecification();
+        Path<Object> codePath = invokeSpec(spec);
+        verify(codePath).in(List.of("THYAO.IS"));
+    }
+
+    @Test
+    void should_splitCommaSeparatedAssetCodes_when_searchCalledWithMultipleAssets() {
+        // Arrange: assetCode carries duplicates, blanks and padding around the commas; the spec must
+        // de-dupe/trim down to the two distinct codes and feed exactly those to the IN clause.
+        when(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+        when(responseMapper.toResponses(List.of())).thenReturn(List.of());
+
+        // Act
+        service.search(null, null, " THYAO.IS , BTC-USD , THYAO.IS , ", "publishedAt", "desc", 0, 10);
+
+        // Assert
+        Specification<NewsArticle> spec = captureSpecification();
+        ArgumentCaptor<List<String>> codesCaptor = ArgumentCaptor.forClass(List.class);
+        invokeSpecCapturingInCodes(spec, codesCaptor);
+        assertThat(codesCaptor.getValue()).containsExactly("THYAO.IS", "BTC-USD");
+    }
+
+    @Test
+    void should_ignoreAssetCodeFilter_when_onlyBlankTokensSupplied() {
+        // Arrange: a comma-string of nothing but blanks must collapse to no codes, so the asset join
+        // is never added (distinct never toggled) — leaving only the always-true conjunction.
+        when(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+        when(responseMapper.toResponses(List.of())).thenReturn(List.of());
+
+        // Act
+        service.search(null, null, " , , ", "publishedAt", "desc", 0, 10);
+
+        // Assert
+        Specification<NewsArticle> spec = captureSpecification();
+        Root<NewsArticle> root = mock(Root.class);
+        CriteriaQuery<?> query = mock(CriteriaQuery.class);
+        CriteriaBuilder cb = mock(CriteriaBuilder.class);
+        spec.toPredicate((Root) root, query, cb);
+        verify(query, never()).distinct(true);
+        verify(root, never()).join(anyString());
+    }
+
+    @SuppressWarnings("rawtypes")
+    private Specification<NewsArticle> captureSpecification() {
+        ArgumentCaptor<Specification> captor = ArgumentCaptor.forClass(Specification.class);
+        verify(articleRepository).findAll(captor.capture(), any(Pageable.class));
+        return captor.getValue();
+    }
+
+    /** Runs the captured spec against mocked criteria objects so the asset-code lambda body executes. */
+    private Path<Object> invokeSpec(Specification<NewsArticle> spec) {
+        Root<NewsArticle> root = mock(Root.class);
+        CriteriaQuery<?> query = mock(CriteriaQuery.class);
+        CriteriaBuilder cb = mock(CriteriaBuilder.class);
+        Join<Object, Object> join = mock(Join.class);
+        Path<Object> codePath = mock(Path.class);
+        Predicate inPredicate = mock(Predicate.class);
+        when(cb.conjunction()).thenReturn(mock(Predicate.class));
+        when(root.join("assets")).thenReturn(join);
+        when(join.get("assetCode")).thenReturn(codePath);
+        when(codePath.in(any(List.class))).thenReturn(inPredicate);
+        spec.toPredicate((Root) root, query, cb);
+        verify(query).distinct(true);
+        return codePath;
+    }
+
+    private void invokeSpecCapturingInCodes(Specification<NewsArticle> spec,
+                                            ArgumentCaptor<List<String>> codesCaptor) {
+        Root<NewsArticle> root = mock(Root.class);
+        CriteriaQuery<?> query = mock(CriteriaQuery.class);
+        CriteriaBuilder cb = mock(CriteriaBuilder.class);
+        Join<Object, Object> join = mock(Join.class);
+        Path<Object> codePath = mock(Path.class);
+        when(root.join("assets")).thenReturn(join);
+        when(join.get("assetCode")).thenReturn(codePath);
+        when(codePath.in(any(List.class))).thenReturn(mock(Predicate.class));
+        spec.toPredicate((Root) root, query, cb);
+        verify(codePath).in(codesCaptor.capture());
+        verify(query).distinct(true);
     }
 }

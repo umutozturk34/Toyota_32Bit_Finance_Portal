@@ -218,16 +218,25 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
           pollHandleRef.current = requestAnimationFrame(tick);
           return;
         }
-        if (!fixedAncestor && typeof el.scrollIntoView === 'function') {
-          const vh = window.innerHeight || document.documentElement.clientHeight || 0;
-          if (vh && (r.top < 0 || r.bottom > vh)) {
-            el.scrollIntoView({ block: r.height > vh - 80 ? 'start' : 'center', behavior: 'instant' });
-            r = el.getBoundingClientRect();
-          }
-        }
         const steady = last
           && Math.abs(r.top - last.top) < 1 && Math.abs(r.left - last.left) < 1
           && Math.abs(r.width - last.width) < 1 && Math.abs(r.height - last.height) < 1;
+        // Smooth-scroll a below/above-fold target into view, but only once the rect has SETTLED (not mid-scroll)
+        // so the scroll plays out as one smooth glide instead of the old instant jump re-issued every frame. Skip
+        // when scrolling can't help (a target taller than the viewport, already pinned to the top). If late
+        // content (e.g. the chart) later pushes it out, the next settled frame nudges it again, still smoothly.
+        if (steady && !fixedAncestor && typeof el.scrollIntoView === 'function') {
+          const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+          const needsScroll = vh && (r.top < -1 || (r.bottom > vh && r.top > 1));
+          if (needsScroll && settleFrames < SETTLE_MAX_FRAMES) {
+            el.scrollIntoView({ block: r.height > vh - 80 ? 'start' : 'center', behavior: 'smooth' });
+            stable = 0;
+            last = r;
+            settleFrames += 1;
+            pollHandleRef.current = requestAnimationFrame(tick);
+            return;
+          }
+        }
         stable = steady ? stable + 1 : 0;
         last = r;
         if (stable >= 2 || settleFrames >= SETTLE_MAX_FRAMES) {

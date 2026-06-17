@@ -63,8 +63,10 @@ class NewsCategoryResolverTest {
 
     @Test
     void scoreBasedResolutionWithoutDefaultCategoryRequiresMinScore2() {
+        // A single keyword in the BODY (neutral title) stays below the min score → uncategorized. (A keyword in the
+        // TITLE is stronger evidence and is allowed to categorize — see titleKeywordsOutweighBodyKeywords.)
         NewsCategory result = NewsCategoryResolver.resolve(null,
-                "Piyasalarda emtia sektöründe gelişmeler", null);
+                "Piyasalarda günün gelişmeleri", "Tek bir emtia anlamında değiniliyor");
 
         assertThat(result).isNull();
     }
@@ -142,5 +144,16 @@ class NewsCategoryResolverTest {
                 "Ünvan değişikliği, sermaye artırımı ve SPK başvuru süreci tamamlandı");
 
         assertThat(result).isEqualTo(NewsCategory.BORSA_SIRKETLERI);
+    }
+
+    @Test
+    void titleKeywordsOutweighBodyKeywords() {
+        // The headline is about oil (EMTIA); the body only mentions the stock market in passing. Title weighting
+        // makes the article's real topic win over the more-numerous body keywords (which would otherwise score higher).
+        NewsCategory result = NewsCategoryResolver.resolve(null,
+                "Brent petrol fiyatı varil başına sert yükseldi",
+                "Bu gelişme bist 100 endeks ve borsa istanbul seans işlemlerinde de konuşuldu");
+
+        assertThat(result).isEqualTo(NewsCategory.EMTIA);
     }
 }

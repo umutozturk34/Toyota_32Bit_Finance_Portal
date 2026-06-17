@@ -11,6 +11,7 @@ import java.util.Set;
 import static com.finance.news.util.NewsTextMatcher.buildSearchText;
 import static com.finance.news.util.NewsTextMatcher.countMatches;
 import static com.finance.news.util.NewsTextMatcher.matchesAny;
+import static com.finance.news.util.NewsTextMatcher.normalize;
 import static com.finance.news.util.NewsTextMatcher.scoreKeywords;
 import static com.finance.news.util.NewsTextMatcher.tokenize;
 
@@ -41,6 +42,10 @@ public final class NewsCategoryResolver {
     private static final List<NewsCategory> SUMMARY_DIVERSITY = CONFIG.summaryDiversityCategories();
     private static int MIN_SCORE_THRESHOLD = 2;
     private static int DEFAULT_CATEGORY_BONUS = 3;
+    // A keyword in the TITLE states the article's topic; one buried in the body is far weaker evidence. Title matches
+    // therefore add this multiple of their weight on top of the base (whole-text) score, so the headline's subject
+    // wins over incidental body mentions of another market.
+    private static final int TITLE_KEYWORD_WEIGHT = 2;
 
     private NewsCategoryResolver() {
     }
@@ -59,6 +64,8 @@ public final class NewsCategoryResolver {
         }
 
         Set<String> tokens = tokenize(text);
+        String titleText = normalize(title);
+        Set<String> titleTokens = tokenize(titleText);
         NewsCategory defaultResolved = parseDefaultCategory(defaultCategory);
 
         NewsCategory strict = resolveByStrictRules(text, tokens, defaultResolved);
@@ -66,7 +73,7 @@ public final class NewsCategoryResolver {
             return strict;
         }
 
-        return resolveByScore(text, tokens, defaultResolved);
+        return resolveByScore(text, tokens, titleText, titleTokens, defaultResolved);
     }
 
     /** High-confidence overrides applied before scoring: crypto, parity, bond, then general-finance; null if none fire. */
@@ -95,6 +102,7 @@ public final class NewsCategoryResolver {
 
     /** Picks the highest-scoring category (gating company news, bonusing the default); null below the threshold. */
     private static NewsCategory resolveByScore(String text, Set<String> tokens,
+                                               String titleText, Set<String> titleTokens,
                                                NewsCategory defaultResolved) {
         NewsCategory best = null;
         int bestScore = 0;
@@ -105,10 +113,19 @@ public final class NewsCategoryResolver {
                 continue;
             }
 
+            // A foreign-bond article (US treasury, etc.) is not domestic bond news — keep TAHVIL_BONO out of the
+            // score race too, mirroring the strict-rule exclusion that title weighting could otherwise overturn.
+            if (entry.getKey() == NewsCategory.TAHVIL_BONO && hasForeignBondContext(text, tokens)) {
+                continue;
+            }
+
             int score = scoreKeywords(text, tokens, entry.getValue());
             if (score == 0) {
                 continue;
             }
+
+            // A keyword in the headline weighs much more than one in the body — add the title score on top.
+            score += TITLE_KEYWORD_WEIGHT * scoreKeywords(titleText, titleTokens, entry.getValue());
 
             if (defaultResolved != null && entry.getKey() == defaultResolved) {
                 score += DEFAULT_CATEGORY_BONUS;

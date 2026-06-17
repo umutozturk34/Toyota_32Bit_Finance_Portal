@@ -48,7 +48,11 @@ class AssetMentionResolverImplTest {
                 new Object[]{"THYAO.IS", "Türk Hava Yolları A.O."},
                 new Object[]{"AKBNK.IS", "Akbank T.A.Ş."},
                 new Object[]{"ASELS.IS", "ASELSAN Elektronik Sanayi ve Ticaret A.Ş."},
-                new Object[]{"AHGAZ.IS", "Ahlatcı Doğalgaz Dağıtım A.Ş."}
+                new Object[]{"AHGAZ.IS", "Ahlatcı Doğalgaz Dağıtım A.Ş."},
+                // Firms whose distinctive name LEADS with a common word — they must link only by their full name or
+                // ticker, never by the lone first word ("platform", "federal").
+                new Object[]{"PLTUR.IS", "Platform Turizm Taşımacılık Gıda A.Ş."},
+                new Object[]{"FMIZP.IS", "Federal-Mogul İzmit Piston ve Pim Üretim Tesisleri A.Ş."}
         ));
         when(cryptoRepository.findAllIdsNamesAndSymbols()).thenReturn(List.of(
                 new Object[]{"bitcoin", "Bitcoin", "btc"},
@@ -235,9 +239,44 @@ class AssetMentionResolverImplTest {
     void shouldResolveOilKeyword_toBrentCommodity() {
         List<ResolvedAsset> result = resolver.resolve("Brent petrol varil başına yükseldi", null);
 
-        // Both "brent" and "petrol" point to the same Brent contract, deduped to one link.
+        // "brent" links the Brent contract; bare "petrol" is no longer a keyword (too generic), so the article
+        // still yields exactly one link.
         assertThat(result).extracting(ResolvedAsset::code).containsExactly("BZ=F");
         assertThat(result).extracting(ResolvedAsset::type).containsExactly("COMMODITY");
+    }
+
+    @Test
+    void shouldNotLinkStock_whenOnlyAGenericFirstWordAppears() {
+        // PLTUR (Platform Turizm) must NOT link just because an unrelated article uses the common word "platform"
+        // (here a crypto platform). Only its full two-word name or its ticker may link it.
+        List<ResolvedAsset> result = resolver.resolve(
+                "Merkeziyetsiz kripto platform faaliyetlerini genişletti", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).doesNotContain("PLTUR.IS");
+    }
+
+    @Test
+    void shouldLinkStock_whenItsFullDistinctiveNameAppears() {
+        // The same firm DOES link when its distinctive two-word name appears together.
+        List<ResolvedAsset> result = resolver.resolve("Platform Turizm yeni sefer ağını açıkladı", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).contains("PLTUR.IS");
+    }
+
+    @Test
+    void shouldNotLinkStock_whenOnlyACommonLeadWordAppears() {
+        // FMIZP (Federal-Mogul İzmit Piston) must NOT link by a lone "Federal" in "Federal Reserve".
+        List<ResolvedAsset> result = resolver.resolve("Bitcoin, Federal Reserve kararı öncesi yükseldi", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).doesNotContain("FMIZP.IS");
+    }
+
+    @Test
+    void shouldNotLinkBrent_whenPetrolAppearsOnlyInACompanyName() {
+        // Bare "petrol" inside a firm name ("Metro Petrol") must NOT pull in the Brent contract.
+        List<ResolvedAsset> result = resolver.resolve("Metro Petrol ve Tesisleri ünvan değişikliğine gitti", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).doesNotContain("BZ=F");
     }
 
     @Test

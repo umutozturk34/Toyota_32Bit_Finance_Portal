@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from '../feedback/AnimatedIcons';
+import useOverlayDismiss from '../../hooks/useOverlayDismiss';
 
 export default function ConfirmDialog({
   open,
@@ -18,6 +19,7 @@ export default function ConfirmDialog({
   loading = false,
 }) {
   const { t } = useTranslation();
+  useOverlayDismiss(open, loading ? undefined : onCancel);
   const Icon = CustomIcon || AlertTriangle;
   const titleText = title ?? t('confirmDialog.title');
   const confirmText = confirmLabel ?? t('common.delete');

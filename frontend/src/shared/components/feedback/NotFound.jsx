@@ -18,7 +18,7 @@ export default function NotFound() {
           transition={{ duration: 0.8, ease: 'easeOut' }}
           className="text-[10rem] sm:text-[14rem] md:text-[18rem] lg:text-[22rem] font-mono font-black leading-none tracking-tighter"
           style={{
-            background: 'linear-gradient(180deg, rgba(99,102,241,0.12) 0%, transparent 80%)',
+            background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 22%, transparent) 0%, transparent 82%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
           }}

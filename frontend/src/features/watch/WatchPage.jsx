@@ -298,9 +298,10 @@ export default function WatchPage() {
         </div>
         <div className="divide-y divide-border-default">
           {alerts.isLoading ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-sm text-fg-muted">
-              <Spinner size="sm" tone="accent" />
-              {t('watch.loading')}
+            <div aria-hidden="true">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonRow key={i} cols={2} />
+              ))}
             </div>
           ) : alertItems.length === 0 ? (
             <EmptyState

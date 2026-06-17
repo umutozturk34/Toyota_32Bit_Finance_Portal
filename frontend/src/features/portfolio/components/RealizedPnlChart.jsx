@@ -10,7 +10,7 @@ import { chartPalette } from '../../../shared/charts/echartsTheme';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { usePortfolioAllocation } from '../hooks/usePortfolioData';
 import Card from '../../../shared/components/card';
-import Spinner from '../../../shared/components/feedback/Spinner';
+import { SkeletonChart } from '../../../shared/components/feedback/Skeleton';
 import FilterTabs from '../../../shared/components/form/FilterTabs';
 import { ASSET_TYPE_TABS as TYPE_TABS } from '../../../shared/constants/assetTypes';
 
@@ -248,9 +248,7 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
 
       <Card variant="elevated" radius="2xl" padding="lg" backdropBlur interactive={false}>
         {loading ? (
-          <div className="flex items-center justify-center" style={{ height: 'min(40vh, 260px)', minHeight: 200 }}>
-            <Spinner size="md" tone="accent" />
-          </div>
+          <SkeletonChart h="min(40vh, 260px)" className="min-h-[200px]" />
         ) : seriesData.length === 0 ? (
           <div className="flex items-center justify-center text-sm text-fg-muted" style={{ height: 'min(40vh, 260px)', minHeight: 200 }}>
             {t('portfolio.allocation.realizedEmpty')}

@@ -6,7 +6,7 @@ import { containerVariants, cardVariants } from '../../../shared/utils/animation
 import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import Card from '../../../shared/components/card';
-import Spinner from '../../../shared/components/feedback/Spinner';
+import { SkeletonChart } from '../../../shared/components/feedback/Skeleton';
 import FilterTabs from '../../../shared/components/form/FilterTabs';
 import RangeSelector from '../../../shared/components/form/RangeSelector';
 import { positionFrame } from '../lib/positionsTableHelpers';
@@ -115,9 +115,7 @@ export default function CostBreakdownChart({ portfolioId }) {
 
           {/* Per-asset cost bars */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Spinner size="md" tone="accent" />
-            </div>
+            <SkeletonChart h="13rem" />
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
               <Layers className="h-7 w-7 text-fg-subtle" />

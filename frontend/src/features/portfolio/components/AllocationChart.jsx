@@ -11,7 +11,7 @@ import { chartPalette } from '../../../shared/charts/echartsTheme';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { usePortfolioAllocation } from '../hooks/usePortfolioData';
 import Card from '../../../shared/components/card';
-import Spinner from '../../../shared/components/feedback/Spinner';
+import { Skeleton } from '../../../shared/components/feedback/Skeleton';
 import FilterTabs from '../../../shared/components/form/FilterTabs';
 import RangeSelector from '../../../shared/components/form/RangeSelector';
 import {
@@ -274,7 +274,7 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
       <Card variant="elevated" radius="2xl" padding="lg" backdropBlur interactive={false}>
         {loading ? (
           <div className="flex items-center justify-center" style={{ height: 'min(40vh, 260px)', minHeight: 200 }}>
-            <Spinner size="md" tone="accent" />
+            <Skeleton w="11rem" h="11rem" circle />
           </div>
         ) : seriesData.length === 0 ? (
           <div className="flex items-center justify-center text-sm text-fg-muted" style={{ height: 'min(40vh, 260px)', minHeight: 200 }}>

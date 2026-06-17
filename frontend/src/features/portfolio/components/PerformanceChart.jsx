@@ -11,6 +11,7 @@ import { formatPrice, formatPercentSmart } from '../../../shared/utils/formatter
 import { cardVariants } from '../../../shared/utils/animations';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
+import { SkeletonChart } from '../../../shared/components/feedback/Skeleton';
 import { useTheme } from '../../../shared/context/useTheme';
 import useElapsedSeconds from '../../../shared/hooks/useElapsedSeconds';
 import RangeSelector from '../../../shared/components/form/RangeSelector';
@@ -273,8 +274,8 @@ function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = fals
 
         <div className="relative min-h-[240px] sm:min-h-[360px] px-2">
           {loading ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Spinner size="md" tone="accent" />
+            <div className="absolute inset-0">
+              <SkeletonChart h="100%" />
             </div>
           ) : option ? (
             <ReactECharts

@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { TrendingUp, TrendingDown, ChevronRight, Inbox } from 'lucide-react';
+import { TrendingUp, TrendingDown, ChevronRight } from 'lucide-react';
 import { containerVariants, cardVariants } from '../../../shared/utils/animations';
 import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import Card from '../../../shared/components/card';
-import Spinner from '../../../shared/components/feedback/Spinner';
+import { SkeletonChart } from '../../../shared/components/feedback/Skeleton';
+import EmptyState from '../../../shared/components/feedback/EmptyState';
 import FilterTabs from '../../../shared/components/form/FilterTabs';
 import RangeSelector from '../../../shared/components/form/RangeSelector';
 import { positionFrame } from '../lib/positionsTableHelpers';
@@ -130,14 +131,9 @@ export default function PnlByTypeChart({ portfolioId }) {
 
           {/* Per-type / per-asset P&L bars */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Spinner size="md" tone="accent" />
-            </div>
+            <SkeletonChart h="13rem" />
           ) : items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
-              <Inbox className="h-7 w-7 text-fg-subtle" />
-              <p className="text-sm text-fg-muted">{t('portfolio.pnlByType.empty')}</p>
-            </div>
+            <EmptyState size="sm" variant="empty" message={t('portfolio.pnlByType.empty')} />
           ) : (
             <motion.div
               variants={containerVariants(0.04)}

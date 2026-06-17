@@ -150,12 +150,16 @@ public class MarketDataInitializer implements CommandLineRunner, MarketDataReadi
         InitSpec stock = new InitSpec("stock", MarketType.STOCK, stockRepository.count(), stockCandleRepository.count(), stockDataService::refreshAll);
         InitSpec commodity = new InitSpec("commodity", MarketType.COMMODITY, commodityRepository.count(), commodityCandleRepository.count(), commodityDataService::refreshAll);
 
+        // News runs LAST, after every market asset (stocks, crypto, forex, commodity, funds) is in the DB — its
+        // per-article asset linkage resolves against that data, so resolving it before stocks load (the old order)
+        // left fresh articles unlinked to stocks. The startup re-resolution backfill stays as a safety net for
+        // matcher/keyword changes, but the steady-state path now links correctly on first ingest.
         completion = runGroup(crypto, fund)
                 .thenCompose(v -> runGroup(bond, macro))
-                .thenCompose(v -> runGroup(viop, news))
-                .thenCompose(v -> runOne(forex))
+                .thenCompose(v -> runGroup(viop, forex))
                 .thenCompose(v -> runOne(stock))
-                .thenCompose(v -> runOne(commodity));
+                .thenCompose(v -> runOne(commodity))
+                .thenCompose(v -> runOne(news));
     }
 
     private record InitSpec(String name, MarketType type, long snapshotCount, long candleCount, Runnable action) {

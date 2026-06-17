@@ -60,13 +60,16 @@ class FundUpdateServiceTest {
     }
 
     @Test
-    void refreshAll_backFillsMissingFundProfiles() {
+    void refreshAll_triggersProfileBackFillOffTheCriticalPath() {
         when(fundCandleRepository.findCandleDateRangePerFund()).thenReturn(List.of());
         when(fundRepository.findAll()).thenReturn(List.of());
 
         service.refreshAll();
 
-        verify(detailEnrichmentService).enrichMissingProfiles();
+        // The per-fund profile back-fill is fired asynchronously so the (init/daily) refresh never blocks on the
+        // ~1h, rate-limited TEFAS profile crawl — it must NOT be called on the synchronous path.
+        verify(detailEnrichmentService).enrichMissingProfilesAsync();
+        verify(detailEnrichmentService, org.mockito.Mockito.never()).enrichMissingProfiles();
     }
 
     @Test

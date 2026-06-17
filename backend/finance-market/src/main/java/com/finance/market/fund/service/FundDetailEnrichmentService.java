@@ -17,6 +17,7 @@ import com.finance.market.fund.repository.FundAllocationRepository;
 import com.finance.market.fund.repository.FundRepository;
 import com.finance.market.fund.util.TefasHelper;
 import com.finance.market.core.util.MarketBatchRunner;
+import com.finance.shared.service.TaskTrackingService;
 import com.finance.shared.util.BatchUpdateRunner;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Enriches stored funds with TEFAS detail data: trailing returns/risk, asset allocations, and
@@ -49,6 +51,10 @@ public class FundDetailEnrichmentService {
     private final FundProperties fundProperties;
     private final ZoneId appZone;
     private final int eodCutoverHour;
+    private final TaskTrackingService taskTracker;
+    /** Guards against two profile back-fills running at once (e.g. a daily refresh firing while a cold-start fill
+     *  is still draining), which would double-fetch and waste the scarce TEFAS rate budget. */
+    private final AtomicBoolean profileBackfillRunning = new AtomicBoolean(false);
 
     /** Min sample before the batch failure-rate guard engages on the profile back-fill. */
     private static final int PROFILE_BATCH_MIN_SAMPLE = 25;
@@ -59,7 +65,8 @@ public class FundDetailEnrichmentService {
                                        TrackedAssetQueryService trackedAssetQueryService,
                                        MarketCacheService<Fund> fundCacheService,
                                        FundProperties fundProperties,
-                                       AppProperties appProperties) {
+                                       AppProperties appProperties,
+                                       TaskTrackingService taskTracker) {
         this.tefasClient = tefasClient;
         this.fundRepository = fundRepository;
         this.allocationRepository = allocationRepository;
@@ -68,6 +75,7 @@ public class FundDetailEnrichmentService {
         this.fundProperties = fundProperties;
         this.appZone = ZoneId.of(appProperties.getTimezone());
         this.eodCutoverHour = fundProperties.getTefasEodCutoverHour();
+        this.taskTracker = taskTracker;
     }
 
     private LocalDate effectiveDate(LocalDate requested) {
@@ -122,6 +130,32 @@ public class FundDetailEnrichmentService {
                 fundProperties.getProfileEnrichParallelism());
         log.info("Fund profile back-fill done: {} enriched, {} failed", result.successCount(), result.failCount());
         return result.successCount();
+    }
+
+    /**
+     * Fire-and-forget wrapper around {@link #enrichMissingProfiles()} so the cold-start / full refresh never
+     * blocks on it. valör/ISIN/seans/KAP come ONLY from TEFAS's per-fund profile endpoint — there is no bulk
+     * variant (a profile call without {@code fonKodu} returns empty; the bulk snapshot/returns/allocation calls
+     * carry price/size/returns/RISK but not these) — and the shared TEFAS rate limiter caps calls at 1 / 2s, so
+     * back-filling the whole universe is inherently a (funds × 2s) job (~1h for ~2000 funds). Running it on the
+     * task executor keeps {@code refreshAll} — and thus the init/daily fund update — fast (just the bulk steps);
+     * profiles trickle in afterwards and the lazy detail-open path ({@link #enrichSingleFundDetailsAsync}) fills
+     * any fund a user actually views instantly. It runs under task-tracking so it shows in the admin task panel,
+     * and the guard flag prevents two overlapping back-fills from double-fetching.
+     */
+    @Async("taskExecutor")
+    public void enrichMissingProfilesAsync() {
+        if (!profileBackfillRunning.compareAndSet(false, true)) {
+            log.info("Fund profile back-fill already running, skipping this trigger");
+            return;
+        }
+        try {
+            taskTracker.runTracked("fund-profile-backfill",
+                    "Fund valör/ISIN/seans back-fill (per-fund TEFAS, rate-limited)",
+                    this::enrichMissingProfiles);
+        } finally {
+            profileBackfillRunning.set(false);
+        }
     }
 
     /** Fetches and applies only the TEFAS profile for one fund (one HTTP call); persists + refreshes cache. */

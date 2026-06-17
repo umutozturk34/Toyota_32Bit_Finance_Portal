@@ -45,8 +45,11 @@ public class FundUpdateService implements MarketRefresher {
 
     /**
      * Runs the full fund refresh in order: snapshots, bulk candle sync, change-percent recompute,
-     * returns/risk enrichment, allocation enrichment as of today, then a profile (valör/ISIN/seans)
-     * back-fill for any funds still missing it.
+     * returns/risk enrichment, allocation enrichment as of today. The per-fund profile (valör/ISIN/seans)
+     * back-fill is fired OFF this critical path: TEFAS serves the profile per fund only and the rate limiter
+     * caps it at 1/2s, so back-filling ~2000 funds is a ~1h job that must not block the init/daily update (which
+     * used to balloon past an hour). It drains in the background; the lazy detail-open path fills any fund a user
+     * opens instantly.
      */
     public void refreshAll() {
         long totalStart = System.currentTimeMillis();
@@ -55,8 +58,9 @@ public class FundUpdateService implements MarketRefresher {
         recomputeChangePercents();
         detailEnrichmentService.enrichReturnsAndRisk();
         detailEnrichmentService.enrichAllocations(LocalDate.now());
-        detailEnrichmentService.enrichMissingProfiles();
-        log.info("[TIMING] Total fund update took {}s", (System.currentTimeMillis() - totalStart) / 1000);
+        detailEnrichmentService.enrichMissingProfilesAsync();
+        log.info("[TIMING] Total fund update (excl. async profile back-fill) took {}s",
+                (System.currentTimeMillis() - totalStart) / 1000);
     }
 
     /**

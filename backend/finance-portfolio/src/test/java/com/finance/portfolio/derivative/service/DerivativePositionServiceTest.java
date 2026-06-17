@@ -82,10 +82,11 @@ class DerivativePositionServiceTest {
         com.finance.market.viop.config.ViopProperties viopProperties =
                 new com.finance.market.viop.config.ViopProperties(
                         null, null, null, null, null, null, null, null, null, null, 5);
+        DerivativePositionValidator validator = new DerivativePositionValidator(
+                viopProperties, new com.finance.portfolio.config.PortfolioProperties(), marketDataReadiness);
         service = new DerivativePositionService(positionRepository, portfolioRepository,
                 contractRepository, assetSnapshotRepository, mapper, eventPublisher,
-                snapshotMaintenance, priceResolver, currencyConverter, viopProperties,
-                new com.finance.portfolio.config.PortfolioProperties(), marketDataReadiness);
+                snapshotMaintenance, priceResolver, currencyConverter, validator);
 
         portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).name("test").build();
 

@@ -28,6 +28,7 @@ import SortSelect from '../../shared/components/form/SortSelect';
 import Card from '../../shared/components/card';
 import Spinner from '../../shared/components/feedback/Spinner';
 import { SkeletonRow } from '../../shared/components/feedback/Skeleton';
+import MotionSwap from '../../shared/components/feedback/MotionSwap';
 import { usePriceAlerts, useDeletePriceAlert, useReactivatePriceAlert } from '../../shared/hooks/usePriceAlerts';
 import useListParams from '../../shared/hooks/useListParams';
 import Pagination from '../../shared/components/form/Pagination';
@@ -162,7 +163,8 @@ export default function WatchPage() {
 
       <WatchViewTabs view={view} onChange={setView} watchCount={watchlists.reduce((acc, w) => acc + (w.itemCount ?? 0), 0)} alertsCount={alerts.data?.totalElements ?? alertItems.length} />
 
-      {isWatchlist && (
+      <MotionSwap swapKey={view}>
+        {isWatchlist ? (
       <Card as="section" variant="elevated" radius="xl" padding="none" interactive clip={false}>
         <header className="flex items-center justify-between px-3 sm:px-4 py-3 border-b border-border-default gap-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -264,9 +266,7 @@ export default function WatchPage() {
           )}
         </div>
       </Card>
-      )}
-
-      {isAlerts && (
+        ) : (
       <Card as="section" variant="elevated" radius="xl" padding="none" interactive>
         <header className="flex items-center justify-between px-3 sm:px-4 py-3 border-b border-border-default gap-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -316,7 +316,8 @@ export default function WatchPage() {
         </div>
         <Pagination page={alertParams.page} totalPages={alertTotalPages} onPageChange={alertParams.setPage} />
       </Card>
-      )}
+        )}
+      </MotionSwap>
 
       <EditWatchlistItemModal
         open={editingItem != null}

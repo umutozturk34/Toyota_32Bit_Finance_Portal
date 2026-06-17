@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { panelVariants } from '../utils/animations';
 import { Outlet, Link, useLocation, useNavigationType } from 'react-router-dom';
 import { useAuth } from '../../features/auth/useAuth';
 import { useTheme } from '../context/useTheme';
@@ -73,6 +74,7 @@ const MainLayout = () => {
   const { user, logout, hasRole } = useAuth();
   const { isDark } = useTheme();
   const location = useLocation();
+  const reduceMotion = useReducedMotion();
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const openSearch = useAppStore((s) => s.openSearch);
@@ -319,19 +321,24 @@ const MainLayout = () => {
         <main className="flex-1 w-full">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:py-6 pt-[calc(4rem+env(safe-area-inset-top))] lg:pt-6">
             {/* Route-level transition: a quick cross-fade + lift so pages glide in — on navigation AND on first
-                mount (F5/hard refresh), since `initial` is allowed to play (no initial={false}). Keyed on pathname
-                only (not search) so in-page tab/filter changes — which use query params — don't replay it. */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={location.pathname}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <Outlet />
-              </motion.div>
-            </AnimatePresence>
+                mount (F5/hard refresh), since `initial` is allowed to play. Keyed on pathname only (not search) so
+                in-page tab/filter changes don't replay it. Uses the shared panelVariants so a page-load lift and an
+                in-page MotionSwap feel like one system; reduced-motion renders the page plainly. */}
+            {reduceMotion ? (
+              <Outlet />
+            ) : (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={location.pathname}
+                  variants={panelVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                >
+                  <Outlet />
+                </motion.div>
+              </AnimatePresence>
+            )}
           </div>
         </main>
         <footer className="border-t border-border-default">

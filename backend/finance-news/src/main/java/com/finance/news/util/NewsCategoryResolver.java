@@ -89,7 +89,7 @@ public final class NewsCategoryResolver {
             return NewsCategory.PARITE;
         }
 
-        if (shouldClassifyAsBond(text, tokens, defaultResolved, defaultResolved)) {
+        if (shouldClassifyAsBond(text, tokens, defaultResolved)) {
             return NewsCategory.TAHVIL_BONO;
         }
 
@@ -151,15 +151,14 @@ public final class NewsCategoryResolver {
      * and excludes mixed parity-market recaps.
      */
     private static boolean shouldClassifyAsBond(String text, Set<String> tokens,
-                                                NewsCategory defaultResolved,
-                                                NewsCategory sourceDefault) {
+                                                NewsCategory defaultResolved) {
         int priorityMatches = countMatches(text, tokens, BOND_PRIORITY);
 
         if (priorityMatches > 0) {
             if (hasForeignBondContext(text, tokens)) {
                 return false;
             }
-            if (hasStrongerCategory(text, tokens, sourceDefault)) {
+            if (hasStrongerCategory(text, tokens, defaultResolved)) {
                 return false;
             }
             return true;

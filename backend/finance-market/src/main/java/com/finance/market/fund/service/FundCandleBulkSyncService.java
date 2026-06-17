@@ -79,19 +79,49 @@ public class FundCandleBulkSyncService {
             log.warn("No tracked {} funds found", fundType);
             return;
         }
-        Map<String, Fund> trackedByCode = trackedFunds.stream()
-                .collect(Collectors.toMap(Fund::getFundCode, f -> f));
         LocalDate today = TefasHelper.findLastBusinessDay(
                 LocalDate.now(appZone), appZone, windowing.eodCutoverHour());
         LocalDate earliest = today.minusYears(windowing.yearsToFetch()).plusDays(1);
 
-        List<WindowedFetchPlanner.DateWindow> windows = computeRequiredWindows(trackedFunds, earliest, today);
-        if (windows.isEmpty()) {
+        Map<String, Long> countPerFund = fundCandleRepository.countCandlesPerFund().stream()
+                .collect(Collectors.toMap(row -> (String) row[0], row -> (Long) row[1]));
+        int minCandles = windowing.minCandlesForIncremental();
+
+        // Split the universe so each fetch only WRITES the funds that need it: a fund with too few candles gets a
+        // full backward back-fill, the rest only a forward top-up. Scoping the executor to each subset avoids
+        // re-UPSERTing every existing fund's whole 5y history just because ONE new fund was discovered (which used
+        // to rewrite the entire ~2000-fund universe). The window FETCH stays bulk; only the writes are scoped.
+        List<Fund> newFunds = trackedFunds.stream()
+                .filter(f -> countPerFund.getOrDefault(f.getFundCode(), 0L) < minCandles).toList();
+        List<Fund> existingFunds = trackedFunds.stream()
+                .filter(f -> countPerFund.getOrDefault(f.getFundCode(), 0L) >= minCandles).toList();
+
+        boolean fetched = false;
+        if (!newFunds.isEmpty()) {
+            runWindowsFor(fundType, WindowedFetchPlanner.planBackward(earliest, today, windowing.windowSizeDays()),
+                    newFunds, "back-fill");
+            fetched = true;
+        }
+        LocalDate forwardStart = forwardStartFor(existingFunds, today);
+        if (forwardStart != null) {
+            runWindowsFor(fundType, WindowedFetchPlanner.planForward(forwardStart, today, windowing.windowSizeDays()),
+                    existingFunds, "forward");
+            fetched = true;
+        }
+        if (!fetched) {
             log.info("All tracked {} funds up to date, skipping fetch", fundType);
+        }
+    }
+
+    /** Runs the bulk windows but persists candles ONLY for {@code funds} (the executor groups by this set). */
+    private void runWindowsFor(FundType fundType, List<WindowedFetchPlanner.DateWindow> windows,
+                               List<Fund> funds, String mode) {
+        if (windows.isEmpty() || funds.isEmpty()) {
             return;
         }
-
-        bulkFetchExecutor.runWindows(fundType, windows, trackedByCode,
+        Map<String, Fund> byCode = funds.stream().collect(Collectors.toMap(Fund::getFundCode, f -> f));
+        log.info("Fund {} candle {}: {} funds, {} windows", fundType, mode, funds.size(), windows.size());
+        bulkFetchExecutor.runWindows(fundType, windows, byCode,
                 (fund, dtos) -> entityWriter.saveCandleBatch(fund, fundType, dtos));
     }
 
@@ -105,27 +135,21 @@ public class FundCandleBulkSyncService {
     }
 
     /**
-     * Plans the windows to fetch: full backward back-fill if any fund lacks enough candles,
-     * otherwise a single forward range from the earliest detected gap/stale date; empty if current.
+     * Earliest forward top-up date across the (already-back-filled) {@code funds}: the day after the oldest
+     * last-candle date, or the earliest recent gap. Null when every fund is current — nothing to fetch. Only
+     * these funds are then written, so up-to-date funds are never needlessly re-UPSERTed.
      */
-    private List<WindowedFetchPlanner.DateWindow> computeRequiredWindows(
-            List<Fund> funds, LocalDate earliest, LocalDate today) {
-        Map<String, Long> countPerFund = fundCandleRepository.countCandlesPerFund().stream()
-                .collect(Collectors.toMap(row -> (String) row[0], row -> (Long) row[1]));
+    private LocalDate forwardStartFor(List<Fund> funds, LocalDate today) {
+        if (funds.isEmpty()) {
+            return null;
+        }
         Map<String, LocalDate> maxPerFund = fundCandleRepository.findCandleDateRangePerFund().stream()
                 .collect(Collectors.toMap(
                         row -> (String) row[0],
                         row -> ((LocalDateTime) row[2]).toLocalDate()));
 
-        boolean anyNeedsFullFetch = false;
         LocalDate forwardStart = null;
-        int minCandles = windowing.minCandlesForIncremental();
         for (Fund fund : funds) {
-            long count = countPerFund.getOrDefault(fund.getFundCode(), 0L);
-            if (count < minCandles) {
-                anyNeedsFullFetch = true;
-                continue;
-            }
             LocalDate max = maxPerFund.get(fund.getFundCode());
             if (max != null && max.isBefore(today)) {
                 LocalDate fundForwardStart = max.plusDays(1);
@@ -136,14 +160,7 @@ public class FundCandleBulkSyncService {
                 forwardStart = gapStart;
             }
         }
-
-        if (anyNeedsFullFetch) {
-            return WindowedFetchPlanner.planBackward(earliest, today, windowing.windowSizeDays());
-        }
-        if (forwardStart != null) {
-            return WindowedFetchPlanner.planForward(forwardStart, today, windowing.windowSizeDays());
-        }
-        return List.of();
+        return forwardStart;
     }
 
     /** Earliest missing weekday within the recent lookback window for a fund, or null if none. */

@@ -138,6 +138,40 @@ class FundCandleBulkSyncServiceTest {
         verify(bulkFetchExecutor).runWindows(eq(FundType.BYF), anyList(), any(), any());
     }
 
+    @Test
+    void should_backfillOnlyNewFund_andNotRewriteUpToDateExistingFund() {
+        // One new fund (no candles) alongside an up-to-date one. The back-fill must write ONLY the new fund — the
+        // existing fund is current, so re-UPSERTing its whole 5y history would be wasted work (the old bug).
+        Fund existing = fundWith("OLD", FundType.YAT);
+        Fund fresh = fundWith("NEW", FundType.YAT);
+        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND)).thenReturn(List.of("OLD", "NEW"));
+        when(fundRepository.findAllById(List.of("OLD", "NEW"))).thenReturn(List.of(existing, fresh));
+        LocalDateTime futureLatest = LocalDateTime.now().plusDays(1);
+        when(fundCandleRepository.findCandleDateRangePerFund())
+                .thenReturn(Collections.singletonList(new Object[]{"OLD", LocalDateTime.now().minusYears(5), futureLatest}));
+        when(fundCandleRepository.countCandlesPerFund())
+                .thenReturn(List.of(new Object[]{"OLD", 1000L}, new Object[]{"NEW", 0L}));
+        LocalDate todayDate = LocalDate.now();
+        List<LocalDateTime> completeDates = new java.util.ArrayList<>();
+        for (LocalDate d = todayDate.minusDays(60); !d.isAfter(todayDate); d = d.plusDays(1)) {
+            completeDates.add(d.atStartOfDay());
+        }
+        when(fundCandleRepository.findCandleDatesSince(eq("OLD"), any(LocalDateTime.class)))
+                .thenReturn(completeDates);
+
+        service.refreshAllCandles();
+
+        // Back-fill runs for NEW only; OLD (current) is never fetched/rewritten.
+        verify(bulkFetchExecutor).runWindows(
+                eq(FundType.YAT), anyList(),
+                argThat(map -> map.containsKey("NEW") && !map.containsKey("OLD")),
+                any());
+        verify(bulkFetchExecutor, never()).runWindows(
+                eq(FundType.YAT), anyList(),
+                argThat(map -> map.containsKey("OLD")),
+                any());
+    }
+
     private Fund fundWith(String code, FundType type) {
         Fund f = new Fund();
         f.setFundCode(code);

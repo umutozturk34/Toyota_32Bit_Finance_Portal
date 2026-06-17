@@ -6,6 +6,7 @@ import MacroIndicatorsPanel from '../macro/MacroIndicatorsPanel';
 import ReturnsPage from '../analytics/pages/ReturnsPage';
 import { RefreshCw } from '../../shared/components/feedback/AnimatedIcons';
 import { Skeleton, SkeletonChart } from '../../shared/components/feedback/Skeleton';
+import { SPRING } from '../../shared/utils/animations';
 import ErrorState from '../../shared/components/feedback/ErrorState';
 import Spinner from '../../shared/components/feedback/Spinner';
 import SearchSuggestions from '../../shared/components/form/SearchSuggestions';
@@ -239,46 +240,27 @@ export default function MarketDataPage() {
       <div data-tour="market-search" className="w-full max-w-md"><SearchSuggestions variant="hero" placeholder={t('marketOverview.searchPlaceholder')} /></div>
       </div>
       <div data-tour="market-tabs" className="inline-flex items-center gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 self-start max-w-full overflow-x-auto" style={{ willChange: 'backdrop-filter', transform: 'translate3d(0,0,0)' }}>
-        <button
-          onClick={() => selectTab('overview')}
-          data-tour="market-overview-tab"
-          className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer shrink-0 whitespace-nowrap ${
-            activeTab === 'overview' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
-          }`}
-        >
-          <Gauge className="h-3.5 w-3.5" />
-          {t('marketOverview.tabOverview', 'Genel Bakış')}
-        </button>
-        <button
-          onClick={() => selectTab('rates')}
-          data-tour="market-rates-tab"
-          className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer shrink-0 whitespace-nowrap ${
-            activeTab === 'rates' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
-          }`}
-        >
-          <Banknote className="h-3.5 w-3.5" />
-          {t('marketOverview.tabRates', 'Kurlar')}
-        </button>
-        <button
-          onClick={() => selectTab('macro')}
-          data-tour="market-macro-tab"
-          className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer shrink-0 whitespace-nowrap ${
-            activeTab === 'macro' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
-          }`}
-        >
-          <BarChart3 className="h-3.5 w-3.5" />
-          {t('marketOverview.tabMacro', 'Göstergeler')}
-        </button>
-        <button
-          onClick={() => selectTab('returns')}
-          data-tour="market-returns-tab"
-          className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer shrink-0 whitespace-nowrap ${
-            activeTab === 'returns' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
-          }`}
-        >
-          <Medal className="h-3.5 w-3.5" />
-          {t('marketOverview.tabReturns', 'Getiriler')}
-        </button>
+        {[
+          { id: 'overview', tour: 'market-overview-tab', Icon: Gauge, label: t('marketOverview.tabOverview', 'Genel Bakış') },
+          { id: 'rates', tour: 'market-rates-tab', Icon: Banknote, label: t('marketOverview.tabRates', 'Kurlar') },
+          { id: 'macro', tour: 'market-macro-tab', Icon: BarChart3, label: t('marketOverview.tabMacro', 'Göstergeler') },
+          { id: 'returns', tour: 'market-returns-tab', Icon: Medal, label: t('marketOverview.tabReturns', 'Getiriler') },
+        ].map(({ id, tour, Icon, label }) => (
+          <button
+            key={id}
+            onClick={() => selectTab(id)}
+            data-tour={tour}
+            className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-colors border-none cursor-pointer shrink-0 whitespace-nowrap ${
+              activeTab === id ? 'text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
+            }`}
+          >
+            {activeTab === id && (
+              <motion.span layoutId="market-tab" className="absolute inset-0 rounded-lg bg-accent/15" transition={SPRING.tab} />
+            )}
+            <Icon className="relative z-10 h-3.5 w-3.5" />
+            <span className="relative z-10">{label}</span>
+          </button>
+        ))}
       </div>
     </div>
   );

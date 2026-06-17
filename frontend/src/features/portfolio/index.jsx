@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import { SPRING } from '../../shared/utils/animations';
 import { useSearchParams } from 'react-router-dom';
 import { LayoutDashboard, TrendingUp as TrendingUpIcon, Layers } from 'lucide-react';
 import useNavigationBack from '../../shared/hooks/useNavigationBack';
@@ -251,7 +252,7 @@ export default function Portfolio() {
                   <motion.span
                     layoutId="portfolio-tab"
                     className="absolute inset-0 rounded-lg bg-accent/15"
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    transition={SPRING.tab}
                   />
                 )}
                 <Icon className={`relative z-10 h-3.5 w-3.5 ${activeTab === id ? 'text-accent' : 'text-fg-muted'}`} />
@@ -262,7 +263,11 @@ export default function Portfolio() {
             ))}
           </div>
 
-          <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
+          <motion.div
+            animate={{ opacity: activeTab === 'overview' ? 1 : 0 }}
+            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            style={{ display: activeTab === 'overview' ? 'block' : 'none' }}
+          >
             <div className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 min-w-0">
                 <AllocationChart allocation={allocation} portfolioId={portfolio?.id} />
@@ -285,18 +290,26 @@ export default function Portfolio() {
                 />
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Toggle visibility (not mount) like the overview tab above, so the chart's React Query cache and
-              rendered canvas survive tab switches — conditional unmounting made the tab flash blank/empty on
-              every re-entry while its query re-validated. The chart mounts once the portfolio loads. */}
-          <div style={{ display: portfolio && activeTab === 'performance' ? 'block' : 'none' }}>
+          {/* Toggle visibility (not mount) so the chart's React Query cache and rendered canvas survive tab
+              switches — conditional unmounting made the tab flash blank on every re-entry. Opacity cross-fades on
+              show so switching reads smooth instead of an instant cut, without ever remounting the chart. */}
+          <motion.div
+            animate={{ opacity: portfolio && activeTab === 'performance' ? 1 : 0 }}
+            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            style={{ display: portfolio && activeTab === 'performance' ? 'block' : 'none' }}
+          >
             {portfolio && <PerformanceChart portfolioId={portfolio.id} backfill={backfill} />}
-          </div>
+          </motion.div>
 
-          <div style={{ display: portfolio && activeTab === 'pnl' ? 'block' : 'none' }}>
+          <motion.div
+            animate={{ opacity: portfolio && activeTab === 'pnl' ? 1 : 0 }}
+            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            style={{ display: portfolio && activeTab === 'pnl' ? 'block' : 'none' }}
+          >
             {portfolio && <PnlBreakdownChart portfolioId={portfolio.id} />}
-          </div>
+          </motion.div>
         </div>
       )}
 

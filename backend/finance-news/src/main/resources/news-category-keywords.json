@@ -35,7 +35,9 @@
       "yatırımcı ilişki", "şirket birleşme", "devralma",
       "bağımsız denetim", "kap açıklama",
       "sermaye azaltım", "hisse devir", "pay devri",
-      "birleşme devralma", "şirket satın alma"
+      "birleşme devralma", "şirket satın alma",
+      "ünvan değişikliği", "unvan değişikliği", "spk başvuru", "spk'ya başvur",
+      "ana sözleşme değişikliği", "sermaye artırımı başvuru"
     ],
     "TAHVIL_BONO": [
       "tahvil", "bono", "getiri eğrisi",
@@ -164,13 +166,14 @@
     "bondPriority": ["tahvil", "bono", "eurobond", "sukuk", "dibs"],
     "bondContext": ["risk primi", "kredi notu", "getiri eğrisi", "tahvil faizi", "hazine", "devlet iç borçlanma", "kupon ödemesi", "vadeye kadar getiri", "borç stoku", "hazine garantili"],
     "macroPolicy": ["tcmb", "merkez bankası", "politika faizi", "faiz kararı", "faiz artırımı", "faiz indirimi", "repo faiz", "ppk", "enflasyon", "tüfe", "üfe", "para politikası"],
-    "strongCompanyNews": ["kap", "kap bildirimi", "özel durum açıklama", "bilanço", "gelir tablosu", "faaliyet raporu", "temettü", "bedelli sermaye", "bedelsiz", "rüçhan", "halka arz", "hisse geri alım", "şirket birleşme", "devralma", "ortaklık yapısı"],
+    "strongCompanyNews": ["kap", "kap bildirimi", "özel durum açıklama", "bilanço", "gelir tablosu", "faaliyet raporu", "temettü", "bedelli sermaye", "bedelsiz", "rüçhan", "halka arz", "hisse geri alım", "şirket birleşme", "devralma", "ortaklık yapısı", "sermaye artırımı", "ünvan değişikliği", "spk başvuru"],
     "definiteCorporate": [
       "kap bildirimi", "özel durum açıklama",
       "temettü", "bedelli sermaye", "bedelsiz", "rüçhan",
       "hisse geri alım", "kar payı",
       "olağan genel kurul", "olağanüstü genel kurul", "genel kurul toplantı", "genel kurul kararı",
-      "kap açıklama", "yönetim kurulu kararı"
+      "kap açıklama", "yönetim kurulu kararı",
+      "ünvan değişikliği", "unvan değişikliği", "spk başvuru", "spk'ya başvur"
     ],
     "foreignBondContext": [
       "abd tahvil", "amerikan tahvil",

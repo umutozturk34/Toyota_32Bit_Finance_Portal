@@ -132,4 +132,15 @@ class NewsCategoryResolverTest {
 
         assertThat(result).isEqualTo(NewsCategory.EMTIA);
     }
+
+    @Test
+    void corporateFilingClassifiedAsBorsaSirketleri() {
+        // Company-specific filings (title/trade-name change, capital increase, SPK application) are company news,
+        // not GENEL_FINANS — the corporate-filing signals now open the company-news gate and score it.
+        NewsCategory result = NewsCategoryResolver.resolve(null,
+                "Şirket SPK başvurusu yaptı",
+                "Ünvan değişikliği, sermaye artırımı ve SPK başvuru süreci tamamlandı");
+
+        assertThat(result).isEqualTo(NewsCategory.BORSA_SIRKETLERI);
+    }
 }

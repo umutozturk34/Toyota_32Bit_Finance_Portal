@@ -177,37 +177,54 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
 
     const maxFrames = step.slowLoad ? POLL_MAX_FRAMES_SLOW : POLL_MAX_FRAMES;
 
+    // After committing, keep the spotlight aligned to the target as late content (e.g. lazy-loaded news images)
+    // reflows it — but DEBOUNCED and THRESHOLDED so minor shifts don't re-commit every frame, which used to make
+    // the ring + tooltip jitter continuously ("loop") on image-heavy pages.
     const attachResizeObserver = (element) => {
       if (resizeObserverRef.current) {
         resizeObserverRef.current.disconnect();
         resizeObserverRef.current = null;
       }
       if (typeof ResizeObserver === 'undefined') return;
+      let committed = element.getBoundingClientRect();
+      let debounce = 0;
       const ro = new ResizeObserver(() => {
         if (cancelled) return;
-        const r2 = element.getBoundingClientRect();
-        if (r2.width > 0 && r2.height > 0) {
-          setRectInfo({ rect: cushionRect(r2), stepId: step.id, status: 'found' });
-        }
+        if (debounce) cancelAnimationFrame(debounce);
+        debounce = requestAnimationFrame(() => {
+          if (cancelled) return;
+          const r2 = element.getBoundingClientRect();
+          if (r2.width <= 0 || r2.height <= 0) return;
+          const moved = Math.abs(r2.top - committed.top) > 6 || Math.abs(r2.left - committed.left) > 6
+            || Math.abs(r2.width - committed.width) > 6 || Math.abs(r2.height - committed.height) > 6;
+          if (moved) {
+            committed = r2;
+            setRectInfo({ rect: cushionRect(r2), stepId: step.id, status: 'found' });
+          }
+        });
       });
       ro.observe(element);
       resizeObserverRef.current = ro;
     };
 
-    // Commit the spotlight rect only once it stops moving. Two motions settle here: scrolling a below-the-fold
-    // target into view (re-scrolled each frame, since slow content above it — e.g. the chart — keeps pushing it
-    // as it loads), and a drawer sliding in from the right (a fixed target is waited out, never scrolled). This
-    // is why the ring no longer flashes at an intermediate position (mid-slide off to the right) and snaps left:
-    // nothing is committed until the rect is stable for two frames. A static target settles immediately.
+    // Bring the target into view, then commit the spotlight rect once it stops moving. The scroll is issued ONCE,
+    // up-front, as a smooth glide (not gated on the rect first being stable — that deadlocked on dynamic pages
+    // like the news grid where loading images meant the rect never settled, so the page never scrolled). We then
+    // wait out the smooth scroll, settle for two stable frames, and commit. A fixed-ancestor target (a sliding
+    // drawer) is waited out, never scrolled.
+    const SCROLL_WAIT_FRAMES = 32; // ~530ms — long enough for a smooth scrollIntoView to finish
     const settleAndCommit = (el) => {
       const fixedAncestor = isInFixedAncestor(el);
+      const canScroll = !fixedAncestor && typeof el.scrollIntoView === 'function';
       settlingRef.current = true;
       let settleFrames = 0;
       let stable = 0;
       let last = null;
+      let scrollCount = 0;
+      let scrolledAt = -1;
       const tick = () => {
         if (cancelled) { settlingRef.current = false; return; }
-        let r = el.getBoundingClientRect();
+        const r = el.getBoundingClientRect();
         if (r.width < 4 || r.height < 8) {
           settleFrames += 1;
           if (settleFrames >= SETTLE_MAX_FRAMES) {
@@ -218,25 +235,31 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
           pollHandleRef.current = requestAnimationFrame(tick);
           return;
         }
+
+        const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+        // Out of view = top above the fold, or bottom below it while not already pinned to the top (so a target
+        // taller than the viewport, scrolled to start, isn't seen as perpetually "out of view").
+        const outOfView = vh && (r.top < -1 || (r.bottom > vh && r.top > 1));
+        const scrolling = scrolledAt >= 0 && (settleFrames - scrolledAt) < SCROLL_WAIT_FRAMES;
+
+        if (scrolling) { // let the smooth scroll play out before measuring stability
+          settleFrames += 1;
+          pollHandleRef.current = requestAnimationFrame(tick);
+          return;
+        }
+        if (canScroll && outOfView && scrollCount < 2) { // one smooth glide (a 2nd only if still far off)
+          el.scrollIntoView({ block: r.height > vh - 80 ? 'start' : 'center', behavior: 'smooth' });
+          scrollCount += 1;
+          scrolledAt = settleFrames;
+          last = null;
+          settleFrames += 1;
+          pollHandleRef.current = requestAnimationFrame(tick);
+          return;
+        }
+
         const steady = last
           && Math.abs(r.top - last.top) < 1 && Math.abs(r.left - last.left) < 1
           && Math.abs(r.width - last.width) < 1 && Math.abs(r.height - last.height) < 1;
-        // Smooth-scroll a below/above-fold target into view, but only once the rect has SETTLED (not mid-scroll)
-        // so the scroll plays out as one smooth glide instead of the old instant jump re-issued every frame. Skip
-        // when scrolling can't help (a target taller than the viewport, already pinned to the top). If late
-        // content (e.g. the chart) later pushes it out, the next settled frame nudges it again, still smoothly.
-        if (steady && !fixedAncestor && typeof el.scrollIntoView === 'function') {
-          const vh = window.innerHeight || document.documentElement.clientHeight || 0;
-          const needsScroll = vh && (r.top < -1 || (r.bottom > vh && r.top > 1));
-          if (needsScroll && settleFrames < SETTLE_MAX_FRAMES) {
-            el.scrollIntoView({ block: r.height > vh - 80 ? 'start' : 'center', behavior: 'smooth' });
-            stable = 0;
-            last = r;
-            settleFrames += 1;
-            pollHandleRef.current = requestAnimationFrame(tick);
-            return;
-          }
-        }
         stable = steady ? stable + 1 : 0;
         last = r;
         if (stable >= 2 || settleFrames >= SETTLE_MAX_FRAMES) {

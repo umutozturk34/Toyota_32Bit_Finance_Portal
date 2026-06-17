@@ -5,7 +5,7 @@ import BankRatesPanel from '../bankRates/BankRatesPanel';
 import MacroIndicatorsPanel from '../macro/MacroIndicatorsPanel';
 import ReturnsPage from '../analytics/pages/ReturnsPage';
 import { RefreshCw } from '../../shared/components/feedback/AnimatedIcons';
-import LoadingState from '../../shared/components/feedback/LoadingState';
+import { Skeleton, SkeletonChart } from '../../shared/components/feedback/Skeleton';
 import ErrorState from '../../shared/components/feedback/ErrorState';
 import Spinner from '../../shared/components/feedback/Spinner';
 import SearchSuggestions from '../../shared/components/form/SearchSuggestions';
@@ -50,7 +50,22 @@ export default function MarketDataPage() {
     setActiveTab(id);
   };
 
-  if (layoutLoading || defsLoading) return <LoadingState message={t('marketOverview.loading')} />;
+  if (layoutLoading || defsLoading) {
+    return (
+      <div className="space-y-6 py-2">
+        <div className="flex items-center gap-3">
+          <Skeleton w="2.5rem" h="2.5rem" className="rounded-xl" />
+          <Skeleton w="11rem" h="1.8rem" className="rounded-lg" />
+        </div>
+        <Skeleton h="2.6rem" className="w-full max-w-md rounded-xl" />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <SkeletonChart h="16rem" />
+          <SkeletonChart h="16rem" />
+          <SkeletonChart h="16rem" />
+        </div>
+      </div>
+    );
+  }
   if (defsError || layoutError || !layout || widgetDefsByKind.size === 0) {
     return <ErrorState message={t('marketOverview.error')} onRetry={() => { refetch(); refetchDefs(); refetchLayout(); }} />;
   }

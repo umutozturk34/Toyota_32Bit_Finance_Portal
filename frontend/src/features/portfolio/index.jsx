@@ -6,7 +6,7 @@ import { LayoutDashboard, TrendingUp as TrendingUpIcon, Layers } from 'lucide-re
 import useNavigationBack from '../../shared/hooks/useNavigationBack';
 import { useUserPreferences } from '../../shared/hooks/useUserPreferences';
 import useAppStore from '../../shared/stores/useAppStore';
-import LoadingState from '../../shared/components/feedback/LoadingState';
+import { Skeleton, SkeletonChart, SkeletonStat, SkeletonList } from '../../shared/components/feedback/Skeleton';
 import ErrorState from '../../shared/components/feedback/ErrorState';
 import SummaryCards from './components/SummaryCards';
 import PositionsTable from './components/PositionsTable';
@@ -142,7 +142,21 @@ export default function Portfolio() {
   const reopenSpot = useReopenPosition(portfolio?.id);
   const reopenViop = useReopenDerivativePosition(portfolio?.id);
 
-  if (loading) return <LoadingState message={t('portfolio.loading')} />;
+  if (loading) {
+    return (
+      <div className="space-y-6 py-2">
+        <div className="flex items-center justify-between">
+          <Skeleton w="12rem" h="2rem" className="rounded-xl" />
+          <Skeleton w="8rem" h="2.4rem" className="rounded-xl" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <SkeletonStat /><SkeletonStat /><SkeletonStat /><SkeletonStat />
+        </div>
+        <SkeletonChart h="18rem" />
+        <SkeletonList rows={5} cols={4} />
+      </div>
+    );
+  }
   if (error) return <ErrorState message={error} onRetry={invalidatePortfolio} />;
 
   if (needsOnboarding) {

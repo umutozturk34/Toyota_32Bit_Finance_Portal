@@ -7,10 +7,10 @@ export const RECT_CUSHION = 6;
 export const DEFAULT_PADDING = 14;
 export const POLL_MAX_FRAMES = 20;
 export const POLL_MAX_FRAMES_SLOW = 36;
-// Frames to wait for a found target's rect to stop moving (smooth scroll-into-view settling, or a drawer's
-// slide-in) before the spotlight commits to it. ~72 frames ≈ 1.2s covers a smooth scroll plus the longest drawer
-// animation; a static, in-view target settles in two frames and exits immediately.
-export const SETTLE_MAX_FRAMES = 72;
+// Frames to wait for a found target's rect to stop moving before the spotlight commits to it. ~104 frames ≈ 1.7s
+// covers up to two smooth scroll-into-view glides (the news grid can shift mid-scroll as images load) plus the
+// longest drawer slide-in; a static, in-view target settles in two frames and exits immediately.
+export const SETTLE_MAX_FRAMES = 104;
 export const ROUTE_SETTLE_MS = 420;
 export const ACTION_SETTLE_MS = 240;
 export const CLOSE_SETTLE_MS = 180;

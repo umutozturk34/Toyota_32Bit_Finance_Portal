@@ -11,7 +11,7 @@ import NewsFilters from './components/NewsFilters';
 import NewsAssetFilter from './components/NewsAssetFilter';
 import NewsCard from './components/NewsCard';
 import FeaturedCard from './components/FeaturedCard';
-import LoadingState from '../../shared/components/feedback/LoadingState';
+import { Skeleton, SkeletonCard, SkeletonCardGrid } from '../../shared/components/feedback/Skeleton';
 import ErrorState from '../../shared/components/feedback/ErrorState';
 import SearchInput from '../../shared/components/form/SearchInput';
 import Pagination from '../../shared/components/form/Pagination';
@@ -85,7 +85,22 @@ export default function News() {
     const featuredArticles = isFirstPage ? articles.slice(0, 2) : [];
     const restArticles = isFirstPage ? articles.slice(2) : articles;
 
-    if (loading && articles.length === 0) return <LoadingState message={t('news.loading')} />;
+    if (loading && articles.length === 0) {
+        return (
+            <div className="space-y-6 py-6">
+                <div className="space-y-2">
+                    <Skeleton w="14rem" h="2rem" className="rounded-xl" />
+                    <Skeleton w="20rem" h="0.9rem" />
+                </div>
+                <Skeleton h="2.6rem" className="rounded-lg" />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <SkeletonCard />
+                    <SkeletonCard />
+                </div>
+                <SkeletonCardGrid count={8} />
+            </div>
+        );
+    }
     if (error) return <ErrorState message={t('news.error')} onRetry={refetch} />;
 
     return (

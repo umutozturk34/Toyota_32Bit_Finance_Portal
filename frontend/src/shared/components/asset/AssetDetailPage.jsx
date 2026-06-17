@@ -9,7 +9,7 @@ import useChartRange from '../../hooks/useChartRange';
 import useNavigationBack from '../../hooks/useNavigationBack';
 import Button from '../buttons/Button';
 import IconButton from '../buttons/IconButton';
-import LoadingState from '../feedback/LoadingState';
+import { Skeleton, SkeletonChart, SkeletonStat } from '../feedback/Skeleton';
 import ErrorState from '../feedback/ErrorState';
 import MarketAddPositionModal from '../../../features/portfolio/components/MarketAddPositionModal';
 import LightweightChart from '../../../features/chart/components/LightweightChart';
@@ -86,7 +86,6 @@ export default function AssetDetailPage({
   fetchAsset,
   fetchHistory,
   queryKeyPrefix,
-  loadingMessage,
   errorMessage,
   notFoundMessage,
   backRoute,
@@ -104,7 +103,6 @@ export default function AssetDetailPage({
   const { convertAt, resolveTarget } = useRateHistory();
   const goBack = useNavigationBack(backRoute);
   const navigate = useNavigate();
-  const resolvedLoading = loadingMessage ?? t('marketDetail.loading');
   const resolvedError = errorMessage ?? t('marketDetail.error');
   const resolvedNotFound = notFoundMessage ?? t('marketDetail.notFound');
   const [buyOpen, setBuyOpen] = useState(false);
@@ -161,7 +159,27 @@ export default function AssetDetailPage({
     return convertCandleSet(transformedData, convertAt, baseCurrency, naturalCurrency);
   }, [transformedData, convertTarget, baseCurrency, naturalCurrency, convertAt]);
 
-  if (isLoading) return <LoadingState message={resolvedLoading} />;
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton w="3.5rem" h="3.5rem" circle />
+          <div className="space-y-2">
+            <Skeleton w="9rem" h="1.6rem" className="rounded-lg" />
+            <Skeleton w="6rem" h="0.85rem" />
+          </div>
+          <Skeleton w="8rem" h="2.5rem" className="ml-auto hidden rounded-xl sm:block" />
+        </div>
+        <SkeletonChart h="22rem" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <SkeletonStat />
+          <SkeletonStat />
+          <SkeletonStat />
+          <SkeletonStat />
+        </div>
+      </div>
+    );
+  }
   if (error || !asset) {
     return (
       <ErrorState

@@ -196,6 +196,25 @@ class AssetMentionResolverImplTest {
     }
 
     @Test
+    void shouldNotPinCatalog_whenCryptosLoadedButStocksNotYet_soArticlesLinkOnceStocksLand() {
+        // The REAL cold-start order: cryptos/funds (and news) initialise BEFORE stocks. A non-empty crypto catalog
+        // must NOT pin a STOCK-LESS catalog for the TTL — otherwise articles resolved in that window (and even the
+        // post-init backfill) never link to any stock. Once stocks land, the next resolve must pick the firm up.
+        when(stockRepository.findAllSymbolsAndNames()).thenReturn(List.of());
+        when(cryptoRepository.findAllIdsNamesAndSymbols()).thenReturn(List.<Object[]>of(
+                new Object[]{"bitcoin", "Bitcoin", "BTC"}));
+
+        List<ResolvedAsset> beforeStocks = resolver.resolve("Akbank güçlü bilanço açıkladı", null);
+        assertThat(beforeStocks).extracting(ResolvedAsset::code).doesNotContain("AKBNK.IS");
+
+        when(stockRepository.findAllSymbolsAndNames()).thenReturn(List.<Object[]>of(
+                new Object[]{"AKBNK.IS", "Akbank T.A.Ş."}));
+
+        List<ResolvedAsset> afterStocks = resolver.resolve("Akbank güçlü bilanço açıkladı", null);
+        assertThat(afterStocks).extracting(ResolvedAsset::code).contains("AKBNK.IS");
+    }
+
+    @Test
     void shouldNotMatchGold_insideAnotherWord() {
         // "altında" (= under) must NOT trigger the "altın" gold keyword — bounded matching protects against it.
         List<ResolvedAsset> result = resolver.resolve("Fiyat 100 liranın altında kaldı", null);

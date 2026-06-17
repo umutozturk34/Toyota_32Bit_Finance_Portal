@@ -190,13 +190,19 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
         }
         Map<String, CodeType> byTicker = new LinkedHashMap<>();
         List<NameRef> byName = new ArrayList<>();
-        boolean marketLoaded = false; // stocks/cryptos present — the signal for caching (funds alone don't count)
+        // Pin the catalog ONLY once STOCKS are in the DB. During cold start, news is initialised (and its articles
+        // resolved) BEFORE stocks load, but cryptos/funds are already in — so keying the cache on "any ticker"
+        // pinned a STOCK-LESS catalog for the full TTL, and even the post-init re-resolution backfill then matched
+        // against that stale catalog and never linked any article to a stock. Gating on stocks keeps the catalog
+        // un-pinned until they arrive, so the backfill rebuilds it with stocks and links correctly.
+        boolean stocksLoaded = false;
         try {
             for (Object[] row : stockRepository.findAllSymbolsAndNames()) {
                 String symbol = str(row[0]);
                 if (symbol == null || symbol.isBlank()) {
                     continue;
                 }
+                stocksLoaded = true;
                 byTicker.put(symbol.replace(".IS", "").toUpperCase(Locale.ROOT), new CodeType(symbol, "STOCK"));
                 String core = stockNameCore(str(row[1]));
                 if (core != null) {
@@ -223,9 +229,6 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
                     byName.add(new NameRef(name, id, "CRYPTO"));
                 }
             }
-            // Captured BEFORE funds so the cold-start cache guard still keys on the market catalog: funds alone
-            // must not pin an otherwise-empty catalog (stocks would then never link until a restart).
-            marketLoaded = !byTicker.isEmpty();
             // Funds by their parenthesised short code ("(AFA)") and, when distinctive, their full long name. The
             // shared "Ak Portföy …" prefix makes a 2-word core useless, so a fund's name is matched ONLY as the
             // WHOLE phrase (qualifier tail dropped) — safe because an article that writes a fund's entire title
@@ -247,12 +250,11 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
             return cached != null ? cached : new Catalog(Map.of(), List.of());
         }
         Catalog built = new Catalog(byTicker, byName);
-        // Only memoise once the market-data catalog has actually loaded. An empty ticker index means stocks/
-        // cryptos aren't in the DB yet (a cold `make up` where MarketDataInitializer is still fetching) — caching
-        // it would pin a keyword-only matcher for the full TTL, so every article enriched during warm-up would
-        // miss its stocks until the next restart. Leaving it uncached makes the next resolve rebuild and pick the
-        // catalog up the moment it lands. Keyword refs still resolve in the meantime.
-        if (marketLoaded) {
+        // Only memoise once STOCKS have loaded (see stocksLoaded above). Until then the catalog is rebuilt on every
+        // resolve so the moment stocks land — at the latest when the post-init backfill re-resolves — articles pick
+        // up their stock links instead of being frozen against a stock-less catalog for the TTL. Crypto/fund/keyword
+        // refs still resolve in the meantime.
+        if (stocksLoaded) {
             catalog = built;
             loadedAt = now;
         }

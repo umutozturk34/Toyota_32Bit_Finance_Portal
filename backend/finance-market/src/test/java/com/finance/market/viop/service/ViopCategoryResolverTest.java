@@ -1,6 +1,5 @@
 package com.finance.market.viop.service;
 
-import com.finance.market.viop.config.ViopUnderlyingRules;
 import com.finance.market.viop.model.ViopCategory;
 import com.finance.market.viop.model.ViopContractKind;
 import org.junit.jupiter.api.Test;
@@ -11,9 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class ViopCategoryResolverTest {
 
-    // null lists → the production defaults from the record's compact constructor.
-    private final ViopCategoryResolver resolver =
-            new ViopCategoryResolver(new ViopUnderlyingRules(null, null, null));
+    private final ViopCategoryResolver resolver = new ViopCategoryResolver();
 
     @ParameterizedTest
     @CsvSource({

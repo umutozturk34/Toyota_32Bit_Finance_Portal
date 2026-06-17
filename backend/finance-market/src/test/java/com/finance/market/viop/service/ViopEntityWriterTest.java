@@ -42,7 +42,8 @@ class ViopEntityWriterTest {
 
     @BeforeEach
     void setUp() {
-        ViopCategoryResolver categoryResolver = new ViopCategoryResolver();
+        ViopCategoryResolver categoryResolver =
+                new ViopCategoryResolver(new com.finance.market.viop.config.ViopUnderlyingRules(null, null, null));
         ViopSymbolParser symbolParser = new ViopSymbolParser();
         writer = new ViopEntityWriter(repository, assetRegistry, trackedAssetCommand,
                 categoryResolver, symbolParser, cacheService);

@@ -1,5 +1,6 @@
 package com.finance.market.viop.service;
 
+import com.finance.market.viop.config.ViopUnderlyingRules;
 import com.finance.market.viop.model.ViopCategory;
 import com.finance.market.viop.model.ViopContractKind;
 import org.springframework.stereotype.Component;
@@ -9,17 +10,21 @@ import java.util.Set;
 /**
  * Classifies a VIOP contract into a {@link ViopCategory} from its kind, underlying and currency
  * (index/currency/metal/pay), splitting currency and metal futures into TRY- vs USD-quoted
- * variants so they group and price correctly.
+ * variants so they group and price correctly. The index/currency/metal code lists come from
+ * {@link ViopUnderlyingRules} (configurable) rather than being hard-coded here.
  */
 @Component
 public class ViopCategoryResolver {
 
-    private static final Set<String> INDEX_UNDERLYINGS = Set.of("XU030", "XLBNK", "X10XB", "XSD25", "XBNK", "XU100");
-    private static final Set<String> CURRENCY_UNDERLYINGS = Set.of(
-            "USDTRY", "EURTRY", "RUBTRY", "CNHTRY", "GBPTRY", "JPYTRY",
-            "EURUSD", "GBPUSD", "USDJPY"
-    );
-    private static final Set<String> METAL_UNDERLYINGS = Set.of("XAU", "XAG", "XPT", "XPD", "XCU");
+    private final Set<String> indexUnderlyings;
+    private final Set<String> currencyUnderlyings;
+    private final Set<String> metalUnderlyings;
+
+    public ViopCategoryResolver(ViopUnderlyingRules rules) {
+        this.indexUnderlyings = Set.copyOf(rules.indexCodes());
+        this.currencyUnderlyings = Set.copyOf(rules.currencyCodes());
+        this.metalUnderlyings = Set.copyOf(rules.metalCodes());
+    }
 
     public ViopCategory resolve(ViopContractKind kind, String underlying, String currency) {
         String normalized = normalize(underlying);
@@ -55,15 +60,15 @@ public class ViopCategoryResolver {
     }
 
     private boolean isIndex(String u) {
-        return INDEX_UNDERLYINGS.stream().anyMatch(u::startsWith);
+        return indexUnderlyings.stream().anyMatch(u::startsWith);
     }
 
     private boolean isCurrency(String u) {
-        return CURRENCY_UNDERLYINGS.stream().anyMatch(u::startsWith);
+        return currencyUnderlyings.stream().anyMatch(u::startsWith);
     }
 
     private boolean isMetal(String u) {
-        return METAL_UNDERLYINGS.stream().anyMatch(u::startsWith);
+        return metalUnderlyings.stream().anyMatch(u::startsWith);
     }
 
     private boolean isUsdQuoted(String normalizedUnderlying, String currency) {

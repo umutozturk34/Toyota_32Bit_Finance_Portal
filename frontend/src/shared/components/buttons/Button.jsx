@@ -28,9 +28,12 @@ const SIZES = {
 
 const SEGMENT_ACTIVE = 'text-accent';
 
+// A snappy spring on press so buttons feel physical (a quick settle, not a linear shrink) — the light, premium
+// micro-interaction the rest of the UI's motion language already uses, applied to every button by default.
+const PRESS_SPRING = { type: 'spring', stiffness: 420, damping: 24, mass: 0.6 };
 const MOTION_PRESETS = {
-  tap: { whileTap: { scale: 0.94 } },
-  tapHover: { whileTap: { scale: 0.94 }, whileHover: { y: -1 } },
+  tap: { whileTap: { scale: 0.96 }, transition: PRESS_SPRING },
+  tapHover: { whileTap: { scale: 0.96 }, whileHover: { y: -1.5 }, transition: PRESS_SPRING },
   none: {},
 };
 

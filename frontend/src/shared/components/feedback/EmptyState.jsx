@@ -1,5 +1,5 @@
 import { Inbox, SearchX, Lock, PackageOpen } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 
 const cx = (...parts) => parts.filter(Boolean).join(' ');
 
@@ -30,6 +30,9 @@ export default function EmptyState({ icon, title, message, hint, size = 'lg', va
     const v = VARIANT_CONFIG[variant] ?? VARIANT_CONFIG.default;
     const tone = TONE[v.tone] ?? TONE.accent;
     const Icon = v.Icon;
+    const reduce = useReducedMotion();
+    const haloAnim = reduce ? undefined : { opacity: [0.4, 0.75, 0.4], scale: [0.9, 1.05, 0.9] };
+    const iconAnim = reduce ? undefined : { y: [0, -3, 0] };
     return (
         <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -46,12 +49,12 @@ export default function EmptyState({ icon, title, message, hint, size = 'lg', va
                 <motion.span
                     aria-hidden="true"
                     className={cx('absolute inset-0 rounded-full blur-xl', tone.glow)}
-                    animate={{ opacity: [0.4, 0.75, 0.4], scale: [0.9, 1.05, 0.9] }}
+                    animate={haloAnim}
                     transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
                 />
                 <motion.div
                     className={cx('relative flex items-center justify-center', config.iconBox, tone.box)}
-                    animate={{ y: [0, -3, 0] }}
+                    animate={iconAnim}
                     transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
                 >
                     {icon || <Icon className={config.iconSize} />}

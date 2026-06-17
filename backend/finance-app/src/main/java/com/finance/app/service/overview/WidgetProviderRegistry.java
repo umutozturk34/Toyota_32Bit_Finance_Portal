@@ -29,6 +29,7 @@ public class WidgetProviderRegistry {
         }
     }
 
+    /** Provider registered for the kind, or empty when none is wired (caller renders an empty widget). */
     public Optional<OverviewWidgetProvider> providerFor(WidgetKind kind) {
         return Optional.ofNullable(byKind.get(kind));
     }

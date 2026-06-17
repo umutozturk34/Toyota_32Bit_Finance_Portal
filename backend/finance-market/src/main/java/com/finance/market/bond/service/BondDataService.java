@@ -25,6 +25,12 @@ public class BondDataService {
     private final BondRateHistoryService bondRateHistoryService;
     private final BondProperties bondProperties;
 
+    /**
+     * Runs the full bond refresh. Throws if no snapshots came back at all; otherwise a failing chunk is
+     * logged and skipped so the rest of the universe still updates.
+     *
+     * @throws BusinessException if the snapshot fetch yields no data
+     */
     public void updateBonds() {
         log.info("Starting unified bond update");
 

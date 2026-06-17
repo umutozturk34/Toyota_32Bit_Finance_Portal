@@ -37,6 +37,11 @@ public class TrackedAssetAdminService {
     private final TrackedAssetRefreshService trackedAssetRefreshService;
     private final Optional<MarketUpdatePort> marketUpdatePort;
 
+    /**
+     * Creates or updates a tracked asset. A brand-new asset is first validated to exist at its source; the
+     * data refresh and default-page refresh run only {@code afterCommit} (see {@link #shouldRefreshAfterUpsert}
+     * for when a refetch is warranted).
+     */
     @Transactional
     public TrackedAssetResponse upsert(UpsertTrackedAssetRequest request) {
         TrackedAssetUpsertCommand command = trackedAssetMapper.toUpsertCommand(request);
@@ -83,6 +88,11 @@ public class TrackedAssetAdminService {
         return false;
     }
 
+    /**
+     * Hard-removes the tracked asset, then {@code afterCommit} evicts its cache and refreshes the type's
+     * default page. An auto-discovered asset may reappear on the next discovery sweep (use {@link #setEnabled}
+     * to hide one permanently).
+     */
     @Transactional
     public void delete(TrackedAssetType type, String code) {
         trackedAssetCommandService.delete(type, code);
@@ -95,6 +105,7 @@ public class TrackedAssetAdminService {
         });
     }
 
+    /** Bulk-reorders the type's tracked assets, refreshing the default page {@code afterCommit} so the new order shows. */
     @Transactional
     public void updateSortOrders(BulkTrackedAssetOrderUpdateRequest request) {
         trackedAssetCommandService.updateSortOrders(request.getAssetType(), request.getItems());

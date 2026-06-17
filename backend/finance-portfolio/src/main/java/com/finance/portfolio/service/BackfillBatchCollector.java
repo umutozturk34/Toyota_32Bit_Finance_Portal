@@ -88,6 +88,11 @@ public class BackfillBatchCollector {
         }
     }
 
+    /**
+     * Builds one summed per-asset row per held asset for {@code ts}, carrying the prior day's price
+     * forward when the day has no observation (weekend/holiday/scraper gap) so the asset is not dropped
+     * from the aggregate; updates {@code priorAssetByKey} so the next day chains off this row.
+     */
     public void collectAssetSnapshots(Long portfolioId, List<PortfolioPosition> active,
                                        LocalDateTime ts, Map<AssetKey, BigDecimal> dayPrices,
                                        List<PortfolioAssetDailySnapshot> batch,
@@ -146,6 +151,7 @@ public class BackfillBatchCollector {
         priorAssetByKey.put(closedOnDay.toAssetKey(), zero);
     }
 
+    /** Historical price series per distinct asset key over {@code [from, to]}, fetched once per key (repeat keys reuse the first). */
     public Map<AssetKey, Map<LocalDate, BigDecimal>> loadHistoricalSeries(
             List<PortfolioPosition> positions, LocalDate from, LocalDate to) {
         Map<AssetKey, Map<LocalDate, BigDecimal>> result = new HashMap<>();
@@ -158,6 +164,7 @@ public class BackfillBatchCollector {
         return result;
     }
 
+    /** Latest snapshot strictly before {@code from} per asset, keyed for chaining the first backfilled day's day-over-day delta. */
     public Map<AssetKey, PortfolioAssetDailySnapshot> preloadPriorAssetSnapshots(
             Long portfolioId, List<PortfolioPosition> positions, LocalDate from) {
         LocalDateTime cutoff = from.atStartOfDay();

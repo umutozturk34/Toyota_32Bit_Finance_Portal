@@ -15,6 +15,7 @@ import java.time.OffsetDateTime;
 @Component
 public class ViopSnapshotMapper {
 
+    /** Builds a snapshot from the rich OneEndeks JSON, carrying every quote field the upstream provides. */
     public ViopQuoteSnapshot fromOneEndeks(OneEndeksDto dto) {
         return new ViopQuoteSnapshot(
                 dto.symbol(),

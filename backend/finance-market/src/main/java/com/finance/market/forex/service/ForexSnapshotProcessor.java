@@ -63,6 +63,7 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
         return entityWriter.saveSnapshot(forex);
     }
 
+    /** Date of the newest stored candle for the currency, used to size the EVDS fetch window; empty if none. */
     public Optional<LocalDate> findLastCandleDate(String currencyCode) {
         return forexCandleRepository.findFirstByCurrencyCodeOrderByCandleDateDesc(currencyCode)
                 .map(c -> c.getCandleDate().toLocalDate());

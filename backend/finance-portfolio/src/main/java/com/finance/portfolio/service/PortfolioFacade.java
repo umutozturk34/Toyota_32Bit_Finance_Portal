@@ -66,6 +66,7 @@ public class PortfolioFacade {
         }
     }
 
+    /** Lot input bounds for the UI; the VIOP entry floor is later than the spot one, clamped to where VIOP candle history starts. */
     public LotLimitsResponse getLotLimits() {
         LotLimits limits = portfolioProperties.getLotLimits();
         // VIOP candle history only spans the last max-history-years, so its entry floor is later than the
@@ -90,6 +91,7 @@ public class PortfolioFacade {
         return crudService.createPortfolio(userSub, request);
     }
 
+    /** Adds a spot lot, but first rejects the call with 503 while the cold-start market-data load is unfinished. */
     public PositionResponse addPosition(String userSub, Long portfolioId, PositionRequest request) {
         requireMarketDataReady();
         return crudService.addPosition(portfolioId, userSub, request);
@@ -182,6 +184,7 @@ public class PortfolioFacade {
         return performanceService.getPerformance(portfolioId, range, assetType);
     }
 
+    /** Asserts the caller owns the portfolio (404 otherwise); for sibling services holding their own data. */
     public void requireOwnership(String userSub, Long portfolioId) {
         validateOwner(userSub, portfolioId);
     }

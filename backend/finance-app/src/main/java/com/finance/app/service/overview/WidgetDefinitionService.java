@@ -22,6 +22,7 @@ public class WidgetDefinitionService {
 
     private final OverviewProperties properties;
 
+    /** Builds the full widget-definition catalog (every {@link WidgetKind}'s sizing plus the layout limits). */
     public WidgetDefinitionResponse build() {
         List<WidgetDefinition> defs = new ArrayList<>(WidgetKind.values().length);
         for (WidgetKind kind : WidgetKind.values()) {

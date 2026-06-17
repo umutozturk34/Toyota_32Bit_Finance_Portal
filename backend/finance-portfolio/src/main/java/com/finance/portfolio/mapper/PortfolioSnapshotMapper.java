@@ -11,6 +11,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public abstract class PortfolioSnapshotMapper {
 
+    /** Maps one snapshot to a chart point: {@code createdAt} becomes the timestamp; events stay empty until the service fills them. */
     @Mapping(target = "timestamp", source = "createdAt")
     @Mapping(target = "events", ignore = true)
     @Mapping(target = "withEvents", ignore = true)

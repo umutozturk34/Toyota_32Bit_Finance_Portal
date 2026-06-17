@@ -40,6 +40,10 @@ public class MacroIndicatorFetchService {
     private final EvdsMacroMapper mapper;
     private final MacroProperties properties;
 
+    /**
+     * Appends new points for every indicator, fetching from the oldest required start across all of them and
+     * de-duplicating against already-stored dates. A single failed window is skipped, not fatal.
+     */
     @Transactional
     public FetchOutcome refreshAll() {
         List<MacroIndicator> indicators = indicatorRepository.findAll();
@@ -70,6 +74,11 @@ public class MacroIndicatorFetchService {
         return new FetchOutcome(indicators.size(), totalPoints, List.copyOf(changedCodes));
     }
 
+    /**
+     * Appends new points for a single indicator from its own last-stored date.
+     *
+     * @return the number of points inserted
+     */
     @Transactional
     public int refreshOne(MacroIndicator indicator) {
         LocalDate today = LocalDate.now();

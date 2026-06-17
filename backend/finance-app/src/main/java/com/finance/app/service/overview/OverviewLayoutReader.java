@@ -43,10 +43,16 @@ public class OverviewLayoutReader {
     private final UserLayoutService userLayoutService;
     private final OverviewDefaults defaults;
 
+    /** Visible sections of the user's default (first) page. */
     public List<WidgetSection> readVisibleSections(String userSub) {
         return readVisibleSections(userSub, null);
     }
 
+    /**
+     * Ordered visible sections for the requested {@code pageId} (null = first page). Returns the seeded
+     * defaults only when the user has no layout at all; an empty list means the page exists but has no
+     * visible sections (so a user who hid everything stays empty rather than reverting to defaults).
+     */
     public List<WidgetSection> readVisibleSections(String userSub, String pageId) {
         UserLayoutResponse response = userLayoutService.getOrEmpty(userSub);
         JsonNode overview = response != null ? response.overview() : null;

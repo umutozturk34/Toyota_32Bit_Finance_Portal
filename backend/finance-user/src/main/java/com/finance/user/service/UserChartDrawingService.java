@@ -30,6 +30,7 @@ public class UserChartDrawingService {
     private final TrackedAssetRepository trackedAssetRepository;
     private final UserChartDrawingMapper mapper;
 
+    /** The user's saved drawings for the asset, or an empty array (stamped now) when none exist. */
     @Transactional(readOnly = true)
     public UserChartDrawingResponse getOrDefault(String userSub, TrackedAssetType type, String code) {
         TrackedAsset tracked = resolveTracked(type, code);
@@ -38,6 +39,7 @@ public class UserChartDrawingService {
                 .orElseGet(() -> new UserChartDrawingResponse(JsonNodeFactory.instance.arrayNode(), Instant.now()));
     }
 
+    /** Saves the user's drawings for the asset, coercing a null or JSON-null payload to an empty array. */
     @Transactional
     public UserChartDrawingResponse upsert(String userSub, TrackedAssetType type, String code, JsonNode drawings) {
         TrackedAsset tracked = resolveTracked(type, code);

@@ -82,6 +82,11 @@ public class FundDetailEnrichmentService {
         return TefasHelper.findLastBusinessDay(requested, appZone, eodCutoverHour);
     }
 
+    /**
+     * Applies trailing returns, risk and sub-category to every persisted fund from one bulk TEFAS call per type.
+     *
+     * @return number of fund rows updated; 0 when no funds are stored yet
+     */
     @Transactional
     public int enrichReturnsAndRisk() {
         Set<String> existingCodes = loadExistingFundCodes();
@@ -170,6 +175,7 @@ public class FundDetailEnrichmentService {
         fundCacheService.putSnapshot(saved.getFundCode(), saved);
     }
 
+    /** Single-fund returns/risk refresh (still one bulk TEFAS call, filtered to {@code fundCode}); 0 if not stored. */
     @Transactional
     public int enrichReturnsAndRiskForFund(String fundCode) {
         Fund fund = fundRepository.findById(fundCode).orElse(null);
@@ -184,6 +190,12 @@ public class FundDetailEnrichmentService {
         }
     }
 
+    /**
+     * Replaces stored asset allocations for all funds from the first publishing day at or before {@code date},
+     * walking back up to the configured limit to skip non-publishing days (weekends/holidays).
+     *
+     * @return number of funds whose allocations were persisted
+     */
     @Transactional
     public int enrichAllocations(LocalDate date) {
         Set<String> existingCodes = loadExistingFundCodes();
@@ -216,6 +228,10 @@ public class FundDetailEnrichmentService {
         return updated;
     }
 
+    /**
+     * Single-fund allocation refresh; walks back from {@code date} until that fund actually appears in a
+     * publishing day's data (not merely any non-empty day), then replaces its stored allocations.
+     */
     @Transactional
     public int enrichAllocationsForFund(String fundCode, LocalDate date) {
         Fund fund = fundRepository.findById(fundCode).orElse(null);
@@ -257,6 +273,12 @@ public class FundDetailEnrichmentService {
         }
     }
 
+    /**
+     * Synchronously fetches and applies info + profile for one fund (two TEFAS calls), persisting and caching
+     * the result. Each call is best-effort: a failure on one is logged and skipped so the other still applies.
+     *
+     * @return the updated fund, or {@code null} if it is not stored
+     */
     @Transactional
     public Fund enrichSingleFundDetails(String fundCode) {
         Fund fund = fundRepository.findById(fundCode).orElse(null);

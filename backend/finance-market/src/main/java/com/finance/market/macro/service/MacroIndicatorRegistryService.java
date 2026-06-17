@@ -26,6 +26,7 @@ public class MacroIndicatorRegistryService {
     private final AssetRegistryService instrumentRegistry;
     private final MacroProperties properties;
 
+    /** Upserts every configured indicator so config is the source of truth; empty config is a no-op. */
     @Transactional
     public List<MacroIndicator> synchronizeFromConfig() {
         List<IndicatorDefinition> definitions = properties.indicators();
@@ -35,6 +36,7 @@ public class MacroIndicatorRegistryService {
         return definitions.stream().map(this::upsert).toList();
     }
 
+    /** Creates the indicator (and its cross-module {@link Instrument}) on first sight, else updates it in place. */
     @Transactional
     public MacroIndicator upsert(IndicatorDefinition definition) {
         return macroRepository.findByCode(definition.code())

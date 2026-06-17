@@ -61,6 +61,7 @@ public class CryptoSnapshotProcessor implements MarketSnapshotProcessor {
         this.vsTry = cryptoProperties.getVsTry();
     }
 
+    /** Refreshes every tracked coin, fetching the whole set once in USD and once in TRY before per-coin upsert. */
     public void refreshAll() {
         List<String> trackedCoins = trackedAssetQueryService.getCodes(TrackedAssetType.CRYPTO);
         log.info("Starting crypto snapshot update for {} coins", trackedCoins.size());

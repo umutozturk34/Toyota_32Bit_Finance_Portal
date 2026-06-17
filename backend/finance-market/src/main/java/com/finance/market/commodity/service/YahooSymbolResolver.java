@@ -27,6 +27,7 @@ public class YahooSymbolResolver {
                         Map.Entry::getKey));
     }
 
+    /** Forward map to a Yahoo ticker; {@code null} means the commodity has no fetchable Yahoo symbol. */
     public String resolve(String commodityCode) {
         if (commodityCode == null) return null;
         String override = overrides.get(commodityCode);
@@ -35,6 +36,7 @@ public class YahooSymbolResolver {
         return null;
     }
 
+    /** Reverse map from a Yahoo ticker back to a commodity code; only configured overrides are reversible. */
     public Optional<String> resolveByYahooSymbol(String yahooSymbol) {
         if (yahooSymbol == null || yahooSymbol.isBlank()) return Optional.empty();
         return Optional.ofNullable(reverseOverrides.get(yahooSymbol.trim().toUpperCase()));

@@ -158,6 +158,7 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
         }
     }
 
+    /** Normalizes the code, refreshes its snapshot, and cascades to any precious-metal derivatives it drives. */
     public void refreshOne(String code) {
         TrackedRefreshRunner.refreshSnapshot(code, yahooSymbolResolver::normalize, normalized -> {
             if (yahooSymbolResolver.resolve(normalized) == null) return false;

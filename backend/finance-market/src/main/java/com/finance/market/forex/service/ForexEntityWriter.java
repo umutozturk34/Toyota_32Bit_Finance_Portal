@@ -44,12 +44,18 @@ public class ForexEntityWriter implements MarketEntityWriter {
         return forexRepository.save(forex);
     }
 
+    /** Saves the snapshot row and pushes it into the snapshot cache. */
     public Forex saveSnapshot(Forex forex) {
         Forex saved = forexRepository.save(forex);
         forexCacheService.putSnapshot(saved.getCurrencyCode(), saved);
         return saved;
     }
 
+    /**
+     * Idempotently upserts candles by date, refreshing the four buying/selling rates on existing rows.
+     *
+     * @return the number of candles inserted or updated
+     */
     public int upsertCandles(Forex forex, List<ForexCandle> candidates) {
         if (candidates.isEmpty()) return 0;
         String currencyCode = forex.getCurrencyCode();
@@ -82,6 +88,7 @@ public class ForexEntityWriter implements MarketEntityWriter {
         return candidate;
     }
 
+    /** Configured money scale, shared with the mapper so candles and snapshot round identically. */
     public int getScale() {
         return appProperties.getScale();
     }

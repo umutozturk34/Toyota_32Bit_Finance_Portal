@@ -23,6 +23,7 @@ public class CommoditySegmentResolver {
         this.preciousMetalCodes = Set.copyOf(keys);
     }
 
+    /** Returns the segment, or {@code null} for a null/unrecognised code (callers treat null as unclassified). */
     public CommoditySegment resolve(String commodityCode) {
         if (commodityCode == null) return null;
         if (preciousMetalCodes.contains(commodityCode)) return CommoditySegment.PRECIOUS_METAL;

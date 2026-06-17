@@ -75,12 +75,14 @@ public class DerivativePositionService {
         return a.isBefore(b) ? a : b;
     }
 
+    /** All positions (open and closed) of the {@code userSub}-owned portfolio; 404s if not owned. */
     @Transactional(readOnly = true)
     public List<DerivativePositionResponse> list(Long portfolioId, String userSub) {
         requireOwnedPortfolio(portfolioId, userSub);
         return mapper.toResponses(positionRepository.findByPortfolioId(portfolioId));
     }
 
+    /** Only the currently open positions of the {@code userSub}-owned portfolio; 404s if not owned. */
     @Transactional(readOnly = true)
     public List<DerivativePositionResponse> listOpen(Long portfolioId, String userSub) {
         requireOwnedPortfolio(portfolioId, userSub);
@@ -302,6 +304,7 @@ public class DerivativePositionService {
         return mapper.toResponse(position);
     }
 
+    /** Reverts a closed position back to open (clears close fields) and rebuilds the symbol's snapshots. */
     @Transactional
     public DerivativePositionResponse reopen(Long positionId, Long portfolioId, String userSub) {
         requireOwnedPortfolio(portfolioId, userSub);
@@ -317,6 +320,7 @@ public class DerivativePositionService {
         return mapper.toResponse(position);
     }
 
+    /** Removes one owned position; the symbol's snapshots are wiped and rebuilt from its surviving peer lots. */
     @Transactional
     public void delete(Long positionId, Long portfolioId, String userSub) {
         requireOwnedPortfolio(portfolioId, userSub);

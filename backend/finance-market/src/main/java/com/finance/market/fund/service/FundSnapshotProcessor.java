@@ -64,6 +64,7 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
         this.holidayLookbackDays = fundProperties.getHolidayLookbackDays();
     }
 
+    /** Bulk-refreshes both BYF and YAT snapshots for the latest publishing day, walking back over TEFAS holidays. */
     public void refreshAll() {
         long start = System.currentTimeMillis();
         LocalDate cursor = today();

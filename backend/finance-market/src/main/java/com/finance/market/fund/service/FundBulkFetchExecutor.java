@@ -29,6 +29,10 @@ public class FundBulkFetchExecutor {
     private final TefasClient tefasClient;
     private final TransactionTemplate transactionTemplate;
 
+    /**
+     * Fetches and persists each window in turn, matching rows to {@code trackedByCode} and delegating the
+     * per-fund save to {@code saver}. Each fund persists in its own transaction, so one failure is isolated.
+     */
     public BulkRunResult runWindows(FundType fundType,
                                      List<WindowedFetchPlanner.DateWindow> windows,
                                      Map<String, Fund> trackedByCode,

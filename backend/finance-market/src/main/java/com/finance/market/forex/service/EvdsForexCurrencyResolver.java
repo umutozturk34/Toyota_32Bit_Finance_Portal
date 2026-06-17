@@ -57,6 +57,7 @@ public class EvdsForexCurrencyResolver {
         return new ArrayList<>(active.values());
     }
 
+    /** Whether the döviz buying serie for one currency exists and is still active (validates a code before tracking). */
     public boolean isActiveCurrencyCode(List<EvdsSerieResponse> dovizSeries, String currencyCode) {
         if (currencyCode == null || currencyCode.isBlank()) return false;
         String normalized = currencyCode.trim().toUpperCase();

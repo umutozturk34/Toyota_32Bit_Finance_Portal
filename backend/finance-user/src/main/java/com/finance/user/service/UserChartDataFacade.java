@@ -27,6 +27,7 @@ public class UserChartDataFacade {
     private final UserChartDrawingService drawingService;
     private final ChartDefaultsProperties chartDefaults;
 
+    /** Bundles the user's preferences and drawings for an asset in one read, each falling back to its defaults when unsaved. */
     @Transactional(readOnly = true)
     public UserChartBundleResponse getBundle(String userSub, TrackedAssetType type, String code, String range) {
         UserChartPreferenceResponse prefs = preferenceService.getOrDefault(userSub, type, code);

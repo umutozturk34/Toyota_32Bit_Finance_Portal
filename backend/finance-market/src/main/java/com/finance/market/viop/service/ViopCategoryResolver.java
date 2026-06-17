@@ -21,6 +21,10 @@ public class ViopCategoryResolver {
     );
     private static final Set<String> METAL_UNDERLYINGS = Set.of("XAU", "XAG", "XPT", "XPD", "XCU");
 
+    /**
+     * Classifies a contract from kind, underlying and currency. An unrecognised underlying falls to a PAY
+     * (single-stock) future/option; metal and currency futures further split TRY vs USD by the quote currency.
+     */
     public ViopCategory resolve(ViopContractKind kind, String underlying, String currency) {
         String normalized = normalize(underlying);
         if (kind == ViopContractKind.OPTION) {

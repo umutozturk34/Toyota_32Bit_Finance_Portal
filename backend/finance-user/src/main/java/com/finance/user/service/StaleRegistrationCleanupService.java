@@ -41,6 +41,10 @@ public class StaleRegistrationCleanupService {
         this.maxPerRun = maxPerRun;
     }
 
+    /**
+     * Scheduled sweep that deletes up to {@code maxPerRun} purgeable unverified registrations; a no-op
+     * when disabled. A full batch leaves the remainder for the next run rather than looping.
+     */
     @Scheduled(cron = "${app.scheduler.user-cleanup.cron}", zone = "${app.timezone}")
     public void purgeStaleUnverifiedRegistrations() {
         if (!enabled) {

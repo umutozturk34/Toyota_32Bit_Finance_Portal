@@ -36,6 +36,7 @@ public class UserChartPreferenceService {
     private final ChartDefaultsProperties chartDefaults;
     private final UserChartPreferenceMapper mapper;
 
+    /** The user's saved preferences for the asset, or config built from the type's defaults when none exist. */
     @Transactional(readOnly = true)
     public UserChartPreferenceResponse getOrDefault(String userSub, TrackedAssetType type, String code) {
         TrackedAsset tracked = resolveTracked(type, code);
@@ -44,6 +45,7 @@ public class UserChartPreferenceService {
                 .orElseGet(() -> new UserChartPreferenceResponse(buildDefaults(type), Instant.now()));
     }
 
+    /** Saves the user's preferences for the asset, coercing a null or JSON-null payload to an empty object. */
     @Transactional
     public UserChartPreferenceResponse upsert(String userSub, TrackedAssetType type, String code, JsonNode config) {
         TrackedAsset tracked = resolveTracked(type, code);

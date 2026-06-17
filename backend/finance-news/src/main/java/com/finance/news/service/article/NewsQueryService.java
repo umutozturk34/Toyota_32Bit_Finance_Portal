@@ -34,6 +34,7 @@ public class NewsQueryService {
     private final NewsCacheService newsCacheService;
     private final NewsResponseMapper responseMapper;
 
+    /** Paged search; all filter args are optional and {@code assetCode} accepts a comma-separated OR-list of codes. */
     @Transactional(readOnly = true)
     public PagedResponse<NewsArticleResponse> search(String category, String searchTerm, String assetCode,
                                                       String sortBy, String direction,
@@ -48,6 +49,7 @@ public class NewsQueryService {
                 page, size, result.getTotalElements());
     }
 
+    /** Cache-backed detail lookup; throws {@link ResourceNotFoundException} when no article has that id. */
     @Transactional(readOnly = true)
     public NewsArticleDetailResponse getById(Long id) {
         NewsArticle article = newsCacheService.getById(id)
@@ -55,6 +57,7 @@ public class NewsQueryService {
         return responseMapper.toDetailResponse(article);
     }
 
+    /** Article count per category, for the news page's category facet. */
     @Transactional(readOnly = true)
     public List<GroupCount> getCategoryCounts() {
         return articleRepository.countByCategory().stream()

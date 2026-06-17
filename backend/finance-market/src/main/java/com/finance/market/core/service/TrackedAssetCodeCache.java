@@ -36,10 +36,12 @@ public class TrackedAssetCodeCache {
         this.displayNameCache = Caffeine.newBuilder().expireAfterWrite(ttl).build();
     }
 
+    /** All tracked codes of the type (enabled or not), sort-order then code; loaded on cache miss. */
     public List<String> get(TrackedAssetType type) {
         return allCache.get(type, this::loadAllFromRepository);
     }
 
+    /** Only the admin-enabled codes of the type, sort-order then code; loaded on cache miss. */
     public List<String> getEnabled(TrackedAssetType type) {
         return enabledCache.get(type, this::loadEnabledFromRepository);
     }
@@ -49,6 +51,7 @@ public class TrackedAssetCodeCache {
         return displayNameCache.get(type, this::loadDisplayNamesFromRepository);
     }
 
+    /** Drops all three per-type caches (all/enabled/display-name); call after any mutation to that type. */
     public void invalidate(TrackedAssetType type) {
         allCache.invalidate(type);
         enabledCache.invalidate(type);

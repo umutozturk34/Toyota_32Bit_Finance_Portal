@@ -107,6 +107,7 @@ public class UserPreferenceService {
         }
     }
 
+    /** The already-stored preferences, or empty; unlike {@link #getOrDefault} this neither seeds a row nor fires onboarding. */
     @Transactional(readOnly = true)
     public Optional<UserPreferenceResponse> findPersisted(String userSub) {
         return repository.findById(userSub).map(mapper::toResponse);

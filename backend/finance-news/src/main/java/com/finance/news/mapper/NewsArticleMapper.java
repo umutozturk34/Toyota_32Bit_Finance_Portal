@@ -56,6 +56,7 @@ public abstract class NewsArticleMapper {
         );
     }
 
+    /** Stamps {@code fetchedAt} from {@code now}; the source link and resolved assets are set by the caller, not mapped. */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "fetchedAt", source = "now")
     @Mapping(target = "source", ignore = true)

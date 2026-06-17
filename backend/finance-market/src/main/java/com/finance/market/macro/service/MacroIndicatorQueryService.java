@@ -37,6 +37,11 @@ public class MacroIndicatorQueryService {
         return indicatorRepository.findByCategory(category);
     }
 
+    /**
+     * Looks up an indicator by its raw EVDS code.
+     *
+     * @throws ResourceNotFoundException if no indicator has that code
+     */
     @Transactional(readOnly = true)
     public MacroIndicator findByCode(String code) {
         return indicatorRepository.findByCode(code)

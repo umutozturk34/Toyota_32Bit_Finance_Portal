@@ -27,10 +27,16 @@ public class MarketOverviewService {
     private final OverviewLayoutReader layoutReader;
     private final WidgetProviderRegistry registry;
 
+    /** Renders the user's default (first) dashboard page. */
     public List<RenderedWidget> render(String userSub) {
         return render(userSub, null);
     }
 
+    /**
+     * Renders the user's dashboard widgets in order for the named {@code pageId} (null = default/first page).
+     * Each section is rendered independently, so one failing widget yields an empty placeholder rather than
+     * failing the whole dashboard.
+     */
     public List<RenderedWidget> render(String userSub, String pageId) {
         List<WidgetSection> sections = layoutReader.readVisibleSections(userSub, pageId);
         List<RenderedWidget> rendered = new ArrayList<>(sections.size());

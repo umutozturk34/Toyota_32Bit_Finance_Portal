@@ -26,6 +26,10 @@ public class EvdsMacroMapper {
     private static final DateTimeFormatter MONTHLY = DateTimeFormatter.ofPattern("yyyy-M");
     private static final DateTimeFormatter DAILY = DateTimeFormatter.ofPattern("d-M-yyyy");
 
+    /**
+     * Pulls the dated values for one serie out of a multi-serie EVDS response (the serie code names its
+     * column). A null/item-less response or rows with an unparseable date/value yield no observations.
+     */
     public List<MacroObservation> extract(EvdsDataResponse response, String serieCode) {
         if (response == null || response.items() == null) {
             return List.of();

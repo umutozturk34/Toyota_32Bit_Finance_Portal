@@ -45,6 +45,7 @@ public class NewsAssetBackfill {
     private final TransactionTemplate transactionTemplate;
     private final ObjectProvider<MarketDataReadiness> marketDataReadiness;
 
+    /** Kicks off the catch-up scan on a daemon thread so startup readiness isn't blocked by it. */
     @EventListener(ApplicationReadyEvent.class)
     public void onReady() {
         Thread worker = new Thread(this::backfill, "news-asset-backfill");

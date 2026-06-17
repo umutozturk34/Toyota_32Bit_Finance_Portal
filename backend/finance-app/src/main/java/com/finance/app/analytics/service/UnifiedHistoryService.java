@@ -48,6 +48,11 @@ public class UnifiedHistoryService {
             .maximumSize(6_000)
             .build();
 
+    /**
+     * Date-ascending history for the instrument over {@code [from, to]}, routed to the source for its type and
+     * memoized per (instrument, window) for the cache TTL. An empty result (source failure / no data) is never
+     * retained, so the next call retries.
+     */
     public List<HistoryPoint> getSeries(AnalyticsInstrument instrument, LocalDate from, LocalDate to) {
         String key = instrument.type() + "|" + instrument.code() + "|" + from + "|" + to;
         List<HistoryPoint> series = seriesCache.get(key, k -> computeSeries(instrument, from, to));
@@ -77,6 +82,10 @@ public class UnifiedHistoryService {
         };
     }
 
+    /**
+     * Macro/deposit indicator points over {@code [from, to]} by EVDS code, bypassing the instrument cache
+     * (callers pass their own probe windows); empty when the code is unknown or the fetch fails.
+     */
     public List<HistoryPoint> getMacroSeries(String code, LocalDate from, LocalDate to) {
         return macroSeries(code, from, to);
     }

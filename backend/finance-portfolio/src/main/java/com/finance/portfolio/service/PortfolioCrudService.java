@@ -69,6 +69,7 @@ public class PortfolioCrudService {
     private final PortfolioProperties portfolioProperties;
     private final CurrencyConverter currencyConverter;
 
+    /** The caller's own portfolios (metadata only, no valuation); scoped by {@code userSub}. */
     @Transactional(readOnly = true)
     public List<PortfolioResponse> listPortfolios(String userSub) {
         return portfolioRepository.findByUserSub(userSub).stream()
@@ -99,6 +100,11 @@ public class PortfolioCrudService {
         return mapper.toPortfolioResponse(portfolioRepository.save(portfolio));
     }
 
+    /**
+     * Renames an owned portfolio, re-checking the unique-name constraint (excluding itself).
+     *
+     * @throws BusinessException if another portfolio already uses the name
+     */
     @Transactional
     public PortfolioResponse renamePortfolio(String userSub, Long portfolioId, PortfolioCreateRequest request) {
         Portfolio portfolio = portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
@@ -200,6 +206,7 @@ public class PortfolioCrudService {
         return mapper.toPositionResponseShell(saved);
     }
 
+    /** Removes one owned lot; drops the asset's snapshots when it was the last lot and recomputes from its entry date. */
     @Transactional
     public void deletePosition(Long portfolioId, Long positionId, String userSub) {
         PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
@@ -317,6 +324,7 @@ public class PortfolioCrudService {
         return mapper.toPositionResponseShell(resulting);
     }
 
+    /** Reverts a closed lot to open (clears exit fields) and recomputes its history from the entry date. */
     @Transactional
     public PositionResponse reopenPosition(Long portfolioId, Long positionId, String userSub) {
         PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);

@@ -62,6 +62,7 @@ public class FundEntityWriter implements MarketEntityWriter {
         this.scale = appProperties.getScale();
     }
 
+    /** Upserts the fund by code (update in place when it exists) and links its asset-registry entry. */
     public Fund saveSnapshot(TefasFundDto dto, FundType fundType) {
         LocalDateTime now = LocalDateTime.now();
         Fund existing = fundRepository.findById(dto.fundCode()).orElse(null);
@@ -105,6 +106,11 @@ public class FundEntityWriter implements MarketEntityWriter {
         return true;
     }
 
+    /**
+     * Idempotently upserts a candle batch, dropping rows with no/zero price before the upsert.
+     *
+     * @return the number of candles inserted or updated
+     */
     public int saveCandleBatch(Fund fund, FundType fundType, List<TefasFundDto> dtos) {
         List<TefasFundDto> priced = dtos.stream().filter(FundEntityWriter::hasValidPrice).toList();
         CandleBatchUpsertTemplate.UpsertResult<FundCandle> upsertResult = CandleBatchUpsertTemplate.upsert(
@@ -120,6 +126,7 @@ public class FundEntityWriter implements MarketEntityWriter {
         return upsertResult.totalChanged();
     }
 
+    /** Upserts a single candle for one date; a no/zero-price row is ignored. */
     public void upsertCandleFromDto(Fund fund, FundType fundType, TefasFundDto dto) {
         if (!hasValidPrice(dto)) return;
         FundCandle existing = fundCandleRepository
@@ -140,10 +147,12 @@ public class FundEntityWriter implements MarketEntityWriter {
                 && dto.price().signum() != 0;
     }
 
+    /** Auto-tracks a BYF (exchange-traded) fund the first time it is seen; a no-op if already tracked. */
     public void ensureByfTracked(String fundCode, String tefasName) {
         trackedAssetCommandService.autoTrack(TrackedAssetType.FUND, fundCode, tefasName, autoTrackSortOrder);
     }
 
+    /** Auto-tracks a YAT (mutual) fund the first time it is seen; a no-op if already tracked. */
     public void ensureYatTracked(String fundCode, String tefasName) {
         trackedAssetCommandService.autoTrack(TrackedAssetType.FUND, fundCode, tefasName, autoTrackSortOrder);
     }

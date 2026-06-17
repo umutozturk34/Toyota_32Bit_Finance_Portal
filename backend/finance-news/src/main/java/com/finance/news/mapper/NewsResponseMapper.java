@@ -14,12 +14,14 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public abstract class NewsResponseMapper {
 
+    /** List-row projection; omits the full body that only {@link #toDetailResponse} carries. */
     @Mapping(target = "category", expression = "java(article.getCategory().name())")
     @Mapping(target = "sourceName", source = "sourceName")
     public abstract NewsArticleResponse toResponse(NewsArticle article);
 
     public abstract List<NewsArticleResponse> toResponses(List<NewsArticle> articles);
 
+    /** Single-article projection including the full content body. */
     @Mapping(target = "category", expression = "java(article.getCategory().name())")
     public abstract NewsArticleDetailResponse toDetailResponse(NewsArticle article);
 

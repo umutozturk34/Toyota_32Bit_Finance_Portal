@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { viopService } from './services/viopService';
 import { formatPrice } from '../../shared/utils/formatters';
@@ -7,6 +7,7 @@ import { viopQuoteCurrency } from '../../shared/utils/priceCurrency';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
 import MarketOpenDerivativeModal from '../portfolio/components/MarketOpenDerivativeModal';
+import { viopUnderlyingRoute } from './lib/viopUnderlying';
 
 const fmt = (price) => (price != null ? formatPrice(price) : '—');
 
@@ -36,10 +37,23 @@ function ViopHeader({ asset }) {
 function ViopMetadata({ asset }) {
   const { t } = useTranslation();
   const { format: money } = useMoney();
+  const location = useLocation();
   const meta = asset.metadata || {};
   const localeTag = t('common.localeTag');
   const isOption = meta.kind === 'OPTION';
   const currency = viopQuoteCurrency(asset.code);
+  // When the underlying resolves to a tradable asset, make it a link to that asset's page; carry the current path
+  // as the navigation origin so the asset page's back returns here (not to the VIOP list).
+  const underlyingTarget = viopUnderlyingRoute(meta);
+  const underlyingValue = underlyingTarget?.route ? (
+    <Link
+      to={underlyingTarget.route}
+      state={{ from: location.pathname }}
+      className="text-accent hover:text-accent-bright hover:underline transition-colors"
+    >
+      {underlyingTarget.code}
+    </Link>
+  ) : (meta.underlying || '—');
   // Leverage ≈ notional / margin = (price × contract size) / initial margin (the lot count cancels). Only
   // shown when all three are present and the margin is positive — futures with a real margin and size.
   const levPrice = Number(asset.price ?? meta.lastPrice ?? meta.settlementPrice);
@@ -49,7 +63,7 @@ function ViopMetadata({ asset }) {
     : null;
   return (
     <MetadataTiles tiles={[
-      { label: t('viop.underlying'), value: meta.underlying || '—' },
+      { label: t('viop.underlying'), value: underlyingValue },
       { label: t('viop.expiry'), value: formatExpiry(meta.expiryDate, localeTag) },
       meta.contractSize != null && { label: t('viop.contractSize'), value: fmt(meta.contractSize) },
       meta.initialMargin != null && { label: t('viop.initialMargin'), value: money(meta.initialMargin, currency) },

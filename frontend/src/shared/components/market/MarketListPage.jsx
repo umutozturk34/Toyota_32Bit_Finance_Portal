@@ -89,8 +89,11 @@ export default function MarketListPage({
     setBuyTarget,
   });
 
+  // Keyed on the full query identity so the grid re-staggers on every sort/filter/page/search change (not just
+  // first mount) — a re-sort lands as one beat instead of hard-swapping the cards.
+  const gridKey = JSON.stringify(effectiveQueryParams);
   const grid = (
-    <motion.div variants={containerVariants(0.06)} initial="hidden" animate="show" className={gridClass}>
+    <motion.div key={gridKey} variants={containerVariants(0.06)} initial="hidden" animate="show" className={gridClass}>
       {items.map(cardRenderer)}
     </motion.div>
   );

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { EASE } from '../../../shared/utils/animations';
 import {
   TrendingUp, TrendingDown, Medal, Search, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpRight, ShieldAlert, RotateCcw,
 } from 'lucide-react';
@@ -397,7 +398,12 @@ export default function ReturnsPage() {
                     </Th>
                   </tr>
                 </thead>
-                <tbody>
+                <motion.tbody
+                  key={`${sortKey}-${sortDir}-${ccy}-${period}-${[...typeFilter].sort().join(',')}-${[...riskFilter].sort().join(',')}-${search.trim()}-${page}`}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.26, ease: EASE.standard }}
+                >
                   {pageRows.map((r, idx) => {
                     const badge = TYPE_BADGE[r.type] || { label: r.type, color: '#6366f1' };
                     const risk = r.riskLevel ? RISK_STYLE[r.riskLevel] : null;
@@ -470,7 +476,7 @@ export default function ReturnsPage() {
                       </td>
                     </tr>
                   )}
-                </tbody>
+                </motion.tbody>
               </table>
             </div>
 

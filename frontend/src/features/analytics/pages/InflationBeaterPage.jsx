@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import { EASE } from '../../../shared/utils/animations';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import { TrendingUp, TrendingDown, Trophy, Search, ChevronLeft, ChevronRight, GitCompare, ArrowUp, ArrowDown, RotateCcw, ArrowLeft } from 'lucide-react';
@@ -489,10 +490,10 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
               </tr>
             </thead>
             <motion.tbody
-              key={`${sortKey}-${sortDir}-${verdictFilter}-${typeFilter}-${page}`}
+              key={`${sortKey}-${sortDir}-${verdictFilter}-${[...typeFilter].sort().join(',')}-${search.trim()}-${page}`}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.26, ease: EASE.standard }}
             >
               {pageEntries.map((entry) => (
                 <tr

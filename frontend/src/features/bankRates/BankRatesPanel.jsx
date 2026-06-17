@@ -497,6 +497,7 @@ export default function BankRatesPanel() {
           </div>
         ) : (
           <motion.div
+            key={`${sortBy}-${sortDir}-${bankQuery.trim()}-${currency}-${kind}`}
             initial="hidden"
             animate="show"
             variants={{ hidden: {}, show: { transition: { staggerChildren: 0.03 } } }}

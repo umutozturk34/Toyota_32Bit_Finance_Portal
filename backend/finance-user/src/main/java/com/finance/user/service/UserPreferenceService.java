@@ -19,6 +19,7 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages user preferences and keeps theme/locale in sync with Keycloak. First read lazily seeds a
@@ -32,6 +33,13 @@ import java.util.UUID;
 public class UserPreferenceService {
 
     private static final Set<String> SUPPORTED_LANGUAGES = Set.of("tr", "en");
+    // Every account should carry the product's baseline realm role. Keycloak self-registration only grants the
+    // default-roles composite, so we attach this ourselves on first touch.
+    private static final String BASELINE_ROLE = "USER";
+
+    // Subjects already reconciled this boot, so the baseline-role check costs one Keycloak round-trip per user per
+    // application lifetime instead of one per preferences read.
+    private final Set<String> baselineRoleEnsured = ConcurrentHashMap.newKeySet();
 
     private final UserPreferenceRepository repository;
     private final UserPreferenceMapper mapper;
@@ -46,13 +54,33 @@ public class UserPreferenceService {
     @Transactional
     public UserPreferenceResponse getOrDefault(String userSub) {
         Optional<UserPreference> existing = repository.findById(userSub);
-        if (existing.isPresent()) return mapper.toResponse(existing.get());
+        if (existing.isPresent()) {
+            ensureBaselineRole(userSub);
+            return mapper.toResponse(existing.get());
+        }
         UserPreference seed = UserPreference.defaultsFor(userSub);
         hydrateFromKeycloak(userSub, seed);
         UserPreference saved = repository.save(seed);
+        ensureBaselineRole(userSub);
         eventPublisher.publish(new UserRegisteredEvent(
                 UUID.randomUUID().toString(), userSub, OffsetDateTime.now()));
         return mapper.toResponse(saved);
+    }
+
+    /**
+     * Best-effort attachment of the baseline {@code USER} realm role, attempted at most once per subject per boot.
+     * Keycloak self-registration leaves users with no product role, so without this they show up role-less and any
+     * future {@code hasRole('USER')} gate would lock them out. A transient failure is rolled back so the next visit
+     * retries, and never propagates — onboarding must not hinge on the role write.
+     */
+    private void ensureBaselineRole(String userSub) {
+        if (!baselineRoleEnsured.add(userSub)) return;
+        try {
+            keycloakAdminClient.ensureRealmRole(userSub, BASELINE_ROLE);
+        } catch (RuntimeException ex) {
+            baselineRoleEnsured.remove(userSub);
+            log.warn("Baseline {} role grant failed user={}: {}", BASELINE_ROLE, userSub, ex.getMessage());
+        }
     }
 
     /** Best-effort override of the seed's theme/language from Keycloak attributes; failures leave defaults intact. */

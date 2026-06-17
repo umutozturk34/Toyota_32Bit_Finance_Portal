@@ -122,6 +122,38 @@ public class KeycloakAdminClient {
     }
 
     /**
+     * Idempotently grants the user the named realm role, returning immediately when they already hold it. Keycloak
+     * self-registration assigns only the {@code default-roles-<realm>} composite, so app users would otherwise carry
+     * no product role at all; this is how the baseline {@code USER} role is attached. A role Keycloak doesn't define
+     * is logged and skipped rather than throwing, so a misconfiguration can't break onboarding.
+     */
+    @CircuitBreaker(name = "keycloak-admin")
+    @Retry(name = "keycloak-admin")
+    @SuppressWarnings("unchecked")
+    public void ensureRealmRole(String userId, String roleName) {
+        if (userId == null || roleName == null || getRealmRoleNames(userId).contains(roleName)) return;
+        Map<String, Object> role = executeWithRetry("getRealmRole", token -> webClient.get()
+                .uri("/admin/realms/{realm}/roles/{role}", properties.getRealm(), roleName)
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block());
+        if (role == null || role.get("id") == null) {
+            log.warn("Keycloak realm role '{}' not found; skipping grant to user {}", roleName, userId);
+            return;
+        }
+        executeWithRetry("addRealmRole", token -> webClient.post()
+                .uri("/admin/realms/{realm}/users/{id}/role-mappings/realm", properties.getRealm(), userId)
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(List.of(role))
+                .retrieve()
+                .toBodilessEntity()
+                .block());
+        log.info("Granted realm role '{}' to user {}", roleName, userId);
+    }
+
+    /**
      * Idempotently ensures the named client allows the given redirect URIs, merging them into the
      * existing set (preserving order) and PUTting back only when something actually changed.
      */

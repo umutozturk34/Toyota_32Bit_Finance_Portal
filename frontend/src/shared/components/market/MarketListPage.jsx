@@ -5,7 +5,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../features/auth/useAuth';
 import { getChangeClass } from '../../utils/formatters';
 import { containerVariants } from '../../utils/animations';
-import LoadingState from '../feedback/LoadingState';
+import { Skeleton } from '../feedback/Skeleton';
 import ErrorState from '../feedback/ErrorState';
 import EmptyState from '../feedback/EmptyState';
 import PageHeader from '../layout/PageHeader';
@@ -33,7 +33,6 @@ export default function MarketListPage({
   filterConfig,
   adminTriggers,
   renderCard,
-  loadingMessage,
   errorMessage,
   emptyMessage,
   emptyHint,
@@ -83,8 +82,7 @@ export default function MarketListPage({
     handler: () => handleTrigger(t.key, t.fn, t.successMsg, t.refetchDelay),
   }));
 
-  if (isLoading && items.length === 0) return <LoadingState message={loadingMessage} />;
-  if (error) return <ErrorState message={errorMessage} onRetry={refetch} />;
+  if (error && items.length === 0) return <ErrorState message={errorMessage} onRetry={refetch} />;
 
   const cardRenderer = (asset) => renderCard(asset, {
     cls: getChangeClass(asset.changePercent),
@@ -150,6 +148,24 @@ export default function MarketListPage({
       </div>
 
       {preGridChildren}
+
+      {isLoading && items.length === 0 && (
+        <div className={gridClass} aria-hidden="true">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="space-y-3 rounded-2xl border border-border-default bg-bg-elevated/60 p-4">
+              <div className="flex items-center gap-3">
+                <Skeleton w="2.25rem" h="2.25rem" circle />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton w="60%" h="0.8rem" />
+                  <Skeleton w="40%" h="0.6rem" />
+                </div>
+              </div>
+              <Skeleton w="55%" h="1.25rem" className="rounded-md" />
+              <Skeleton w="32%" h="0.7rem" />
+            </div>
+          ))}
+        </div>
+      )}
 
       {items.length > 0 && (animatePresence ? <AnimatePresence>{grid}</AnimatePresence> : grid)}
 

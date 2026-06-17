@@ -6,6 +6,7 @@ import PageHeader from '../../../shared/components/layout/PageHeader';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
 import AdminTabBar from './AdminTabBar';
 import Spinner from '../../../shared/components/feedback/Spinner';
+import { SkeletonRow } from '../../../shared/components/feedback/Skeleton';
 import { toast } from '../../../shared/components/feedback/toastBus';
 import { useAuth } from '../../auth/useAuth';
 import { useAdminUsers, useAdminUserCount, useBanUser, useUnbanUser } from '../hooks/useAdminUsers';
@@ -151,9 +152,10 @@ export default function AdminUsersPage() {
           <span className="text-right">{t('adminUsers.col.action')}</span>
         </div>
         {isLoading && (
-          <div className="flex items-center justify-center gap-2 py-12 text-sm text-fg-muted">
-            <Spinner size="sm" tone="accent" />
-            {t('common.loading')}
+          <div aria-hidden="true">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonRow key={i} cols={4} />
+            ))}
           </div>
         )}
         {!isLoading && (!users || users.length === 0) && (

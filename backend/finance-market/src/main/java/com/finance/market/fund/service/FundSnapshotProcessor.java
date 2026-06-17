@@ -125,7 +125,14 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
     }
 
     private boolean persistByf(TefasFundDto dto) {
-        if (!hasValidPrice(dto)) return false;
+        // A BYF is an exchange-traded fund. On a given day TEFAS often omits its NAV (fiyat) while the exchange
+        // bulletin price is present — gating ETFs on NAV alone silently DROPPED those (only ~10 of ~30 had a NAV
+        // that day, all from one issuer). A real, listed ETF (one with a NAV OR a bulletin price) must still be
+        // tracked so it shows in the list. We deliberately do NOT copy the bulletin into the NAV field: price
+        // stays the genuine NAV (null until TEFAS publishes it — upsertCandleFromDto skips the candle while it is),
+        // and bulletin_price keeps the exchange price. The next daily snapshot fills the NAV in cleanly once it
+        // publishes, with no flip and nothing faked.
+        if (!hasValidPrice(dto) && !hasValidBulletin(dto)) return false;
         Fund persisted = transactionTemplate.execute(s -> {
             Fund f = entityWriter.saveSnapshot(dto, FundType.BYF);
             entityWriter.upsertCandleFromDto(f, FundType.BYF, dto);
@@ -135,6 +142,10 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
         entityWriter.ensureByfTracked(persisted.getFundCode(), persisted.getName());
         fundCacheService.putSnapshot(persisted.getFundCode(), persisted);
         return true;
+    }
+
+    private static boolean hasValidBulletin(TefasFundDto dto) {
+        return dto != null && dto.bulletinPrice() != null && dto.bulletinPrice().signum() != 0;
     }
 
     private boolean persistYat(TefasFundDto dto) {

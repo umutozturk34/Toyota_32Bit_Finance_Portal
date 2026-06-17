@@ -24,6 +24,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.mockito.ArgumentCaptor;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -86,6 +88,29 @@ class FundSnapshotProcessorTest {
         verify(entityWriter).upsertCandleFromDto(savedByf, FundType.BYF, byfDto);
         verify(entityWriter).ensureByfTracked("BTC1", "name BTC1");
         verify(fundCacheService).putSnapshot("BTC1", savedByf);
+    }
+
+    @Test
+    void refreshAll_tracksByf_whenNavMissingButBulletinPresent_withoutFakingNav() {
+        // An ETF whose NAV (fiyat) wasn't published that day but has a valid exchange bulletin price must still be
+        // TRACKED so it shows in the list (the cause of "only 10 of 30" was dropping these) — WITHOUT faking the
+        // NAV: price stays null, bulletin is preserved, and the next daily snapshot fills the NAV once published.
+        TefasFundDto navlessEtf = new TefasFundDto("ETF1", "name ETF1",
+                LocalDateTime.of(2026, 5, 12, 0, 0),
+                null, new BigDecimal("690.00"), null, null, null);
+        Fund saved = fund("ETF1");
+        when(tefasClient.bulkFetch(eq(FundType.BYF), any(), any())).thenReturn(List.of(navlessEtf));
+        when(tefasClient.bulkFetch(eq(FundType.YAT), any(), any())).thenReturn(List.of());
+        stubTransactionTemplate();
+        when(entityWriter.saveSnapshot(any(), eq(FundType.BYF))).thenReturn(saved);
+
+        processor.refreshAll();
+
+        ArgumentCaptor<TefasFundDto> captor = ArgumentCaptor.forClass(TefasFundDto.class);
+        verify(entityWriter).saveSnapshot(captor.capture(), eq(FundType.BYF));
+        assertThat(captor.getValue().price()).isNull();                       // NAV not faked
+        assertThat(captor.getValue().bulletinPrice()).isEqualByComparingTo("690.00");
+        verify(entityWriter).ensureByfTracked("ETF1", "name ETF1");           // still tracked → shows in list
     }
 
     @Test

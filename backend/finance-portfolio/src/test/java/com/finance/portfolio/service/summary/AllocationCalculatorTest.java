@@ -53,7 +53,7 @@ class AllocationCalculatorTest {
     void setUp() {
         calculator = new AllocationCalculator(pricingPort, positionRepository,
                 derivativePositionRepository, mapper, historicalPricingPort,
-                viopCandleRepository, assetSnapshotRepository);
+                viopCandleRepository, assetSnapshotRepository, new CurrencyFrameConverter());
         lenient().when(mapper.toAllocationItem(anyString(), any(), any(), any(), any(), any()))
                 .thenAnswer(inv -> new AllocationItem(
                         inv.getArgument(0), inv.getArgument(1), inv.getArgument(2),

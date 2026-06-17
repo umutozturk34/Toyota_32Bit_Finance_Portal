@@ -26,7 +26,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +60,7 @@ class AllocationCalculator {
     private final HistoricalPricingPort historicalPricingPort;
     private final ViopCandleRepository viopCandleRepository;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
+    private final CurrencyFrameConverter frameConverter;
 
     /** Entry point: builds the allocation (by mode/filter) and applies the optional top-N cap. */
     List<AllocationItem> compute(Long portfolioId, String mode, String assetTypeFilter, Integer limit) {
@@ -120,8 +120,8 @@ class AllocationCalculator {
             LocalDate entryDate = pos.getEntryDate() != null ? pos.getEntryDate().toLocalDate() : null;
             LocalDate exitDate = pos.getExitDate() != null ? pos.getExitDate().toLocalDate() : null;
             acc.addCash(exitValue, pos.entryValue(), pos.realizedPnl(),
-                    convertToFrames(pos.entryValue(), entryDate, fxSeries),
-                    realizedFrames(exitValue, exitDate, pos.entryValue(), entryDate, fxSeries));
+                    frameConverter.convertToFrames(pos.entryValue(), entryDate, fxSeries),
+                    frameConverter.realizedFrames(exitValue, exitDate, pos.entryValue(), entryDate, fxSeries));
         }
     }
 
@@ -179,10 +179,10 @@ class AllocationCalculator {
             BigDecimal closeNotional = dpos.notionalAt(dpos.getClosePrice());
             int sign = dpos.getDirection() == com.finance.portfolio.derivative.model.DerivativeDirection.SHORT ? -1 : 1;
             Map<String, BigDecimal> realizedByCcy = closeNotional != null
-                    ? directionalRealizedFrames(closeNotional, dpos.getCloseDate(), entryNotional, dpos.getEntryDate(), sign, fxSeries)
-                    : realizedFrames(exitValue, dpos.getCloseDate(), entryNotional, dpos.getEntryDate(), fxSeries);
+                    ? frameConverter.directionalRealizedFrames(closeNotional, dpos.getCloseDate(), entryNotional, dpos.getEntryDate(), sign, fxSeries)
+                    : frameConverter.realizedFrames(exitValue, dpos.getCloseDate(), entryNotional, dpos.getEntryDate(), fxSeries);
             acc.addCash(exitValue, entryNotional, realized,
-                    convertToFrames(entryNotional, dpos.getEntryDate(), fxSeries),
+                    frameConverter.convertToFrames(entryNotional, dpos.getEntryDate(), fxSeries),
                     realizedByCcy);
         }
     }
@@ -216,9 +216,9 @@ class AllocationCalculator {
         // value date. LONG/spot equity == notional so this only shifts a SHORT's foreign value.
         BigDecimal currentNotionalTry = dpos.notionalAt(currentPriceTry);
         int sign = dpos.getDirection() == com.finance.portfolio.derivative.model.DerivativeDirection.SHORT ? -1 : 1;
-        Map<String, BigDecimal> costByCcy = convertToFrames(entryNotional.abs(), dpos.getEntryDate(), fxSeries);
+        Map<String, BigDecimal> costByCcy = frameConverter.convertToFrames(entryNotional.abs(), dpos.getEntryDate(), fxSeries);
         Map<String, BigDecimal> pnlByCcy = currentNotionalTry != null
-                ? directionalRealizedFrames(currentNotionalTry, LocalDate.now(), entryNotional.abs(),
+                ? frameConverter.directionalRealizedFrames(currentNotionalTry, LocalDate.now(), entryNotional.abs(),
                         dpos.getEntryDate(), sign, fxSeries)
                 : Map.of();
         acc.addBucketFrames(key, AssetType.VIOP.name(), marketValue, entryNotional.abs(), openPnl, costByCcy, pnlByCcy);
@@ -309,82 +309,6 @@ class AllocationCalculator {
         return series;
     }
 
-    private Map<String, BigDecimal> convertToFrames(BigDecimal realizedTry, LocalDate date,
-                                                    Map<String, TreeMap<LocalDate, BigDecimal>> fxSeries) {
-        if (realizedTry == null) return Collections.emptyMap();
-        Map<String, BigDecimal> out = new LinkedHashMap<>();
-        for (var entry : fxSeries.entrySet()) {
-            TreeMap<LocalDate, BigDecimal> series = entry.getValue();
-            if (series.isEmpty()) continue;
-            BigDecimal fxRate = null;
-            if (date != null) {
-                var floor = series.floorEntry(date);
-                if (floor != null && floor.getValue() != null && floor.getValue().signum() > 0) {
-                    fxRate = floor.getValue();
-                }
-            }
-            if (fxRate == null) {
-                var latest = series.lastEntry();
-                if (latest != null && latest.getValue() != null && latest.getValue().signum() > 0) {
-                    fxRate = latest.getValue();
-                }
-            }
-            if (fxRate == null) continue;
-            out.put(entry.getKey(), realizedTry.divide(fxRate, MoneyScale.PRICE, RoundingMode.HALF_UP));
-        }
-        return out;
-    }
-
-    /**
-     * Realized PnL per currency = proceeds at the exit-date FX minus cost at the entry-date FX — the SAME
-     * basis the summary card / chart frame uses ({@code MultiCurrencyPnlCalculator.pointFrame}). Converting the
-     * netted TRY realized at one (exit) rate left the cost at the exit rate instead of its entry rate, so the
-     * donut's "Net P/L" disagreed with the card. proceeds = realized + cost (TRY).
-     */
-    private Map<String, BigDecimal> realizedFrames(BigDecimal proceedsTry, LocalDate exitDate,
-                                                   BigDecimal costTry, LocalDate entryDate,
-                                                   Map<String, TreeMap<LocalDate, BigDecimal>> fxSeries) {
-        Map<String, BigDecimal> proceeds = convertToFrames(proceedsTry, exitDate, fxSeries);
-        Map<String, BigDecimal> cost = convertToFrames(costTry, entryDate, fxSeries);
-        Map<String, BigDecimal> out = new LinkedHashMap<>();
-        for (var e : proceeds.entrySet()) {
-            BigDecimal c = cost.get(e.getKey());
-            out.put(e.getKey(), c != null ? e.getValue().subtract(c) : e.getValue());
-        }
-        return out;
-    }
-
-    /**
-     * Direction-aware realized PnL per currency for a derivative close: {@code sign × (closeNotional@closeFX −
-     * cost@entryFX)}. For a LONG ({@code sign = +1}) this equals the spot-style {@code proceeds@closeFX −
-     * cost@entryFX} because closeNotional == proceeds; for a SHORT ({@code sign = −1}) it negates the notional
-     * delta so a profit (notional fell) reads as a profit, instead of the FX drift on the whole notional
-     * dragging it negative as the proceeds formula does. closeNotional = close price × contract size × lots.
-     */
-    private Map<String, BigDecimal> directionalRealizedFrames(BigDecimal closeNotionalTry, LocalDate closeDate,
-                                                              BigDecimal costTry, LocalDate entryDate, int sign,
-                                                              Map<String, TreeMap<LocalDate, BigDecimal>> fxSeries) {
-        Map<String, BigDecimal> value = convertToFrames(closeNotionalTry, closeDate, fxSeries);
-        Map<String, BigDecimal> cost = convertToFrames(costTry, entryDate, fxSeries);
-        Map<String, BigDecimal> out = new LinkedHashMap<>();
-        BigDecimal signed = BigDecimal.valueOf(sign);
-        for (var e : value.entrySet()) {
-            BigDecimal c = cost.get(e.getKey());
-            BigDecimal diff = c != null ? e.getValue().subtract(c) : e.getValue();
-            out.put(e.getKey(), signed.multiply(diff));
-        }
-        return out;
-    }
-
-    private void mergeRealizedFrames(Map<String, Map<String, BigDecimal>> target, String key,
-                                      Map<String, BigDecimal> increment) {
-        if (increment.isEmpty()) return;
-        target.computeIfAbsent(key, k -> new LinkedHashMap<>());
-        Map<String, BigDecimal> bucket = target.get(key);
-        for (var e : increment.entrySet()) {
-            bucket.merge(e.getKey(), e.getValue(), BigDecimal::add);
-        }
-    }
 
     private void accumulateClosedSpot(Long portfolioId, String assetTypeFilter, boolean noFilter, boolean groupByType,
                                        Map<String, BigDecimal> costs, Map<String, BigDecimal> realizeds,
@@ -405,9 +329,9 @@ class AllocationCalculator {
             LocalDate entryDate = pos.getEntryDate() != null ? pos.getEntryDate().toLocalDate() : null;
             BigDecimal exitValue = pos.getExitPrice().multiply(pos.getQuantity())
                     .setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
-            mergeRealizedFrames(realizedsByCurrency, key,
-                    realizedFrames(exitValue, exitDate, pos.entryValue(), entryDate, fxSeries));
-            mergeRealizedFrames(costsByCurrency, key, convertToFrames(pos.entryValue(), entryDate, fxSeries));
+            frameConverter.mergeRealizedFrames(realizedsByCurrency, key,
+                    frameConverter.realizedFrames(exitValue, exitDate, pos.entryValue(), entryDate, fxSeries));
+            frameConverter.mergeRealizedFrames(costsByCurrency, key, frameConverter.convertToFrames(pos.entryValue(), entryDate, fxSeries));
         }
     }
 
@@ -434,10 +358,10 @@ class AllocationCalculator {
             // reading its profit as a loss in USD/EUR while TRY is correct. closeNotional = price × size × lots.
             BigDecimal closeNotional = dpos.notionalAt(dpos.getClosePrice());
             int sign = dpos.getDirection() == com.finance.portfolio.derivative.model.DerivativeDirection.SHORT ? -1 : 1;
-            mergeRealizedFrames(realizedsByCurrency, key, closeNotional != null
-                    ? directionalRealizedFrames(closeNotional, closeDate, entryNotional, entryDate, sign, fxSeries)
-                    : realizedFrames(realized.add(entryNotional), closeDate, entryNotional, entryDate, fxSeries));
-            mergeRealizedFrames(costsByCurrency, key, convertToFrames(entryNotional, entryDate, fxSeries));
+            frameConverter.mergeRealizedFrames(realizedsByCurrency, key, closeNotional != null
+                    ? frameConverter.directionalRealizedFrames(closeNotional, closeDate, entryNotional, entryDate, sign, fxSeries)
+                    : frameConverter.realizedFrames(realized.add(entryNotional), closeDate, entryNotional, entryDate, fxSeries));
+            frameConverter.mergeRealizedFrames(costsByCurrency, key, frameConverter.convertToFrames(entryNotional, entryDate, fxSeries));
         }
     }
 

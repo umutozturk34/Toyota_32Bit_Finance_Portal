@@ -67,7 +67,7 @@ class PortfolioSummaryServiceTest {
         AllocationCalculator allocationCalculator = new AllocationCalculator(
                 counting, positionRepository, derivativePositionRepository, responseMapper,
                 (type, code, from, to) -> java.util.Map.of(), viopCandleRepository,
-                assetSnapshotRepository);
+                assetSnapshotRepository, new CurrencyFrameConverter());
         DerivativePricingResolver pricingResolver = new DerivativePricingResolver(viopCandleRepository, counting);
         DerivativePositionFormatter derivativeFormatter = new DerivativePositionFormatter(pricingResolver);
         DerivativeAggregationService derivativeAggregationService =

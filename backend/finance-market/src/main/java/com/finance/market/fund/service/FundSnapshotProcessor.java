@@ -12,7 +12,6 @@ import com.finance.market.fund.config.FundProperties;
 import com.finance.market.fund.dto.external.TefasFundDto;
 import com.finance.market.fund.model.Fund;
 import com.finance.market.fund.model.FundType;
-import com.finance.common.model.TrackedAssetType;
 import com.finance.market.core.util.ApiAssetValidator;
 import com.finance.shared.util.CodeNormalizer;
 import com.finance.market.fund.util.TefasHelper;

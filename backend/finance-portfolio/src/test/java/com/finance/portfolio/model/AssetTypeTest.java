@@ -2,7 +2,6 @@ package com.finance.portfolio.model;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;

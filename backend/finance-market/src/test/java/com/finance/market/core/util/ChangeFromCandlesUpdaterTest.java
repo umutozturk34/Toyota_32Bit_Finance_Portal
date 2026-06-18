@@ -1,6 +1,5 @@
 package com.finance.market.core.util;
 
-import com.finance.market.core.model.BaseAsset;
 import com.finance.market.stock.model.Stock;
 import org.junit.jupiter.api.Test;
 

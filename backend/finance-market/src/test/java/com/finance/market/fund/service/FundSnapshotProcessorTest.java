@@ -1,7 +1,6 @@
 package com.finance.market.fund.service;
 
 import com.finance.common.config.AppProperties;
-import com.finance.common.model.TrackedAssetType;
 import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.core.service.TrackedAssetQueryService;
 import com.finance.market.fund.client.TefasClient;

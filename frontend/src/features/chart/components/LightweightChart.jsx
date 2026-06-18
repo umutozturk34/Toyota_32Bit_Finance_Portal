@@ -191,7 +191,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
         {data?.candles?.length > 0 && !isFullscreen && (
             <div data-tour="chart-lens">
             {lensOpen ? (
-                <Card variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className="relative !overflow-hidden">
+                <Card variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} hoverable={false} className="relative z-10 !overflow-hidden">
                     <DataWindowPanel candles={data.candles} hover={crosshairData} assetType={assetType} variant="summary" />
                     <button
                         type="button"

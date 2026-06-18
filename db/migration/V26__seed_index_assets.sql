@@ -73,3 +73,12 @@ INSERT INTO public.tracked_assets (id, asset_type, asset_code, display_name, sto
 INSERT INTO public.tracked_assets (id, asset_type, asset_code, display_name, stock_segment, sort_order, created_at, updated_at, binance_symbol, index_asset, compare_only, asset_id, enabled) VALUES (117, 'STOCK', 'XKOBI.IS', NULL, 'SECONDARY_INDEX', 128, now(), now(), NULL, true, true, 113, true) ON CONFLICT DO NOTHING;
 INSERT INTO public.tracked_assets (id, asset_type, asset_code, display_name, stock_segment, sort_order, created_at, updated_at, binance_symbol, index_asset, compare_only, asset_id, enabled) VALUES (118, 'STOCK', 'XHARZ.IS', NULL, 'SECONDARY_INDEX', 129, now(), now(), NULL, true, true, 114, true) ON CONFLICT DO NOTHING;
 INSERT INTO public.tracked_assets (id, asset_type, asset_code, display_name, stock_segment, sort_order, created_at, updated_at, binance_symbol, index_asset, compare_only, asset_id, enabled) VALUES (119, 'STOCK', 'XBANA.IS', NULL, 'SECONDARY_INDEX', 130, now(), now(), NULL, true, true, 115, true) ON CONFLICT DO NOTHING;
+
+-- V13/V26 seed instruments AND tracked_assets with HARDCODED ids but never advance their sequences, so in
+-- empty/prod mode (`make up`, no demo dump — the dump carries its own setval) the first runtime auto-discovery
+-- insert (id DEFAULT nextval) collides with a seeded row on the primary key. Resync both sequences to their
+-- current max id so runtime inserts continue past the seeded block. Idempotent; harmless in demo mode.
+SELECT pg_catalog.setval('public.assets_id_seq',
+    GREATEST((SELECT COALESCE(MAX(id), 0) FROM public.instruments), 1));
+SELECT pg_catalog.setval('public.tracked_assets_id_seq',
+    GREATEST((SELECT COALESCE(MAX(id), 0) FROM public.tracked_assets), 1));

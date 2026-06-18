@@ -1573,6 +1573,12 @@
         "noPortfolioTitle": "Tahvil portföyü yok",
         "noPortfolioHint": "Önce bir Mevduat & Tahvil portföyü oluştur"
       },
+      "search": {
+        "title": "Tahvil Ekle",
+        "subtitle": "Hazine tahvil/bono serisi arayıp bu portföye ekle",
+        "placeholder": "Tahvil eklemek için ara...",
+        "addLabel": "Portföye ekle"
+      },
       "col": {
         "series": "Seri"
       },
@@ -2913,6 +2919,11 @@
     }
   },
   "analytics": {
+    "compare": {
+      "rangeCustom": "Özel",
+      "startDate": "Başlangıç",
+      "endDate": "Bitiş"
+    },
     "amount": "Tutar",
     "amountHint": "Ayarlardan görüntü para birimini değiştirebilirsin",
     "tabCompare": "Karşılaştır",

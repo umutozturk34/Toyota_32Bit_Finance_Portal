@@ -12,6 +12,7 @@ import ErrorState from '../../shared/components/feedback/ErrorState';
 import SummaryCards from './components/SummaryCards';
 import PositionsTable from './components/PositionsTable';
 import PositionSearchBar from './components/PositionSearchBar';
+import BondSearchBar from './components/BondSearchBar';
 import AllocationChart from './components/AllocationChart';
 import RealizedPnlChart from './components/RealizedPnlChart';
 import CostBreakdownChart from './components/CostBreakdownChart';
@@ -217,6 +218,8 @@ export default function Portfolio() {
               <FixedIncomePnlChart portfolioId={portfolio.id} />
             </div>
           )}
+
+          <BondSearchBar />
 
           <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 items-start">
             <DepositsList portfolioId={portfolio?.id} />

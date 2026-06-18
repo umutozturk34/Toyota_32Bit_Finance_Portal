@@ -133,6 +133,11 @@ export default function SearchSuggestions({
     : recentSearches
   ).filter((item) => !excludedTypeSet.has(item.type));
 
+  // When a host (portfolio add bars) supplies a secondaryAction, the "add" affordance must appear on recent
+  // items too — not just live results — so a recently-viewed asset is addable straight from the recent panel
+  // instead of only navigating to its detail page.
+  const SecondaryIcon = secondaryAction?.icon;
+
   const handleSelect = useCallback((asset) => {
     trackRecent(asset);
     setQuery('');
@@ -272,10 +277,20 @@ export default function SearchSuggestions({
                         {t(`assets.labels.${item.type}`, { defaultValue: item.type })}
                       </span>
                     </button>
+                    {secondaryAction && (!secondaryAction.shouldShow || secondaryAction.shouldShow(item)) && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); secondaryAction.onClick(item); setQuery(''); setDebouncedQuery(''); setOpen(false); }}
+                        title={secondaryAction.label}
+                        aria-label={secondaryAction.label}
+                        className="shrink-0 flex items-center justify-center h-8 w-8 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors cursor-pointer border-none"
+                      >
+                        {SecondaryIcon && <SecondaryIcon className="h-4 w-4" />}
+                      </button>
+                    )}
                     <button
                       onClick={(e) => { e.stopPropagation(); removeRecent({ code: item.code, type: item.type }); }}
                       aria-label={t('searchSuggestions.removeRecent', { defaultValue: 'Kaldır' })}
-                      className="shrink-0 mr-2 flex items-center justify-center h-7 w-7 rounded-md text-fg-subtle hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer border-none bg-transparent opacity-0 group-hover:opacity-100"
+                      className="shrink-0 mr-2 flex items-center justify-center h-7 w-7 rounded-md text-fg-subtle hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer border-none bg-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-60"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -310,7 +325,6 @@ export default function SearchSuggestions({
                   const typeColor = ASSET_TYPE_COLORS[asset.type] || '#8b5cf6';
                   const showSecondary = secondaryAction
                     && (!secondaryAction.shouldShow || secondaryAction.shouldShow(asset));
-                  const SecondaryIcon = secondaryAction?.icon;
                   return (
                     <div
                       key={`${asset.type}-${asset.code}`}

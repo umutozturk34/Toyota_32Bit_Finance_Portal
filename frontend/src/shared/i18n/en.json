@@ -1573,6 +1573,12 @@
         "noPortfolioTitle": "No bond portfolio",
         "noPortfolioHint": "Create a Deposit & Bond portfolio first"
       },
+      "search": {
+        "title": "Add Bond",
+        "subtitle": "Find a Treasury bond series and add it to this portfolio",
+        "placeholder": "Search to add a bond...",
+        "addLabel": "Add to portfolio"
+      },
       "col": {
         "series": "Series"
       },
@@ -2913,6 +2919,11 @@
     }
   },
   "analytics": {
+    "compare": {
+      "rangeCustom": "Custom",
+      "startDate": "Start",
+      "endDate": "End"
+    },
     "amount": "Amount",
     "amountHint": "You can change the display currency in settings",
     "tabCompare": "Compare",

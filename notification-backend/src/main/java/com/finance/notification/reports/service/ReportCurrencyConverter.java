@@ -41,6 +41,13 @@ public class ReportCurrencyConverter {
         }
     }
 
+    /**
+     * Re-creates the summary with its current money fields converted at as-of; percentages untouched. Total Cost
+     * is an entry-date figure, so for a USD/EUR target it consumes the per-currency frame's already-converted
+     * {@code totalEntry} (matching the position table and the on-screen SummaryCards) instead of re-converting the
+     * TRY scalar at today's rate, falling back to the as-of conversion only when the frame is absent (TRY report
+     * or no rates).
+     */
     public ReportSummary convertSummary(ReportSummary s, ReportFxConverter fx, LocalDate asOf, String target) {
         if (s == null) return null;
         ReportSummary.ReportCurrencyFrame frame = s.frames() != null ? s.frames().get(target) : null;

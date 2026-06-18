@@ -19,6 +19,7 @@ public class NotificationSchedulingConfig {
     private static final int POOL_SIZE = 4;
     private static final String THREAD_PREFIX = "notif-sched-";
 
+    /** The pooled {@link TaskScheduler} Spring's scheduling infrastructure adopts (by the {@code taskScheduler} name). */
     @Bean
     public TaskScheduler taskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();

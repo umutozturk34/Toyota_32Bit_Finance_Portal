@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -201,13 +202,15 @@ class StockSnapshotProcessorTest {
     }
 
     @Test
-    void exists_returnsFalse_whenLookupThrows() {
+    void exists_propagatesTemporarilyUnavailable_whenLookupFailsTransiently() {
         when(yahooStockClient.fetchStockChartFull(eq("AAPL"), eq("1d"), anyString(), eq(true)))
                 .thenThrow(new RuntimeException("Yahoo 503"));
 
-        boolean result = processor.exists("AAPL");
-
-        assertThat(result).isFalse();
+        // A transient upstream failure must NOT be reported as "does not exist": it propagates so the add flow
+        // tells the user to retry rather than falsely claiming a valid symbol is unknown.
+        assertThatThrownBy(() -> processor.exists("AAPL"))
+                .isInstanceOf(com.finance.common.exception.BusinessException.class)
+                .hasMessage("error.market.dataTemporarilyUnavailable");
     }
 
     @Test

@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -220,13 +221,14 @@ class CryptoSnapshotProcessorTest {
     }
 
     @Test
-    void exists_returnsFalse_whenCoinGeckoLookupThrows() {
+    void exists_propagatesTemporarilyUnavailable_whenCoinGeckoLookupFailsTransiently() {
         when(coinGeckoClient.fetchMarkets(eq("usd"), eq(List.of("bitcoin"))))
                 .thenThrow(new RuntimeException("CoinGecko 429"));
 
-        boolean result = processor.exists("bitcoin");
-
-        assertThat(result).isFalse();
+        // A transient upstream failure (e.g. 429 rate-limit) must NOT be reported as "does not exist".
+        assertThatThrownBy(() -> processor.exists("bitcoin"))
+                .isInstanceOf(com.finance.common.exception.BusinessException.class)
+                .hasMessage("error.market.dataTemporarilyUnavailable");
     }
 
     @Test

@@ -27,6 +27,7 @@ import java.util.List;
 import org.mockito.ArgumentCaptor;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -291,13 +292,14 @@ class FundSnapshotProcessorTest {
     }
 
     @Test
-    void exists_returnsFalse_whenLookupThrows() {
+    void exists_propagatesTemporarilyUnavailable_whenLookupFailsTransiently() {
         when(tefasClient.post(eq(FundType.YAT), eq("X"), any(), any()))
                 .thenThrow(new RuntimeException("WAF block"));
 
-        boolean result = processor.exists("X");
-
-        assertThat(result).isFalse();
+        // A transient upstream failure must NOT be reported as "does not exist"; it propagates so the caller retries.
+        assertThatThrownBy(() -> processor.exists("X"))
+                .isInstanceOf(com.finance.common.exception.BusinessException.class)
+                .hasMessage("error.market.dataTemporarilyUnavailable");
     }
 
     @Test

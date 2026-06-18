@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -242,12 +243,13 @@ class ForexSnapshotProcessorTest {
     }
 
     @Test
-    void exists_returnsFalse_whenLookupThrows() {
+    void exists_propagatesTemporarilyUnavailable_whenLookupFailsTransiently() {
         when(evdsClient.fetchDovizSerieList()).thenThrow(new RuntimeException("EVDS 503"));
 
-        boolean result = processor.exists("USD");
-
-        assertThat(result).isFalse();
+        // A transient upstream failure must NOT be reported as "does not exist"; it propagates so the caller retries.
+        assertThatThrownBy(() -> processor.exists("USD"))
+                .isInstanceOf(com.finance.common.exception.BusinessException.class)
+                .hasMessage("error.market.dataTemporarilyUnavailable");
     }
 
     @Test

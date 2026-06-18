@@ -303,15 +303,16 @@ class CommoditySnapshotProcessorTest {
     }
 
     @Test
-    void exists_returnsFalse_whenClientThrows() {
+    void exists_propagatesTemporarilyUnavailable_whenClientFailsTransiently() {
         when(yahooSymbolResolver.normalize("XAU")).thenReturn("XAU");
         when(yahooSymbolResolver.resolve("XAU")).thenReturn("GC=F");
         when(yahooCommodityClient.fetchChartFull(eq("GC=F"), eq("1d"), anyString(), eq(true)))
                 .thenThrow(new RuntimeException("Yahoo 503"));
 
-        boolean result = processor.exists("XAU");
-
-        assertThat(result).isFalse();
+        // A transient Yahoo failure must NOT be reported as "does not exist"; it propagates so the caller retries.
+        assertThatThrownBy(() -> processor.exists("XAU"))
+                .isInstanceOf(com.finance.common.exception.BusinessException.class)
+                .hasMessage("error.market.dataTemporarilyUnavailable");
     }
 
     private static boolean anyBoolean() {

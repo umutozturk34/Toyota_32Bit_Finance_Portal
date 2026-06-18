@@ -23,6 +23,7 @@ import com.finance.market.commodity.model.Commodity;
 import com.finance.market.commodity.model.CommoditySnapshotInput;
 import com.finance.market.commodity.repository.CommodityCandleRepository;
 import com.finance.market.commodity.repository.CommodityRepository;
+import com.finance.market.core.util.ApiAssetValidator;
 import com.finance.market.core.util.PriceCrossCalculator;
 import com.finance.market.core.util.TrackedRefreshRunner;
 import com.finance.market.core.util.YahooRangePolicy;
@@ -173,12 +174,13 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
         String normalized = yahooSymbolResolver.normalize(code);
         String yahooSymbol = yahooSymbolResolver.resolve(normalized);
         if (yahooSymbol == null) return false;
-        try {
+        // Route through the shared validator (like stock/crypto/forex/fund) so a definitive 404 maps to "not found"
+        // while a transient Yahoo failure surfaces as temporarily-unavailable instead of being swallowed to false
+        // and mis-reported as "does not exist". The lookup uses the resolved yahooSymbol, ignoring the validator's
+        // own re-normalised arg.
+        return ApiAssetValidator.validate(normalized, true, n -> {
             YahooChartFullResult<YahooQuoteDto> result = yahooCommodityClient.fetchChartFull(yahooSymbol, "1d", chartInterval, true);
             return result.quote() != null && result.quote().regularMarketPrice() != null;
-        } catch (Exception e) {
-            log.warn("Commodity existence check failed for {}: {}", normalized, e.getMessage());
-            return false;
-        }
+        }, log, "Commodity");
     }
 }

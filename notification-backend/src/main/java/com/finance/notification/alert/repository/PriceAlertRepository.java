@@ -17,6 +17,14 @@ public interface PriceAlertRepository extends JpaRepository<PriceAlert, Long> {
 
     List<PriceAlert> findByActiveTrueAndTrackedAsset_AssetType(TrackedAssetType assetType);
 
+    /**
+     * Keyset page (id strictly greater than {@code lastId}, ascending) of active, not-yet-triggered alerts for
+     * the asset type. Keyset (not offset) paging is required because the evaluator deactivates fired alerts
+     * mid-scan, which would shift an offset window and skip rows; advancing by id is immune to that.
+     */
+    List<PriceAlert> findByActiveTrueAndTrackedAsset_AssetTypeAndIdGreaterThan(
+            TrackedAssetType assetType, Long lastId, Pageable pageable);
+
     long countByUserSub(String userSub);
 
     long countByUserSubAndTrackedAsset_Id(String userSub, Long trackedAssetId);

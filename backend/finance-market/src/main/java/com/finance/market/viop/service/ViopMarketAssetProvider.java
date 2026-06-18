@@ -67,7 +67,7 @@ public class ViopMarketAssetProvider implements MarketAssetProvider {
                                             String sortBy, String direction, int page, int size) {
         Specification<ViopContract> spec = buildSearchSpec(searchTerm, filters);
         List<ViopContract> contracts = repository
-                .findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS)))
+                .findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS, "symbol")))
                 .getContent();
         return responseMapper.toResponses(contracts);
     }

@@ -128,7 +128,7 @@ class CryptoMarketAssetProviderTest {
                 .containsEntry("name", "name")
                 .containsEntry("volume", "totalVolume")
                 .containsEntry("marketCap", "marketCap")
-                .containsEntry("default", "changePercent");
+                .containsEntry("default", "marketCap");
     }
 
     @Test

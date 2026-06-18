@@ -13,9 +13,12 @@ import com.finance.notification.alert.model.PriceAlert;
 import com.finance.notification.alert.repository.PriceAlertRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -23,6 +26,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -95,6 +99,23 @@ class PriceAlertServiceTest {
         var result = service.activeAlerts(MarketType.CRYPTO);
 
         assertThat(result).hasSize(1);
+    }
+
+    @Test
+    void activeAlertsAfter_queriesKeysetPage_orderedByIdAscending() {
+        when(repository.findByActiveTrueAndTrackedAsset_AssetTypeAndIdGreaterThan(
+                eq(TrackedAssetType.CRYPTO), eq(50L), any(Pageable.class)))
+                .thenReturn(java.util.List.of(ownedAlert()));
+
+        var result = service.activeAlertsAfter(MarketType.CRYPTO, 50L, 200);
+
+        assertThat(result).hasSize(1);
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(repository).findByActiveTrueAndTrackedAsset_AssetTypeAndIdGreaterThan(
+                eq(TrackedAssetType.CRYPTO), eq(50L), pageable.capture());
+        assertThat(pageable.getValue().getPageNumber()).isZero();
+        assertThat(pageable.getValue().getPageSize()).isEqualTo(200);
+        assertThat(pageable.getValue().getSort()).isEqualTo(Sort.by("id").ascending());
     }
 
     private PriceAlertResponse stubResponse(PriceAlert a) {

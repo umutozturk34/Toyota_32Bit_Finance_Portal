@@ -75,7 +75,7 @@ public class CryptoMarketAssetProvider extends BaseTrackedMarketAssetProvider<Cr
                 "name", "name",
                 "volume", "totalVolume",
                 "marketCap", "marketCap",
-                "default", "changePercent"
+                "default", "marketCap"
         );
     }
 

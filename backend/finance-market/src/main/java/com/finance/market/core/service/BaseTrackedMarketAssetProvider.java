@@ -92,7 +92,7 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
                                             String sortBy, String direction, int page, int size) {
         Set<String> enabledCodes = enabledCodes();
         Specification<T> spec = applyCustomFilters(buildSearchSpec(searchTerm, enabledCodes), filters);
-        List<T> entities = repository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, sortFields()))).getContent();
+        List<T> entities = repository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, sortFields(), codeField()))).getContent();
         return withDisplayNames(mapToResponses(entities));
     }
 

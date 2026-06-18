@@ -26,6 +26,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -89,6 +90,38 @@ class PriceAlertEvaluatorTest {
         assertThat(captured.type()).isEqualTo(NotificationType.PRICE_ALERT_FIRED);
         assertThat(captured.userSub()).isEqualTo("user-1");
         assertThat(captured.payload()).isSameAs(mapped);
+    }
+
+    @Test
+    void should_dispatchSurvivingFire_when_oneAlertPersistThrows() {
+        PriceAlert bad = PriceAlert.builder()
+                .id(1L).userSub("user-1").marketType(MarketType.CRYPTO).assetCode("BTC")
+                .direction(AlertDirection.ABOVE).threshold(BigDecimal.valueOf(100))
+                .currency("TRY").active(true).build();
+        PriceAlert good = PriceAlert.builder()
+                .id(2L).userSub("user-2").marketType(MarketType.CRYPTO).assetCode("ETH")
+                .direction(AlertDirection.ABOVE).threshold(BigDecimal.valueOf(100))
+                .currency("TRY").active(true).build();
+        AssetSnapshot btc = snapshot("BTC", BigDecimal.valueOf(105));
+        AssetSnapshot eth = snapshot("ETH", BigDecimal.valueOf(110));
+        PriceAlertPayload goodPayload = new PriceAlertPayload(
+                2L, MarketType.CRYPTO, "ETH", AlertDirection.ABOVE,
+                BigDecimal.valueOf(100), BigDecimal.valueOf(110), "image", "ETH name", "TRY");
+        when(alertService.activeAlerts(MarketType.CRYPTO)).thenReturn(List.of(bad, good));
+        when(assetSnapshotCache.findByCodes(eq(MarketType.CRYPTO), eq(Set.of("BTC", "ETH"))))
+                .thenReturn(Map.of("BTC", btc, "ETH", eth));
+        doThrow(new RuntimeException("persist boom")).when(alertService).persist(bad);
+        when(priceAlertMapper.toFiredPayload(good, eth, MarketType.CRYPTO)).thenReturn(goodPayload);
+        when(dispatcher.dispatchBatched(any())).thenReturn(new BatchResult(1, 0));
+
+        int fired = evaluator.evaluate(MarketType.CRYPTO);
+
+        // The bad row is swallowed; the good row still fans out.
+        assertThat(fired).isEqualTo(1);
+        ArgumentCaptor<List<NotificationRequest>> captor = ArgumentCaptor.forClass(List.class);
+        verify(dispatcher).dispatchBatched(captor.capture());
+        assertThat(captor.getValue()).hasSize(1);
+        assertThat(captor.getValue().get(0).userSub()).isEqualTo("user-2");
     }
 
     @Test

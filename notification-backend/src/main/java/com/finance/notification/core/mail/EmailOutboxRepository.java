@@ -34,7 +34,8 @@ public interface EmailOutboxRepository extends JpaRepository<EmailOutbox, Long> 
     @Modifying
     @Query("""
             UPDATE EmailOutbox o
-            SET o.status = com.finance.notification.core.mail.EmailOutbox.Status.PROCESSING
+            SET o.status = com.finance.notification.core.mail.EmailOutbox.Status.PROCESSING,
+                o.relayedAt = CURRENT_TIMESTAMP
             WHERE o.id = :id
               AND o.status = com.finance.notification.core.mail.EmailOutbox.Status.RELAYED
             """)

@@ -172,6 +172,24 @@ class PortfolioCrudServiceTest {
     }
 
     @Test
+    void shouldThrowBusinessException_whenPortfolioAlreadyHoldsMaxLots() {
+        // Arrange: an owned SPOT portfolio already at the lot cap.
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.countByPortfolioId(PORTFOLIO_ID))
+                .thenReturn((long) portfolioProperties.getMaxLotsPerPortfolio());
+        PositionRequest request = new PositionRequest(
+                "STOCK", "THYAO.IS", new BigDecimal("100"),
+                LocalDateTime.of(2024, 1, 15, 10, 0), new BigDecimal("40"));
+
+        // Act + Assert: the add is rejected with the localized cap key and nothing is persisted.
+        assertThatThrownBy(() -> service.addPosition(PORTFOLIO_ID, USER_SUB, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("error.portfolio.maxLotsReached");
+        verify(positionRepository, never()).save(any());
+    }
+
+    @Test
     void shouldPersistNewPositionWithRequestFields_whenPortfolioOwnedByUser() {
         Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
         LocalDateTime entryDate = LocalDateTime.of(2024, 1, 15, 10, 0);

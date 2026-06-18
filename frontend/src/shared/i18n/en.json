@@ -2509,10 +2509,12 @@
     "history": "History",
     "noHistory": "No task history yet",
     "taskToast": "Task",
+    "apiKeyHint": "EVDS_API_KEY is not set — configure the environment variable.",
     "status": {
       "RUNNING": "Running",
       "COMPLETED": "Completed",
-      "FAILED": "Failed"
+      "FAILED": "Failed",
+      "API_KEY_MISSING": "API key missing"
     },
     "category": {
       "CRYPTO": "Crypto",

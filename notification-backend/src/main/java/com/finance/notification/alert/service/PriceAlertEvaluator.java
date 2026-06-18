@@ -68,13 +68,19 @@ public class PriceAlertEvaluator {
             AssetSnapshot snapshot = resolveSnapshot(alert, snapshots);
             if (snapshot == null) continue;
             if (!alert.evaluate(snapshot.priceTry())) continue;
-            alert.markFired();
-            priceAlertService.persist(alert);
-            PriceAlertPayload payload = priceAlertMapper.toFiredPayload(alert, snapshot, marketType);
-            fired.add(NotificationRequest.of(alert.getUserSub(), payload));
-            log.info("Price alert fired alertId={} userSub={} market={} code={} dir={} threshold={} price={}",
-                    alert.getId(), alert.getUserSub(), marketType, alert.getAssetCode(),
-                    alert.getDirection(), alert.getThreshold(), snapshot.priceTry());
+            // Isolate each alert: one bad row must not abort the whole batch.
+            try {
+                alert.markFired();
+                priceAlertService.persist(alert);
+                PriceAlertPayload payload = priceAlertMapper.toFiredPayload(alert, snapshot, marketType);
+                fired.add(NotificationRequest.of(alert.getUserSub(), payload));
+                log.info("Price alert fired alertId={} userSub={} market={} code={} dir={} threshold={} price={}",
+                        alert.getId(), alert.getUserSub(), marketType, alert.getAssetCode(),
+                        alert.getDirection(), alert.getThreshold(), snapshot.priceTry());
+            } catch (RuntimeException ex) {
+                log.warn("Price alert fire failed alertId={} code={}: {}",
+                        alert.getId(), alert.getAssetCode(), ex.getMessage());
+            }
         }
         return fired;
     }

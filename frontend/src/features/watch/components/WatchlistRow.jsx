@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, TrendingUp, TrendingDown, Trash2, Pencil } from 'lucide-react';
@@ -32,8 +33,14 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
     : undefined;
 
   return (
-    <div
+    // In a sorted (non-draggable) view the rows persist across a sort/direction change (placeholderData keeps the
+    // current rows), so animate their reorder with framer `layout` — otherwise the list SNAPS to the new order,
+    // which reads as a jarring re-render. In the CUSTOM (draggable) view layout is disabled so dnd-kit owns the
+    // transform during a drag and the two transform writers never fight.
+    <motion.div
       ref={setNodeRef}
+      layout={draggable ? false : 'position'}
+      transition={{ layout: { type: 'spring', stiffness: 480, damping: 42 } }}
       style={style}
       onClick={route ? () => navigate(route) : undefined}
       onMouseEnter={triggerPrefetch}
@@ -135,6 +142,6 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -60,9 +60,10 @@ class BondHoldingServiceTest {
 
     @BeforeEach
     void setUp() {
+        BondHoldingProjection projection = new BondHoldingProjection(bondRepository,
+                bondValuationService, new BondCouponService(), bondRateHistoryRepository);
         service = new BondHoldingService(portfolioRepository, bondHoldingRepository,
-                bondRepository, bondValuationService, new BondCouponService(),
-                bondRateHistoryRepository, portfolioProperties);
+                bondRepository, projection, portfolioProperties);
     }
 
     private Portfolio ownedPortfolio() {
@@ -965,6 +966,47 @@ class BondHoldingServiceTest {
         // Assert: 2 coupons, summed at their own period rates (10 + 14 = 24 per 100 → × 100 nominal ÷ 100 = 24 TRY).
         assertThat(row.couponsReceivedCount()).isEqualTo(2);
         assertThat(row.couponsReceivedTry()).isEqualByComparingTo("2400.0000");
+    }
+
+    @Test
+    void couponsReceivedHeadlineReconcilesWithSchedule_forTlrefFloaterWithRampAndDrop() {
+        // A TLREF floater whose rate ramps within a period: the grid prices each coupon at the rate the day BEFORE
+        // the ex-coupon price drop, while the old headline read it at the plain coupon date — so they could disagree.
+        // After routing the floater headline through the same dated schedule, the received-coupon total must equal
+        // Σ(RECEIVED grid entries), even with a real price drop present.
+        LocalDate issue = LocalDate.now().minusMonths(14);
+        Bond tlref = Bond.builder()
+                .seriesCode(SERIES).isinCode(ISIN).name("TLREF Değişken")
+                .couponRate(new BigDecimal("14.0000"))
+                .maturityStart(issue).maturityEnd(LocalDate.now().plusYears(2))
+                .bondType(BondType.FLOATING_TLREF).build();
+        BondHolding held = BondHolding.builder()
+                .id(HOLDING_ID).portfolio(Portfolio.builder().id(PORTFOLIO_ID).build()).portfolioId(PORTFOLIO_ID)
+                .bondSeriesCode(SERIES).bondIsin(ISIN)
+                .quantity(new BigDecimal("100")).entryPrice(new BigDecimal("100")).entryDate(issue)
+                .build();
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(ownedPortfolio()));
+        when(bondHoldingRepository.findByPortfolioIdOrderByEntryDateDescIdDesc(PORTFOLIO_ID)).thenReturn(List.of(held));
+        when(bondHoldingRepository.findById(HOLDING_ID)).thenReturn(Optional.of(held));
+        when(bondRepository.findById(SERIES)).thenReturn(Optional.of(tlref));
+        when(bondValuationService.cleanPriceTry(any(BondHolding.class), any(LocalDate.class)))
+                .thenReturn(new BigDecimal("101.00"));
+        when(bondRateHistoryRepository.findByIsinCodeOrderByRateDateAsc(ISIN)).thenReturn(List.of(
+                rateRow(issue, new BigDecimal("10.0000")),
+                rateRow(issue.plusMonths(7), new BigDecimal("14.0000")),
+                priceRow(issue, new BigDecimal("100")),
+                priceRow(issue.plusMonths(6).minusDays(1), new BigDecimal("103")),
+                priceRow(issue.plusMonths(6), new BigDecimal("92")),   // ex-coupon drop > 4%
+                priceRow(LocalDate.now(), new BigDecimal("101"))));
+
+        BigDecimal headline = service.list(PORTFOLIO_ID, USER_SUB).get(0).couponsReceivedTry();
+        BigDecimal scheduleSum = service.couponSchedule(PORTFOLIO_ID, HOLDING_ID, USER_SUB).stream()
+                .filter(e -> "RECEIVED".equals(e.status()))
+                .map(BondCouponScheduleEntry::amountTry)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        assertThat(scheduleSum).isGreaterThan(BigDecimal.ZERO);
+        assertThat(headline).isEqualByComparingTo(scheduleSum);
     }
 
     @Test

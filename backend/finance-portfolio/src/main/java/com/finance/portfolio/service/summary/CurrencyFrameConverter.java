@@ -36,9 +36,13 @@ class CurrencyFrameConverter {
                 }
             }
             if (fxRate == null) {
-                var latest = series.lastEntry();
-                if (latest != null && latest.getValue() != null && latest.getValue().signum() > 0) {
-                    fxRate = latest.getValue();
+                // No rate on/before `date` (date precedes the series, or is null): fall back to the EARLIEST
+                // known rate, not the latest. lastEntry() is today's spot, which would value a years-old
+                // entry/exit at the current FX and badly distort the realized-PnL frame; firstEntry() is the
+                // closest historical rate to that early date.
+                var earliest = series.firstEntry();
+                if (earliest != null && earliest.getValue() != null && earliest.getValue().signum() > 0) {
+                    fxRate = earliest.getValue();
                 }
             }
             if (fxRate == null) continue;

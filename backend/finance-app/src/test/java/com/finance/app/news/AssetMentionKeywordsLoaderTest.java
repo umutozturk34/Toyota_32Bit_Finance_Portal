@@ -21,7 +21,7 @@ class AssetMentionKeywordsLoaderTest {
         assertThat(config.blockedTickers()).contains("FED", "TCMB", "SPK", "ECB");
         assertThat(config.nameStopwords()).contains("ve");
         assertThat(config.thresholds().stockCoreMin()).isEqualTo(5);
-        assertThat(config.thresholds().cryptoNameMin()).isEqualTo(4);
+        assertThat(config.thresholds().cryptoNameMin()).isEqualTo(3);
         assertThat(config.thresholds().catalogTtlMs()).isEqualTo(3_600_000L);
     }
 }

@@ -56,9 +56,14 @@ class InflationBeaterServiceTest {
     void wireTrackedDefaults() {
         // Built by hand rather than @InjectMocks: both cold-start guards are erased-type ObjectProvider, which
         // constructor injection can't disambiguate. Each getIfAvailable() defaults to null — treated as ready
-        // and TRY-based — until a test stubs it.
+        // and TRY-based — until a test stubs it. The universe builder/simulator collaborators are wired from
+        // the same catalog/scenario mocks so the universe is still driven by these stubs.
+        InflationBeaterUniverseBuilder universeBuilder =
+                new InflationBeaterUniverseBuilder(macroQueryService, trackedAssetQueryService);
+        InflationBeaterUniverseSimulator universeSimulator =
+                new InflationBeaterUniverseSimulator(scenarioService);
         service = new InflationBeaterService(scenarioService, historyService, macroQueryService,
-                trackedAssetQueryService, cacheManager, nativeCurrencyResolver, marketDataInitializer);
+                cacheManager, universeBuilder, universeSimulator, nativeCurrencyResolver, marketDataInitializer);
         for (TrackedAssetType t : TrackedAssetType.values()) {
             lenient().when(trackedAssetQueryService.getCodes(t)).thenReturn(List.of());
             lenient().when(trackedAssetQueryService.getEnabledCodes(t)).thenReturn(List.of());

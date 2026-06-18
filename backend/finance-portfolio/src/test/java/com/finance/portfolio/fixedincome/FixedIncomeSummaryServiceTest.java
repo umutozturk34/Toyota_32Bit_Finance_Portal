@@ -75,17 +75,23 @@ class FixedIncomeSummaryServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new FixedIncomeSummaryService(portfolioRepository, depositHoldingRepository,
-                bondHoldingRepository, depositAccrualService, bondValuationService,
-                new BondCouponEventBuilder(new BondCouponService(), bondRateHistoryRepository),
-                bondRateHistoryRepository, bondRepository, currencyConverter);
+        BondCouponEventBuilder couponEventBuilder =
+                new BondCouponEventBuilder(new BondCouponService(), bondRateHistoryRepository);
+        FixedIncomeValuationSupport support = new FixedIncomeValuationSupport(
+                portfolioRepository, depositAccrualService, bondRateHistoryRepository, bondRepository, currencyConverter);
+        FixedIncomeHistoryService historyService = new FixedIncomeHistoryService(
+                depositHoldingRepository, bondHoldingRepository, depositAccrualService, couponEventBuilder, support);
+        service = new FixedIncomeSummaryService(depositHoldingRepository, bondHoldingRepository,
+                bondValuationService, couponEventBuilder, support, historyService);
         // The per-row grid services share the SAME mocks as the summary service, so a single arrange-once book
         // can be valued through all three surfaces and asserted to reconcile.
         depositGridService = new DepositHoldingService(portfolioRepository, depositHoldingRepository,
                 depositAccrualService, currencyConverter);
+        com.finance.portfolio.fixedincome.bond.BondHoldingProjection bondProjection =
+                new com.finance.portfolio.fixedincome.bond.BondHoldingProjection(bondRepository,
+                        bondValuationService, new BondCouponService(), bondRateHistoryRepository);
         bondGridService = new BondHoldingService(portfolioRepository, bondHoldingRepository,
-                bondRepository, bondValuationService, new BondCouponService(),
-                bondRateHistoryRepository, portfolioProperties);
+                bondRepository, bondProjection, portfolioProperties);
     }
 
     private void ownsPortfolio() {

@@ -164,11 +164,41 @@ class RateLimitFilterTest {
                 .contains("RATE_LIMIT_PUBLIC");
     }
 
+    @Test
+    void doFilterInternal_failsOpen_whenRedisBackendThrows() throws Exception {
+        // Arrange: Redis outage simulated by the bucket consume throwing a RuntimeException.
+        injectProxyManagerThrowing(new RuntimeException("redis down"));
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/public");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+
+        // Act
+        filter.doFilterInternal(request, response, chain);
+
+        // Assert: request is forwarded and no 429/500 is written.
+        verify(chain).doFilter(request, response);
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+        assertThat(response.getContentAsString()).isEmpty();
+    }
+
     @SuppressWarnings("unchecked")
     private void injectProxyManagerReturning(ConsumptionProbe probe) throws Exception {
         BucketProxy bucketProxy = mock(BucketProxy.class);
         when(bucketProxy.tryConsumeAndReturnRemaining(1)).thenReturn(probe);
 
+        injectProxyManager(bucketProxy);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void injectProxyManagerThrowing(RuntimeException error) throws Exception {
+        BucketProxy bucketProxy = mock(BucketProxy.class);
+        when(bucketProxy.tryConsumeAndReturnRemaining(1)).thenThrow(error);
+
+        injectProxyManager(bucketProxy);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void injectProxyManager(BucketProxy bucketProxy) throws Exception {
         RemoteBucketBuilder<String> builder = mock(RemoteBucketBuilder.class);
         when(builder.build(any(String.class), any(Supplier.class))).thenReturn(bucketProxy);
 

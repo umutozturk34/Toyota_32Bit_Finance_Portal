@@ -118,6 +118,29 @@ class AdminTaskRunnerTest {
     }
 
     @Test
+    void shouldNotLeakCapacity_whenStartTaskThrows() {
+        // A startTask failure (e.g. type already running) must not consume an in-flight slot; otherwise the
+        // counter leaks and a later trigger of a different type wrongly hits the capacity guard (429 forever).
+        ThreadPoolTaskExecutor pool = new ThreadPoolTaskExecutor();
+        pool.setCorePoolSize(1);
+        pool.setMaxPoolSize(1);
+        pool.setQueueCapacity(10);
+        pool.initialize();
+        AdminTaskRunner poolRunner = new AdminTaskRunner(taskTracker, pool);
+        when(taskTracker.startTask(eq("dupe"), anyString()))
+                .thenThrow(new IllegalStateException("already running"));
+        when(taskTracker.startTask(eq("other"), anyString())).thenReturn(info);
+
+        assertThatThrownBy(() -> poolRunner.execute("dupe", "m", () -> { }))
+                .isInstanceOf(IllegalStateException.class);
+        TaskTriggerResponse response = poolRunner.execute("other", "m", () -> { });
+
+        assertThat(response.status()).isEqualTo("started");
+        verify(taskTracker).startTask("other", "m");
+        pool.shutdown();
+    }
+
+    @Test
     void shouldRejectAndCleanUp_whenExecutorRejectsTask() {
         Executor rejecting = command -> { throw new RejectedExecutionException("pool full"); };
         AdminTaskRunner saturatedRunner = new AdminTaskRunner(taskTracker, rejecting);

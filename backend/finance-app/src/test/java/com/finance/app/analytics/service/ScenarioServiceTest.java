@@ -49,7 +49,9 @@ class ScenarioServiceTest {
     @BeforeEach
     void setUp() {
         when(analyticsProperties.scenario()).thenReturn(new AnalyticsProperties.Scenario(7));
-        service = new ScenarioService(historyService, macroQueryService, priceSeriesProvider, analyticsProperties);
+        ScenarioSimulationEngine simulationEngine =
+                new ScenarioSimulationEngine(priceSeriesProvider, analyticsProperties);
+        service = new ScenarioService(historyService, macroQueryService, priceSeriesProvider, simulationEngine);
     }
 
     private static PricedSeries pricedTry(List<HistoryPoint> points) {

@@ -59,14 +59,25 @@ public class MarketCacheService<T extends BaseAsset> {
      */
     public T getSnapshot(String key) {
         String cacheKey = snapshotPrefix + key;
-        Object cached = redisTemplate.opsForValue().get(cacheKey);
-        if (cached != null) {
-            return objectMapper.convertValue(cached, snapshotType);
+        // Redis is a read-through optimization, not the source of truth: a Redis outage must not 500
+        // valuation reads, so any failure falls through to the DB loader.
+        try {
+            Object cached = redisTemplate.opsForValue().get(cacheKey);
+            if (cached != null) {
+                return objectMapper.convertValue(cached, snapshotType);
+            }
+        } catch (RuntimeException e) {
+            log.warn("Redis read failed for {}; falling back to DB loader", cacheKey, e);
         }
         Optional<T> entity = snapshotFinder.apply(key);
         if (entity.isPresent()) {
             T loaded = entity.get();
-            redisTemplate.opsForValue().set(cacheKey, loaded, ttl);
+            // A cache write failure must not discard a successful DB load.
+            try {
+                redisTemplate.opsForValue().set(cacheKey, loaded, ttl);
+            } catch (RuntimeException e) {
+                log.warn("Redis write failed for {}; serving DB-loaded value uncached", cacheKey, e);
+            }
             return loaded;
         }
         throw new ResourceNotFoundException(entityName + " not found: " + key);

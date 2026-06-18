@@ -18,4 +18,7 @@ public class KeycloakAdminProperties {
     private String tokenClientId = "admin-cli";
     private String tokenPath = "/realms/master/protocol/openid-connect/token";
     private String otpCredentialType = "otp";
+    // Bounded HTTP timeouts: a hung Keycloak must not pin Tomcat workers on the blocking admin calls.
+    private long responseTimeoutSeconds = 10;
+    private int connectTimeoutMillis = 5000;
 }

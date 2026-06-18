@@ -12,6 +12,7 @@ import {
   lineSeriesDefaults,
   legendBase,
 } from '../../../shared/charts/echartsTheme';
+import i18n from '../../../shared/i18n/config';
 import { SERIES_COLORS } from '../constants';
 import { moneyDigits } from '../utils';
 
@@ -101,7 +102,7 @@ function buildOption(scenario, isDark, displayCurrency, isMobile) {
         // `params` (which only includes series with a point near the cursor) — otherwise series that end
         // earlier or sit on a sparser grid silently vanish from the tooltip as the mouse moves.
         const ts = params[0].value[0];
-        const date = new Date(ts).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+        const date = new Date(ts).toLocaleDateString(i18n.t('common.localeTag'), { day: '2-digit', month: 'short', year: 'numeric' });
         const rows = series
           .map((s) => {
             const pt = valueAsOf(s.data, ts);
@@ -110,7 +111,7 @@ function buildOption(scenario, isDark, displayCurrency, isMobile) {
           .filter(Boolean)
           .sort((a, b) => b.val - a.val)
           .map((r) => {
-            const val = r.val.toLocaleString('tr-TR', { style: 'currency', currency: displayCurrency, maximumFractionDigits: chartDigits(r.val) });
+            const val = r.val.toLocaleString(i18n.t('common.localeTag'), { style: 'currency', currency: displayCurrency, maximumFractionDigits: chartDigits(r.val) });
             return `<div style="display:flex;justify-content:space-between;gap:14px;align-items:center;font-family:ui-monospace,monospace;font-size:11px">
               <span style="display:flex;align-items:center;gap:6px;min-width:0"><span style="width:8px;height:8px;background:${r.color};border-radius:50%;flex-shrink:0"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${r.name}</span></span>
               <span style="font-weight:700;color:${r.color};flex-shrink:0">${val}</span>
@@ -126,7 +127,7 @@ function buildOption(scenario, isDark, displayCurrency, isMobile) {
     yAxis: valueAxis(palette, {
       axisLabel: {
         color: palette.muted, fontSize: 10,
-        formatter: (val) => Number(val).toLocaleString('tr-TR', { maximumFractionDigits: chartDigits(Number(val)) }),
+        formatter: (val) => Number(val).toLocaleString(i18n.t('common.localeTag'), { maximumFractionDigits: chartDigits(Number(val)) }),
       },
     }),
     series,

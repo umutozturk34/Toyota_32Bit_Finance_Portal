@@ -1,31 +1,27 @@
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { EASE } from '../../../shared/utils/animations';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import useSessionState from '../../../shared/hooks/useSessionState';
-import { TrendingUp, TrendingDown, Trophy, Search, ChevronLeft, ChevronRight, GitCompare, ArrowUp, ArrowDown, RotateCcw, ArrowLeft } from 'lucide-react';
-import Card from '../../../shared/components/card';
 import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
 import { useInflationBeaters, useAssetDisplayMeta } from '../hooks/useAnalytics';
 import { useMacroIndicators } from '../../macro/hooks/useMacroIndicators';
 import { instrumentDisplayName } from '../../../shared/utils/instrumentLabel';
-import BenchmarkPicker from '../components/BenchmarkPicker';
-import HeroStat from '../components/BeaterHeroStat';
-import Th from '../components/BeaterTh';
 import { PERIODS } from '../constants';
-import { formatPercent } from '../utils';
 import { buildBackTarget } from '../lib/compareNav';
 import {
   PAGE_SIZE,
   FIXED_TYPE_ORDER,
-  SORT_OPTIONS,
   BENCHMARK_CATEGORIES,
   MACRO_CATEGORY_TO_MARKET_TYPE,
   ANALYTICS_TO_MARKET_TYPE,
-  TYPE_BADGE,
 } from '../inflationBeaterConstants';
+import BeaterPageHeader from '../components/beater/BeaterPageHeader';
+import BeaterControls from '../components/beater/BeaterControls';
+import BeaterHeroStats from '../components/beater/BeaterHeroStats';
+import BeaterToolbar from '../components/beater/BeaterToolbar';
+import BeaterTable from '../components/beater/BeaterTable';
 
 export default function InflationBeaterPage() {
   const { t } = useTranslation();
@@ -138,72 +134,21 @@ export default function InflationBeaterPage() {
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      <header className="pb-3 border-b border-border-default/40">
-        {backTarget && (
-          <motion.button
-            type="button"
-            onClick={() => navigate(backTarget)}
-            whileHover={{ x: -2 }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="group inline-flex items-center gap-2 mb-4 rounded-full border border-border-default/80 bg-bg-elevated/80 backdrop-blur-md pl-1.5 pr-4 py-1.5 text-fg-muted hover:text-accent hover:border-accent/50 hover:bg-accent/10 transition-colors cursor-pointer"
-            style={{ boxShadow: '0 2px 12px -4px rgba(0,0,0,0.3)' }}
-          >
-            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-bg-base/70 border border-border-default/60 group-hover:bg-accent/15 group-hover:border-accent/50 group-hover:shadow-[0_0_10px_-2px_rgba(99,102,241,0.5)] transition-all">
-              <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
-            </span>
-            <span className="font-display text-sm font-semibold tracking-tight">
-              {t(`analytics.backTo.${cameFrom}`, { defaultValue: 'Geri dön' })}
-            </span>
-          </motion.button>
-        )}
-        <div className="flex items-center gap-2.5">
-          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/12 text-accent shrink-0">
-            <Trophy className="h-5 w-5" />
-          </span>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-fg tracking-tight leading-none">
-            {t('analytics.beaterTitle', { defaultValue: 'Benchmark Yenenler' })}
-          </h1>
-        </div>
-        <p className="mt-2 text-sm text-fg-muted max-w-2xl">
-          {t('analytics.beaterSubtitle', {
-            defaultValue: 'Bir indikatör seç ve hangi enstrümanların onu geçtiğini gör — TÜFE, politika faizi, mevduat veya başka bir gösterge.',
-          })}
-        </p>
-      </header>
+      <BeaterPageHeader
+        t={t}
+        backTarget={backTarget}
+        cameFrom={cameFrom}
+        onBack={() => navigate(backTarget)}
+      />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-xs font-display font-semibold text-fg-muted mr-1">
-            {t('analytics.period', { defaultValue: 'Dönem' })}
-          </span>
-          {PERIODS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => { setPeriod(p.id); setPage(0); }}
-              className={`text-xs font-mono font-semibold rounded-lg px-3 py-1.5 cursor-pointer border-none transition-colors ${
-                period === p.id ? 'bg-accent/15 text-accent shadow-[inset_0_0_0_1px_rgba(99,102,241,0.4)]' : 'text-fg-muted hover:text-fg'
-              }`}
-            >
-              {t(`analytics.${p.labelKey}`, { defaultValue: p.id })}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap min-w-0">
-          <span className="text-xs font-display font-semibold text-fg-muted">
-            {t('analytics.benchmark', { defaultValue: 'Karşılaştırma' })}
-          </span>
-          <BenchmarkPicker
-            value={benchmark}
-            onChange={(v) => { setBenchmark(v); setPage(0); }}
-            options={benchmarkOptions}
-            t={t}
-            defaultLabel={t('analytics.benchmarkDefault', { defaultValue: 'TÜFE (varsayılan)' })}
-          />
-        </div>
-      </div>
+      <BeaterControls
+        t={t}
+        period={period}
+        onPeriodChange={(id) => { setPeriod(id); setPage(0); }}
+        benchmark={benchmark}
+        onBenchmarkChange={(v) => { setBenchmark(v); setPage(0); }}
+        benchmarkOptions={benchmarkOptions}
+      />
 
       {isLoading && <LoadingState message={t('analytics.loading', { defaultValue: 'Hesaplanıyor...' })} />}
       {isError && <ErrorState message={t('analytics.loadError', { defaultValue: 'Yüklenirken hata oluştu' })} onRetry={refetch} />}
@@ -329,288 +274,52 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <HeroStat
-          icon={<Trophy className="h-4 w-4" />}
-          label={t('analytics.beatingBenchmark', { defaultValue: 'Yenenler' })}
-          value={`${scopeBeating}/${scopeTotal}`}
-          sub={`${winRate}%`}
-          accent="#10b981"
-        />
-        <HeroStat
-          icon={<TrendingUp className="h-4 w-4" />}
-          label={t('analytics.benchmarkReturn', { defaultValue: 'Benchmark getirisi' })}
-          value={data.benchmarkReturnPct != null ? formatPercent(data.benchmarkReturnPct) : '—'}
-          sub={`${benchmarkLabel} · ${period}${data.comparisonCurrency ? ` · ${data.comparisonCurrency}` : ''}`}
-          accent="#f59e0b"
-        />
-        <HeroStat
-          icon={<TrendingDown className="h-4 w-4" />}
-          label={t('analytics.losers', { defaultValue: 'Altta kalan' })}
-          value={scopeLosing > 0
-            ? `${scopeLosing}`
-            : <span className="text-sm text-fg-muted">{t('analytics.noUnderperformers', { defaultValue: 'Altta kalan yok' })}</span>}
-          sub={scopeLosing > 0
-            ? t('analytics.realLoss', { defaultValue: 'Excess return < 0' })
-            : t('analytics.allBeatSub', { defaultValue: 'Hepsi göstergeyi yendi' })}
-          accent={scopeLosing > 0 ? '#ef4444' : '#6b7280'}
-        />
-      </div>
+      <BeaterHeroStats
+        t={t}
+        period={period}
+        data={data}
+        scopeBeating={scopeBeating}
+        scopeTotal={scopeTotal}
+        scopeLosing={scopeLosing}
+        winRate={winRate}
+        benchmarkLabel={benchmarkLabel}
+      />
 
-      <div className="flex items-center gap-1.5 flex-wrap pt-1">
-        <span className="text-xs font-display font-semibold text-fg-muted mr-1">
-          {t('analytics.sortBy', { defaultValue: 'Sırala' })}
-        </span>
-        {SORT_OPTIONS.map((opt) => {
-          const active = sortKey === opt.id;
-          return (
-            <button
-              key={opt.id}
-              type="button"
-              onClick={() => onToggleSort(opt.id)}
-              className={`inline-flex items-center gap-1 text-[11px] font-mono font-semibold rounded-md px-2.5 py-1 cursor-pointer border-none transition-colors ${
-                active ? 'bg-accent/15 text-accent shadow-[inset_0_0_0_1px_rgba(99,102,241,0.4)]' : 'text-fg-muted hover:text-fg'
-              }`}
-            >
-              {t(opt.labelKey)}
-              {active && (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
-            </button>
-          );
-        })}
-        <button
-          type="button"
-          onClick={onReset}
-          disabled={isDefaultView}
-          title={t('analytics.reset', { defaultValue: 'Sıfırla' })}
-          className={`inline-flex items-center gap-1 text-[11px] font-display font-semibold rounded-md px-2 py-1 ml-1 border-none bg-transparent transition-colors ${
-            isDefaultView ? 'text-fg-subtle/40 cursor-default' : 'text-fg-subtle hover:text-fg cursor-pointer'
-          }`}
-        >
-          <RotateCcw className="h-3 w-3" />
-          {t('analytics.reset', { defaultValue: 'Sıfırla' })}
-        </button>
-      </div>
+      <BeaterToolbar
+        t={t}
+        sortKey={sortKey}
+        sortDir={sortDir}
+        onToggleSort={onToggleSort}
+        onReset={onReset}
+        isDefaultView={isDefaultView}
+        verdictFilter={verdictFilter}
+        onVerdictChange={onVerdictChange}
+        availableTypes={availableTypes}
+        typeFilter={typeFilter}
+        onTypeToggle={onTypeToggle}
+        onClearTypes={onClearTypes}
+        search={search}
+        onSearchChange={onSearchChange}
+        filteredCount={filteredEntries.length}
+        totalCount={totalCount}
+      />
 
-      <div className="flex flex-wrap items-center gap-3 pt-1">
-        <div className="flex items-center gap-1">
-          <span className="text-xs font-display font-semibold text-fg-muted mr-1">
-            {t('analytics.verdictFilter', { defaultValue: 'Durum' })}
-          </span>
-          {['all', 'beats', 'losers'].map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => onVerdictChange(v)}
-              className={`text-[11px] font-mono font-semibold rounded-md px-2.5 py-1 cursor-pointer border transition-colors ${
-                verdictFilter === v
-                  ? v === 'beats' ? 'bg-success/15 text-success border-success/40'
-                    : v === 'losers' ? 'bg-danger/15 text-danger border-danger/40'
-                    : 'bg-accent/15 text-accent border-accent/40'
-                  : 'text-fg-muted border-transparent hover:text-fg'
-              }`}
-            >
-              {t(`analytics.verdict_${v}`, { defaultValue: v })}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-1 flex-wrap">
-          <span className="text-xs font-display font-semibold text-fg-muted mr-1">
-            {t('analytics.typeFilter', { defaultValue: 'Tip' })}
-          </span>
-          {availableTypes.map((tp) => {
-            const badge = TYPE_BADGE[tp] || { label: tp, color: '#6366f1' };
-            const active = typeFilter.has(tp);
-            return (
-              <button
-                key={tp}
-                type="button"
-                onClick={() => onTypeToggle(tp)}
-                className="text-[11px] font-mono font-semibold tracking-[0.04em] rounded-md px-2 py-1 cursor-pointer border-none transition-all"
-                style={active ? {
-                  background: `${badge.color}26`,
-                  color: badge.color,
-                  boxShadow: `inset 0 0 0 1px ${badge.color}66`,
-                } : {
-                  background: 'transparent',
-                  color: 'var(--color-fg-muted)',
-                  boxShadow: `inset 0 0 0 1px var(--color-border-default)`,
-                }}
-              >
-                {t(`assets.labels.${tp}`, { defaultValue: badge.label })}
-              </button>
-            );
-          })}
-          {typeFilter.size > 0 && (
-            <button
-              type="button"
-              onClick={() => onClearTypes()}
-              className="text-xs font-display font-semibold text-fg-subtle hover:text-fg cursor-pointer border-none bg-transparent ml-1"
-            >
-              {t('analytics.clearFilters', { defaultValue: 'Temizle' })}
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-0 sm:min-w-[200px] max-w-md">
-          <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-            <Search className="h-3.5 w-3.5 text-fg-muted" />
-          </span>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            maxLength={64}
-            placeholder={t('analytics.searchAsset', { defaultValue: 'Asset ara — kaçıncı sırada?' })}
-            className="w-full rounded-lg border border-border-default bg-bg-elevated pl-9 pr-3 py-2 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
-          />
-        </div>
-        <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-fg-subtle tabular-nums">
-          {filteredEntries.length} / {totalCount}
-        </span>
-      </div>
-
-      <Card variant="elevated" radius="xl" padding="none" backdropBlur className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs sm:text-sm min-w-[560px]">
-            <thead className="bg-bg-elevated/40">
-              <tr>
-                <Th sortKey="rank" activeSort={sortKey} dir={sortDir}>#</Th>
-                <Th>
-                  {t('analytics.instrument', { defaultValue: 'Enstrüman' })}
-                </Th>
-                <Th align="right" sortKey="nominal" activeSort={sortKey} dir={sortDir} title={t('analytics.nominalReturnTooltip', { defaultValue: 'Mutlak yüzde değişim' })}>
-                  {t('analytics.nominalReturn', { defaultValue: 'Nominal' })}
-                </Th>
-                <Th align="right" sortKey="excess" activeSort={sortKey} dir={sortDir} title={t('analytics.excessReturnTooltip', { defaultValue: 'Nominal − Gösterge' })}>
-                  {t('analytics.excessReturn', { defaultValue: 'Gösterge Üzeri' })}
-                </Th>
-                <Th align="right">{t('analytics.verdict', { defaultValue: 'Sonuç' })}</Th>
-              </tr>
-            </thead>
-            <motion.tbody
-              key={`${sortKey}-${sortDir}-${verdictFilter}-${[...typeFilter].sort().join(',')}-${search.trim()}-${page}`}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.26, ease: EASE.standard }}
-            >
-              {pageEntries.map((entry) => (
-                <tr
-                  key={`${entry.type}|${entry.code}`}
-                  onClick={() => onCompare?.(entry)}
-                  className="group border-t border-border-default/40 hover:bg-bg-elevated/40 transition-colors cursor-pointer"
-                  title={t('analytics.openInCompare', { defaultValue: 'Compare’de aç' })}
-                >
-                  <td className="py-3 px-2 sm:px-3 font-mono text-xs tabular-nums">
-                    <span className={entry._displayRank <= 3 ? 'text-warning font-bold' : 'text-fg-muted'}>
-                      {entry._displayRank}
-                    </span>
-                  </td>
-                  <td className="py-3 px-2 sm:px-3">
-                    {(() => {
-                      const badge = TYPE_BADGE[entry.type] || { label: entry.type, color: '#6366f1' };
-                      // Crypto shows its CoinGecko logo (same as the Returns page); everything else keeps the
-                      // colored initials avatar so each asset still has an at-a-glance visual identity.
-                      const icon = entry.type === 'CRYPTO' ? metaFor(entry.type, entry.code)?.image : null;
-                      const initials = (entry.code || '').replace('.IS', '').slice(0, 2).toUpperCase();
-                      return (
-                        <>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {icon ? (
-                              <img
-                                src={icon}
-                                alt=""
-                                loading="lazy"
-                                className="w-6 h-6 rounded-full ring-1 ring-border-default shrink-0"
-                              />
-                            ) : (
-                              <span
-                                className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold text-white shadow-sm"
-                                style={{ backgroundColor: badge.color }}
-                                aria-hidden
-                              >
-                                {initials}
-                              </span>
-                            )}
-                            <span className="text-fg font-semibold">{nameFor(entry)}</span>
-                            <span
-                              className="inline-flex items-center text-[10px] font-mono font-semibold tracking-[0.04em] rounded px-1.5 py-0.5"
-                              style={{ background: `${badge.color}1f`, color: badge.color, boxShadow: `inset 0 0 0 1px ${badge.color}40` }}
-                            >
-                              {t(`assets.labels.${entry.type}`, { defaultValue: badge.label })}
-                            </span>
-                            <GitCompare className="h-3 w-3 text-fg-subtle opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
-                          <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle mt-0.5">
-                            {entry.code}
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </td>
-                  <td className="py-3 px-2 sm:px-3 text-right font-mono tabular-nums">
-                    <span className={Number(entry.nominalReturnPct) >= 0 ? 'text-success' : 'text-danger'}>
-                      {formatPercent(entry.nominalReturnPct)}
-                    </span>
-                  </td>
-                  <td className="py-3 px-2 sm:px-3 text-right font-mono font-bold tabular-nums">
-                    <span className={Number(entry.excessReturnPct) >= 0 ? 'text-success' : 'text-danger'}>
-                      {formatPercent(entry.excessReturnPct)}
-                    </span>
-                  </td>
-                  <td className="py-3 px-2 sm:px-3 text-right">
-                    {entry.beatsBenchmark ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.14em] rounded-md px-2 py-0.5 bg-success/15 text-success">
-                        <Trophy className="h-3 w-3" />
-                        {t('analytics.beats', { defaultValue: 'Yendi' })}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.14em] rounded-md px-2 py-0.5 bg-danger/10 text-danger">
-                        <TrendingDown className="h-3 w-3" />
-                        {t('analytics.lost', { defaultValue: 'Kaybetti' })}
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {pageEntries.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="py-6 text-center text-xs text-fg-muted font-mono italic">
-                    {t('analytics.noMatch', { defaultValue: 'Eşleşme yok' })}
-                  </td>
-                </tr>
-              )}
-            </motion.tbody>
-          </table>
-        </div>
-
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-border-default/40">
-            <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-subtle tabular-nums">
-              {safePage + 1} / {totalPages}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => onPageChange(Math.max(0, safePage - 1))}
-                disabled={safePage === 0}
-                className="h-7 w-7 flex items-center justify-center rounded-md text-fg-muted hover:text-fg hover:bg-bg-elevated transition-colors border-none cursor-pointer bg-transparent disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => onPageChange(Math.min(totalPages - 1, safePage + 1))}
-                disabled={safePage >= totalPages - 1}
-                className="h-7 w-7 flex items-center justify-center rounded-md text-fg-muted hover:text-fg hover:bg-bg-elevated transition-colors border-none cursor-pointer bg-transparent disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-        )}
-      </Card>
+      <BeaterTable
+        t={t}
+        sortKey={sortKey}
+        sortDir={sortDir}
+        verdictFilter={verdictFilter}
+        typeFilter={typeFilter}
+        search={search}
+        page={page}
+        pageEntries={pageEntries}
+        onCompare={onCompare}
+        metaFor={metaFor}
+        nameFor={nameFor}
+        safePage={safePage}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+      />
     </>
   );
 }

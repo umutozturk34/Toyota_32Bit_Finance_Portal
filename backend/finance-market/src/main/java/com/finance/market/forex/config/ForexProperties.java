@@ -26,5 +26,9 @@ public class ForexProperties {
     private int backfillWindowDays = 4 * 365;
     private int evdsRowCap = 1000;
     private int latestLookbackDays = 5;
+    // Max EVDS series codes per snapshot request. The cold-start snapshot spans every active currency (~100-160
+    // codes); packing them all into one URL made EVDS drop the request (timeout/connection reset), which silently
+    // aborted the whole refresh. Fetching in small fixed-size chunks keeps each request short and reliable.
+    private int snapshotBatchChunkSize = 24;
     private Map<String, String> flagEmojis = new HashMap<>();
 }

@@ -46,6 +46,23 @@ export function useMoney({ lockBase = false } = {}) {
     return target === 'TRY' ? inTry : inTry / toRate;
   }, [resolveTarget, rates, convertAt, lockBase]);
 
+  // TRY-equivalent magnitude of a value, independent of the display currency. The compact-vs-full
+  // threshold is calibrated in TRY (100k), so gating on the CONVERTED display value would let a
+  // USD/EUR figure (≈30x smaller numerically) slip under the threshold and never compact.
+  const toTry = useCallback((value, base = 'TRY', dateAt) => {
+    if (value == null) return null;
+    const num = Number(value);
+    if (!Number.isFinite(num)) return null;
+    // lockBase renders the value as supplied (no FX), so its display magnitude IS the gate magnitude —
+    // returning null lets the caller fall back to the converted (== as-supplied) value.
+    if (lockBase) return null;
+    if (dateAt) return convertAt(value, base, dateAt, 'TRY');
+    const from = SUPPORTED.includes(base) ? base : 'TRY';
+    if (from === 'TRY') return num;
+    const fromRate = rates[from];
+    return fromRate == null ? num : num * fromRate;
+  }, [rates, convertAt, lockBase]);
+
   const format = useCallback((value, base = 'TRY', opts = {}) => {
     const natural = opts.natural;
     const dateAt = opts.dateAt;
@@ -72,7 +89,11 @@ export function useMoney({ lockBase = false } = {}) {
   const formatCompact = useCallback((value, base = 'TRY', threshold = 100_000, natural, dateAt) => {
     const converted = convert(value, base, natural, dateAt);
     if (converted == null) return 'N/A';
-    if (Math.abs(converted) < threshold) return format(value, base, { natural, dateAt });
+    // Gate on the TRY-equivalent magnitude (threshold is in TRY), but format the CONVERTED value so the
+    // displayed unit stays correct. Fall back to the converted magnitude if the TRY conversion misses.
+    const tryEquivalent = toTry(value, base, dateAt);
+    const gateMagnitude = tryEquivalent == null ? Math.abs(converted) : Math.abs(tryEquivalent);
+    if (gateMagnitude < threshold) return format(value, base, { natural, dateAt });
     const target = resolveTarget(base, natural);
     const normalizedBase = SUPPORTED.includes(base) ? base : 'TRY';
     // dateAt uses convertAt's own date-series rates; only keep the `target` symbol when those rates
@@ -87,7 +108,7 @@ export function useMoney({ lockBase = false } = {}) {
       currency: effectiveCurrency,
       maximumFractionDigits: 2,
     }).format(converted);
-  }, [convert, format, resolveTarget, rates, dateRatesReady]);
+  }, [convert, format, resolveTarget, rates, dateRatesReady, toTry]);
 
   // Width-aware money: full when it fits `maxChars`, compact (never digit-clipped) when it would overflow.
   // Same conversion + currency-readiness gate as format(); pair with useFitChars + a title= carrying format().

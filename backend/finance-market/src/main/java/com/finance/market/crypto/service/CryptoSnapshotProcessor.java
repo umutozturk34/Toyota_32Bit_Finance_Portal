@@ -23,9 +23,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Refreshes crypto snapshots from CoinGecko, fetching the same coins in both USD and TRY so each
@@ -67,8 +67,14 @@ public class CryptoSnapshotProcessor implements MarketSnapshotProcessor {
         log.info("Starting crypto snapshot update for {} coins", trackedCoins.size());
         List<CoinGeckoSnapshotDto> usdMarkets = coinGeckoClient.fetchMarkets(vsUsd, trackedCoins);
         List<CoinGeckoSnapshotDto> tryMarkets = coinGeckoClient.fetchMarkets(vsTry, trackedCoins);
-        Map<String, BigDecimal> tryPriceMap = tryMarkets.stream()
-                .collect(Collectors.toMap(CoinGeckoSnapshotDto::id, CoinGeckoSnapshotDto::currentPrice));
+        // toMap NPEs on a null value (delisted coin with no TRY price) and aborts the whole batch;
+        // build null-tolerantly so missing prices are simply absent (per-coin tryPrice then resolves null).
+        Map<String, BigDecimal> tryPriceMap = new HashMap<>();
+        tryMarkets.forEach(dto -> {
+            if (dto.currentPrice() != null) {
+                tryPriceMap.put(dto.id(), dto.currentPrice());
+            }
+        });
 
         BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 usdMarkets,

@@ -43,6 +43,20 @@ class KeycloakAdminTokenManagerTest {
     }
 
     @Test
+    void properties_exposeBoundedHttpTimeouts_soHungKeycloakCannotPinWorkers() {
+        // Arrange
+        KeycloakAdminProperties defaults = new KeycloakAdminProperties();
+
+        // Act
+        long responseTimeout = defaults.getResponseTimeoutSeconds();
+        int connectTimeout = defaults.getConnectTimeoutMillis();
+
+        // Assert
+        assertThat(responseTimeout).isPositive();
+        assertThat(connectTimeout).isPositive();
+    }
+
+    @Test
     void getToken_fetchesAndReturnsNewToken_whenNoSnapshot() {
         stubFetchReturning(new TokenResponse("access-1", 300, "Bearer"));
 

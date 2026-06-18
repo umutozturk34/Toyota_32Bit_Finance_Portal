@@ -37,6 +37,7 @@ public final class AssetMentionKeywordsLoader {
     private static AssetMentionConfig.MentionConfig toConfig(AssetMentionConfig.RawMentionConfig raw) {
         return new AssetMentionConfig.MentionConfig(
                 raw.commodityCurrencyKeywords == null ? List.of() : List.copyOf(raw.commodityCurrencyKeywords),
+                raw.entityAliases == null ? List.of() : List.copyOf(raw.entityAliases),
                 toSet(raw.commonNameWords),
                 toSet(raw.blockedTickers),
                 toSet(raw.nameStopwords),

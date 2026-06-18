@@ -7,6 +7,7 @@ import com.finance.market.core.client.AbstractEvdsClient;
 import com.finance.market.core.dto.internal.EvdsDataResponse;
 import com.finance.market.core.service.MarketRefresher;
 import com.finance.market.core.service.TrackedAssetCommandService;
+import com.finance.market.core.util.EvdsResponseMerger;
 import com.finance.market.core.util.MarketBatchRunner;
 import com.finance.market.core.util.WindowedFetchPlanner;
 import com.finance.market.bank.service.BankRatesService;
@@ -24,6 +25,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -158,7 +160,20 @@ public class ForexUpdateService implements MarketRefresher {
         List<String> allCodes = active.stream()
                 .flatMap(m -> m.seriesCodes().stream())
                 .toList();
-        return fetchData(allCodes, from, today);
+        // Packing every active currency's series (~100-160 codes) into ONE EVDS request made the request drop on
+        // cold start (timeout/connection reset), silently aborting the whole refresh. Fetch in small fixed-size
+        // chunks and stitch the dated rows so each request stays short and reliable. A single failed chunk aborts
+        // the run (null) rather than yielding a partial snapshot that the smoke filter would read as "these
+        // currencies are dead" and wrongly drop.
+        int chunkSize = Math.max(1, forexProperties.getSnapshotBatchChunkSize());
+        List<EvdsDataResponse> parts = new ArrayList<>();
+        for (int i = 0; i < allCodes.size(); i += chunkSize) {
+            List<String> chunk = allCodes.subList(i, Math.min(i + chunkSize, allCodes.size()));
+            EvdsDataResponse part = fetchData(chunk, from, today);
+            if (part == null) return null;
+            parts.add(part);
+        }
+        return EvdsResponseMerger.mergeByDate(parts);
     }
 
     /** Back-fills candles from after the pre-refresh last candle (or configured start) up to just below the snapshot window. */

@@ -1,7 +1,6 @@
 package com.finance.portfolio.service.summary;
 
 import com.finance.common.model.MarketType;
-import com.finance.market.core.service.HistoricalPricingPort;
 import com.finance.market.viop.model.ViopCandle;
 import com.finance.market.viop.repository.ViopCandleRepository;
 import com.finance.portfolio.derivative.model.DerivativePosition;
@@ -32,11 +31,11 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Computes portfolio allocation breakdowns in TRY for the pie/donut charts. Supports grouping by
- * asset code or asset type, optional filtering (asset type, kind FUTURE/OPTION, or the synthetic
- * CASH bucket of closed-position proceeds), a {@code realizedPnl} mode that buckets realized gains
- * (with USD/EUR frame conversions at each close's FX rate), and a top-N cap that folds the tail into
- * an OTHER bucket. Open spot uses live prices; open derivatives use live-to-TRY notional+PnL.
+ * Computes the CURRENT-VALUE portfolio allocation breakdown in TRY for the pie/donut charts: grouping by asset code
+ * or type, optional filtering (asset type, kind FUTURE/OPTION, or the synthetic CASH bucket of closed-position
+ * proceeds), and a top-N cap that folds the tail into an OTHER bucket. Open spot uses live prices; open derivatives
+ * use live-to-TRY notional+PnL. The {@code realizedPnl} mode is a distinct closed-positions-only computation,
+ * delegated to {@link RealizedPnlAllocationCalculator}; the entry point and cap stay here so both share one surface.
  */
 @Log4j2
 @Component
@@ -51,16 +50,15 @@ class AllocationCalculator {
     private static final String OTHER_KEY = "OTHER";
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
-    private static final List<String> FRAME_CURRENCIES = List.of("USD", "EUR");
-
     private final AssetPricingPort pricingPort;
     private final PortfolioPositionRepository positionRepository;
     private final DerivativePositionRepository derivativePositionRepository;
     private final PortfolioResponseMapper responseMapper;
-    private final HistoricalPricingPort historicalPricingPort;
     private final ViopCandleRepository viopCandleRepository;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     private final CurrencyFrameConverter frameConverter;
+    private final AllocationFxFrameLoader fxFrameLoader;
+    private final RealizedPnlAllocationCalculator realizedPnlCalculator;
 
     /** Entry point: builds the allocation (by mode/filter) and applies the optional top-N cap. */
     List<AllocationItem> compute(Long portfolioId, String mode, String assetTypeFilter, Integer limit) {
@@ -72,7 +70,7 @@ class AllocationCalculator {
 
     private List<AllocationItem> computeAllocation(Long portfolioId, String mode, String assetTypeFilter) {
         if (REALIZED_PNL_MODE.equals(mode)) {
-            return buildRealizedPnlAllocation(portfolioId, assetTypeFilter);
+            return realizedPnlCalculator.build(portfolioId, assetTypeFilter);
         }
         AllocationContext ctx = AllocationContext.from(mode, assetTypeFilter);
         // The CASH bucket's cost/realized breakdown is rendered per-currency at each closed position's
@@ -82,7 +80,7 @@ class AllocationCalculator {
         // buckets it stays unused, so skip the FX fetch.
         Map<String, TreeMap<LocalDate, BigDecimal>> fxSeries =
                 ctx.shouldEmitCashBucket() || ctx.includeDerivatives()
-                        ? loadFxFrameSeries(portfolioId) : Map.of();
+                        ? fxFrameLoader.loadFxFrameSeries(portfolioId) : Map.of();
         AllocationAcc acc = new AllocationAcc();
         List<PortfolioPosition> positions = loadSpotPositions(portfolioId, ctx);
         addSpotPositions(positions, ctx, acc, fxSeries);
@@ -263,142 +261,14 @@ class AllocationCalculator {
                 : BigDecimal.ZERO;
     }
 
-    private List<AllocationItem> buildRealizedPnlAllocation(Long portfolioId, String assetTypeFilter) {
-        boolean noFilter = assetTypeFilter == null || assetTypeFilter.isBlank();
-        boolean groupByType = noFilter;
-        Map<String, BigDecimal> costs = new LinkedHashMap<>();
-        Map<String, BigDecimal> realizeds = new LinkedHashMap<>();
-        Map<String, Map<String, BigDecimal>> realizedsByCurrency = new LinkedHashMap<>();
-        Map<String, Map<String, BigDecimal>> costsByCurrency = new LinkedHashMap<>();
-        Map<String, String> types = new LinkedHashMap<>();
-        Map<String, TreeMap<LocalDate, BigDecimal>> fxSeries = loadFxFrameSeries(portfolioId);
-        boolean includeSpot = noFilter || !AssetType.VIOP.name().equalsIgnoreCase(assetTypeFilter);
-        boolean includeViop = noFilter || AssetType.VIOP.name().equalsIgnoreCase(assetTypeFilter);
-        if (includeSpot) accumulateClosedSpot(portfolioId, assetTypeFilter, noFilter, groupByType, costs, realizeds, realizedsByCurrency, costsByCurrency, types, fxSeries);
-        if (includeViop) accumulateClosedDerivatives(portfolioId, groupByType, costs, realizeds, realizedsByCurrency, costsByCurrency, types, fxSeries);
-        return toRealizedPnlItems(realizeds, realizedsByCurrency, costs, costsByCurrency, types);
-    }
-
-    private Map<String, TreeMap<LocalDate, BigDecimal>> loadFxFrameSeries(Long portfolioId) {
-        LocalDate today = LocalDate.now();
-        // Series must reach back to the oldest entry date across ALL positions/derivatives — open AND
-        // closed, not just the oldest exit date. The cost basis is converted at each position's
-        // entry-date FX (open derivatives carry per-date EQUITY frames too), so an entry that predates
-        // the loaded window has no floor rate and silently falls back to today's spot for its cost leg.
-        LocalDate oldest = positionRepository.findByPortfolioId(portfolioId).stream()
-                .flatMap(p -> java.util.stream.Stream.of(
-                        p.getExitDate() != null ? p.getExitDate().toLocalDate() : null,
-                        p.getEntryDate() != null ? p.getEntryDate().toLocalDate() : null))
-                .filter(java.util.Objects::nonNull)
-                .min(LocalDate::compareTo)
-                .orElse(today);
-        LocalDate oldestDerivativeEntry = derivativePositionRepository.findByPortfolioId(portfolioId).stream()
-                .map(DerivativePosition::getEntryDate)
-                .filter(java.util.Objects::nonNull)
-                .min(LocalDate::compareTo)
-                .orElse(null);
-        if (oldestDerivativeEntry != null && oldestDerivativeEntry.isBefore(oldest)) {
-            oldest = oldestDerivativeEntry;
-        }
-        Map<String, TreeMap<LocalDate, BigDecimal>> series = new LinkedHashMap<>();
-        for (String currency : FRAME_CURRENCIES) {
-            Map<LocalDate, BigDecimal> raw = historicalPricingPort.getPriceSeries(
-                    MarketType.FOREX, currency, oldest.minusDays(14), today.plusDays(1));
-            series.put(currency, raw != null && !raw.isEmpty() ? new TreeMap<>(raw) : new TreeMap<>());
-        }
-        return series;
-    }
-
-
-    private void accumulateClosedSpot(Long portfolioId, String assetTypeFilter, boolean noFilter, boolean groupByType,
-                                       Map<String, BigDecimal> costs, Map<String, BigDecimal> realizeds,
-                                       Map<String, Map<String, BigDecimal>> realizedsByCurrency,
-                                       Map<String, Map<String, BigDecimal>> costsByCurrency,
-                                       Map<String, String> types,
-                                       Map<String, TreeMap<LocalDate, BigDecimal>> fxSeries) {
-        for (PortfolioPosition pos : positionRepository.findByPortfolioId(portfolioId)) {
-            if (!pos.isClosed() || pos.getExitPrice() == null) continue;
-            if (!noFilter && !pos.getAssetType().name().equalsIgnoreCase(assetTypeFilter)) continue;
-            BigDecimal realized = pos.realizedPnl();
-            if (realized == null) continue;
-            String key = groupByType ? pos.getAssetType().name() : pos.getAssetCode();
-            costs.merge(key, pos.entryValue(), BigDecimal::add);
-            realizeds.merge(key, realized, BigDecimal::add);
-            types.putIfAbsent(key, pos.getAssetType().name());
-            LocalDate exitDate = pos.getExitDate() != null ? pos.getExitDate().toLocalDate() : null;
-            LocalDate entryDate = pos.getEntryDate() != null ? pos.getEntryDate().toLocalDate() : null;
-            BigDecimal exitValue = pos.getExitPrice().multiply(pos.getQuantity())
-                    .setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
-            frameConverter.mergeRealizedFrames(realizedsByCurrency, key,
-                    frameConverter.realizedFrames(exitValue, exitDate, pos.entryValue(), entryDate, fxSeries));
-            frameConverter.mergeRealizedFrames(costsByCurrency, key, frameConverter.convertToFrames(pos.entryValue(), entryDate, fxSeries));
-        }
-    }
-
-    private void accumulateClosedDerivatives(Long portfolioId, boolean groupByType,
-                                              Map<String, BigDecimal> costs, Map<String, BigDecimal> realizeds,
-                                              Map<String, Map<String, BigDecimal>> realizedsByCurrency,
-                                              Map<String, Map<String, BigDecimal>> costsByCurrency,
-                                              Map<String, String> types,
-                                              Map<String, TreeMap<LocalDate, BigDecimal>> fxSeries) {
-        for (DerivativePosition dpos : derivativePositionRepository.findByPortfolioId(portfolioId)) {
-            if (dpos.getViopContract() == null || dpos.isOpen()) continue;
-            BigDecimal entryNotional = dpos.nominalExposure();
-            BigDecimal realized = dpos.realizedOrUnrealizedPnl(dpos.getClosePrice());
-            if (entryNotional == null || realized == null) continue;
-            String key = groupByType ? AssetType.VIOP.name() : dpos.getViopContract().getSymbol();
-            costs.merge(key, entryNotional, BigDecimal::add);
-            realizeds.merge(key, realized, BigDecimal::add);
-            types.putIfAbsent(key, AssetType.VIOP.name());
-            LocalDate closeDate = dpos.getCloseDate();
-            LocalDate entryDate = dpos.getEntryDate();
-            // Direction-aware per-currency realized: value the CLOSE notional at the close-date FX and the
-            // entry notional at the entry-date FX, then flip the sign for a SHORT. Using proceeds (= entry +
-            // realized) like a spot exit leaks the FX drift on the whole notional into a SHORT's realized,
-            // reading its profit as a loss in USD/EUR while TRY is correct. closeNotional = price × size × lots.
-            BigDecimal closeNotional = dpos.notionalAt(dpos.getClosePrice());
-            int sign = dpos.getDirection() == com.finance.portfolio.derivative.model.DerivativeDirection.SHORT ? -1 : 1;
-            frameConverter.mergeRealizedFrames(realizedsByCurrency, key, closeNotional != null
-                    ? frameConverter.directionalRealizedFrames(closeNotional, closeDate, entryNotional, entryDate, sign, fxSeries)
-                    : frameConverter.realizedFrames(realized.add(entryNotional), closeDate, entryNotional, entryDate, fxSeries));
-            frameConverter.mergeRealizedFrames(costsByCurrency, key, frameConverter.convertToFrames(entryNotional, entryDate, fxSeries));
-        }
-    }
-
-    private List<AllocationItem> toRealizedPnlItems(Map<String, BigDecimal> realizeds,
-                                                     Map<String, Map<String, BigDecimal>> realizedsByCurrency,
-                                                     Map<String, BigDecimal> costs,
-                                                     Map<String, Map<String, BigDecimal>> costsByCurrency,
-                                                     Map<String, String> types) {
-        BigDecimal absTotal = realizeds.values().stream()
-                .map(BigDecimal::abs).reduce(BigDecimal.ZERO, BigDecimal::add);
-        return realizeds.entrySet().stream()
-                .sorted((a, b) -> b.getValue().abs().compareTo(a.getValue().abs()))
-                .map(e -> {
-                    BigDecimal abs = e.getValue().abs().setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
-                    BigDecimal pct = absTotal.signum() > 0
-                            ? abs.multiply(HUNDRED).divide(absTotal, MoneyScale.PRICE, RoundingMode.HALF_UP)
-                            : BigDecimal.ZERO;
-                    Map<String, BigDecimal> realizedByCurrency = realizedsByCurrency.getOrDefault(e.getKey(), Map.of());
-                    Map<String, BigDecimal> costByCurrency = costsByCurrency.getOrDefault(e.getKey(), Map.of());
-                    return responseMapper.toAllocationItem(e.getKey(), types.get(e.getKey()), abs, pct,
-                            costs.get(e.getKey()).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP),
-                            e.getValue().setScale(MoneyScale.PRICE, RoundingMode.HALF_UP),
-                            realizedByCurrency, costByCurrency);
-                })
-                .toList();
-    }
-
     private List<AllocationItem> applyLimit(List<AllocationItem> items, Integer limit) {
         if (limit == null || limit <= 0 || items.size() <= limit) return items;
         List<AllocationItem> top = items.subList(0, limit - 1);
         List<AllocationItem> rest = items.subList(limit - 1, items.size());
         BigDecimal restValue = rest.stream().map(AllocationItem::valueTry).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal restPercent = rest.stream().map(AllocationItem::percent).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal restCost = rest.stream().map(AllocationItem::costTry)
-                .filter(c -> c != null).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal restRealized = rest.stream().map(AllocationItem::realizedPnlTry)
-                .filter(r -> r != null).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal restCost = rest.stream().map(AllocationItem::costTry).filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal restRealized = rest.stream().map(AllocationItem::realizedPnlTry).filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
         AllocationItem other = responseMapper.toAllocationItem(
                 OTHER_KEY, OTHER_KEY,
                 restValue.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP),

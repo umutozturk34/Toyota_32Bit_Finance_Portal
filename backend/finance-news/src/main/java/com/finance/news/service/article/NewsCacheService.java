@@ -63,14 +63,28 @@ public class NewsCacheService {
     /** Writes (or overwrites) the article in Redis under its id key with the configured TTL. */
     public void cacheArticle(NewsArticle article) {
         // Hibernate hands `assets` to us as a PersistentSet; the typed Redis serializer would write its runtime
-        // class (org.hibernate.collection.spi.PersistentSet), which deserialisation can't instantiate. Rather than
-        // MUTATE the (possibly managed) entity to normalise the collection — which we never want to risk turning
-        // into a DB write — simply SKIP caching when it isn't a plain set. Such an article (one with no mentions,
-        // so the enricher never replaced its collection) just loads fresh from the DB each time, uncached but
-        // always correct. Enriched articles carry a LinkedHashSet and cache normally.
-        if (article.getAssets() != null && !(article.getAssets() instanceof LinkedHashSet)) {
-            return;
-        }
-        redisTemplate.opsForValue().set(CACHE_ARTICLE + article.getId(), article, cacheTtl);
+        // class (org.hibernate.collection.spi.PersistentSet), which deserialisation can't instantiate. We must NOT
+        // mutate the (possibly managed) entity to normalise the collection — that risks a DB write. Instead cache a
+        // detached SHALLOW copy whose `assets` is a fresh LinkedHashSet, so tagged articles (most of them) cache too
+        // instead of forever hitting the DB on the detail page. The lazy `source` is @JsonIgnore'd out of the cache,
+        // so it is intentionally not copied (touching it could throw LazyInitializationException).
+        redisTemplate.opsForValue().set(CACHE_ARTICLE + article.getId(), detachedCopy(article), cacheTtl);
+    }
+
+    /** A serialisation-safe shallow copy with `assets` rehomed into a plain {@link LinkedHashSet}; never mutates {@code article}. */
+    private static NewsArticle detachedCopy(NewsArticle article) {
+        return NewsArticle.builder()
+                .id(article.getId())
+                .link(article.getLink())
+                .title(article.getTitle())
+                .description(article.getDescription())
+                .category(article.getCategory())
+                .publishedAt(article.getPublishedAt())
+                .fetchedAt(article.getFetchedAt())
+                .imageUrl(article.getImageUrl())
+                .content(article.getContent())
+                .guid(article.getGuid())
+                .assets(article.getAssets() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(article.getAssets()))
+                .build();
     }
 }

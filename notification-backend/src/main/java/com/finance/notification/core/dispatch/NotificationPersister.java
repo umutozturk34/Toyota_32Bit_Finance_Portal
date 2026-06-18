@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataAccessException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -56,7 +57,9 @@ public class NotificationPersister {
         this.mailDispatchTopic = topics.mailDispatch();
     }
 
-    @Transactional
+    // REQUIRES_NEW so each page commits in its own short transaction rather than joining the long
+    // outer fanout tx; this also lets per-page SSE/mail post-commit hooks fire incrementally.
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void persistBatch(List<Prepared> batch) {
         if (batch.isEmpty()) return;
 

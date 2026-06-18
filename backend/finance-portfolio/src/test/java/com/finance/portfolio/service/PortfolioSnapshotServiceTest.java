@@ -80,6 +80,22 @@ class PortfolioSnapshotServiceTest {
     }
 
     @Test
+    void onMarketUpdate_skipsFixedPortfolio_soItsDailyFixedIncomeSnapshotIsNotClobbered() {
+        // A spot tick cannot change a deposit/bond portfolio, and the spot aggregate path has no fixed-income branch.
+        // Running it for a FIXED portfolio would write a 0/empty daily row and DELETE the correct fixed-income
+        // snapshot the daily scheduler produced — so FIXED is excluded from the market-tick path entirely.
+        Portfolio fixed = Portfolio.builder().id(9L).userSub("u1")
+                .type(com.finance.portfolio.model.PortfolioType.FIXED).build();
+        when(portfolioRepository.findAll()).thenReturn(List.of(fixed));
+
+        service.onMarketUpdate(MarketType.STOCK);
+
+        verify(dailySnapshotRepository, never()).deleteByPortfolioIdAndSnapshotDate(eq(9L), any());
+        verify(dailySnapshotRepository, never()).save(any());
+        verify(assetSnapshotRepository, never()).save(any());
+    }
+
+    @Test
     void generateDailySnapshots_writesFixedIncomeAggregate_fromSummary_forFixedPortfolio() {
         // A FIXED (deposit/bond) portfolio has no spot/derivative rows; it must still snapshot — built from the
         // fixed-income summary and written to the SAME daily table so the morning/evening digest picks it up.

@@ -2509,10 +2509,12 @@
     "history": "Geçmiş",
     "noHistory": "Henüz görev geçmişi yok",
     "taskToast": "Görev",
+    "apiKeyHint": "EVDS_API_KEY tanımlı değil — ortam değişkenini ayarlayın.",
     "status": {
       "RUNNING": "Çalışıyor",
       "COMPLETED": "Tamamlandı",
-      "FAILED": "Başarısız"
+      "FAILED": "Başarısız",
+      "API_KEY_MISSING": "API anahtarı yok"
     },
     "category": {
       "CRYPTO": "Kripto",

@@ -1,52 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Plus, Pencil, Trash2, Check, X, Wallet, CornerDownLeft, CandlestickChart, Landmark } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Check, X, Wallet, CornerDownLeft } from 'lucide-react';
 import { useCreatePortfolio, useRenamePortfolio, useDeletePortfolio } from '../hooks/usePortfolioData';
-import { portfolioService } from '../services/portfolioService';
-import { fixedIncomeService } from '../services/fixedIncomeService';
-import { useMoney } from '../../../shared/hooks/useMoney';
 import { extractApiError } from '../../../shared/utils/apiError';
 import { portfolioName } from '../../../shared/utils/portfolioName';
 import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
+import { PORTFOLIO_TYPES } from './switcher/portfolioTypes';
+import PortfolioTotal from './switcher/PortfolioTotal';
+import TypeBadge from './switcher/TypeBadge';
 
 const PANEL_TRANSITION = { duration: 0.18, ease: [0.16, 1, 0.3, 1] };
-
-const PORTFOLIO_TYPES = [
-  { id: 'SPOT', labelKey: 'portfolio.typeSwitcher.spot', Icon: CandlestickChart },
-  { id: 'FIXED', labelKey: 'portfolio.typeSwitcher.fixed', Icon: Landmark },
-];
-
-// Each portfolio's current TRY total, fetched lazily only while the dropdown is open (so opening the switcher costs
-// at most N small summary calls, never on every render). Spot and fixed-income read their own summary endpoint.
-function PortfolioTotal({ portfolio, enabled }) {
-  const isFixed = portfolio.type === 'FIXED';
-  const { format: money } = useMoney({ lockBase: true });
-  const { data } = useQuery({
-    queryKey: ['switcherTotal', portfolio.id, portfolio.type],
-    queryFn: () => (isFixed ? fixedIncomeService.summary(portfolio.id) : portfolioService.getSummary(portfolio.id)),
-    enabled,
-    staleTime: 60 * 1000,
-  });
-  const total = data?.totalValueTry ?? data?.totalValue ?? data?.value ?? null;
-  if (total == null) return null;
-  return (
-    <span className="block text-[11px] font-mono tabular-nums text-fg-muted truncate">{money(total, 'TRY')}</span>
-  );
-}
-
-function TypeBadge({ type }) {
-  const { t } = useTranslation();
-  const meta = PORTFOLIO_TYPES.find((x) => x.id === type) ?? PORTFOLIO_TYPES[0];
-  const Icon = meta.Icon;
-  return (
-    <span className="inline-flex items-center gap-1 shrink-0 rounded-md bg-bg-base/70 px-1.5 py-0.5 text-[10px] font-medium text-fg-muted ring-1 ring-inset ring-border-default/60">
-      <Icon className="h-3 w-3" />
-      <span className="hidden sm:inline">{t(meta.labelKey)}</span>
-    </span>
-  );
-}
 
 export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect, autoCreate = false, onAutoCreateConsumed }) {
   const { t } = useTranslation();

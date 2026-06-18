@@ -31,6 +31,7 @@
     import java.util.Collection;
     import java.util.List;
     import java.util.Map;
+    import java.util.function.Supplier;
     import java.util.stream.Collectors;
     /**
      * Stateless OAuth2 resource-server security shared by all modules. Validates Keycloak JWTs
@@ -91,18 +92,23 @@
             return http.build();
         }
         /**
-         * Builds the {@link RateLimitFilter}, unwrapping the Lettuce native client to open a
-         * dedicated connection with a {@code String} key / {@code byte[]} value codec as required by
-         * the Bucket4j Redis backend.
+         * Builds the {@link RateLimitFilter} with a lazy connection supplier that unwraps the Lettuce
+         * native client and opens a dedicated {@code String} key / {@code byte[]} value connection
+         * (as required by the Bucket4j Redis backend) on first request rather than at boot, so a
+         * Redis-down startup does not fail; the filter then fails open if the supplier throws.
          */
         @Bean
         public RateLimitFilter rateLimitFilterFactory(ObjectMapper objectMapper, AppProperties appProperties, RedisConnectionFactory redisConnectionFactory, List<RateLimitTier> tiers, com.finance.common.i18n.Translator translator) {
-            LettuceConnectionFactory lettuceFactory = (LettuceConnectionFactory) redisConnectionFactory;
-            RedisClient redisClient = (RedisClient) lettuceFactory.getNativeClient();
-            StatefulRedisConnection<String, byte[]> connection = redisClient.connect(
-                    RedisCodec.of(StringCodec.UTF8, ByteArrayCodec.INSTANCE)
-            );
-            return new RateLimitFilter(objectMapper, appProperties, connection, tiers, translator);
+            // Defer the cast + connect to first request: a Redis-down (or non-Lettuce) boot must not
+            // fail startup. The filter fails open if this supplier later throws.
+            Supplier<StatefulRedisConnection<String, byte[]>> connectionSupplier = () -> {
+                if (!(redisConnectionFactory instanceof LettuceConnectionFactory lettuceFactory)
+                        || !(lettuceFactory.getNativeClient() instanceof RedisClient redisClient)) {
+                    throw new IllegalStateException("Rate limiting requires a Lettuce-backed Redis connection factory");
+                }
+                return redisClient.connect(RedisCodec.of(StringCodec.UTF8, ByteArrayCodec.INSTANCE));
+            };
+            return new RateLimitFilter(objectMapper, appProperties, connectionSupplier, tiers, translator);
         }
         
         @Bean

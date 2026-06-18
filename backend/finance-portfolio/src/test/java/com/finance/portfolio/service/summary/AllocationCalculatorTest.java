@@ -51,9 +51,14 @@ class AllocationCalculatorTest {
 
     @BeforeEach
     void setUp() {
+        CurrencyFrameConverter frameConverter = new CurrencyFrameConverter();
+        AllocationFxFrameLoader fxFrameLoader = new AllocationFxFrameLoader(
+                positionRepository, derivativePositionRepository, historicalPricingPort);
+        RealizedPnlAllocationCalculator realizedPnlCalculator = new RealizedPnlAllocationCalculator(
+                positionRepository, derivativePositionRepository, mapper, frameConverter, fxFrameLoader);
         calculator = new AllocationCalculator(pricingPort, positionRepository,
-                derivativePositionRepository, mapper, historicalPricingPort,
-                viopCandleRepository, assetSnapshotRepository, new CurrencyFrameConverter());
+                derivativePositionRepository, mapper, viopCandleRepository,
+                assetSnapshotRepository, frameConverter, fxFrameLoader, realizedPnlCalculator);
         lenient().when(mapper.toAllocationItem(anyString(), any(), any(), any(), any(), any()))
                 .thenAnswer(inv -> new AllocationItem(
                         inv.getArgument(0), inv.getArgument(1), inv.getArgument(2),
@@ -148,8 +153,8 @@ class AllocationCalculatorTest {
     void shouldUseEntryDateRateForOpenDerivativeCost_whenEntryPredatesLoadedFxWindow() {
         // Open LONG entered 2024-01-01 (entry notional 100 × size 10 × 2 lots = 2000 TRY). With no closed
         // positions/derivatives the FX-series window previously anchored on today, so this open entry fell
-        // OUTSIDE the loaded window: convertToFrames' floorEntry was null and it fell back to lastEntry =
-        // today's rate (20), reading cost as 2000/20 = $100. The fix extends the window back to the OLDEST
+        // OUTSIDE the loaded window: convertToFrames' floorEntry was null and it fell back to the spot rate
+        // (today, 20), reading cost as 2000/20 = $100. The fix extends the window back to the OLDEST
         // entry across open AND closed positions, so the entry-date rate (10) is in the series and the cost
         // leg converts at it: 2000/10 = $200. The mock filters by the requested window like the real port.
         ViopContract c = contract("F_OLD", ViopContractKind.FUTURE, "10", "100", "TRY");

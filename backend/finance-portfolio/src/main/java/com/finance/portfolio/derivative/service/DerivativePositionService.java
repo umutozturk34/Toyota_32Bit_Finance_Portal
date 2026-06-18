@@ -431,7 +431,13 @@ public class DerivativePositionService {
                 continue;
             }
             pos.closeWith(contract.getExpiryDate(), settlementTry, DerivativeCloseReason.EXPIRED);
-            rebuildPeerSnapshots(pos.getPortfolio().getId(), contract.getSymbol(), pos, null);
+            Long pid = pos.getPortfolio().getId();
+            rebuildPeerSnapshots(pid, contract.getSymbol(), pos, null);
+            // Like close(): publish a backfill event from the expiry date so the daily portfolio aggregate
+            // recomputes forward. visibleToUi=false — this is a scheduled auto-close, not a user action, so it
+            // must not light up the per-portfolio "pending" indicator.
+            eventPublisher.publishEvent(new PortfolioBackfillService.LotChangedEvent(
+                    pid, AssetType.VIOP, contract.getSymbol(), contract.getExpiryDate(), false));
             closed++;
         }
         if (closed > 0 || skippedNoPrice > 0 || skippedNoFx > 0) {

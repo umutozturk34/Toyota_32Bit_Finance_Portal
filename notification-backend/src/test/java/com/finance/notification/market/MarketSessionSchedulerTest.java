@@ -137,6 +137,20 @@ class MarketSessionSchedulerTest {
     }
 
     @Test
+    void should_keepTrackerBaseline_when_dispatchFailsSoEdgeSurvives() {
+        MarketSessionTracker tracker = freshTracker();
+        seedTracker(tracker, MarketSession.CLOSED);
+        resolverReturnsExcept(SessionMarket.STOCK, MarketSession.OPEN, MarketSession.CLOSED);
+        when(fanoutService.fanout(anyString(), any(), any()))
+                .thenThrow(new RuntimeException("dispatch boom"));
+
+        scheduler(tracker).scanTransitions();
+
+        // Tracker must NOT advance past the un-dispatched edge, so the next scan retries it.
+        assertThat(tracker.previous(SessionMarket.STOCK)).contains(MarketSession.CLOSED);
+    }
+
+    @Test
     void should_supplyPayloadOfMatchingType_when_payloadFactoryInvoked() {
         MarketSessionTracker tracker = freshTracker();
         seedTracker(tracker, MarketSession.CLOSED);

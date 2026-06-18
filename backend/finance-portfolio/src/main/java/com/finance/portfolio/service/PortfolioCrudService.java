@@ -146,6 +146,12 @@ public class PortfolioCrudService {
         // Integrity gate AFTER the ownership load: a spot lot may only land in a SPOT portfolio. Ordering matters —
         // an unowned portfolio must surface as 404 (not a type error) so we never leak that the id exists.
         portfolio.requireType(PortfolioType.SPOT);
+        // Cap lots per portfolio AFTER the ownership/type gate: every snapshot rebuild revalues all lots in memory,
+        // so an unbounded portfolio exhausts heap and stalls the backfill. Mirrors the per-user portfolio cap.
+        int maxLots = portfolioProperties.getMaxLotsPerPortfolio();
+        if (positionRepository.countByPortfolioId(portfolioId) >= maxLots) {
+            throw new BusinessException("error.portfolio.maxLotsReached", maxLots);
+        }
         PortfolioValidator.validateLot(request, portfolioProperties.getLotLimits());
         AssetType assetType = EnumParser.parseOrBadRequest(AssetType.class,
                 request.assetType().toUpperCase(), "enum.field.assetType");

@@ -416,6 +416,51 @@ class AssetMentionResolverImplTest {
     }
 
     @Test
+    void shouldNotValidateAllCapsTitleTicker_byLowercaseInTheBody() {
+        // The prose-context window must not cross the title/body join: an ALL-CAPS title token ("KENT") collides
+        // with a code but is NOT a deliberate ticker; a lowercase body on the far side must not validate it.
+        List<ResolvedAsset> result = resolver.resolve(
+                "KENT MERKEZINDE YENI PROJE", "Belediye projeyi tamamladı");
+
+        assertThat(result).extracting(ResolvedAsset::code).doesNotContain("KENT.IS");
+    }
+
+    @Test
+    void shouldNotLinkBareShortTicker_evenInProse() {
+        // A <=3-char ticker is too collision-prone to link bare; only "(TON)" should. "Bugün ton ton …" must not
+        // pull in a coin whose symbol is TON via the bare-ticker path. (Catalog has a short-symbol coin below.)
+        when(cryptoRepository.findAllIdsNamesAndSymbols()).thenReturn(List.<Object[]>of(
+                new Object[]{"toncoin", "Toncoin", "TON"}));
+
+        List<ResolvedAsset> result = resolver.resolve("Bugün TON bazında üretim arttı", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).doesNotContain("toncoin");
+    }
+
+    @Test
+    void shouldLinkShortTicker_onlyWhenParenthesised() {
+        // The same short symbol DOES link when written deliberately in parentheses.
+        when(cryptoRepository.findAllIdsNamesAndSymbols()).thenReturn(List.<Object[]>of(
+                new Object[]{"toncoin", "Toncoin", "TON"}));
+
+        List<ResolvedAsset> result = resolver.resolve("Toncoin (TON) ağı büyüdü", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).contains("toncoin");
+    }
+
+    @Test
+    void shouldResolveThreeLetterCryptoByName() {
+        // A 3-letter coin name (xrp/ton/sui) must link by NAME — the crypto-name floor was lowered to 3.
+        when(cryptoRepository.findAllIdsNamesAndSymbols()).thenReturn(List.<Object[]>of(
+                new Object[]{"ripple", "XRP", "xrp"}));
+
+        List<ResolvedAsset> result = resolver.resolve("xrp davası sonuçlandı", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).contains("ripple");
+        assertThat(result).extracting(ResolvedAsset::type).contains("CRYPTO");
+    }
+
+    @Test
     void shouldResolveAllAssetTypes_fromOneMarketWrap() {
         // A real day-end wrap names a stock, gold, a currency, oil and a coin at once — every type must link.
         List<ResolvedAsset> result = resolver.resolve(
@@ -424,5 +469,27 @@ class AssetMentionResolverImplTest {
 
         assertThat(result).extracting(ResolvedAsset::code)
                 .contains("AKBNK.IS", "XAUTRYG", "BZ=F", "USD", "bitcoin");
+    }
+
+    @Test
+    void shouldResolveStockByEntityAliasAcronym() {
+        // "THY" is the everyday acronym for Türk Hava Yolları and is NOT part of the legal name, so only the
+        // configured entity alias (THY -> THYAO.IS) can link it.
+        List<ResolvedAsset> result = resolver.resolve("THY filosuna yeni uçak kattı", "Detaylar yarın açıklanacak");
+
+        assertThat(result).extracting(ResolvedAsset::code).contains("THYAO.IS");
+        assertThat(result).filteredOn(r -> r.code().equals("THYAO.IS"))
+                .extracting(ResolvedAsset::type).containsExactly("STOCK");
+    }
+
+    @Test
+    void shouldResolveBankByShortNameAlias_butNotGenericWorkforceText() {
+        // The short form "İş Bankası" links via the alias even though the geo-led legal name suppresses its
+        // generic "turkiye is" bigram — but the everyday "Türkiye iş gücü" (workforce) must STILL NOT link the bank,
+        // because the alias is the full phrase "is bankasi", not the bare bigram.
+        assertThat(resolver.resolve("İş Bankası rekor kâr açıkladı", null))
+                .extracting(ResolvedAsset::code).contains("ISCTR.IS");
+        assertThat(resolver.resolve("Türkiye iş gücü piyasası verisi açıklandı", null))
+                .extracting(ResolvedAsset::code).doesNotContain("ISCTR.IS");
     }
 }

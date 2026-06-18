@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
   Outlet,
+  useLocation,
 } from 'react-router-dom';
 import { AuthProvider } from './features/auth/AuthContext';
 import { useAuth } from './features/auth/useAuth';
@@ -59,8 +60,11 @@ function LandingRedirect() {
 }
 
 function RootLayout() {
+  // Key the boundary by pathname so a one-off render crash clears on the next navigation; without this
+  // the boundary stays latched in its error state forever (it never resets itself across route changes).
+  const location = useLocation();
   return (
-    <ErrorBoundary>
+    <ErrorBoundary key={location.pathname}>
       <Outlet />
     </ErrorBoundary>
   );

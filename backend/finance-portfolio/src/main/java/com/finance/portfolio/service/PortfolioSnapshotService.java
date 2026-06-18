@@ -78,7 +78,13 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
                 || (type != AssetType.VIOP && type.trackedAssetType() == null)) {
             return;
         }
-        List<Portfolio> portfolios = portfolioRepository.findAll();
+        // A spot market tick (STOCK/CRYPTO/FOREX/VIOP/…) cannot change a FIXED (deposit/bond) portfolio's value, and
+        // the spot aggregate path below has no fixed-income branch — running it for a FIXED portfolio would write a
+        // 0/empty daily row and DELETE the correct fixed-income snapshot the daily scheduler produced
+        // (generateFixedIncomeSnapshot). So exclude FIXED here; it is snapshotted only on the daily schedule.
+        List<Portfolio> portfolios = portfolioRepository.findAll().stream()
+                .filter(p -> p.getType() != PortfolioType.FIXED)
+                .toList();
         LocalDateTime batchTimestamp = LocalDateTime.now();
 
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(

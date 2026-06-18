@@ -8,20 +8,17 @@ import com.finance.app.analytics.dto.response.InflationBeaterResponse;
 import com.finance.app.analytics.dto.request.ScenarioRequest;
 import com.finance.app.analytics.dto.response.ScenarioResponse;
 import com.finance.app.analytics.dto.response.ScenarioSeries;
+import com.finance.app.analytics.service.InflationBeaterUniverseBuilder.CuratedAsset;
+import com.finance.app.analytics.service.InflationBeaterUniverseSimulator.UniverseReturn;
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.model.Currency;
 import com.finance.common.model.MarketType;
-import com.finance.common.model.TrackedAssetType;
 import com.finance.market.core.service.AssetNativeCurrencyResolver;
-import com.finance.market.core.service.TrackedAssetQueryService;
-import com.finance.market.macro.model.DepositMaturity;
 import com.finance.market.macro.model.MacroCategory;
 import com.finance.market.macro.model.MacroIndicator;
 import com.finance.market.macro.model.MacroUnit;
 import com.finance.market.macro.service.MacroIndicatorQueryService;
 import com.finance.shared.util.ReturnMath;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.ObjectProvider;
@@ -29,11 +26,9 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,14 +52,6 @@ public class InflationBeaterService {
     private static final BigDecimal HUNDRED = new BigDecimal("100");
     // Excess decimals — matches ScenarioService RETURN_SCALE so excess and nominal share precision.
     private static final int EXCESS_SCALE = 4;
-
-    private static final Map<TrackedAssetType, AnalyticsInstrumentType> TYPE_MAP = Map.of(
-            TrackedAssetType.STOCK,     AnalyticsInstrumentType.SPOT,
-            TrackedAssetType.CRYPTO,    AnalyticsInstrumentType.CRYPTO,
-            TrackedAssetType.FOREX,     AnalyticsInstrumentType.FOREX,
-            TrackedAssetType.FUND,      AnalyticsInstrumentType.FUND,
-            TrackedAssetType.COMMODITY, AnalyticsInstrumentType.COMMODITY
-    );
 
     private static final Map<String, Integer> PERIOD_MONTHS = Map.of(
             "1M", 1, "3M", 3, "6M", 6, "1Y", 12, "3Y", 36, "5Y", 60
@@ -93,18 +80,15 @@ public class InflationBeaterService {
     private final ScenarioService scenarioService;
     private final UnifiedHistoryService historyService;
     private final MacroIndicatorQueryService macroQueryService;
-    private final TrackedAssetQueryService trackedAssetQueryService;
     private final BeaterCacheManager cacheManager;
 
-    // The universe's per-asset return depends only on (period, comparison currency) — never on which
-    // benchmark it is compared against — so the ~2700-asset universe is simulated ONCE per (period,
-    // currency) and reused across every benchmark of that currency. Caching the LIGHTWEIGHT per-asset
-    // summary (not the heavy daily series) keeps this to a few MB. 15-min TTL spans a warm run; the daily
-    // warm clears it first so it always reflects the evening refresh. Holds 6 periods × 3 currencies = 18.
-    private final Cache<String, List<UniverseReturn>> universeCache = Caffeine.newBuilder()
-            .expireAfterWrite(Duration.ofMinutes(15))
-            .maximumSize(64)
-            .build();
+    // Builds the curated universe (tracked assets + deposit tenors) from the catalogs; the universe
+    // membership is benchmark/period/currency-independent, so this collaborator owns only that concern.
+    private final InflationBeaterUniverseBuilder universeBuilder;
+
+    // Simulates and caches the universe's per-asset return by (period, comparison currency); reused across
+    // every benchmark of that currency so the ~2700-asset universe is simulated once per (period, currency).
+    private final InflationBeaterUniverseSimulator universeSimulator;
 
     private final ObjectProvider<AssetNativeCurrencyResolver> nativeCurrencyResolver;
 
@@ -193,7 +177,7 @@ public class InflationBeaterService {
     /** Drops all cached rankings (and the per-(period,currency) universe sims), forcing a fresh recompute. */
     public void clearCache() {
         cacheManager.clear();
-        universeCache.invalidateAll();
+        universeSimulator.invalidate();
     }
 
     /**
@@ -273,9 +257,9 @@ public class InflationBeaterService {
                 ? Currency.TRY
                 : (override != null ? override : resolveComparisonCurrency(benchmark, code));
 
-        List<CuratedAsset> universe = buildUniverse();
+        List<CuratedAsset> universe = universeBuilder.buildUniverse();
         List<UniverseReturn> universeReturns =
-                universeReturnsCached(period, startDate, endDate, comparisonCurrency, universe);
+                universeSimulator.returnsCached(period, startDate, endDate, comparisonCurrency, universe);
         log.info("Computing beaters period={} benchmark={} currency={} universeSize={}",
                 period, code, comparisonCurrency, universe.size());
 
@@ -283,7 +267,7 @@ public class InflationBeaterService {
                 ? computeIndexGrowthPct(code, startDate, endDate)
                 : benchmarkReturn(code, benchmark, universeReturns, startDate, endDate, comparisonCurrency);
 
-        Map<String, String> nameLookup = nameMapFor(universe);
+        Map<String, String> nameLookup = universeBuilder.nameMapFor(universe);
         List<InflationBeaterEntry> entries = universeReturns.stream()
                 .filter(u -> isIndex || !u.code().equals(code))
                 .filter(u -> u.nominalReturnPct() != null)
@@ -301,33 +285,6 @@ public class InflationBeaterService {
         return new InflationBeaterResponse(
                 startDate, endDate, benchmark.getSlug(), benchmark.getLabel(),
                 benchmarkReturn, beating, entries.size(), comparisonCurrency, entries);
-    }
-
-    /**
-     * Universe per-asset returns for (period, currency), cached so every benchmark of that currency reuses
-     * one simulation. The heavy {@link ScenarioResponse} (full daily series) is projected to a lightweight
-     * summary and discarded; only the per-asset return + partial flag are kept.
-     */
-    private List<UniverseReturn> universeReturnsCached(String period, LocalDate startDate, LocalDate endDate,
-                                                       Currency currency, List<CuratedAsset> universe) {
-        return universeCache.get(period + "|" + currency.name(),
-                k -> simulateUniverse(startDate, endDate, currency, universe));
-    }
-
-    private List<UniverseReturn> simulateUniverse(LocalDate startDate, LocalDate endDate,
-                                                  Currency currency, List<CuratedAsset> universe) {
-        List<AnalyticsInstrument> instruments = new ArrayList<>(universe.size());
-        for (CuratedAsset c : universe) {
-            instruments.add(new AnalyticsInstrument(c.type, c.code));
-        }
-        ScenarioResponse scenario = scenarioService.simulate(
-                new ScenarioRequest(NOTIONAL_AMOUNT, startDate, endDate, instruments, currency));
-        List<UniverseReturn> out = new ArrayList<>(scenario.series().size());
-        for (ScenarioSeries s : scenario.series()) {
-            out.add(new UniverseReturn(s.instrument().type(), s.instrument().code(),
-                    s.nominalReturnPct(), s.partial()));
-        }
-        return out;
     }
 
     /**
@@ -355,13 +312,13 @@ public class InflationBeaterService {
      */
     public void warmUniverse() {
         if (!dataReady()) return;
-        List<CuratedAsset> universe = buildUniverse();
+        List<CuratedAsset> universe = universeBuilder.buildUniverse();
         LocalDate end = LocalDate.now();
         for (var e : PERIOD_MONTHS.entrySet()) {
             LocalDate start = end.minusMonths(e.getValue());
             for (Currency ccy : WARM_CURRENCIES) {
                 try {
-                    universeReturnsCached(e.getKey(), start, end, ccy, universe);
+                    universeSimulator.returnsCached(e.getKey(), start, end, ccy, universe);
                 } catch (RuntimeException ex) {
                     log.warn("Universe warm failed period={} currency={}: {}", e.getKey(), ccy, ex.getMessage());
                 }
@@ -382,60 +339,6 @@ public class InflationBeaterService {
                 benchmark.getCategory(), MarketType.MACRO_RATE);
         Currency resolved = resolver.resolveNativeCurrency(marketType, code);
         return resolved != null ? resolved : Currency.TRY;
-    }
-
-    private List<CuratedAsset> buildUniverse() {
-        List<CuratedAsset> universe = new ArrayList<>();
-        for (var entry : TYPE_MAP.entrySet()) {
-            TrackedAssetType trackedType = entry.getKey();
-            AnalyticsInstrumentType analyticsType = entry.getValue();
-            try {
-                List<String> codes = trackedAssetQueryService.getEnabledCodes(trackedType);
-                Map<String, String> names = trackedAssetQueryService.getDisplayNameMap(trackedType);
-                for (String c : codes) {
-                    universe.add(new CuratedAsset(analyticsType, c, names.getOrDefault(c, c)));
-                }
-            } catch (Exception e) {
-                log.warn("Failed to enumerate tracked type={}: {}", trackedType, e.getMessage());
-            }
-        }
-        universe.addAll(depositUniverse());
-        return universe;
-    }
-
-    /**
-     * Deposits enumerated from the macro catalog (every published TRY/USD/EUR tenor), not a hard-coded list —
-     * mirroring how stocks/crypto/forex/commodity are enumerated, so newly added deposit tenors rank
-     * automatically. The synthetic {@link DepositMaturity#TOTAL} bucket is excluded: it is the weighted
-     * average across the other tenors, so ranking it beside them would double-count an aggregate that is not
-     * itself a holdable product.
-     */
-    private List<CuratedAsset> depositUniverse() {
-        List<CuratedAsset> deposits = new ArrayList<>();
-        try {
-            for (MacroIndicator d : macroQueryService.listByCategory(MacroCategory.DEPOSIT)) {
-                if (d.getMaturity() == DepositMaturity.TOTAL) continue;
-                deposits.add(new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, d.getCode(), depositName(d)));
-            }
-        } catch (Exception e) {
-            log.warn("Failed to enumerate deposit universe: {}", e.getMessage());
-        }
-        return deposits;
-    }
-
-    /** Fallback display name "{CURRENCY} {tenor}" (e.g. "TRY 3M"); the frontend localizes via the label key. */
-    private static String depositName(MacroIndicator d) {
-        String currency = d.getCurrency() != null ? d.getCurrency() + " " : "";
-        String tenor = d.getMaturity() != null ? d.getMaturity().tenorLabel() : d.getCode();
-        return currency + tenor;
-    }
-
-    private Map<String, String> nameMapFor(List<CuratedAsset> universe) {
-        Map<String, String> out = new LinkedHashMap<>();
-        for (CuratedAsset c : universe) {
-            out.put(c.type + "|" + c.code, c.name);
-        }
-        return out;
     }
 
     /**
@@ -492,11 +395,4 @@ public class InflationBeaterService {
         String name = nameLookup.getOrDefault(key, u.code());
         return new InflationBeaterEntry(u.type(), u.code(), name, u.nominalReturnPct(), excess, beats);
     }
-
-    /** Curated universe member to rank. */
-    private record CuratedAsset(AnalyticsInstrumentType type, String code, String name) {}
-
-    /** Lightweight projection of a simulated universe asset — its nominal return and completeness. */
-    private record UniverseReturn(AnalyticsInstrumentType type, String code,
-                                  BigDecimal nominalReturnPct, boolean partial) {}
 }

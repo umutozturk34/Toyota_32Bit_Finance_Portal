@@ -181,6 +181,8 @@ public class IsyatirimViopClient implements ViopMarketDataPort {
         List<ViopHistoryPoint> points = new ArrayList<>(response.data().size());
         for (List<BigDecimal> entry : response.data()) {
             if (entry == null || entry.size() < 2) continue;
+            // İş Yatırım emits [null, x] / [x, null] rows on missing candles; skip rather than NPE.
+            if (entry.get(0) == null || entry.get(1) == null) continue;
             long epochMs = entry.get(0).longValue();
             BigDecimal close = entry.get(1);
             LocalDateTime candleDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMs), ISTANBUL);

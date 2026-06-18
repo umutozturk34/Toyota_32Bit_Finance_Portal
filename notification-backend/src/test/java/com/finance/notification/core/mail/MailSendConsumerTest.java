@@ -115,6 +115,35 @@ class MailSendConsumerTest {
     }
 
     @Test
+    void onDispatch_clampsBackoffIndex_whenMaxAttemptsExceedsBackoffSchedule() {
+        // Arrange: max-attempts (3) exceeds backoffs size (1); attempt 2 fails into the else
+        // branch with index 1, which is past the schedule and must be clamped, not throw.
+        NotificationOutboxProperties props = new NotificationOutboxProperties(
+                10,
+                3, List.of(Duration.ofMinutes(1)),
+                Duration.ofMinutes(5), Duration.ofDays(7),
+                Duration.ofSeconds(30), Duration.ofMinutes(1),
+                "0 0 * * *");
+        MailSendConsumer clampConsumer = new MailSendConsumer(repository, mailSender, new ObjectMapper(),
+                props, txManager, new SimpleMeterRegistry());
+        EmailOutbox row = row(42L);
+        row.setAttempts(1);
+        when(repository.claimForProcessing(42L)).thenReturn(1);
+        when(repository.findById(42L)).thenReturn(Optional.of(row));
+        org.mockito.Mockito.doThrow(new RuntimeException("smtp flaky"))
+                .when(mailSender).sendBlocking(anyString(), anyString(), anyString(), any(), anyString(), any());
+
+        // Act
+        clampConsumer.onDispatch(new MailDispatchEvent(42L), ack);
+
+        // Assert
+        org.junit.jupiter.api.Assertions.assertEquals(EmailOutbox.Status.PENDING, row.getStatus());
+        org.junit.jupiter.api.Assertions.assertNotNull(row.getNextAttemptAt());
+        verify(repository).save(row);
+        verify(ack).acknowledge();
+    }
+
+    @Test
     void onDispatch_swallowsOptimisticLockingOnSentSave() {
         EmailOutbox row = row(42L);
         when(repository.claimForProcessing(42L)).thenReturn(1);

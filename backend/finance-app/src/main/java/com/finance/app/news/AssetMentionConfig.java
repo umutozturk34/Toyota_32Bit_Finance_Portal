@@ -14,7 +14,8 @@ public final class AssetMentionConfig {
     private AssetMentionConfig() {
     }
 
-    /** A colloquial Turkish keyword (stored already normalised) → the commodity/currency it names, and that asset's type. */
+    /** A colloquial keyword → the asset it names (any type), with that asset's catalog code and type. Used both for
+     *  commodity/currency words and for entity aliases (a company's common short name/acronym → its stock code). */
     public record KeywordRef(String keyword, String code, String type) {
     }
 
@@ -22,9 +23,11 @@ public final class AssetMentionConfig {
     public record Thresholds(int stockCoreMin, int cryptoNameMin, int fundNameMinChars, int fundNameMinWords, long catalogTtlMs) {
     }
 
-    /** Immutable resolver config: commodity/currency keyword links, the common-word denylist, blocked tickers, name stopwords, thresholds. */
+    /** Immutable resolver config: commodity/currency keyword links, entity (company short-name/acronym) aliases,
+     *  the common-word denylist, blocked tickers, name stopwords, thresholds. */
     public record MentionConfig(
             List<KeywordRef> commodityCurrencyKeywords,
+            List<KeywordRef> entityAliases,
             Set<String> commonNameWords,
             Set<String> blockedTickers,
             Set<String> nameStopwords,
@@ -35,6 +38,7 @@ public final class AssetMentionConfig {
     /** Mutable JSON binding form, converted to {@link MentionConfig} after loading. */
     public static class RawMentionConfig {
         public List<KeywordRef> commodityCurrencyKeywords;
+        public List<KeywordRef> entityAliases;
         public List<String> commonNameWords;
         public List<String> blockedTickers;
         public List<String> nameStopwords;

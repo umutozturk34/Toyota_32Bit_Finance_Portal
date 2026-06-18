@@ -5,6 +5,7 @@ import com.finance.market.bond.service.BondDataService;
 import com.finance.market.commodity.repository.CommodityCandleRepository;
 import com.finance.market.commodity.repository.CommodityRepository;
 import com.finance.market.commodity.service.CommodityDataService;
+import com.finance.market.core.client.EvdsCredentials;
 import com.finance.market.core.scheduler.SchedulerPorts;
 import com.finance.market.crypto.repository.CryptoCandleRepository;
 import com.finance.market.crypto.repository.CryptoRepository;
@@ -42,6 +43,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -106,7 +110,7 @@ class MarketDataInitializerTest {
                 macroIndicatorRepository, macroIndicatorPointRepository, macroRegistry, macroFetcher,
                 viopContractRepository, viopDataService,
                 articleRepository, newsDataService,
-                taskTracker, synchronous, ports);
+                taskTracker, synchronous, ports, new EvdsCredentials("test-evds-key"));
     }
 
     private Answer<Void> record(String name) {
@@ -159,5 +163,48 @@ class MarketDataInitializerTest {
 
         // Assert — the completion future is exposed and done so late warmers (e.g. the beater cache) can gate on it.
         assertThat(initializer.completion()).isDone();
+    }
+
+    @Test
+    void should_failInit_when_fetchPersistsNoData() {
+        // Arrange — forex runs but its repositories stay empty afterwards (counts default to 0), which is what a
+        // swallowed upstream fetch failure looks like: the action returns normally yet writes nothing.
+
+        // Act
+        initializer.run(new String[]{});
+
+        // Assert — the empty fetch is reported as a failure, never as a completed init, so the "forex completed but
+        // no data" false-success can no longer cascade into the FX-dependent stock/commodity fetches.
+        verify(taskTracker).failTask(eq("init-forex"), any(), anyString());
+        verify(taskTracker, never()).completeTask(eq("init-forex"), any());
+    }
+
+    @Test
+    void should_reportApiKeyMissing_forEvdsBackedClasses_whenEvdsKeyAbsent() {
+        // Arrange — the EVDS API key is absent, so the EVDS-backed classes (forex, bond, macro) cannot fetch.
+        MarketDataInitializer noKey = new MarketDataInitializer(
+                cryptoRepository, cryptoCandleRepository, cryptoDataService,
+                stockRepository, stockCandleRepository, stockDataService,
+                fundRepository, fundCandleRepository, fundDataService,
+                forexRepository, forexCandleRepository, forexDataService,
+                commodityRepository, commodityCandleRepository, commodityDataService,
+                bondRepository, bondDataService,
+                macroIndicatorRepository, macroIndicatorPointRepository, macroRegistry, macroFetcher,
+                viopContractRepository, viopDataService,
+                articleRepository, newsDataService,
+                taskTracker, Runnable::run, ports, new EvdsCredentials(""));
+
+        // Act
+        noKey.run(new String[]{});
+
+        // Assert — EVDS-backed fetches are NOT attempted (no doomed request / timeout) and are reported with the
+        // distinct API_KEY_MISSING status carrying an actionable message, while non-EVDS classes still run.
+        verify(forexDataService, never()).refreshAll();
+        verify(bondDataService, never()).updateBonds();
+        verify(macroFetcher, never()).refreshAll();
+        verify(taskTracker).failApiKeyMissing(eq("init-forex"), any(), anyString());
+        verify(taskTracker).failApiKeyMissing(eq("init-bond"), any(), anyString());
+        verify(taskTracker).failApiKeyMissing(eq("init-macro"), any(), anyString());
+        assertThat(order).contains("crypto");
     }
 }

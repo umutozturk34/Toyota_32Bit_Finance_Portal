@@ -31,6 +31,11 @@
     { "keyword": "pakistan rupisi", "code": "PKR", "type": "FOREX" },
     { "keyword": "rumen leyi", "code": "RON", "type": "FOREX" }
   ],
+  "entityAliases": [
+    { "keyword": "THY", "code": "THYAO.IS", "type": "STOCK" },
+    { "keyword": "İş Bankası", "code": "ISCTR.IS", "type": "STOCK" },
+    { "keyword": "Şişecam", "code": "SISE.IS", "type": "STOCK" }
+  ],
   "commonNameWords": [
     "turkiye", "anadolu", "akdeniz", "marmara", "avrupa", "ulusal", "global", "dunya", "merkez",
     "karadeniz", "istanbul", "ankara", "amerika", "avrasya", "uluslararasi", "international",
@@ -49,7 +54,7 @@
   "nameStopwords": ["ve", "the", "a.s", "as", "ao"],
   "thresholds": {
     "stockCoreMin": 5,
-    "cryptoNameMin": 4,
+    "cryptoNameMin": 3,
     "fundNameMinChars": 18,
     "fundNameMinWords": 4,
     "catalogTtlMs": 3600000

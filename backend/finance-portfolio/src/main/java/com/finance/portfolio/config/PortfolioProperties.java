@@ -20,6 +20,10 @@ public class PortfolioProperties {
     private BigDecimal minTransactionAmountTry = new BigDecimal("10");
     private int historicalRateLookbackDays = 30;
     private int maxPortfoliosPerUser = 5;
+    // Hard cap on spot lots in one portfolio. Every snapshot rebuild loads + revalues ALL lots in memory, so an
+    // unbounded portfolio (e.g. a script bulk-adding lots) blows up heap and stalls the per-portfolio backfill.
+    // 500 is far above any plausible hand-built portfolio yet keeps the rebuild working set bounded.
+    private int maxLotsPerPortfolio = 500;
     private LotLimits lotLimits = new LotLimits();
     private BondLimits bondLimits = new BondLimits();
     private Deposit deposit = new Deposit();

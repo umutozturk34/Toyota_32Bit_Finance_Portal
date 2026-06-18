@@ -80,7 +80,11 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
         if (cat.byTicker().isEmpty() && cat.byName().isEmpty()) {
             return List.of();
         }
-        String raw = (title == null ? "" : title) + " " + (description == null ? "" : description);
+        String titlePart = title == null ? "" : title;
+        String raw = titlePart + " " + (description == null ? "" : description);
+        // The index of the single space joining title and body. The prose-context window must not cross it: an
+        // all-caps TITLE token ("KENT") would otherwise borrow a lowercase BODY char and be validated as prose.
+        int joinIndex = titlePart.length();
         // Dedup by code (a coin named both "(BTC)" and "Bitcoin" links once); insertion order = ticker hits first.
         // `type` keeps that order + the asset type; `count` accumulates how many times the article references the
         // code (ticker occurrences + name-phrase occurrences) — a rough "how prominent" signal shown in the UI.
@@ -98,7 +102,11 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
             // 3-6 letter word ("KENT", "GLOBAL", "LINK") that collides with a catalog code would otherwise link.
             boolean parenthesised = m.start() > 0 && raw.charAt(m.start() - 1) == '('
                     && m.end() < raw.length() && raw.charAt(m.end()) == ')';
-            if (!parenthesised && !hasProseContext(raw, m.start(), m.end())) {
+            // A <=3-char ticker (TON, SUI, GAS) collides far too readily with everyday all-caps words, so it links
+            // ONLY when parenthesised; >=4-char tickers may still link bare in prose. The prose-context window is
+            // clamped to the token's own field (title or body) so a body's lowercase can't validate a title token.
+            if (!parenthesised
+                    && (ticker.length() <= 3 || !hasProseContext(raw, m.start(), m.end(), joinIndex))) {
                 continue;
             }
             CodeType ct = cat.byTicker().get(ticker);
@@ -143,10 +151,16 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
     }
 
     /** True if a lowercase letter sits within {@link #TICKER_CONTEXT_WINDOW} of {@code [start,end)} — i.e. the
-     *  all-caps token is embedded in normal prose, not an all-caps headline run. */
-    private static boolean hasProseContext(String text, int start, int end) {
-        int from = Math.max(0, start - TICKER_CONTEXT_WINDOW);
-        int to = Math.min(text.length(), end + TICKER_CONTEXT_WINDOW);
+     *  all-caps token is embedded in normal prose, not an all-caps headline run. The window is clamped so it never
+     *  crosses {@code joinIndex} (the title/body separator): a token in the title sees only title context and one
+     *  in the body only body context, so an all-caps headline can't be validated by lowercase prose on the far side. */
+    private static boolean hasProseContext(String text, int start, int end, int joinIndex) {
+        // Clamp to the side of the join the token lives on. The separator space sits AT joinIndex; a title token ends
+        // at or before it, a body token starts after it.
+        int fieldStart = end <= joinIndex ? 0 : joinIndex + 1;
+        int fieldEnd = end <= joinIndex ? joinIndex : text.length();
+        int from = Math.max(fieldStart, start - TICKER_CONTEXT_WINDOW);
+        int to = Math.min(fieldEnd, end + TICKER_CONTEXT_WINDOW);
         for (int i = from; i < to; i++) {
             if (Character.isLowerCase(text.charAt(i))) {
                 return true;
@@ -221,6 +235,14 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
             // Commodity/currency keywords from config; normalised on the way in so an edit can be written in plain
             // Turkish ("altın") yet still match the normalised article text.
             for (AssetMentionConfig.KeywordRef k : CONFIG.commodityCurrencyKeywords()) {
+                byName.add(new NameRef(normalize(k.keyword()), k.code(), k.type()));
+            }
+            // Entity aliases: a company's common short name / acronym → its catalog code (e.g. "THY" → THYAO.IS,
+            // "İş Bankası" → ISCTR.IS). Needed for firms cited by a name that ISN'T in their legal name (an acronym)
+            // or whose legal-name lead is a generic/geo word the name matcher deliberately suppresses (so the bare
+            // short form never linked). Each alias is a full-phrase match, so it stays clear of the bigram the
+            // generic-lead guard drops ("is bankasi" matches the bank, never "iş gücü").
+            for (AssetMentionConfig.KeywordRef k : CONFIG.entityAliases()) {
                 byName.add(new NameRef(normalize(k.keyword()), k.code(), k.type()));
             }
         } catch (RuntimeException e) {

@@ -3,8 +3,6 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
-  X,
-  Landmark,
   Calendar,
   CalendarClock,
   Percent,
@@ -16,13 +14,13 @@ import {
   Coins,
   Layers,
   CheckCircle2,
-  CircleDot,
-  MinusCircle,
 } from 'lucide-react';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { formatPercentSmart, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
 import { BOND_TYPE_COLORS } from '../../bond/lib/bondConstants';
 import { useBondCouponSchedule } from '../hooks/useFixedIncomePositions';
+import BondDetailHeader from './bondDetail/BondDetailHeader';
+import CouponSchedule from './bondDetail/CouponSchedule';
 
 const PAYMENTS_PER_YEAR = { ANNUAL: 1, SEMI_ANNUAL: 2, QUARTERLY: 4, MONTHLY: 12, ZERO_COUPON: 0 };
 const CPI_TYPES = new Set(['FLOATING_CPI', 'SUKUK_CPI']);
@@ -52,14 +50,6 @@ function StatCell({ icon: Icon, label, value, valueClass = 'text-fg', mono, wrap
     </div>
   );
 }
-
-const SCHEDULE_STYLE = {
-  received: { box: 'bg-success/5 border border-success/15', Icon: CheckCircle2, icon: 'text-success', label: 'text-success' },
-  upcoming: { box: 'bg-accent/5 border border-accent/15', Icon: CircleDot, icon: 'text-accent', label: 'text-accent' },
-  beforeEntry: { box: 'bg-bg-base/40', Icon: MinusCircle, icon: 'text-fg-subtle', label: 'text-fg-subtle' },
-};
-
-const STATUS_KEY = { RECEIVED: 'received', BEFORE_ENTRY: 'beforeEntry', UPCOMING: 'upcoming' };
 
 export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
   const { t } = useTranslation();
@@ -159,41 +149,7 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
         <div aria-hidden className="pointer-events-none absolute -top-20 -right-12 h-48 w-48 rounded-full bg-accent/15 blur-[90px] opacity-60" />
         <div aria-hidden className="pointer-events-none absolute -bottom-24 -left-16 h-52 w-52 rounded-full bg-success/10 blur-[90px] opacity-50" />
 
-        <div className="flex items-start justify-between gap-3 px-4 sm:px-6 pt-4 sm:pt-5 pb-3 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 text-accent shrink-0">
-              <Landmark className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <h2 className="text-base sm:text-lg font-bold text-fg leading-tight font-mono truncate">{bond.bondSeriesCode}</h2>
-              {bond.bondName && bond.bondName !== bond.bondSeriesCode && (
-                <p className="text-xs text-fg-muted truncate">{bond.bondName}</p>
-              )}
-              {bond.bondIsin && (
-                <p className="text-[10px] text-fg-subtle font-mono truncate">{bond.bondIsin}</p>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {isCpi && (
-              <span className="rounded-lg border px-2 py-1 text-[10px] font-semibold tracking-wider bg-warning/15 text-warning border-warning/25">
-                {t('portfolio.bonds.coupon.cpiLinked')}
-              </span>
-            )}
-            {bond.bondType && (
-              <span className={`rounded-lg border px-2 py-1 text-[10px] font-semibold tracking-wider ${typeColor}`}>
-                {t(`market.bond.types.${bond.bondType}`, { defaultValue: bond.bondType })}
-              </span>
-            )}
-            <button
-              onClick={onClose}
-              aria-label={t('common.close')}
-              className="flex items-center justify-center w-8 h-8 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+        <BondDetailHeader bond={bond} isCpi={isCpi} typeColor={typeColor} onClose={onClose} t={t} />
 
         <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pb-4 sm:pb-5">
         <section className="rounded-2xl border border-border-default bg-bg-base/50 p-3.5 mb-3">
@@ -392,57 +348,16 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
         </section>
         </div>
 
-        <section className="rounded-2xl border border-border-default bg-bg-base/50 p-3.5">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-fg-muted mb-1">
-            {t('portfolio.bonds.detail.scheduleTitle')}
-          </h3>
-          <p className="text-[11px] text-fg-subtle mb-3">{t('portfolio.bonds.detail.scheduleHint')}</p>
-          {schedule.length === 0 ? (
-            <p className="text-xs text-fg-muted">
-              {(isCpi || isPerUnit) ? t(indexNoteKey) : t('portfolio.bonds.detail.scheduleEmpty')}
-            </p>
-          ) : (
-            <>
-              {(isCpi || isPerUnit) && (
-                <p className="text-[11px] text-fg-muted mb-2">{t(indexNoteKey)}</p>
-              )}
-              <ul className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-              {schedule.map((c) => {
-                const sKey = STATUS_KEY[c.status] || 'upcoming';
-                const style = SCHEDULE_STYLE[sKey];
-                const StatusIcon = style.Icon;
-                const statusLabel = sKey === 'received'
-                  ? t('portfolio.bonds.coupon.scheduleReceived')
-                  : sKey === 'beforeEntry'
-                    ? t('portfolio.bonds.coupon.scheduleBeforeEntry')
-                    : t('portfolio.bonds.detail.coupon.upcoming');
-                return (
-                  <li
-                    key={c.date}
-                    className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-xs ${style.box}`}
-                  >
-                    <span className="flex items-center gap-2 min-w-0">
-                      <StatusIcon className={`h-3.5 w-3.5 shrink-0 ${style.icon}`} />
-                      <span className={`font-mono truncate ${sKey === 'upcoming' ? 'text-fg font-medium' : 'text-fg-muted'}`}>
-                        {formatDate(c.date, localeTag)}
-                      </span>
-                      {c.ratePer100 != null && (
-                        <span className="font-mono text-[10px] text-fg-subtle shrink-0">%{Number(c.ratePer100).toFixed(2)}</span>
-                      )}
-                    </span>
-                    <span className="flex items-center gap-2 shrink-0">
-                      <span className={`font-mono ${sKey === 'received' ? 'text-success' : 'text-fg-muted'}`}>
-                        {money(c.amountTry, 'TRY')}
-                      </span>
-                      <span className={`text-[10px] font-medium tracking-wider uppercase ${style.label}`}>{statusLabel}</span>
-                    </span>
-                  </li>
-                );
-              })}
-              </ul>
-            </>
-          )}
-        </section>
+        <CouponSchedule
+          schedule={schedule}
+          isCpi={isCpi}
+          isPerUnit={isPerUnit}
+          indexNoteKey={indexNoteKey}
+          localeTag={localeTag}
+          money={money}
+          formatDate={formatDate}
+          t={t}
+        />
         </div>
       </motion.div>
     </div>,

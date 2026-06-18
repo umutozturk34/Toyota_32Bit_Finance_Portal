@@ -85,7 +85,8 @@ class PortfolioPdfServiceTest {
         PdfExportProperties props = new PdfExportProperties(
                 new PdfExportProperties.Pdf("http://pdf-service:8080", 10000),
                 "http://localhost:5173");
-        return new PortfolioPdfService(builder, dataClient, forexHistoryClient, templateEngine, messageSource, svgService, props);
+        return new PortfolioPdfService(builder, dataClient, forexHistoryClient, templateEngine, messageSource,
+                svgService, new ReportCurrencyConverter(), props);
     }
 
     @BeforeEach

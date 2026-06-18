@@ -10,6 +10,11 @@ spring:
           auth: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:false}
           starttls:
             enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:false}
+          # Fail a hung SMTP send fast (well under reclaim-after PT5M) so it retries via
+          # handleFailure instead of being reclaimed and re-sent — avoids duplicate emails.
+          connectiontimeout: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_CONNECTIONTIMEOUT:10000}
+          timeout: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_TIMEOUT:30000}
+          writetimeout: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_WRITETIMEOUT:30000}
 
 notification:
   from-address: ${NOTIFICATION_FROM_ADDRESS:noreply@finance.local}

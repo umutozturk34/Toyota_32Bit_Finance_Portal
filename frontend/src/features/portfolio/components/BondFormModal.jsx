@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Hash, Tag, Landmark, Percent, Repeat, RotateCcw, Lock } from 'lucide-react';
+import { Calendar, Landmark } from 'lucide-react';
 import { AlertCircle } from '../../../shared/components/feedback/AnimatedIcons';
 import DatePickerPopover from '../../../shared/components/form/DatePickerPopover';
 import { useMoney } from '../../../shared/hooks/useMoney';
@@ -18,6 +18,11 @@ import {
 import { useAddBond, useUpdateBond } from '../hooks/useFixedIncomePositions';
 import { bondService } from '../../bond/services/bondService';
 import BondSeriesPicker from './BondSeriesPicker';
+import BondFormHeader from './bondForm/BondFormHeader';
+import QuantityField from './bondForm/QuantityField';
+import EntryPriceField from './bondForm/EntryPriceField';
+import CouponSection from './bondForm/CouponSection';
+import TotalCostBanner from './bondForm/TotalCostBanner';
 import { toast } from '../../../shared/components/feedback/toastBus';
 
 const CPI_TYPES = new Set(['FLOATING_CPI', 'SUKUK_CPI']);
@@ -25,8 +30,6 @@ const CPI_TYPES = new Set(['FLOATING_CPI', 'SUKUK_CPI']);
 // an untouched default is sent as null so the server detects the cadence instead of forcing the type default.
 const PAR_FLOATER_TYPES = new Set(['FLOATING_TLREF', 'FLOATING_AUCTION', 'SUKUK_FLOATING']);
 const PAYMENTS_PER_YEAR = { ANNUAL: 1, SEMI_ANNUAL: 2, QUARTERLY: 4, MONTHLY: 12, ZERO_COUPON: 0 };
-// User-selectable coupon cadences (a discount bill is always ZERO_COUPON and shows no selector).
-const FREQ_OPTIONS = ['ANNUAL', 'SEMI_ANNUAL', 'QUARTERLY', 'MONTHLY'];
 // The clean price may drift at most ±10% from the bond's own quoted price on the entry date — a hypothetical
 // purchase still has to clear at a realistic level, so a fat-fingered or speculative price is rejected.
 const PRICE_BAND = 0.10;
@@ -255,37 +258,18 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
         <div aria-hidden className="pointer-events-none absolute -top-16 -right-10 h-40 w-40 rounded-full bg-accent/15 blur-[80px] opacity-60" />
         <div aria-hidden className="pointer-events-none absolute -bottom-20 -left-12 h-40 w-40 rounded-full bg-success/10 blur-[80px] opacity-50" />
-        <div className="flex items-center justify-between px-4 sm:px-6 pt-4 sm:pt-6 pb-4 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/10">
-              <Landmark className="h-4 w-4 text-accent" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-fg">
-                {isEdit ? t('portfolio.bonds.form.titleEdit') : t('portfolio.bonds.form.titleAdd')}
-              </h2>
-              <p className="text-xs text-fg-muted">{seriesName || seriesCode || t('portfolio.bonds.form.subtitle')}</p>
-              {bondType && (
-                <span className={`mt-1 inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ring-1 ring-inset ${
-                  isCpi ? 'bg-warning/15 text-warning ring-warning/25'
-                    : isFloating ? 'bg-accent/12 text-accent ring-accent/25'
-                      : isDiscount ? 'bg-fg-muted/10 text-fg-muted ring-border-default/50'
-                        : 'bg-success/12 text-success ring-success/25'
-                }`}>
-                  {t(`market.bond.types.${bondType}`, { defaultValue: bondType })}
-                </span>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            disabled={!dismissable}
-            aria-label={t('common.close')}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer disabled:opacity-30"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+        <BondFormHeader
+          t={t}
+          isEdit={isEdit}
+          seriesName={seriesName}
+          seriesCode={seriesCode}
+          bondType={bondType}
+          isCpi={isCpi}
+          isFloating={isFloating}
+          isDiscount={isDiscount}
+          dismissable={dismissable}
+          onClose={onClose}
+        />
 
         <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pb-4 sm:pb-6">
         {phase === 'form' && (
@@ -333,169 +317,44 @@ export default function BondFormModal({ mode, portfolioId, portfolioPicker, bond
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
-                <Hash className="h-3 w-3" />
-                {t('portfolio.bonds.form.fields.quantity')}
-              </label>
-              <input
-                type="number"
-                step="any"
-                min="0"
-                max={MAX_QUANTITY}
-                inputMode="decimal"
-                value={quantity}
-                onChange={(e) => { setQuantity(sanitizeNumberInput(e.target.value, MAX_QUANTITY, QUANTITY_DECIMALS)); setError(null); }}
-                placeholder={t('portfolio.bonds.form.fields.quantityPlaceholder')}
-                className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
-              />
-            </div>
+            <QuantityField
+              t={t}
+              quantity={quantity}
+              onChange={(e) => { setQuantity(sanitizeNumberInput(e.target.value, MAX_QUANTITY, QUANTITY_DECIMALS)); setError(null); }}
+            />
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-fg-muted flex items-center justify-between gap-1.5">
-                <span className="inline-flex items-center gap-1.5">
-                  <Tag className="h-3 w-3" />
-                  {t('portfolio.bonds.form.fields.entryPrice')}
-                </span>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-accent">
-                  {t('portfolio.bonds.form.fields.perUnit', { defaultValue: '1 adet' })}
-                </span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle font-mono text-sm pointer-events-none">₺</span>
-                <input
-                  type="number"
-                  step="any"
-                  min="0"
-                  max={MAX_BOND_PRICE_TRY}
-                  inputMode="decimal"
-                  value={priceValue}
-                  onChange={(e) => {
-                    setEntryPrice(sanitizeNumberInput(e.target.value, MAX_BOND_PRICE_TRY, PRICE_DECIMALS));
-                    setPriceTouched(true);
-                    setError(null);
-                  }}
-                  onBlur={() => { if (priceTouched) setEntryPrice((v) => clampToBand(v)); }}
-                  placeholder="0.00"
-                  className="w-full rounded-lg border border-border-default bg-bg-base pl-7 pr-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
-                />
-              </div>
-              {priceBand ? (
-                <div className="space-y-1 rounded-lg border border-accent/20 bg-accent/5 px-2.5 py-1.5 text-[11px]">
-                  <p className="flex items-start gap-1.5 text-fg-muted leading-snug">
-                    <Tag className="h-3 w-3 text-accent shrink-0 mt-0.5" />
-                    <span className="min-w-0 break-words">
-                      {t('portfolio.bonds.form.fields.priceSuggested', {
-                        price: money(suggestedPrice, 'TRY'),
-                        low: money(priceBand[0], 'TRY'),
-                        high: money(priceBand[1], 'TRY'),
-                      })}
-                    </span>
-                  </p>
-                  <button
-                    type="button"
-                    onClick={resetToSuggested}
-                    className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-accent hover:text-accent-bright bg-transparent border-none cursor-pointer p-0"
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                    {t('portfolio.bonds.form.fields.priceReset')}
-                  </button>
-                </div>
-              ) : (
-                <p className="text-[10px] text-fg-subtle">{t('portfolio.bonds.form.fields.priceHint')}</p>
-              )}
-              {isCpi && (
-                <div className="flex items-start gap-1.5 rounded-lg border border-warning/25 bg-warning/10 px-2.5 py-1.5 text-[11px] text-warning/90">
-                  <Tag className="h-3 w-3 shrink-0 mt-0.5" />
-                  <span>{t('portfolio.bonds.form.cpiPriceHint', { index: baseIndex != null ? Math.round(Number(baseIndex)).toLocaleString() : '6300' })}</span>
-                </div>
-              )}
-            </div>
+            <EntryPriceField
+              t={t}
+              money={money}
+              priceValue={priceValue}
+              priceBand={priceBand}
+              suggestedPrice={suggestedPrice}
+              isCpi={isCpi}
+              baseIndex={baseIndex}
+              onPriceChange={(e) => {
+                setEntryPrice(sanitizeNumberInput(e.target.value, MAX_BOND_PRICE_TRY, PRICE_DECIMALS));
+                setPriceTouched(true);
+                setError(null);
+              }}
+              onPriceBlur={() => { if (priceTouched) setEntryPrice((v) => clampToBand(v)); }}
+              onReset={resetToSuggested}
+            />
 
             {/* Coupon — read-only, sourced from the bond record (not user-editable) */}
-            {couponHidden ? (
-              <div className="flex items-start gap-2 rounded-lg border border-border-default bg-bg-base/60 px-3 py-2.5 text-[11px] text-fg-muted">
-                <Percent className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                <span>{t('portfolio.bonds.form.discountNote')}</span>
-              </div>
-            ) : (
-              <div className="space-y-2.5 rounded-xl border border-border-default bg-bg-base/50 p-3">
-                {/* Coupon RATE — read-only, the bond's published per-period (.ORAN) value */}
-                <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-fg-muted">
-                    <Percent className="h-3.5 w-3.5 text-accent" />
-                    {t('portfolio.bonds.form.fields.couponRate')}
-                  </span>
-                  <span className="font-mono text-sm font-semibold text-fg">
-                    {couponPerPeriod != null ? `%${couponPerPeriod.toFixed(2)}` : '—'}
-                    <span className="ml-1 text-[10px] font-normal text-fg-subtle">{t('portfolio.bonds.form.perPeriod')}</span>
-                  </span>
-                </div>
-                <p className="flex items-center gap-1.5 text-[10px] text-fg-subtle">
-                  <Lock className="h-3 w-3 shrink-0" />
-                  {t('portfolio.bonds.form.couponFromDb')}
-                </p>
-                {/* Coupon FREQUENCY — user-overridable (the data carries no frequency; default inferred from type) */}
-                <div className="space-y-1.5 pt-1">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-fg-muted">
-                    <Repeat className="h-3.5 w-3.5 text-accent" />
-                    {t('portfolio.bonds.detail.frequencyLabel')}
-                  </span>
-                  <div className="grid grid-cols-2 gap-1 rounded-lg bg-bg-base/60 p-1 ring-1 ring-inset ring-border-default/50">
-                    {FREQ_OPTIONS.map((f) => {
-                      const selected = couponFrequency === f;
-                      return (
-                        <button
-                          key={f}
-                          type="button"
-                          onClick={() => { setCouponFrequency(f); setFreqTouched(true); setError(null); }}
-                          aria-pressed={selected}
-                          className={`rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors border-none cursor-pointer ${
-                            selected
-                              ? 'text-accent bg-accent/15 ring-1 ring-inset ring-accent/40'
-                              : 'text-fg-muted bg-transparent hover:text-fg hover:bg-surface/60'
-                          }`}
-                        >
-                          {t(`portfolio.bonds.coupon.freq.${f}`)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="flex items-center justify-between gap-2 text-[10px] text-fg-subtle">
-                    <span>{t(freqAutoDetect ? 'portfolio.bonds.form.freqAutoDetect' : 'portfolio.bonds.form.freqInferred')}</span>
-                    {publishedAnnualRate != null && (
-                      <span className="font-mono text-accent shrink-0">{t('portfolio.bonds.form.annualApprox', { rate: publishedAnnualRate.toFixed(2) })}</span>
-                    )}
-                  </div>
-                </div>
-                {isCpi && (
-                  <p className="rounded-lg bg-warning/10 px-2.5 py-1.5 text-[11px] text-warning/90">
-                    {t('portfolio.bonds.form.cpiCouponNote')}
-                  </p>
-                )}
-                {isFloating && (
-                  <p className="rounded-lg bg-accent/[0.08] px-2.5 py-1.5 text-[11px] text-accent/90">
-                    {t('portfolio.bonds.form.floatingNote')}
-                  </p>
-                )}
-              </div>
-            )}
+            <CouponSection
+              t={t}
+              couponHidden={couponHidden}
+              couponPerPeriod={couponPerPeriod}
+              couponFrequency={couponFrequency}
+              freqAutoDetect={freqAutoDetect}
+              publishedAnnualRate={publishedAnnualRate}
+              isCpi={isCpi}
+              isFloating={isFloating}
+              onSelectFrequency={(f) => { setCouponFrequency(f); setFreqTouched(true); setError(null); }}
+            />
 
             {totalCostTry != null && (
-              <div className="sm:col-span-2 rounded-xl border border-accent/30 bg-gradient-to-r from-accent/5 to-transparent px-4 py-3 flex items-center justify-between gap-3 min-w-0">
-                <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="text-xs font-semibold text-accent">{t('portfolio.bonds.form.totalCost')}</span>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-fg-subtle">
-                    {t('portfolio.bonds.form.storedAsTry')}
-                  </span>
-                </div>
-                <span
-                  className="text-lg font-bold font-mono text-accent truncate"
-                  title={money(totalCostTry, 'TRY')}
-                >
-                  {formatCompact(totalCostTry, 'TRY', 1_000_000_000)}
-                </span>
-              </div>
+              <TotalCostBanner t={t} money={money} formatCompact={formatCompact} totalCostTry={totalCostTry} />
             )}
 
             <AnimatePresence>

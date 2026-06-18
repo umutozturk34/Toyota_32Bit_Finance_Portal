@@ -7,7 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /** Persistence for {@link StockIndexMembership}; supports per-stock lookup and reconcile (delete-stale). */
-@Repository
 public interface StockIndexMembershipRepository
         extends JpaRepository<StockIndexMembership, StockIndexMembership.Key> {
 

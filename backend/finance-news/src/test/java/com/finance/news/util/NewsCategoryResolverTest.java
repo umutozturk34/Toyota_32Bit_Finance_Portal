@@ -147,6 +147,27 @@ class NewsCategoryResolverTest {
     }
 
     @Test
+    void domesticBondNewsMentioningFedStillClassifiesAsBond() {
+        // A domestic Treasury-bond article that references the Fed only in passing must keep TAHVIL_BONO: a bare
+        // Fed mention is macro-policy context, not foreign-bond context, so it must not suppress the classification.
+        NewsCategory result = NewsCategoryResolver.resolve(null,
+                "Hazine tahvil ihalesinde gösterge faiz geriledi",
+                "Fed faiz kararı öncesi yurt içi tahvil faizleri düştü, gösterge tahvil getirisi indi");
+
+        assertThat(result).isEqualTo(NewsCategory.TAHVIL_BONO);
+    }
+
+    @Test
+    void domesticEurobondNewsMentioningFedStillClassifiesAsBond() {
+        // Eurobond/CDS recaps almost always reference the Fed; the article is still domestic bond news.
+        NewsCategory result = NewsCategoryResolver.resolve(null,
+                "Türkiye eurobond getirileri geriledi",
+                "Eurobond faizleri ve CDS primi Fed faiz beklentisiyle indi");
+
+        assertThat(result).isEqualTo(NewsCategory.TAHVIL_BONO);
+    }
+
+    @Test
     void titleKeywordsOutweighBodyKeywords() {
         // The headline is about oil (EMTIA); the body only mentions the stock market in passing. Title weighting
         // makes the article's real topic win over the more-numerous body keywords (which would otherwise score higher).

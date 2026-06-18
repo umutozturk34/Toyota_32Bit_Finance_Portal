@@ -52,7 +52,13 @@ class AssetMentionResolverImplTest {
                 // Firms whose distinctive name LEADS with a common word — they must link only by their full name or
                 // ticker, never by the lone first word ("platform", "federal").
                 new Object[]{"PLTUR.IS", "Platform Turizm Taşımacılık Gıda A.Ş."},
-                new Object[]{"FMIZP.IS", "Federal-Mogul İzmit Piston ve Pim Üretim Tesisleri A.Ş."}
+                new Object[]{"FMIZP.IS", "Federal-Mogul İzmit Piston ve Pim Üretim Tesisleri A.Ş."},
+                // A geo-led firm whose two-word core ("turkiye is") is fully generic — must link only by ticker
+                // or full name, never anchor on the bigram against unrelated economy text ("Türkiye iş gücü").
+                new Object[]{"ISCTR.IS", "Türkiye İş Bankası A.Ş."},
+                // A ticker that collides with an everyday Turkish word ("KENT" = city) — must link as a bare ticker
+                // only in prose, not when it appears as a shouting all-caps headline word.
+                new Object[]{"KENT.IS", "Kent Gıda Sanayi A.Ş."}
         ));
         when(cryptoRepository.findAllIdsNamesAndSymbols()).thenReturn(List.of(
                 new Object[]{"bitcoin", "Bitcoin", "btc"},
@@ -269,6 +275,65 @@ class AssetMentionResolverImplTest {
         List<ResolvedAsset> result = resolver.resolve("Bitcoin, Federal Reserve kararı öncesi yükseldi", null);
 
         assertThat(result).extracting(ResolvedAsset::code).doesNotContain("FMIZP.IS");
+    }
+
+    @Test
+    void shouldNotLinkStock_whenGeoLedGenericCoreAppearsInUnrelatedText() {
+        // ISCTR (Türkiye İş Bankası) must NOT link off the everyday bigram "Türkiye iş" — its two-word core
+        // "turkiye is" is fully generic (geo lead + 2-letter filler), so unrelated economy text must not anchor it.
+        List<ResolvedAsset> result = resolver.resolve("Türkiye iş gücü piyasası verisi açıklandı", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).doesNotContain("ISCTR.IS");
+    }
+
+    @Test
+    void shouldLinkGeoLedStock_whenNamedByTicker() {
+        // The same firm still links by its parenthesised ticker, so the generic-core guard costs no real recall.
+        List<ResolvedAsset> result = resolver.resolve("Bankacılık endeksinde yükseliş (ISCTR) öne çıktı", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).contains("ISCTR.IS");
+    }
+
+    @Test
+    void shouldLinkStandaloneTicker_evenWithoutParenthesesAndWithTurkishSuffix() {
+        // A bare ticker token is an unambiguous reference and must link without parentheses — including with a
+        // Turkish apostrophe-suffix ("ISCTR'den"). This is the recall the parentheses-only matcher used to miss.
+        List<ResolvedAsset> result = resolver.resolve("ISCTR'den güçlü bilanço; THYAO yükseldi", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).contains("ISCTR.IS", "THYAO.IS");
+    }
+
+    @Test
+    void shouldNotLinkTicker_whenItIsOnlyASubstringOfALongerToken() {
+        // "ISCTR" buried inside a longer alphanumeric word is contains-not-mention, so it must NOT link.
+        List<ResolvedAsset> result = resolver.resolve("DISCTRACK adlı ürün tanıtıldı", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).doesNotContain("ISCTR.IS");
+    }
+
+    @Test
+    void shouldNotLinkBareTicker_whenItIsAnAllCapsHeadlineWordCollidingWithACode() {
+        // "KENT" (Kent Gıda) is also the everyday word "kent" (city). In an ALL-CAPS shouting headline it is not a
+        // deliberate ticker reference, so it must NOT link — otherwise every all-caps lead collides with the catalog.
+        List<ResolvedAsset> result = resolver.resolve("KENT MERKEZINDE YENI PROJE HAYATA GECIRILDI", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).doesNotContain("KENT.IS");
+    }
+
+    @Test
+    void shouldLinkBareTicker_whenItAppearsInNormalProse() {
+        // The same token in normal prose (lowercase neighbours) IS a deliberate ticker mention and links.
+        List<ResolvedAsset> result = resolver.resolve("Bugün KENT hissesi günü yükselişle kapattı", null);
+
+        assertThat(result).extracting(ResolvedAsset::code).contains("KENT.IS");
+    }
+
+    @Test
+    void shouldNotLinkStandaloneTicker_whenItIsABlockedAcronym() {
+        // A bare blocked acronym (FED, IMF…) must never link even though the token shape matches a ticker.
+        List<ResolvedAsset> result = resolver.resolve("FED ve IMF kararları izleniyor", null);
+
+        assertThat(result).isEmpty();
     }
 
     @Test

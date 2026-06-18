@@ -165,7 +165,7 @@
     "parityPriority": ["döviz kuru", "efektif döviz", "efektif döviz kuru", "usd/try", "eur/try", "parite", "kur sepeti", "döviz kurları"],
     "bondPriority": ["tahvil", "bono", "eurobond", "sukuk", "dibs"],
     "bondContext": ["risk primi", "kredi notu", "getiri eğrisi", "tahvil faizi", "hazine", "devlet iç borçlanma", "kupon ödemesi", "vadeye kadar getiri", "borç stoku", "hazine garantili"],
-    "macroPolicy": ["tcmb", "merkez bankası", "politika faizi", "faiz kararı", "faiz artırımı", "faiz indirimi", "repo faiz", "ppk", "enflasyon", "tüfe", "üfe", "para politikası"],
+    "macroPolicy": ["tcmb", "merkez bankası", "politika faizi", "faiz kararı", "faiz artırımı", "faiz indirimi", "repo faiz", "ppk", "enflasyon", "tüfe", "üfe", "para politikası", "fed faiz", "federal reserve"],
     "strongCompanyNews": ["kap", "kap bildirimi", "özel durum açıklama", "bilanço", "gelir tablosu", "faaliyet raporu", "temettü", "bedelli sermaye", "bedelsiz", "rüçhan", "halka arz", "hisse geri alım", "şirket birleşme", "devralma", "ortaklık yapısı", "sermaye artırımı", "ünvan değişikliği", "spk başvuru"],
     "definiteCorporate": [
       "kap bildirimi", "özel durum açıklama",
@@ -179,8 +179,7 @@
       "abd tahvil", "amerikan tahvil",
       "us treasury", "treasury yield",
       "avrupa tahvil", "alman tahvil",
-      "japon tahvil", "çin tahvil",
-      "fed faiz", "federal reserve"
+      "japon tahvil", "çin tahvil"
     ]
   },
   "summaryDiversityCategories": [

@@ -37,7 +37,12 @@ import java.util.regex.Pattern;
 @Log4j2
 public class AssetMentionResolverImpl implements AssetMentionResolver {
 
-    private static final Pattern TICKER = Pattern.compile("\\(([A-Z0-9]{3,6})\\)");
+    // A BIST/crypto ticker written on its OWN, not only in parentheses: "ISCTR", "(ISCTR)", "ISCTR'den" all link.
+    // It matches a 3-6 char ALL-UPPERCASE token at a word boundary (lookbehind/ahead reject letters/digits, so a
+    // Turkish apostrophe-suffix is tolerated and a substring like "DISCTRACK" is not). Title-case words ("Akbank",
+    // "Federal") have lowercase letters and never match — only genuine tickers/acronyms do, and the catalog
+    // membership + the blocked-acronym denylist (FED, IMF, BIST…) keep it precise.
+    private static final Pattern TICKER = Pattern.compile("(?<![\\p{L}\\p{N}])([A-Z][A-Z0-9]{2,5})(?![\\p{L}\\p{N}])");
     private static final Pattern DIACRITICS = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
     private static final Pattern NON_ALNUM = Pattern.compile("[^a-z0-9]+");
     // Commodity/currency keyword links, the common-word denylist, blocked tickers, name stopwords and the tuning
@@ -47,6 +52,16 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
     // "Federal-Mogul …" on every "Federal Reserve"); a distinctive coined brand ("Aselsan") is not in it, so it still
     // links on its single word. See AssetMentionConfig for the shape.
     private static final AssetMentionConfig.MentionConfig CONFIG = AssetMentionKeywordsLoader.load();
+
+    // When a two-word name core LEADS with a generic/geo word (Türkiye, Sanayi…), the trailing word must be at
+    // least this many normalised chars to count as distinctive — otherwise a 2-3 letter filler ("turkiye is")
+    // would anchor matches against unrelated economy text ("Türkiye iş gücü").
+    private static final int GENERIC_LEAD_TRAILING_MIN = 4;
+
+    // Chars on each side of a BARE (non-parenthesised) ticker token scanned for lowercase: a deliberate ticker
+    // mention sits in normal prose ("ISCTR'den güçlü bilanço"), whereas an all-caps shouting headline word that
+    // merely collides with a catalog code ("KENT MERKEZINDE…") has no lowercase neighbour and must not link.
+    private static final int TICKER_CONTEXT_WINDOW = 24;
 
     private final StockRepository stockRepository;
     private final CryptoRepository cryptoRepository;
@@ -76,6 +91,14 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
         while (m.find()) {
             String ticker = m.group(1).toUpperCase(Locale.ROOT);
             if (CONFIG.blockedTickers().contains(ticker)) {
+                continue;
+            }
+            // A parenthesised "(ISCTR)" is an unambiguous, deliberate reference. A BARE token is taken as a ticker
+            // only when it sits in normal prose (lowercase nearby) — never inside an ALL-CAPS shouting run, where a
+            // 3-6 letter word ("KENT", "GLOBAL", "LINK") that collides with a catalog code would otherwise link.
+            boolean parenthesised = m.start() > 0 && raw.charAt(m.start() - 1) == '('
+                    && m.end() < raw.length() && raw.charAt(m.end()) == ')';
+            if (!parenthesised && !hasProseContext(raw, m.start(), m.end())) {
                 continue;
             }
             CodeType ct = cat.byTicker().get(ticker);
@@ -117,6 +140,19 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
             idx += needle.length() - 1;
         }
         return hitCount;
+    }
+
+    /** True if a lowercase letter sits within {@link #TICKER_CONTEXT_WINDOW} of {@code [start,end)} — i.e. the
+     *  all-caps token is embedded in normal prose, not an all-caps headline run. */
+    private static boolean hasProseContext(String text, int start, int end) {
+        int from = Math.max(0, start - TICKER_CONTEXT_WINDOW);
+        int to = Math.min(text.length(), end + TICKER_CONTEXT_WINDOW);
+        for (int i = from; i < to; i++) {
+            if (Character.isLowerCase(text.charAt(i))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Lazily (re)builds the catalog (stock + crypto names/tickers, fund codes), refreshing past the TTL. */
@@ -225,6 +261,16 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
         // A single significant word (a one-word firm name like "Akbank") may match alone only when it's distinctive —
         // a lone common/sector word would over-match, exactly as it does as a brand first word.
         if (sig.size() == 1 && CONFIG.commonNameWords().contains(sig.get(0))) {
+            return null;
+        }
+        // A two-word core that leads with a generic/geo word ("turkiye", "platform"…) is safe only when the
+        // trailing word is itself substantial; a 2-3 letter filler turns the core into an everyday phrase
+        // ("turkiye is" → matches "Türkiye iş gücü"). A real distinctive trailing word ("Platform Turizm",
+        // "Türk Hava") is long enough to stay, so those firms still link by their full name. The single-word
+        // guard above already covers a lone generic word; the two-word path previously skipped this entirely.
+        if (sig.size() == 2
+                && CONFIG.commonNameWords().contains(sig.get(0))
+                && sig.get(1).length() < GENERIC_LEAD_TRAILING_MIN) {
             return null;
         }
         String core = String.join(" ", sig);

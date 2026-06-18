@@ -122,6 +122,46 @@ class BondHoldingServiceTest {
         assertThat(schedule).allSatisfy(e -> assertThat(e.amountTry()).isGreaterThan(BigDecimal.ZERO));
     }
 
+    @Test
+    void couponsReceivedHeadlineReconcilesWithSchedule_forCpiBondWithIndexGrowth() {
+        // A CPI bond's index grows between coupons (6000 → 6300), so each paid coupon rode a DIFFERENT indexed base.
+        // The couponsReceivedTry headline must sum those dated bases — the same ones the grid shows — instead of
+        // multiplying the total per-100 rate by today's value. So headline == Σ(RECEIVED schedule amounts).
+        LocalDate issue = LocalDate.now().minusMonths(13);
+        Bond cpi = Bond.builder()
+                .seriesCode(SERIES).isinCode(ISIN).name("TÜFE")
+                .couponRate(new BigDecimal("0.85"))
+                .maturityStart(issue).maturityEnd(LocalDate.now().plusYears(3))
+                .bondType(BondType.FLOATING_CPI).build();
+        BondHolding held = BondHolding.builder()
+                .id(HOLDING_ID).portfolio(Portfolio.builder().id(PORTFOLIO_ID).build()).portfolioId(PORTFOLIO_ID)
+                .bondSeriesCode(SERIES).bondIsin(ISIN)
+                .quantity(new BigDecimal("100")).entryPrice(new BigDecimal("6000")).entryDate(issue)
+                .build();
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(ownedPortfolio()));
+        when(bondHoldingRepository.findByPortfolioIdOrderByEntryDateDescIdDesc(PORTFOLIO_ID)).thenReturn(List.of(held));
+        when(bondHoldingRepository.findById(HOLDING_ID)).thenReturn(Optional.of(held));
+        when(bondRepository.findById(SERIES)).thenReturn(Optional.of(cpi));
+        when(bondValuationService.cleanPriceTry(any(BondHolding.class), any(LocalDate.class)))
+                .thenReturn(new BigDecimal("6300"));
+        when(bondRateHistoryRepository.findByIsinCodeOrderByRateDateAsc(ISIN)).thenReturn(List.of(
+                priceRow(issue, new BigDecimal("6000")),
+                priceRow(issue.plusMonths(6), new BigDecimal("6150")),
+                priceRow(issue.plusMonths(12), new BigDecimal("6280")),
+                priceRow(LocalDate.now(), new BigDecimal("6300"))));
+
+        // Act: the headline value and the per-coupon grid, from the two methods that previously disagreed.
+        BigDecimal headline = service.list(PORTFOLIO_ID, USER_SUB).get(0).couponsReceivedTry();
+        BigDecimal scheduleSum = service.couponSchedule(PORTFOLIO_ID, HOLDING_ID, USER_SUB).stream()
+                .filter(e -> "RECEIVED".equals(e.status()))
+                .map(BondCouponScheduleEntry::amountTry)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Assert: real income exists and the two figures reconcile to the cent.
+        assertThat(scheduleSum).isGreaterThan(BigDecimal.ZERO);
+        assertThat(headline).isEqualByComparingTo(scheduleSum);
+    }
+
     private BondHoldingRequest request(BigDecimal quantity, BigDecimal entryPrice, LocalDate entryDate) {
         return new BondHoldingRequest(SERIES, quantity, entryPrice, entryDate, null, null);
     }

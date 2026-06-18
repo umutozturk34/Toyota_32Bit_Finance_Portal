@@ -145,6 +145,37 @@ class ScenarioServiceTest {
     }
 
     @Test
+    void shouldCarryInflationIndexFlatToEndDate_whenLastPrintLagsTheWindowEnd() {
+        // CPI is published monthly with weeks of lag, so the last print (2024-11-01) sits well before the window
+        // end (2024-12-31). The inflation line must still reach endDate by flat-carrying the last index level,
+        // otherwise it stops weeks short of the deposit/rate lines on the scenario chart (the user's complaint).
+        AnalyticsInstrument inflation = new AnalyticsInstrument(AnalyticsInstrumentType.MACRO, "TP.GENENDEKS.T1");
+        LocalDate start = LocalDate.of(2024, 1, 15);
+        LocalDate end = LocalDate.of(2024, 12, 31);
+        MacroIndicator cpiIndicator = mock(MacroIndicator.class);
+        when(cpiIndicator.getUnit()).thenReturn(MacroUnit.INDEX);
+        when(macroQueryService.findByCode("TP.GENENDEKS.T1")).thenReturn(cpiIndicator);
+        when(priceSeriesProvider.fetch(eq(inflation), eq(start.minusMonths(2)), eq(end), any()))
+                .thenReturn(pricedTry(List.of(
+                        new HistoryPoint(LocalDate.of(2023, 12, 1), new BigDecimal("2000")),
+                        new HistoryPoint(LocalDate.of(2024, 11, 1), new BigDecimal("2400"))
+                )));
+        when(historyService.getMacroSeries(anyString(), any(), any())).thenReturn(List.of(
+                new HistoryPoint(LocalDate.of(2023, 12, 1), new BigDecimal("2000")),
+                new HistoryPoint(LocalDate.of(2024, 11, 1), new BigDecimal("2400"))
+        ));
+
+        ScenarioResponse response = service.simulate(new ScenarioRequest(
+                new BigDecimal("10000"), start, end, List.of(inflation)));
+
+        var pts = response.series().get(0).points();
+        // The series now reaches endDate, and the carried endpoint holds the last published level (flat-carry),
+        // not a fabricated change — so it equals the prior (last real) point's value.
+        assertThat(pts.get(pts.size() - 1).date()).isEqualTo(end);
+        assertThat(pts.get(pts.size() - 1).value()).isEqualByComparingTo(pts.get(pts.size() - 2).value());
+    }
+
+    @Test
     void shouldReturnEmptySeriesWhenNoHistory() {
         AnalyticsInstrument missing = new AnalyticsInstrument(AnalyticsInstrumentType.SPOT, "GHOST");
         LocalDate start = LocalDate.of(2024, 1, 1);

@@ -168,10 +168,19 @@ public class BondHoldingService {
     public List<BondCouponScheduleEntry> couponSchedule(Long portfolioId, Long holdingId, String userSub) {
         BondHolding holding = loadOwnedHolding(portfolioId, holdingId, userSub);
         Bond bond = bondRepository.findById(holding.getBondSeriesCode()).orElse(null);
+        LocalDate asOf = holding.isClosed() ? holding.getExitDate() : LocalDate.now();
+        return buildCouponSchedule(holding, bond, asOf);
+    }
+
+    /**
+     * Builds the priced coupon schedule (one entry per coupon date, issue→maturity) for a holding: each coupon at
+     * the per-period rate in effect on its date and — for a CPI/gold bond — against the indexed/gold value ON THAT
+     * DATE; a plain/floater coupon rides the constant face nominal. Shared by the public {@link #couponSchedule}
+     * breakdown and the {@code couponsReceivedTry} headline so the two always reconcile. A discount bill (no coupon)
+     * returns empty.
+     */
+    private List<BondCouponScheduleEntry> buildCouponSchedule(BondHolding holding, Bond bond, LocalDate asOf) {
         BondType type = bond == null ? null : bond.getBondType();
-        // Only a discount bill (no coupon) has no schedule. CPI and gold DO pay a periodic coupon — a small real
-        // coupon on the inflation-indexed value, a rental on the gold value — so they now produce a schedule too,
-        // each coupon converted against that bond's indexed/gold value AT ITS OWN DATE (see couponBase below).
         if (type == null || type == BondType.DISCOUNTED) {
             return List.of();
         }
@@ -193,7 +202,6 @@ public class BondHoldingService {
         // pins each coupon's rate to the day before it — so load it whenever the bond is indexed OR floating.
         NavigableMap<LocalDate, BigDecimal> priceSeries = (indexed || floating)
                 ? loadPriceHistory(holding.getBondIsin()) : null;
-        LocalDate asOf = holding.isClosed() ? holding.getExitDate() : LocalDate.now();
         return bondCouponService.schedule(rateMap, fallbackPerPeriod, frequency,
                         bond.getMaturityStart(), bond.getMaturityEnd(), holding.getEntryDate(), asOf, priceSeries).stream()
                 .map(e -> {
@@ -374,7 +382,15 @@ public class BondHoldingService {
         BigDecimal dailyCouponTry = holding.isClosed()
                 ? BigDecimal.ZERO
                 : bondCouponService.per100ToTry(accrual.dailyAccrualPer100(), couponBase);
-        BigDecimal couponsReceivedTry = bondCouponService.per100ToTry(couponsPaid.totalPer100(), couponBase);
+        // CPI/gold coupons were each paid on the indexed/gold value AT THEIR OWN DATE — summing per-100 rates and
+        // multiplying by today's value (couponBase) would mis-price past coupons as the index grows. Sum the dated
+        // schedule (the same one the grid shows) so the received-coupon headline reconciles with the breakdown.
+        BigDecimal couponsReceivedTry = (indexLinked || goldLinked)
+                ? buildCouponSchedule(holding, bond, incomeAsOf).stream()
+                        .filter(e -> "RECEIVED".equals(e.status()))
+                        .map(BondCouponScheduleEntry::amountTry)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                : bondCouponService.per100ToTry(couponsPaid.totalPer100(), couponBase);
 
         // currentValueTry stays the CLEAN (nominal) value so the grid/summary/history reconcile and PnL is a pure
         // mark-to-market figure; the accrued coupon (işlemiş kupon) is surfaced as its own line (accruedCouponTry)

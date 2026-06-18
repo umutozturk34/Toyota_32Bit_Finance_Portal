@@ -175,6 +175,7 @@ public class ScenarioService {
 
         List<ScenarioPoint> points = new ArrayList<>();
         points.add(new ScenarioPoint(startDate, amount));
+        BigDecimal lastIndexValue = null;
         for (HistoryPoint p : raw) {
             if (p.value() == null || !p.date().isAfter(startDate) || p.date().isAfter(endDate)) {
                 continue;
@@ -186,6 +187,20 @@ public class ScenarioService {
             BigDecimal value = amount.multiply(p.value()).multiply(fx)
                     .divide(basePrice.multiply(baseFx), VALUE_SCALE, RoundingMode.HALF_UP);
             points.add(new ScenarioPoint(p.date(), value));
+            lastIndexValue = p.value();
+        }
+        // Carry the last published index level flat to the scenario end date: a CPI/PPI level does not change
+        // until the next monthly print, so the plotted line must reach endDate rather than stopping weeks short
+        // at the final EVDS observation (publication lag). Only the FX leg moves over the gap; mirrors the rate
+        // path's tail-carry so the inflation line ends level with the deposit lines instead of cutting off early.
+        if (lastIndexValue != null && points.get(points.size() - 1).date().isBefore(endDate)) {
+            BigDecimal fxAtEnd = series.fxAt(endDate);
+            if (fxAtEnd == null || fxAtEnd.signum() <= 0) {
+                fxAtEnd = baseFx;
+            }
+            BigDecimal endValue = amount.multiply(lastIndexValue).multiply(fxAtEnd)
+                    .divide(basePrice.multiply(baseFx), VALUE_SCALE, RoundingMode.HALF_UP);
+            points.add(new ScenarioPoint(endDate, endValue));
         }
         if (points.size() <= 1) {
             return emptySeries(instrument);

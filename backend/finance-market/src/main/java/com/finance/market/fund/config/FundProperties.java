@@ -35,4 +35,10 @@ public class FundProperties {
     private int allocationWalkbackDays = 7;
     /** Bounded pool size for the per-fund TEFAS profile (valör/ISIN/risk) bulk back-fill. */
     private int profileEnrichParallelism = 6;
+    /**
+     * Re-fetch a fund's TEFAS profile (valör/ISIN/seans/risk) when it was last enriched more than this many days
+     * ago. Valör/ISIN change rarely, so the default keeps them fresh without re-hitting the per-fund endpoint for
+     * every fund daily; set {@code app.fund.profile-refresh-days=1} for a daily refresh.
+     */
+    private int profileRefreshDays = 7;
 }

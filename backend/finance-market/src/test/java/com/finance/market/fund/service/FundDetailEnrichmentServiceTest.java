@@ -213,7 +213,7 @@ class FundDetailEnrichmentServiceTest {
     @Test
     void should_backFillProfile_when_trackedFundMissingIsin() {
         when(trackedAssetQueryService.getCodes(com.finance.common.model.TrackedAssetType.FUND)).thenReturn(List.of("AAL"));
-        when(fundRepository.findFundCodesMissingProfile()).thenReturn(List.of("AAL"));
+        when(fundRepository.findFundCodesNeedingProfile(any())).thenReturn(List.of("AAL"));
         Fund fund = Fund.builder().fundCode("AAL").fundType(FundType.YAT).build();
         when(fundRepository.findById("AAL")).thenReturn(Optional.of(fund));
         TefasFundProfileDto profile = new TefasFundProfileDto("AAL", "ATA",
@@ -228,13 +228,15 @@ class FundDetailEnrichmentServiceTest {
         assertThat(fund.getSellValor()).isEqualTo(2);
         assertThat(fund.getBuybackValor()).isEqualTo(1);
         assertThat(fund.getIsinCode()).isEqualTo("TRMAALWWWWW5");
+        // The profile is stamped enriched so the next bulk pass skips it until the refresh window lapses.
+        assertThat(fund.getProfileEnrichedAt()).isNotNull();
         verify(fundCacheService).putSnapshot("AAL", fund);
     }
 
     @Test
     void should_skipProfileBackFill_when_noTrackedFundMissingProfile() {
         when(trackedAssetQueryService.getCodes(com.finance.common.model.TrackedAssetType.FUND)).thenReturn(List.of("AAL"));
-        when(fundRepository.findFundCodesMissingProfile()).thenReturn(List.of());
+        when(fundRepository.findFundCodesNeedingProfile(any())).thenReturn(List.of());
 
         int enriched = service.enrichMissingProfiles();
 

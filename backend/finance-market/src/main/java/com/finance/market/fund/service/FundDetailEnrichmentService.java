@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -120,14 +121,15 @@ public class FundDetailEnrichmentService {
     public int enrichMissingProfiles() {
         Set<String> tracked = loadExistingFundCodes();
         if (tracked.isEmpty()) return 0;
-        List<String> targets = fundRepository.findFundCodesMissingProfile().stream()
+        LocalDateTime staleBefore = LocalDateTime.now().minusDays(fundProperties.getProfileRefreshDays());
+        List<String> targets = fundRepository.findFundCodesNeedingProfile(staleBefore).stream()
                 .filter(tracked::contains)
                 .toList();
         if (targets.isEmpty()) {
-            log.info("Fund profile back-fill: all tracked funds already enriched");
+            log.info("Fund profile back-fill: all tracked funds enriched within the refresh window");
             return 0;
         }
-        log.info("Fund profile back-fill: {} funds missing profile (parallelism={})",
+        log.info("Fund profile back-fill: {} funds need profile (parallelism={})",
                 targets.size(), fundProperties.getProfileEnrichParallelism());
         BatchUpdateRunner.Result result = MarketBatchRunner.runParallel(
                 targets, this::enrichProfileOnly, code -> code,
@@ -169,7 +171,13 @@ public class FundDetailEnrichmentService {
         if (fund == null) return;
         FundType type = fund.getFundType() != null ? fund.getFundType() : FundType.YAT;
         TefasFundProfileDto profile = tefasClient.fetchProfile(type, fundCode);
-        if (profile == null) return;
+        if (profile == null) {
+            // TEFAS genuinely has no profile for this fund — stamp the attempt so it backs off to the refresh
+            // cadence instead of being retried on every back-fill; a profile published later is picked up once stale.
+            fund.setProfileEnrichedAt(LocalDateTime.now());
+            fundRepository.save(fund);
+            return;
+        }
         applyProfile(fund, profile);
         Fund saved = fundRepository.save(fund);
         fundCacheService.putSnapshot(saved.getFundCode(), saved);
@@ -381,6 +389,9 @@ public class FundDetailEnrichmentService {
             Integer risk = parseRisk(profile.riskValue());
             if (risk != null) fund.setRiskValue(risk);
         }
+        // Stamp every successful profile application (even one with a null ISIN), so the bulk back-fill marks the
+        // fund done and only revisits it once the refresh window lapses — instead of looping on it forever.
+        fund.setProfileEnrichedAt(LocalDateTime.now());
     }
 
     private Integer parseRisk(String raw) {

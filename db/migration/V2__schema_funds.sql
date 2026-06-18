@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS public.funds (
     market_share          numeric(9,4),
     isin_code             character varying(16),
     kap_link              character varying(255),
+    profile_enriched_at   timestamp without time zone,
     return_1m             numeric(12,4),
     return_3m             numeric(12,4),
     return_6m             numeric(12,4),

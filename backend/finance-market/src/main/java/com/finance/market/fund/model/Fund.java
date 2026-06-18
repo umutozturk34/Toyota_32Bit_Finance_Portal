@@ -7,6 +7,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
  * A TEFAS investment fund keyed by its code, holding the unit price ({@code getPriceTry()}),
@@ -81,6 +82,12 @@ public class Fund extends BaseAsset {
 
     @Column(name = "kap_link", length = 255)
     private String kapLink;
+
+    // When the TEFAS profile (valör/ISIN/seans/risk) was last applied. Drives the bulk back-fill: a fund is
+    // re-enriched when this is null or older than the configured refresh window, so the rarely-changing profile
+    // is kept fresh without re-fetching every fund on every cycle (the per-fund TEFAS endpoint has no bulk form).
+    @Column(name = "profile_enriched_at")
+    private LocalDateTime profileEnrichedAt;
 
     @Column(name = "return_1m", precision = 12, scale = 4)
     private BigDecimal return1m;

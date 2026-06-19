@@ -221,13 +221,15 @@ export default function useCompareSeries({
           });
         }
       } else if (!levelMode && !isRateLike(s.indicator.type)
-          && (!isMacro(s.indicator.type) || s.compounded) && !originalView && native !== targetCurrency) {
-        // FX-convert only genuine monetary values: asset prices, and compounded macro growth-indices
-        // (deposits / PERCENT-unit rates). A macro series left UNCOMPOUNDED is a currency-agnostic LEVEL —
-        // a raw interest-rate % OR an index-unit rate like the BIST TLREF Index (~6022) — so the
-        // (!isMacro || s.compounded) clause keeps it out of FX conversion (multiplying a level by an FX
-        // ratio is meaningless). !levelMode also excludes raw rate percentages. Cumulative compounded
-        // series stay correctly FX-converted per-date.
+          && !originalView && native !== targetCurrency) {
+        // FX-convert every genuine monetary VALUE series: asset prices, compounded macro growth-indices
+        // (deposits / PERCENT-unit rates), AND an INDEX-unit MACRO_RATE like the BIST TLREF Index (~6022),
+        // which is itself a TRY-denominated growth index — its USD/EUR read is index(t)/FX(t) rebased from
+        // the start, exactly like an asset. In cumulative mode (!levelMode) EVERY non-rate-like macro is
+        // such a value series (a PERCENT rate is compounded, a deposit is compounded, an index-rate is a
+        // level), so the only exclusions are the rate-like deflators/yields (CPI-TÜFE, BOND — kept out by
+        // isRateLike) and raw rate percentages (kept out by !levelMode). The old (!isMacro || s.compounded)
+        // clause wrongly left the index-unit TLREF rate in TRY against USD/EUR assets.
         pts = pts.map((p) => {
           const converted = convertBetween(p.value, native, targetCurrency, p.date);
           return { ...p, value: converted ?? p.value };

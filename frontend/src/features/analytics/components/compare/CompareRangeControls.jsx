@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarRange } from 'lucide-react';
 import { RANGES } from '../../../macro/constants';
 import { rangeBoundsCalendar } from '../../lib/compareSeriesUtils';
+import DatePickerPopover from '../../../../shared/components/form/DatePickerPopover';
 
 export default function CompareRangeControls({
   rangeId,
@@ -19,6 +20,7 @@ export default function CompareRangeControls({
   setValueMode,
   t,
 }) {
+  const today = new Date().toLocaleDateString('sv-SE');
   return (
     <>
       <div className="flex flex-wrap items-center gap-1 pt-1">
@@ -66,28 +68,30 @@ export default function CompareRangeControls({
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-wrap items-center gap-2 overflow-hidden"
           >
-            <label className="flex items-center gap-1.5 text-[11px] font-mono text-fg-muted">
+            <label className="flex items-center gap-2 text-[11px] font-mono text-fg-muted">
               {t('analytics.compare.startDate', { defaultValue: 'Başlangıç' })}
-              <input
-                type="date"
-                value={customFrom}
-                min={fxFloorDate}
-                max={customTo || new Date().toLocaleDateString('sv-SE')}
-                onChange={(e) => { setCustomFrom(e.target.value); setUseExplicitBounds(true); }}
-                className="rounded-md border border-border-default bg-bg-elevated px-2 py-1 text-[11px] font-mono text-fg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 cursor-pointer"
-              />
+              <div className="w-44">
+                <DatePickerPopover
+                  large
+                  value={customFrom}
+                  minDate={fxFloorDate}
+                  maxDate={customTo || today}
+                  onChange={(iso) => { setCustomFrom(iso); setUseExplicitBounds(true); }}
+                />
+              </div>
             </label>
             <span className="text-fg-subtle text-xs">→</span>
-            <label className="flex items-center gap-1.5 text-[11px] font-mono text-fg-muted">
+            <label className="flex items-center gap-2 text-[11px] font-mono text-fg-muted">
               {t('analytics.compare.endDate', { defaultValue: 'Bitiş' })}
-              <input
-                type="date"
-                value={customTo}
-                min={customFrom || fxFloorDate}
-                max={new Date().toLocaleDateString('sv-SE')}
-                onChange={(e) => { setCustomTo(e.target.value); setUseExplicitBounds(true); }}
-                className="rounded-md border border-border-default bg-bg-elevated px-2 py-1 text-[11px] font-mono text-fg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 cursor-pointer"
-              />
+              <div className="w-44">
+                <DatePickerPopover
+                  large
+                  value={customTo}
+                  minDate={customFrom || fxFloorDate}
+                  maxDate={today}
+                  onChange={(iso) => { setCustomTo(iso); setUseExplicitBounds(true); }}
+                />
+              </div>
             </label>
           </motion.div>
         )}

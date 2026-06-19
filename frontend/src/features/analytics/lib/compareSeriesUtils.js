@@ -45,13 +45,22 @@ export function isRateLike(type) {
   return (isMacro(type) && type !== 'MACRO_DEPOSIT' && type !== 'MACRO_RATE') || type === 'BOND';
 }
 
-// Deposit quote currency from the EVDS code: TP.<CCY>... (mirrors DepositNativeCurrencyStrategy).
+// Deposit quote currency from the indicator code. TWO code shapes reach Compare and BOTH carry the ISO
+// currency right after their prefix: the macro-list / Beater code DEPOSIT<CCY><maturity> (e.g. depositUsd1m,
+// depositEurTotal) and the raw EVDS code TP.<CCY>TAS... (the analytics presets). A USD/EUR deposit grows in
+// its OWN currency, so mis-resolving this to TRY made a USD deposit get FX-DIVIDED by the (rising) USD/TRY
+// rate in a USD/EUR frame and collapse to a spurious ~−95% "loss" — while the TRY frame (no conversion)
+// looked right. Mirrors backend DepositNativeCurrencyStrategy.
 export function depositCurrencyFor(code) {
-  if (!code || !code.startsWith('TP.')) return 'TRY';
-  const payload = code.slice(3);
-  if (payload.length < 3) return 'TRY';
-  const prefix = payload.slice(0, 3).toUpperCase();
-  return ['TRY', 'USD', 'EUR'].includes(prefix) ? prefix : 'TRY';
+  if (!code) return 'TRY';
+  const upper = code.toUpperCase();
+  const ccyAt = (i) => {
+    const ccy = upper.slice(i, i + 3);
+    return ['TRY', 'USD', 'EUR'].includes(ccy) ? ccy : 'TRY';
+  };
+  if (upper.startsWith('DEPOSIT')) return ccyAt(7);
+  if (upper.startsWith('TP.')) return ccyAt(3);
+  return 'TRY';
 }
 
 export function nativeCurrencyFor(type, code) {

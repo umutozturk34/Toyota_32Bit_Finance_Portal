@@ -4,6 +4,7 @@ import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.Currency;
 import com.finance.market.core.service.CurrencyConverter;
+import com.finance.market.core.service.FxRateUnavailableException;
 import com.finance.portfolio.dto.request.DepositHoldingRequest;
 import com.finance.portfolio.dto.response.DepositHoldingResponse;
 import com.finance.portfolio.model.MoneyScale;
@@ -195,7 +196,16 @@ public class DepositHoldingService {
                 grossInterestTry, withholdingTaxTry, netInterestTry, depositAccrualService.effectiveWithholdingRate(h));
     }
 
-    /** Converts a holding-currency amount to TRY at the as-of date's FX rate; a TRY amount passes through. */
+    /**
+     * Converts a holding-currency amount to TRY at the as-of date's FX rate; a TRY amount passes through.
+     * Degrades a missing FX observation to {@code null} (not an exception): a foreign deposit whose value
+     * (today) or cost (start date) leg has an FX gap — a stale forex feed, or a start date before the earliest
+     * seeded candle — would otherwise let {@link CurrencyConverter#convertAtDate}'s
+     * {@link FxRateUnavailableException} (422) bubble out of {@code toResponse} and fail the ENTIRE deposit grid
+     * and every mutation response. Mirroring {@code FixedIncomeSummaryService}/{@code FixedIncomeHistoryService},
+     * we instead null just the affected leg so the row's downstream null checks blank that one figure while the
+     * rest of the grid stays alive.
+     */
     private BigDecimal toTry(BigDecimal amount, String currencyCode, LocalDate asOf) {
         if (amount == null) {
             return null;
@@ -204,7 +214,12 @@ public class DepositHoldingService {
         if (from == null || from == Currency.TRY) {
             return amount;
         }
-        return currencyConverter.convertAtDate(amount, from, Currency.TRY, asOf);
+        try {
+            return currencyConverter.convertAtDate(amount, from, Currency.TRY, asOf);
+        } catch (FxRateUnavailableException ex) {
+            log.debug("No FX rate for {} -> TRY at {} — degrading deposit leg to null", from, asOf);
+            return null;
+        }
     }
 
     private static BigDecimal scaled(BigDecimal value) {

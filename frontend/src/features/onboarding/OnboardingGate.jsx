@@ -16,7 +16,21 @@ export default function OnboardingGate() {
   const updatePreferences = useUpdateUserPreferences();
   const { themePreference, setThemePreference } = useTheme();
 
-  const [phase, setPhase] = useState('landing');
+  const [phase, setPhase] = useState(() => {
+    try { return sessionStorage.getItem('onboarding:phase') || 'landing'; } catch { return 'landing'; }
+  });
+
+  // Persist the phase so a remount of MainLayout/OnboardingGate RESUMES the flow instead of dumping the user
+  // back on the landing splash. The trigger is a hard one to survive in React state: keycloak.onTokenExpired
+  // calls doLogin() (a full-page redirect) when a token refresh fails, which reloads the whole SPA mid-tour —
+  // sessionStorage outlives that reload, plain useState does not. Cleared on 'done'; the server-side
+  // onboardingCompleted gate (`show`) still blocks a finished user from re-entering on a stale value.
+  useEffect(() => {
+    try {
+      if (phase === 'done') sessionStorage.removeItem('onboarding:phase');
+      else sessionStorage.setItem('onboarding:phase', phase);
+    } catch { /* sessionStorage unavailable */ }
+  }, [phase]);
 
   useEffect(() => {
     if (phase !== 'landing') return undefined;
@@ -49,6 +63,7 @@ export default function OnboardingGate() {
     if (!closingRef.current) return;
     closingRef.current = false;
     setPhase('done');
+    try { sessionStorage.removeItem('onboarding:tourStep'); } catch { /* ignore */ }
     updatePreferences.mutate({ onboardingCompleted: true });
   }, [updatePreferences]);
 

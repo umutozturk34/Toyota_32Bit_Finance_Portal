@@ -66,11 +66,29 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
   // (scroll, resize, the post-step rAF syncs) must NOT commit a half-settled rect during this window, or the ring
   // flashes at an intermediate position — the settle routine is the sole writer until it stabilises.
   const settlingRef = useRef(false);
+  // True once the user manually wheels/touches during a step — the settle routine then stops auto-scrolling so
+  // it never yanks the page back up to the spotlight target while the user is reading/scrolling further down.
+  const userScrolledRef = useRef(false);
 
   useEffect(() => {
     stepIdRef.current = step?.id ?? null;
   }, [step]);
   const candidatesRef = useRef([]);
+
+  // Detect a MANUAL scroll (wheel/touch only — a programmatic scrollIntoView never fires these), reset per step,
+  // so settleAndCommit can yield to the user instead of fighting them back to the target ("jumps to the top
+  // while scrolling"). The first auto-scroll of each new step still runs because this resets to false on entry.
+  useEffect(() => {
+    userScrolledRef.current = false;
+    if (!open) return undefined;
+    const mark = () => { userScrolledRef.current = true; };
+    window.addEventListener('wheel', mark, { passive: true });
+    window.addEventListener('touchmove', mark, { passive: true });
+    return () => {
+      window.removeEventListener('wheel', mark);
+      window.removeEventListener('touchmove', mark);
+    };
+  }, [open, step]);
 
   const measure = useCallback(() => {
     if (settlingRef.current) return;
@@ -247,7 +265,7 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
           pollHandleRef.current = requestAnimationFrame(tick);
           return;
         }
-        if (canScroll && outOfView && scrollCount < 2) { // one smooth glide (a 2nd only if still far off)
+        if (canScroll && outOfView && scrollCount < 2 && !userScrolledRef.current) { // glide once; never fight a manual scroll
           el.scrollIntoView({ block: r.height > vh - 80 ? 'start' : 'center', behavior: 'smooth' });
           scrollCount += 1;
           scrolledAt = settleFrames;

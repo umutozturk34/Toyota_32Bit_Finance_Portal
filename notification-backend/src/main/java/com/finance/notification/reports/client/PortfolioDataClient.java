@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
 
@@ -119,7 +120,8 @@ public class PortfolioDataClient {
         List<PerformanceSeriesPoint> series = downsample(safePerf.stream()
                 .map(p -> new PerformanceSeriesPoint(
                         p.timestamp(),
-                        p.totalValueTry() != null ? p.totalValueTry().doubleValue() : 0d))
+                        p.totalValueTry() != null ? p.totalValueTry().doubleValue() : 0d,
+                        p.valueByCcy()))
                 .toList());
         // Cost-based cumulative return % straight from the portfolio's pnlPercent — NOT a value index
         // (value/first − 1), which lot additions over time would distort. Leading synthetic-zero
@@ -275,14 +277,22 @@ public class PortfolioDataClient {
     ) {}
 
     /**
-     * One point of the performance chart as returned by the backend: portfolio value in TRY and the
-     * cost-based cumulative return percent at that timestamp. Mapped into the report's value and
-     * return series respectively.
+     * One point of the performance chart as returned by the backend: portfolio value in TRY, the cost-based
+     * cumulative return percent at that timestamp, and {@code valueByCcy} — the per-currency value frame
+     * (closed-lot proceeds locked at exit FX) the on-screen chart plots directly. Carrying it lets a non-TRY
+     * report use the locked value instead of re-dividing the flat TRY scalar by a moving daily rate (which
+     * makes a closed portfolio's tail wobble). Mapped into the report's value and return series respectively.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record PerformanceRecord(
             LocalDateTime timestamp,
             BigDecimal totalValueTry,
-            BigDecimal pnlPercent
-    ) {}
+            BigDecimal pnlPercent,
+            Map<String, BigDecimal> valueByCcy
+    ) {
+        /** Legacy 3-arg form (no per-currency frame) — payloads/tests predating valueByCcy. */
+        public PerformanceRecord(LocalDateTime timestamp, BigDecimal totalValueTry, BigDecimal pnlPercent) {
+            this(timestamp, totalValueTry, pnlPercent, null);
+        }
+    }
 }

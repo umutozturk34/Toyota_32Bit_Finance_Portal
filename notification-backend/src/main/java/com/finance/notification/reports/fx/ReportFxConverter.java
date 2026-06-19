@@ -33,6 +33,11 @@ public final class ReportFxConverter {
         this.series = series == null ? Map.of() : series;
     }
 
+    /** The report's target currency code (upper-case; {@code "TRY"} when this converter is a pass-through). */
+    public String target() {
+        return target;
+    }
+
     /**
      * Lira-per-unit selling rate of {@code currency} on {@code date}, or {@code null} when no history
      * exists. TRY is always 1. Forward-fills to the latest prior trading day; for dates before all

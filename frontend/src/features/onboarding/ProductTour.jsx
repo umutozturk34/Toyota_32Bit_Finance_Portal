@@ -36,7 +36,12 @@ export default function ProductTour({ open, onFinish, onSkip }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [stepIndex, setStepIndex] = useState(0);
+  const [stepIndex, setStepIndex] = useState(() => {
+    try {
+      const saved = parseInt(sessionStorage.getItem('onboarding:tourStep') ?? '', 10);
+      return Number.isInteger(saved) && saved > 0 && saved < tourSteps.length ? saved : 0;
+    } catch { return 0; }
+  });
   const [tooltipSize, setTooltipSize] = useState({ width: 320, height: 200 });
   const [viewport, setViewport] = useState(() => ({
     w: typeof window !== 'undefined' ? window.innerWidth : 0,
@@ -50,6 +55,13 @@ export default function ProductTour({ open, onFinish, onSkip }) {
   const isMobileLayout = viewport.w > 0 && viewport.w < TABLET_BREAKPOINT;
   const step = tourSteps[stepIndex];
   const isLast = stepIndex === tourSteps.length - 1;
+
+  // Persist the tour position so a remount — or the full-page reload keycloak.onTokenExpired triggers via
+  // doLogin() — resumes the same step instead of restarting at 0. Mirrors OnboardingGate's phase persistence;
+  // the key is cleared by OnboardingGate when the tour finishes.
+  useEffect(() => {
+    try { sessionStorage.setItem('onboarding:tourStep', String(stepIndex)); } catch { /* ignore */ }
+  }, [stepIndex]);
 
   useEffect(() => {
     if (!open) return undefined;

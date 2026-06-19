@@ -146,13 +146,21 @@ public class ReportCurrencyConverter {
         return byCurrency != null ? byCurrency.get(target) : null;
     }
 
-    /** Re-creates the value series converting each point's value at THAT POINT'S OWN date. */
+    /**
+     * Re-creates the value series in the report currency. Prefers the backend per-currency value frame
+     * ({@code valueByCcy}: closed-lot proceeds locked at exit FX) so a fully-closed/frozen portfolio's tail
+     * stays FLAT in USD/EUR — exactly like the on-screen chart. Only re-divides the flat TRY scalar by THAT
+     * POINT'S OWN date FX when no per-currency value is present (TRY target, or an older payload without the
+     * frame); that fallback would otherwise make the closed tail wobble with the daily rate.
+     */
     public List<PerformanceSeriesPoint> convertSeries(List<PerformanceSeriesPoint> series, ReportFxConverter fx) {
         if (series == null) return List.of();
+        String target = fx.target();
         return series.stream()
                 .map(p -> {
                     LocalDate date = p.timestamp() != null ? p.timestamp().toLocalDate() : LocalDate.now(ISTANBUL);
-                    BigDecimal converted = fx.convertFromTry(BigDecimal.valueOf(p.value()), date);
+                    BigDecimal locked = p.valueByCcy() != null ? p.valueByCcy().get(target) : null;
+                    BigDecimal converted = locked != null ? locked : fx.convertFromTry(BigDecimal.valueOf(p.value()), date);
                     return new PerformanceSeriesPoint(p.timestamp(), converted.doubleValue());
                 })
                 .toList();

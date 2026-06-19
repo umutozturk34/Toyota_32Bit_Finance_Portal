@@ -4,6 +4,7 @@ import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.Currency;
 import com.finance.market.core.service.CurrencyConverter;
+import com.finance.market.core.service.FxRateUnavailableException;
 import com.finance.portfolio.dto.request.DepositHoldingRequest;
 import com.finance.portfolio.dto.response.DepositHoldingResponse;
 import com.finance.portfolio.model.Portfolio;
@@ -132,6 +133,28 @@ class DepositHoldingServiceTest {
         assertThat(response.currentValueTry()).isEqualByComparingTo(new BigDecimal("38500"));
         assertThat(response.pnlTry()).isEqualByComparingTo(new BigDecimal("8500"));
         assertThat(response.pnlPercent()).isEqualByComparingTo(new BigDecimal("28.33333333"));
+    }
+
+    @Test
+    void shouldDegradeRowFiguresToNull_whenFxRateUnavailable_ratherThanFailingTheWholeGrid() {
+        // A foreign deposit whose FX leg has no rate (stale forex feed, or a start date before the earliest
+        // seeded candle) must NOT 422 the entire deposit list/mutation response: just this row's FX-dependent
+        // figures degrade to null, mirroring FixedIncomeSummaryService/FixedIncomeHistoryService.
+        LocalDate start = LocalDate.now().minusMonths(6);
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(ownedPortfolio()));
+        when(depositHoldingRepository.save(any(DepositHolding.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(depositAccrualService.realizedOrAccruedValue(any(), any())).thenReturn(new BigDecimal("1100"));
+        when(currencyConverter.convertAtDate(any(), eq(Currency.USD), eq(Currency.TRY), any()))
+                .thenThrow(new FxRateUnavailableException(Currency.USD, Currency.TRY, start));
+        DepositHoldingRequest req = new DepositHoldingRequest("USD", new BigDecimal("1000"),
+                new BigDecimal("10"), start, LocalDate.now().plusMonths(6));
+
+        DepositHoldingResponse response = service.add(PORTFOLIO_ID, USER_SUB, req);
+
+        assertThat(response).isNotNull();
+        assertThat(response.currentValueTry()).isNull();
+        assertThat(response.pnlTry()).isNull();
+        assertThat(response.pnlPercent()).isNull();
     }
 
     // ---- cross-user ownership matrix (the non-negotiable) -------------------------------------------------

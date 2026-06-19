@@ -51,13 +51,13 @@ public class PortfolioDailySnapshot {
     @Column(name = "total_pnl_try", nullable = false, precision = 23, scale = 8)
     private BigDecimal totalPnlTry;
 
-    @Column(name = "pnl_percent", nullable = false, precision = 19, scale = 4)
+    @Column(name = "pnl_percent", nullable = false, precision = 23, scale = 8)
     private BigDecimal pnlPercent;
 
     @Column(name = "daily_pnl_try", precision = 23, scale = 8)
     private BigDecimal dailyPnlTry;
 
-    @Column(name = "daily_pnl_percent", precision = 19, scale = 4)
+    @Column(name = "daily_pnl_percent", precision = 23, scale = 8)
     private BigDecimal dailyPnlPercent;
 
     @Column(name = "created_at", nullable = false, updatable = false)

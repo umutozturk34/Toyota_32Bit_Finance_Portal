@@ -111,7 +111,7 @@ export function computeSharedBaselineDate(seriesData, commonStartDate, levelMode
   return sharedBaselineDate;
 }
 
-export function buildOption(seriesData, normalize, isDark, targetCurrency, commonStartDate, levelMode, sharedBaselineDateOverride) {
+export function buildOption(seriesData, normalize, isDark, targetCurrency, commonStartDate, levelMode, sharedBaselineDateOverride, authoritativeReturns) {
   const muted = isDark ? '#6b6b7a' : '#94a3b8';
   const grid = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
   const tooltipBg = isDark ? 'rgba(12,12,20,0.96)' : 'rgba(255,255,255,0.98)';
@@ -168,9 +168,25 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency, commo
     const basePoint = Number(sortedPoints[baseIdx]?.value);
     // Trim to the shared [start, end] window: all begin at the same date/0% and end on the same date.
     const visiblePoints = sortedPoints.slice(baseIdx, Math.max(baseIdx, endIdx));
+    // Beater hand-off: pin the chart's trailing return to the AUTHORITATIVE beater value (the exact number the
+    // info-bar headline shows) so the line ends where the headline says. The frontend re-compound drifts ~0.2pt
+    // from the backend beater; a LINEAR scale of every point's % keeps the 0% baseline intact (pct=0 stays 0)
+    // and lands the last point on the target, with a negligible (~0.05%) change to the points in between. Only
+    // when normalizing a % compare AND a pinned authoritative return exists for this series; a safety band
+    // ignores any wild ratio (bad data) since a legitimate hand-off always drifts well under a point.
+    let pctScale = 1;
+    const authPct = authoritativeReturns ? authoritativeReturns[ind.code] : undefined;
+    if (normalize && authPct != null && basePoint !== 0 && visiblePoints.length > 1) {
+      const lastRaw = Number(visiblePoints[visiblePoints.length - 1].value);
+      const frontendLastPct = ((lastRaw - basePoint) / Math.abs(basePoint)) * 100;
+      if (Number.isFinite(frontendLastPct) && Math.abs(frontendLastPct) > 1e-9) {
+        const candidate = Number(authPct) / frontendLastPct;
+        if (candidate > 0.5 && candidate < 2) pctScale = candidate;
+      }
+    }
     const data = visiblePoints.map((p) => {
       const raw = Number(p.value);
-      const pct = basePoint !== 0 ? ((raw - basePoint) / Math.abs(basePoint)) * 100 : 0;
+      const pct = (basePoint !== 0 ? ((raw - basePoint) / Math.abs(basePoint)) * 100 : 0) * pctScale;
       // A compounded deposit/rate index (kind 'index') resets to 1.0 at the widened fetch start (~18mo before
       // the window), so its raw value at the window start is an arbitrary ~1,25 — a confusing baseline. When it
       // is NOT being normalized to % (single-series view), rebase it to a 100.000 money base at the shared

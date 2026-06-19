@@ -8,9 +8,13 @@ import { LEARN_TERMS } from './learnTerms';
 import LearnTermChart from './LearnTermChart';
 import LearnMacroChart from './LearnMacroChart';
 import { useMacroIndicators } from '../macro/hooks/useMacroIndicators';
+import LoadingState from '../../shared/components/feedback/LoadingState';
 
 // Accent per macro category so the live charts carry the same colour language as the market overview.
 const MACRO_COLOR = { RATES: '#5E6AD2', INFLATION: '#f59e0b', DEPOSIT: '#10b981' };
+// Hoisted so the staggered grid's variants keep a STABLE reference across re-renders (a fresh object each
+// render can nudge framer-motion into re-initialising the entrance).
+const CARDS_CONTAINER = containerVariants(0.04);
 const TERM_CATEGORIES = ['technical', 'returnsRisk', 'bonds', 'deposits', 'viop', 'general'];
 
 // A signature hue per section gives the page a sense of place — the rail, the section marker and each card's
@@ -36,7 +40,7 @@ export default function LearnPage() {
   const sectionRefs = useRef({});
   const termRefs = useRef({});
 
-  const { data: macroList = [] } = useMacroIndicators({ prominentOnly: true });
+  const { data: macroList = [], isLoading: macroLoading } = useMacroIndicators({ prominentOnly: true });
 
   const q = query.trim().toLocaleLowerCase('tr');
   const macroMatches = useMemo(() => (Array.isArray(macroList) ? macroList : []).filter((ind) => {
@@ -102,7 +106,7 @@ export default function LearnPage() {
   const noResults = macroMatches.length === 0 && termMatches.length === 0;
 
   const renderCards = (children) => (
-    <motion.div variants={containerVariants(0.04)} initial="hidden" animate="show"
+    <motion.div variants={CARDS_CONTAINER} initial="hidden" animate="show"
       className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {children}
     </motion.div>
@@ -144,7 +148,12 @@ export default function LearnPage() {
         </div>
       </div>
 
-      {/* Sticky scroll-spy nav on the left (desktop) / sticky chips on top (mobile). */}
+      {/* Hold the body until the live macro section is ready, so the static terms and the async macro section
+          appear together in ONE entrance wave — instead of the terms rendering first and the macro cards popping
+          in at the top a beat later and replaying the stagger ("cards deleted then reappear" on first load). */}
+      {macroLoading ? (
+        <div className="flex justify-center py-20"><LoadingState message={t('common.loading')} /></div>
+      ) : (
       <div className="lg:grid lg:grid-cols-[200px_1fr] lg:gap-8">
         <nav aria-label={t('learn.title')} className="hidden lg:block">
           <ul className="sticky top-4 space-y-1">
@@ -233,6 +242,7 @@ export default function LearnPage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

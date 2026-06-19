@@ -270,6 +270,7 @@ export default function ComparePage() {
     targetCurrency,
     convertBetween,
     isDark,
+    authoritativeReturns,
   });
 
   function addAsset(asset) {

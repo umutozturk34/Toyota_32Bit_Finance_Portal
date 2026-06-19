@@ -36,6 +36,7 @@ export default function useCompareSeries({
   targetCurrency,
   convertBetween,
   isDark,
+  authoritativeReturns,
 }) {
   const range = useMemo(() => RANGES.find((r) => r.id === rangeId) || RANGES[3], [rangeId]);
   const bounds = useMemo(() => {
@@ -316,8 +317,8 @@ export default function useCompareSeries({
   );
 
   const option = useMemo(
-    () => buildOption(seriesData, normalize, isDark, targetCurrency, baselineDate, levelMode, sharedBaselineDate),
-    [seriesData, normalize, isDark, targetCurrency, baselineDate, levelMode, sharedBaselineDate]
+    () => buildOption(seriesData, normalize, isDark, targetCurrency, baselineDate, levelMode, sharedBaselineDate, authoritativeReturns),
+    [seriesData, normalize, isDark, targetCurrency, baselineDate, levelMode, sharedBaselineDate, authoritativeReturns]
   );
 
   return {

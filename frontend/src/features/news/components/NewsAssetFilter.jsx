@@ -15,14 +15,20 @@ export default function NewsAssetFilter({ activeAssets, onToggle, onClear }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const { data: assets = [] } = useQuery({
+  const { data } = useQuery({
     queryKey: ['newsAssetCounts'],
     queryFn: () => newsService.getAssetCounts(40),
     staleTime: 5 * 60 * 1000,
   });
+  const assets = Array.isArray(data?.assets) ? data.assets : [];
 
-  if (!Array.isArray(assets) || assets.length === 0) return null;
-  const total = assets.reduce((s, a) => s + (Number(a.count) || 0), 0) || 1;
+  if (assets.length === 0) return null;
+  // Share denominator is the TRUE grand total of ALL asset mentions (backend totalMentions), NOT the sum of the
+  // shown top-40 — otherwise each chip's % is inflated once more than 40 assets are mentioned. Falls back to the
+  // shown sum only when the total is absent (older payload).
+  const total = Number(data?.totalMentions) > 0
+    ? Number(data.totalMentions)
+    : (assets.reduce((s, a) => s + (Number(a.count) || 0), 0) || 1);
   const maxCount = Math.max(...assets.map((a) => Number(a.count) || 0), 1);
   const activeSet = new Set(activeAssets);
   const needle = query.trim().toUpperCase();

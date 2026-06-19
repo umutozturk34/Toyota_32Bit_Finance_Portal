@@ -205,14 +205,15 @@ class NewsQueryServiceTest {
                 new Object[]{"THYAO.IS", "STOCK", 9L},
                 new Object[]{"BTC-USD", "CRYPTO", 4L}));
 
-        List<com.finance.news.dto.response.NewsAssetCountResponse> result = service.getAssetCounts(10);
+        var result = service.getAssetCounts(10);
 
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).code()).isEqualTo("THYAO.IS");
-        assertThat(result.get(0).type()).isEqualTo("STOCK");
-        assertThat(result.get(0).count()).isEqualTo(9L);
-        assertThat(result.get(1).code()).isEqualTo("BTC-USD");
-        assertThat(result.get(1).count()).isEqualTo(4L);
+        assertThat(result.assets()).hasSize(2);
+        assertThat(result.totalMentions()).isEqualTo(13L);
+        assertThat(result.assets().get(0).code()).isEqualTo("THYAO.IS");
+        assertThat(result.assets().get(0).type()).isEqualTo("STOCK");
+        assertThat(result.assets().get(0).count()).isEqualTo(9L);
+        assertThat(result.assets().get(1).code()).isEqualTo("BTC-USD");
+        assertThat(result.assets().get(1).count()).isEqualTo(4L);
     }
 
     @Test
@@ -222,20 +223,23 @@ class NewsQueryServiceTest {
                 new Object[]{"BTC-USD", "CRYPTO", 4L},
                 new Object[]{"EREGL.IS", "STOCK", 2L}));
 
-        List<com.finance.news.dto.response.NewsAssetCountResponse> result = service.getAssetCounts(2);
+        var result = service.getAssetCounts(2);
 
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).code()).isEqualTo("THYAO.IS");
-        assertThat(result.get(1).code()).isEqualTo("BTC-USD");
+        assertThat(result.assets()).hasSize(2);
+        // Total includes the truncated tail (EREGL's 2), proving the share denominator isn't the capped sum.
+        assertThat(result.totalMentions()).isEqualTo(15L);
+        assertThat(result.assets().get(0).code()).isEqualTo("THYAO.IS");
+        assertThat(result.assets().get(1).code()).isEqualTo("BTC-USD");
     }
 
     @Test
     void should_returnEmptyAssetCounts_when_noRows() {
         when(articleRepository.countArticlesByAsset()).thenReturn(List.of());
 
-        List<com.finance.news.dto.response.NewsAssetCountResponse> result = service.getAssetCounts(10);
+        var result = service.getAssetCounts(10);
 
-        assertThat(result).isEmpty();
+        assertThat(result.assets()).isEmpty();
+        assertThat(result.totalMentions()).isEqualTo(0L);
     }
 
     @Test

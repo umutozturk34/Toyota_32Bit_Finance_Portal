@@ -14,7 +14,7 @@ const SUPPORTED = ['TRY', 'USD', 'EUR'];
 export function useMoney({ lockBase = false } = {}) {
   const displayCurrency = useAppStore((s) => s.displayCurrency) || 'TRY';
   const rates = useExchangeRates();
-  const { convertAt, rateAt } = useRateHistory();
+  const { convertAt, rateAt, convertBetween } = useRateHistory();
 
   const resolveTarget = useCallback((base, natural) => {
     if (lockBase) return SUPPORTED.includes(base) ? base : 'TRY';
@@ -56,12 +56,16 @@ export function useMoney({ lockBase = false } = {}) {
     // lockBase renders the value as supplied (no FX), so its display magnitude IS the gate magnitude —
     // returning null lets the caller fall back to the converted (== as-supplied) value.
     if (lockBase) return null;
-    if (dateAt) return convertAt(value, base, dateAt, 'TRY');
+    // Use convertBetween (explicit to='TRY'), NOT convertAt(...,'TRY'): convertAt's resolveTarget ignores the
+    // 'TRY' natural hint whenever a display currency is set, so in a USD/EUR frame it would return the
+    // DISPLAY-currency value (~30x smaller) and let a 1–30B TRY figure slip under the TRY-calibrated compact
+    // threshold and never compact. convertBetween converts base→TRY at the date regardless of displayCurrency.
+    if (dateAt) return convertBetween(value, base, 'TRY', dateAt);
     const from = SUPPORTED.includes(base) ? base : 'TRY';
     if (from === 'TRY') return num;
     const fromRate = rates[from];
     return fromRate == null ? num : num * fromRate;
-  }, [rates, convertAt, lockBase]);
+  }, [rates, convertBetween, lockBase]);
 
   const format = useCallback((value, base = 'TRY', opts = {}) => {
     const natural = opts.natural;

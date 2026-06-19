@@ -7,7 +7,7 @@ import com.finance.common.i18n.Translator;
 import com.finance.shared.dto.response.GroupCount;
 import com.finance.news.dto.response.NewsArticleDetailResponse;
 import com.finance.news.dto.response.NewsArticleResponse;
-import com.finance.news.dto.response.NewsAssetCountResponse;
+import com.finance.news.dto.response.NewsAssetCountsResponse;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.news.service.article.NewsQueryService;
 import jakarta.validation.constraints.Size;
@@ -57,7 +57,7 @@ public class NewsController {
     /** The most-mentioned assets across all news with their article counts — powers the "filter by asset" rail. */
     @GetMapping("/assets")
     @PreAuthorize("isAuthenticated()")
-    public ApiResponse<List<NewsAssetCountResponse>> getAssetCounts(
+    public ApiResponse<NewsAssetCountsResponse> getAssetCounts(
             @RequestParam(defaultValue = "24") int limit) {
         int resolved = Math.max(1, Math.min(limit, 60));
         return ApiResponse.success(translator.translate("api.news.categoriesRetrieved"),

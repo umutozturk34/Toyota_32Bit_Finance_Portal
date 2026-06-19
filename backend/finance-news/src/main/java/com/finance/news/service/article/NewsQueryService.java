@@ -6,6 +6,7 @@ import com.finance.shared.dto.response.GroupCount;
 import com.finance.news.dto.response.NewsArticleDetailResponse;
 import com.finance.news.dto.response.NewsArticleResponse;
 import com.finance.news.dto.response.NewsAssetCountResponse;
+import com.finance.news.dto.response.NewsAssetCountsResponse;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.shared.util.EnumParser;
@@ -65,13 +66,20 @@ public class NewsQueryService {
                 .toList();
     }
 
-    /** The {@code limit} most-mentioned assets across all news, with their article counts — drives the asset filter. */
+    /**
+     * The {@code limit} most-mentioned assets across all news, with their article counts, PLUS the grand total
+     * of all asset mentions — the share-% denominator. The total is summed from the full GROUP BY result before
+     * truncating to {@code limit} (one query), so each asset's share isn't inflated by the cap.
+     */
     @Transactional(readOnly = true)
-    public List<NewsAssetCountResponse> getAssetCounts(int limit) {
-        return articleRepository.countArticlesByAsset().stream()
+    public NewsAssetCountsResponse getAssetCounts(int limit) {
+        List<Object[]> rows = articleRepository.countArticlesByAsset();
+        long totalMentions = rows.stream().mapToLong(row -> ((Number) row[2]).longValue()).sum();
+        List<NewsAssetCountResponse> assets = rows.stream()
                 .map(row -> new NewsAssetCountResponse(row[0].toString(), row[1].toString(), ((Number) row[2]).longValue()))
                 .limit(limit)
                 .toList();
+        return new NewsAssetCountsResponse(assets, totalMentions);
     }
 
     /** Composes optional category-equality, accent-insensitive multi-token text search, and an asset-mention filter. */

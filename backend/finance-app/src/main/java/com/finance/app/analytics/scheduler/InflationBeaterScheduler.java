@@ -8,15 +8,12 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.Executor;
 
 /**
  * Keeps the inflation-beater cache warm: precomputes EVERY supported period × EVERY selectable benchmark
@@ -30,20 +27,19 @@ import java.util.concurrent.TimeoutException;
 @Component
 public class InflationBeaterScheduler {
 
-    /** Generous upper bound on waiting for cold-start init before warming anyway — duration isn't critical,
-     *  but a hung fetch must never permanently block the warm-up. */
-    private static final long INIT_WAIT_MINUTES = 30;
-
     private final InflationBeaterService inflationBeaterService;
     private final TaskTrackingService taskTracker;
     private final ObjectProvider<MarketDataInitializer> marketDataInitializer;
+    private final Executor taskExecutor;
 
     public InflationBeaterScheduler(InflationBeaterService inflationBeaterService,
                                     TaskTrackingService taskTracker,
-                                    ObjectProvider<MarketDataInitializer> marketDataInitializer) {
+                                    ObjectProvider<MarketDataInitializer> marketDataInitializer,
+                                    Executor taskExecutor) {
         this.inflationBeaterService = inflationBeaterService;
         this.taskTracker = taskTracker;
         this.marketDataInitializer = marketDataInitializer;
+        this.taskExecutor = taskExecutor;
     }
 
     /**
@@ -54,10 +50,23 @@ public class InflationBeaterScheduler {
      * the bean is absent and we warm right away. {@code @Async} keeps the wait off the startup thread.
      */
     @WithSpan("beater.warmCacheOnStartup")
-    @Async
     @EventListener(ApplicationReadyEvent.class)
     public void warmCacheOnStartup() {
-        awaitMarketDataInit();
+        MarketDataInitializer initializer = marketDataInitializer.getIfAvailable();
+        if (initializer == null) {
+            // Init is disabled (a populated DB is assumed) — warm right away, off the startup event thread.
+            taskExecutor.execute(this::warmStartup);
+            return;
+        }
+        // Warm EXACTLY when the cold-start init chain finishes — however long it takes — instead of after a
+        // fixed wait window that can elapse mid-init and warm against half-loaded data (e.g. before forex/USD
+        // is in — the very bug this fixes). A failed/empty init still completes the future, which is fine: the
+        // gate is "init DONE", not "init OK". whenCompleteAsync runs the warm on the task executor, never the
+        // init thread, and a genuinely hung init simply leaves the daily precompute + on-demand warm to cover it.
+        initializer.completion().whenCompleteAsync((v, ex) -> warmStartup(), taskExecutor);
+    }
+
+    private void warmStartup() {
         taskTracker.runTracked("beater-startup-warmup",
                 "Beater cache warmup on startup",
                 this::warmAll);
@@ -77,22 +86,6 @@ public class InflationBeaterScheduler {
                 });
     }
 
-    /** Blocks (off the startup thread, via {@code @Async}) until the cold-start data load finishes; warms
-     *  anyway on timeout/interrupt so a stalled fetch can't strand the cache permanently empty. */
-    private void awaitMarketDataInit() {
-        MarketDataInitializer initializer = marketDataInitializer.getIfAvailable();
-        if (initializer == null) {
-            return;
-        }
-        try {
-            initializer.completion().get(INIT_WAIT_MINUTES, TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("Interrupted while awaiting market-data init; warming beater anyway");
-        } catch (ExecutionException | TimeoutException e) {
-            log.warn("Market-data init did not finish in time; warming beater anyway: {}", e.getMessage());
-        }
-    }
 
     /**
      * Refreshes every (period × benchmark) combination the UI can request — all supported periods against

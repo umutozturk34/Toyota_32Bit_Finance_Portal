@@ -37,6 +37,7 @@
     { "keyword": "Şişecam", "code": "SISE.IS", "type": "STOCK" }
   ],
   "commonNameWords": [
+    "turk", "yukselen", "buyuk", "yeni", "ozel", "milli", "genel", "birlesik", "guclu", "ileri", "ortak",
     "turkiye", "anadolu", "akdeniz", "marmara", "avrupa", "ulusal", "global", "dunya", "merkez",
     "karadeniz", "istanbul", "ankara", "amerika", "avrasya", "uluslararasi", "international",
     "platform", "federal", "turizm", "holding", "yatirim", "sanayi", "ticaret", "teknoloji", "finansal",

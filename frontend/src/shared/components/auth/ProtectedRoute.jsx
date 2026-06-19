@@ -7,7 +7,15 @@ import Spinner from '../feedback/Spinner';
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { isAuthenticated, hasRole, loading } = useAuth();
   const { t } = useTranslation();
-  if (loading) {
+  // Full-screen loader ONLY until auth first resolves. Afterwards a transient `loading` flip — a background
+  // Keycloak token refresh fires every few minutes — must NOT swap the whole app for a spinner: that unmounts
+  // the entire layout and remounts it fresh, which (among other things) restarts the onboarding tour mid-flight.
+  // Likewise, don't bounce to login while a refresh is still in flight, where isAuthenticated can dip for a frame.
+  const [authSettled, setAuthSettled] = React.useState(false);
+  React.useEffect(() => {
+    if (isAuthenticated) setAuthSettled(true);
+  }, [isAuthenticated]);
+  if (loading && !isAuthenticated && !authSettled) {
     return (
       <div className="flex justify-center items-center h-screen h-[100dvh]">
         <div className="flex items-center gap-3 text-fg-muted">
@@ -17,7 +25,7 @@ const ProtectedRoute = ({ children, requiredRole }) => {
       </div>
     );
   }
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !loading) {
     return <Navigate to="/" replace />;
   }
   if (requiredRole && !hasRole(requiredRole)) {

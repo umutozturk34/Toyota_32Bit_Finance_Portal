@@ -1,6 +1,8 @@
 import { useParams, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { viopService } from './services/viopService';
+import { unifiedMarketService } from '../../shared/services/unifiedMarketService';
 import { formatPrice } from '../../shared/utils/formatters';
 import { useMoney } from '../../shared/hooks/useMoney';
 import { viopQuoteCurrency } from '../../shared/utils/priceCurrency';
@@ -45,10 +47,21 @@ function ViopMetadata({ asset }) {
   // When the underlying resolves to a tradable asset, make it a link to that asset's page; carry the current path
   // as the navigation origin so the asset page's back returns here (not to the VIOP list).
   const underlyingTarget = viopUnderlyingRoute(meta);
+  // Resolve the underlying stock's full name (one cached snapshot read, shared with the news chips' cache) so the
+  // bare ticker reveals which company it is on hover.
+  const { data: underlyingAsset } = useQuery({
+    queryKey: ['assetSnapshot', 'STOCK', underlyingTarget?.code],
+    queryFn: () => unifiedMarketService.getByCode('STOCK', `${underlyingTarget.code}.IS`),
+    enabled: !!underlyingTarget?.route,
+    staleTime: 10 * 60 * 1000,
+  });
+  const underlyingName = underlyingAsset?.name && underlyingAsset.name !== underlyingTarget?.code
+    ? underlyingAsset.name : null;
   const underlyingValue = underlyingTarget?.route ? (
     <Link
       to={underlyingTarget.route}
       state={{ from: location.pathname }}
+      title={underlyingName || underlyingTarget.code}
       className="text-accent hover:text-accent-bright hover:underline transition-colors"
     >
       {underlyingTarget.code}

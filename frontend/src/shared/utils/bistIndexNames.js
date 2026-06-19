@@ -39,6 +39,22 @@ function bareIndexCode(code) {
   return (code || '').replace('.IS', '').toUpperCase();
 }
 
+// Canonical display order for the size/benchmark indices: 30 → 50 → 100 (ascending breadth), which is
+// how investors expect to scan them — not the arbitrary order the backend returns rows in.
+const SIZE_INDEX_ORDER = ['XU030', 'XU050', 'XU100'];
+
+/**
+ * Orders index assets for display: the size indices first in 30 → 50 → 100 order, then any other indices
+ * in their original (weight/data) order. Pure — returns a new array; sort is stable so non-size order is kept.
+ */
+export function mainIndexSort(indices) {
+  const rankOf = (idx) => {
+    const i = SIZE_INDEX_ORDER.indexOf(bareIndexCode(idx?.code));
+    return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+  };
+  return [...(indices || [])].sort((a, b) => rankOf(a) - rankOf(b));
+}
+
 /** True for the three size/benchmark indices (BIST 30/50/100) — a stock's "blue-chip" stature signal. */
 export function isSizeIndex(code) {
   return Boolean(SIZE_INDEX_NAMES[bareIndexCode(code)]);

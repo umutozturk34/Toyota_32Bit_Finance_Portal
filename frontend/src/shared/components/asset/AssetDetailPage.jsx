@@ -184,8 +184,8 @@ export default function AssetDetailPage({
     return (
       <ErrorState
         message={error ? resolvedError : resolvedNotFound}
-        onRetry={error ? refetchAsset : goBack}
-        retryLoading={error ? isFetching : false}
+        onRetry={refetchAsset}
+        retryLoading={isFetching}
       />
     );
   }

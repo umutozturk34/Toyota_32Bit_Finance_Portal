@@ -8,7 +8,7 @@ import { TrendingUp, TrendingDown } from '../feedback/AnimatedIcons';
 import { ASSET_TYPE_COLORS } from '../../constants/assetTypes';
 import { assetCodeLabel } from '../../utils/assetCode';
 import { commodityLabel } from '../../utils/commodityName';
-import { getChangeClass, changeColors } from '../../utils/formatters';
+import { getChangeClass, changeColors, visibleDecimals } from '../../utils/formatters';
 import { useMoney } from '../../hooks/useMoney';
 import { priceCurrencyOf } from '../../utils/priceCurrency';
 import useSearchSuggestions from '../../hooks/useSearchSuggestions';
@@ -175,9 +175,16 @@ export default function SearchSuggestions({
     inputRef.current?.blur();
   }, []);
 
+  // The recent-searches panel is what's on screen (not live results) while the query is too short; route
+  // keyboard navigation to it so ArrowDown/Up + Enter cycle through and open recent items too.
+  const showingRecent = open && trimmedQuery.length < 2 && recentItems.length > 0;
   const handleKeyDown = useCallback(
-    (e) => buildKeyDown(handleSelect, handleEscape)(e),
-    [buildKeyDown, handleSelect, handleEscape],
+    (e) => buildKeyDown(
+      showingRecent ? handleRecentSelect : handleSelect,
+      handleEscape,
+      showingRecent ? recentItems : null,
+    )(e),
+    [buildKeyDown, showingRecent, handleRecentSelect, handleSelect, handleEscape, recentItems],
   );
 
   const isHero = variant === 'hero';
@@ -246,11 +253,13 @@ export default function SearchSuggestions({
               </button>
             </div>
             <div className="flex-auto min-h-0 overflow-y-auto">
-              {recentItems.map((item) => (
+              {recentItems.map((item, i) => (
                 <RecentSearchRow
                   key={`recent-${item.type}-${item.code}`}
                   t={t}
                   item={item}
+                  isActive={i === activeIndex}
+                  onHover={() => setActiveIndex(i)}
                   secondaryAction={secondaryAction}
                   SecondaryIcon={SecondaryIcon}
                   onSelect={handleRecentSelect}
@@ -339,7 +348,7 @@ export default function SearchSuggestions({
                           {asset.changePercent != null && (
                             <div className={`flex items-center justify-end gap-0.5 text-[11px] font-mono font-medium ${changeColors[cls]}`}>
                               {asset.changePercent > 0 ? <TrendingUp className="h-3 w-3" /> : asset.changePercent < 0 ? <TrendingDown className="h-3 w-3" /> : null}
-                              {asset.changePercent > 0 ? '+' : ''}{asset.changePercent?.toFixed(2)}%
+                              {asset.changePercent > 0 ? '+' : ''}{asset.changePercent?.toFixed(visibleDecimals(asset.changePercent, 2))}%
                             </div>
                           )}
                         </div>

@@ -9,6 +9,8 @@ import { commodityLabel } from '../../../utils/commodityName';
 export default function RecentSearchRow({
   t,
   item,
+  isActive = false,
+  onHover,
   secondaryAction,
   SecondaryIcon,
   onSelect,
@@ -18,7 +20,8 @@ export default function RecentSearchRow({
   const typeColor = ASSET_TYPE_COLORS[item.type] || '#8b5cf6';
   return (
     <div
-      className="group w-full flex items-center hover:bg-surface/50 transition-colors"
+      onMouseEnter={onHover}
+      className={`group w-full flex items-center transition-colors ${isActive ? 'bg-surface' : 'hover:bg-surface/50'}`}
     >
       <button
         onClick={() => onSelect(item)}

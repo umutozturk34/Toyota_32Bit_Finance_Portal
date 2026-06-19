@@ -16,6 +16,7 @@ import ChangePercentBadge from '../../shared/components/asset/ChangePercentBadge
 import useListParams from '../../shared/hooks/useListParams';
 import { useMoney } from '../../shared/hooks/useMoney';
 import { assetCodeLabel } from '../../shared/utils/assetCode';
+import { mainIndexSort } from '../../shared/utils/bistIndexNames';
 
 const SORT_OPTION_IDS = ['changePercent', 'price', 'volume', 'name'];
 
@@ -39,7 +40,7 @@ function StocksPage() {
         queryKey: ['stocks', 'indices'],
         queryFn: () => stockService.getAll({ segment: 'MAIN_INDEX', size: 10 }),
     });
-    const indices = indicesData?.content || [];
+    const indices = mainIndexSort(indicesData?.content || []);
 
     const tabItems = segmentCounts
         .filter(s => s.type !== 'MAIN_INDEX')

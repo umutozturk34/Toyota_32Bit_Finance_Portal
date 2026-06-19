@@ -87,16 +87,33 @@ class FundMarketAssetProviderTest {
     }
 
     @Test
-    void getByCode_skipsEnrichment_whenProfileAlreadyPresent() {
+    void getByCode_skipsEnrichment_whenIsinAndCategoryBothPresent() {
         Fund fund = Fund.builder().build();
         fund.setFundCode("TYH");
         fund.setIsinCode("TRYTYH00001");
+        fund.setCategory("Endeks Fon");
         when(cacheService.getSnapshot("TYH")).thenReturn(fund);
         when(mapper.toMarketAssetResponses(List.of(fund))).thenReturn(List.of(response("TYH")));
 
         provider.getByCode("TYH");
 
         verify(detailEnrichmentService, never()).enrichSingleFundDetailsAsync(any());
+    }
+
+    @Test
+    void getByCode_enrichesInBackground_whenCategoryMissingThoughIsinPresent() {
+        // The bulk profile back-fill sets isin but never the info-only category; opening such a fund must still
+        // fire the (info + profile) fetch so the category column finally fills instead of staying empty forever.
+        Fund fund = Fund.builder().build();
+        fund.setFundCode("TYH");
+        fund.setIsinCode("TRYTYH00001");
+        // category intentionally left null
+        when(cacheService.getSnapshot("TYH")).thenReturn(fund);
+        when(mapper.toMarketAssetResponses(List.of(fund))).thenReturn(List.of(response("TYH")));
+
+        provider.getByCode("TYH");
+
+        verify(detailEnrichmentService).enrichSingleFundDetailsAsync("TYH");
     }
 
     @SuppressWarnings("unchecked")

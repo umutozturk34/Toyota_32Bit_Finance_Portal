@@ -70,7 +70,11 @@ public class FundMarketAssetProvider extends BaseTrackedMarketAssetProvider<Fund
     public MarketAssetResponse getByCode(String code) {
         Fund snapshot = getSnapshotByCode(code);
         if (snapshot == null) return null;
-        if (snapshot.getIsinCode() == null && profileEnrichAttempted.add(code)) {
+        // isinCode comes from the per-fund PROFILE call and category from the per-fund INFO call — the bulk
+        // refresh runs neither. A null on EITHER means its TEFAS call has never landed, so kick the (info +
+        // profile) fetch off in the background. Gating on isin alone left category permanently empty on funds
+        // whose profile was back-filled (isin set) but whose info call never ran.
+        if ((snapshot.getIsinCode() == null || snapshot.getCategory() == null) && profileEnrichAttempted.add(code)) {
             detailEnrichmentService.enrichSingleFundDetailsAsync(code);
         }
         return super.getByCode(code);

@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { FIB_LEVELS, FIB_LABELS } from '../lib/fibonacci';
 import { drawSnapIndicator } from '../lib/magnetManager';
+import { priceDecimals } from '../../../shared/utils/formatters';
 
 const useDrawingRenderer = ({
     canvasOverlayRef,
@@ -95,7 +96,7 @@ const useDrawingRenderer = ({
                     ctx.fillStyle = d.color || '#f59e0b';
                     ctx.fillRect(rect.width - 80, y - 10, 75, 20);
                     ctx.fillStyle = '#fff'; ctx.font = '11px Inter, sans-serif';
-                    ctx.fillText(d.price.toFixed(2), rect.width - 75, y + 4);
+                    ctx.fillText(d.price.toFixed(priceDecimals(d.price)), rect.width - 75, y + 4);
                 }
             } else if (d.type === 'VERTICAL_LINE') {
                 const p = chartCoordsToPixel(d.time, d.price);
@@ -183,7 +184,7 @@ const useDrawingRenderer = ({
                 ctx.stroke();
                 ctx.fillStyle = `rgba(${baseColor},0.9)`;
                 ctx.font = '10px Inter, sans-serif';
-                ctx.fillText(`${lev.label} (${lev.price.toFixed(2)})`, Math.max(s.x, e.x) + 5, fp.y + 4);
+                ctx.fillText(`${lev.label} (${lev.price.toFixed(priceDecimals(lev.price))})`, Math.max(s.x, e.x) + 5, fp.y + 4);
             });
             ctx.setLineDash([]);
             ctx.restore();

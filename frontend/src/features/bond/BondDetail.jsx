@@ -25,6 +25,7 @@ import ErrorState from '../../shared/components/feedback/ErrorState';
 import MarketAddBondModal from '../portfolio/components/MarketAddBondModal';
 import BondDetailHeader from './components/BondDetailHeader';
 import { BOND_TYPE_COLORS, CHART_LINE_COLORS, CHART_RATE_COLORS, DEFAULT_RATE_COLOR } from './lib/bondConstants';
+import { priceDecimals } from '../../shared/utils/formatters';
 
 function formatRate(val) {
   if (val == null) return '—';
@@ -33,7 +34,7 @@ function formatRate(val) {
 
 function formatPrice(val, localeTag = 'en-US') {
   if (val == null) return '—';
-  return new Intl.NumberFormat(localeTag, { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(val);
+  return new Intl.NumberFormat(localeTag, { minimumFractionDigits: 2, maximumFractionDigits: priceDecimals(val) }).format(val);
 }
 
 function formatDate(val, localeTag = 'en-US') {

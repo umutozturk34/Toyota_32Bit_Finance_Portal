@@ -1,5 +1,6 @@
 import { isMacro } from '../../analytics/lib/compareSeriesUtils';
 import { themeFor } from '../utils';
+import { visibleDecimals } from '../../../shared/utils/formatters';
 
 const MACRO_CATEGORY_TO_TYPE = {
   DEPOSIT: 'MACRO_DEPOSIT',
@@ -185,10 +186,10 @@ export function buildOption(seriesData, normalize, isDark, localeTag = localeTag
         formatter: (val) => {
           if (normalize) {
             const sign = val > 0 ? '+' : '';
-            return `${sign}${val.toFixed(0)}%`;
+            return `${sign}${val.toFixed(visibleDecimals(val, 1))}%`;
           }
           const unit = series[0]?._unit;
-          return unit === 'PERCENT' ? `%${val.toFixed(1)}` : val.toLocaleString(localeTag);
+          return unit === 'PERCENT' ? `%${val.toFixed(visibleDecimals(val, 1))}` : val.toLocaleString(localeTag);
         },
       },
       splitLine: { lineStyle: { color: grid, type: 'dashed' } },

@@ -26,8 +26,8 @@ export default function DepositConfirmPanel({ sym, principal, localeTag, currenc
         </div>
       </div>
       <div className="rounded-xl border border-border-default bg-bg-base px-4 py-3 space-y-2">
-        <ConfirmRow label={t('deposits.fields.principal')} value={`${sym}${Number(principal).toLocaleString(localeTag)} ${currency}`} />
-        <ConfirmRow label={t('deposits.fields.annualRate')} value={`%${Number(rateValue).toLocaleString(localeTag)}`} />
+        <ConfirmRow label={t('deposits.fields.principal')} value={`${sym}${Number(principal).toLocaleString(localeTag, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`} />
+        <ConfirmRow label={t('deposits.fields.annualRate')} value={`%${Number(rateValue).toLocaleString(localeTag, { maximumFractionDigits: 4 })}`} />
         {selectedRate && <ConfirmRow label={t('deposits.fields.depositType')} value={t(`marketOverview.macro.maturity${selectedRate.maturity}`)} />}
         <div className="border-t border-border-default pt-2 space-y-2">
           <ConfirmRow label={t('deposits.fields.startDate')} value={startDisplay} />

@@ -7,7 +7,7 @@ import { LineChart, Briefcase, Tag, Activity, Clock, Users as UsersIcon, Wallet,
 import { TrendingUp, TrendingDown } from '../../shared/components/feedback/AnimatedIcons';
 import { fundService } from './services/fundService';
 import { adminService } from '../admin/services/adminService';
-import { formatVolume } from '../../shared/utils/formatters';
+import { formatVolume, visibleDecimals } from '../../shared/utils/formatters';
 import MarketListPage from '../../shared/components/market/MarketListPage';
 import AssetCard from '../../shared/components/asset/AssetCard';
 import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
@@ -230,7 +230,7 @@ function FundsPage() {
                     {ret != null && (
                         <div className="text-right shrink-0">
                             <span className={`block font-mono text-base font-semibold ${ret >= 0 ? 'text-success' : 'text-danger'}`}>
-                                {ret >= 0 ? '+' : ''}{Number(ret).toFixed(2)}%
+                                {ret >= 0 ? '+' : ''}{Number(ret).toFixed(visibleDecimals(Number(ret), 2))}%
                             </span>
                             <span className="block text-[10px] uppercase tracking-wider text-fg-subtle">{returnLabel} {t(activeReturnShort)}</span>
                         </div>

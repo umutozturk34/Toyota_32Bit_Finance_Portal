@@ -16,7 +16,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useMoney } from '../../../shared/hooks/useMoney';
-import { formatPercentSmart, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
+import { formatPercentSmart, changeColors, changeBg, getChangeClass, visibleDecimals } from '../../../shared/utils/formatters';
 import { BOND_TYPE_COLORS } from '../../bond/lib/bondConstants';
 import { useBondCouponSchedule } from '../hooks/useFixedIncomePositions';
 import BondDetailHeader from './bondDetail/BondDetailHeader';
@@ -32,7 +32,7 @@ function formatDate(val, localeTag) {
 
 function formatRate(val) {
   if (val == null) return '—';
-  return `%${Number(val).toFixed(2)}`;
+  return `%${Number(val).toFixed(visibleDecimals(Number(val), 2))}`;
 }
 
 function daysUntil(dateStr, nowMs) {
@@ -330,7 +330,7 @@ export default function BondHoldingDetailModal({ bond, portfolioId, onClose }) {
               <div className="mb-1.5 flex items-center justify-between gap-2 text-[10px]">
                 <span className="font-medium uppercase tracking-wider text-fg-muted">{t('portfolio.bonds.detail.maturityProgress')}</span>
                 <span className="font-mono text-fg-muted">
-                  %{maturityPct.toFixed(0)}
+                  %{maturityPct.toFixed(visibleDecimals(maturityPct, 0))}
                   {maturityDays != null && maturityDays >= 0 && (
                     <span className="ml-1.5 text-fg-subtle">· {maturityDays}{t('market.bond.daysSuffix')}</span>
                   )}

@@ -1,10 +1,10 @@
-import { formatPrice } from '../../shared/utils/formatters';
+import { formatPrice, visibleDecimals } from '../../shared/utils/formatters';
 
 export function formatPercent(value, locale = 'tr-TR') {
   if (value == null) return '—';
   const n = Number(value);
   const sign = n > 0 ? '+' : '';
-  return `${sign}${n.toLocaleString(locale, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}%`;
+  return `${sign}${n.toLocaleString(locale, { maximumFractionDigits: visibleDecimals(n, 2), minimumFractionDigits: 2 })}%`;
 }
 
 // Decimals scaled to magnitude: big figures (crypto can be millions per unit) drop decimals for

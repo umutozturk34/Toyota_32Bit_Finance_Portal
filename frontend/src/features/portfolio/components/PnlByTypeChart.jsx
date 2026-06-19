@@ -5,6 +5,7 @@ import { TrendingUp, TrendingDown, ChevronRight } from 'lucide-react';
 import { containerVariants, cardVariants } from '../../../shared/utils/animations';
 import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
 import { useMoney } from '../../../shared/hooks/useMoney';
+import { visibleDecimals } from '../../../shared/utils/formatters';
 import Card from '../../../shared/components/card';
 import { SkeletonChart } from '../../../shared/components/feedback/Skeleton';
 import EmptyState from '../../../shared/components/feedback/EmptyState';
@@ -98,7 +99,7 @@ export default function PnlByTypeChart({ portfolioId }) {
               <p className={`text-lg font-bold font-mono ${totalUp ? 'text-success' : 'text-danger'}`}>
                 {totalUp ? '+' : ''}{money(totalPnl, targetCurrency)}
                 {overallReturn != null && (
-                  <span className="ml-1.5 text-xs font-semibold">({totalUp ? '+' : ''}%{overallReturn.toFixed(1)})</span>
+                  <span className="ml-1.5 text-xs font-semibold">({totalUp ? '+' : ''}%{overallReturn.toFixed(visibleDecimals(overallReturn, 1))})</span>
                 )}
               </p>
             </div>
@@ -187,7 +188,7 @@ export default function PnlByTypeChart({ portfolioId }) {
                         </span>
                         {ret != null && (
                           <span className={`w-12 text-right text-[10px] font-mono ${up ? 'text-success/80' : 'text-danger/80'}`}>
-                            {up ? '+' : ''}%{ret.toFixed(1)}
+                            {up ? '+' : ''}%{ret.toFixed(visibleDecimals(ret, 1))}
                           </span>
                         )}
                         {groupByType && (

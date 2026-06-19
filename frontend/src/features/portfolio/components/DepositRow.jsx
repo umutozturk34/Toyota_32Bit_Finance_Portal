@@ -140,7 +140,7 @@ export default function DepositRow({ deposit, portfolioId }) {
             <Stat label={t('deposits.fields.annualRate')}>
               <span className="inline-flex items-center gap-1">
                 <Percent className="h-3 w-3 text-success" />
-                {Number(deposit.annualRate).toLocaleString(localeTag)}
+                {Number(deposit.annualRate).toLocaleString(localeTag, { maximumFractionDigits: 4 })}
               </span>
             </Stat>
             <Stat label={t('deposits.fields.startDate')}>{formatEntryDate(deposit.startDate, localeTag)}</Stat>
@@ -161,7 +161,7 @@ export default function DepositRow({ deposit, portfolioId }) {
                 <span className="font-mono text-fg">{money(deposit.grossInterestTry, 'TRY')}</span>
               </span>
               <span className="inline-flex items-center gap-1 text-fg-muted">
-                {t('deposits.interest.stopaj')} (%{Number((((Number(deposit.withholdingRate) || 0) * 100).toFixed(2))).toLocaleString(localeTag)}):
+                {t('deposits.interest.stopaj')} (%{((Number(deposit.withholdingRate) || 0) * 100).toLocaleString(localeTag, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}):
                 <span className="font-mono text-danger">−{money(deposit.withholdingTaxTry, 'TRY')}</span>
               </span>
               <span className="inline-flex items-center gap-1 text-fg-muted sm:ml-auto">

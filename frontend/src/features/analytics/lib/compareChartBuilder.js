@@ -1,4 +1,4 @@
-import { formatPrice } from '../../../shared/utils/formatters';
+import { formatPrice, visibleDecimals } from '../../../shared/utils/formatters';
 import { moneyDigits } from '../utils';
 
 function rawKind(type, levelMode) {
@@ -289,7 +289,7 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency, commo
           const pct = Number(pt[3]);
           const sign = pct > 0 ? '+' : '';
           const pctColor = pct > 0 ? '#10b981' : pct < 0 ? '#ef4444' : tooltipFg;
-          const pctFmt = `${sign}${pct.toFixed(2)}%`;
+          const pctFmt = `${sign}${pct.toFixed(visibleDecimals(pct, 2))}%`;
           let valueSpans;
           if (kind === 'portfolio') {
             // Return % is the comparison primary; the cumulative TL P&L rides along as the secondary

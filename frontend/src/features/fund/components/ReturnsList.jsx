@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import Card from '../../../shared/components/card';
+import { visibleDecimals } from '../../../shared/utils/formatters';
 
 const PERIODS = [
   { key: 'return1m', labelKey: 'marketDetail.fund.return.1m' },
@@ -41,7 +42,7 @@ export default function ReturnsList({ metadata }) {
               />
               <p className="relative text-[10px] font-semibold uppercase tracking-wider text-fg-muted">{t(p.labelKey)}</p>
               <p className="relative mt-0.5 font-mono text-sm font-bold tabular-nums" style={{ color: tone }}>
-                {positive ? '+' : ''}{p.value.toFixed(2)}%
+                {positive ? '+' : ''}{p.value.toFixed(visibleDecimals(p.value, 2))}%
               </p>
             </div>
           );

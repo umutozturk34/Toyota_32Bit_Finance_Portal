@@ -79,9 +79,7 @@ function FixedIncomeChart({ portfolioId }) {
 
   const money = useCallback((value) => {
     if (value == null) return '—';
-    const abs = Math.abs(value);
-    const maxDecimals = abs < 10 ? 4 : abs < 1000 ? 3 : 2;
-    return formatPrice(value, { currency: 'TRY', minDecimals: 2, maxDecimals });
+    return formatPrice(value, { currency: 'TRY', minDecimals: 2 });
   }, []);
 
   const points = useMemo(

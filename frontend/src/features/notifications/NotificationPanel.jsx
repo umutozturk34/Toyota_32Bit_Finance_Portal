@@ -15,7 +15,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import ConfirmDialog from '../../shared/components/modal/ConfirmDialog';
 import BroadcastModal from '../admin/broadcast/BroadcastModal';
 import { useAuth } from '../auth/useAuth';
-import { currentLocaleTag } from '../../shared/utils/formatters';
+import { currentLocaleTag, visibleDecimals } from '../../shared/utils/formatters';
 import SideDrawer from '../../shared/components/modal/SideDrawer';
 import Button from '../../shared/components/buttons/Button';
 import IconButton from '../../shared/components/buttons/IconButton';
@@ -138,7 +138,7 @@ function NotificationRow({ item, onRead, onDelete }) {
                         <span className="text-fg-muted">₺{Number(pf.totalValue).toLocaleString(locale, { maximumFractionDigits: 0 })}</span>
                       )}
                       {pct != null && (
-                        <span className={up ? 'text-success' : 'text-danger'}>{up ? '+' : ''}{pct.toFixed(2)}%</span>
+                        <span className={up ? 'text-success' : 'text-danger'}>{up ? '+' : ''}{pct.toFixed(visibleDecimals(pct, 2))}%</span>
                       )}
                     </span>
                   </li>

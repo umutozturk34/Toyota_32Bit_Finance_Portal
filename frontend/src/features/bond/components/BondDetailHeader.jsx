@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft, Landmark, TrendingUp, TrendingDown, Plus } from 'lucide-react';
+import { visibleDecimals } from '../../../shared/utils/formatters';
 import IconButton from '../../../shared/components/buttons/IconButton';
 import MarketStatusBadge from '../../../shared/components/layout/MarketStatusBadge';
 
@@ -55,7 +56,7 @@ export default function BondDetailHeader({
           {priceChangePct != null && (
             <span className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs sm:text-sm font-semibold ${priceChangePct >= 0 ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
               {priceChangePct >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-              {priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(2)}%
+              {priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(visibleDecimals(priceChangePct, 2))}%
             </span>
           )}
         </div>

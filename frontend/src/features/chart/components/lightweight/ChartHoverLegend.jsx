@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { visibleDecimals } from '../../../../shared/utils/formatters';
 
 // Fixed resting spot for the static on-chart OHLC legend (top-left).
 const LEGEND_DEFAULT_CLASS = 'left-1 top-1 sm:left-2 sm:top-2';
@@ -44,7 +45,7 @@ const ChartHoverLegend = ({
                 )}
                 {legendVals.changePercent != null && (
                     <span className={legendVals.changePercent >= 0 ? 'text-success' : 'text-danger'}>
-                        {legendVals.changePercent >= 0 ? '+' : ''}{legendVals.changePercent.toFixed(2)}%
+                        {legendVals.changePercent >= 0 ? '+' : ''}{legendVals.changePercent.toFixed(visibleDecimals(legendVals.changePercent, 2))}%
                     </span>
                 )}
                 {legendOverlayInds.map((ind) => (

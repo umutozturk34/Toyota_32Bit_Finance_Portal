@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Search, X, Clock } from 'lucide-react';
 import { ASSET_TYPE_COLORS } from '../../constants/assetTypes';
-import { getChangeClass, changeColors } from '../../utils/formatters';
+import { getChangeClass, changeColors, visibleDecimals } from '../../utils/formatters';
 import { useMoney } from '../../hooks/useMoney';
 import { priceCurrencyOf } from '../../utils/priceCurrency';
 import { assetCodeLabel } from '../../utils/assetCode';
@@ -253,7 +253,7 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
                           <p className="text-xs font-mono font-semibold text-fg">{money(asset.price ?? asset.baseIndex, priceCurrencyOf(asset))}</p>
                           {asset.changePercent != null && (
                             <span className={`text-[10px] font-mono ${changeColors[cls]}`}>
-                              {asset.changePercent > 0 ? '+' : ''}{asset.changePercent?.toFixed(2)}%
+                              {asset.changePercent > 0 ? '+' : ''}{asset.changePercent?.toFixed(visibleDecimals(asset.changePercent, 2))}%
                             </span>
                           )}
                         </div>

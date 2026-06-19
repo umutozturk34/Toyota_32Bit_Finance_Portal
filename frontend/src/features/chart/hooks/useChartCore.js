@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { createChart, CandlestickSeries, LineSeries, LineStyle, createSeriesMarkers } from 'lightweight-charts';
 import { calculateSMA, calculateEMA } from '../lib/indicators';
 import { getChartOptions } from '../lib/chartOptions';
-import { priceDecimals } from '../../../shared/utils/formatters';
+import { priceDecimals, visibleDecimals } from '../../../shared/utils/formatters';
 import {
     COMPARE_COLORS,
     analyzeTrend,
@@ -484,7 +484,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             try { mainSeries.applyOptions({ visible: false }); } catch { void 0; }
         }
 
-        const fmtPercent = (p) => (p >= 0 ? '+' : '') + p.toFixed(2) + '%';
+        const fmtPercent = (p) => (p >= 0 ? '+' : '') + p.toFixed(visibleDecimals(p, 2)) + '%';
         const percentFormat = { type: 'custom', minMove: 0.01, formatter: fmtPercent };
 
         const { mainBase, startEpoch } = baseline;

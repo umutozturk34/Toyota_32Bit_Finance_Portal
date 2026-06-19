@@ -238,7 +238,9 @@ const MainLayout = () => {
       <motion.aside
         animate={{ width: sidebarWidth }}
         initial={false}
-        transition={{ type: 'spring', stiffness: 380, damping: 36, mass: 0.8 }}
+        // A tween, not a spring: a spring's settle oscillates the width a hair past its target, and every icon
+        // inside rides that overshoot — reading as a collapse "wobble". A fixed-duration ease glides cleanly.
+        transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}
         className="hidden lg:flex flex-col fixed top-0 left-0 h-screen h-[100dvh] border-r border-border-default z-30 overflow-visible"
         style={{
           background: 'var(--sidebar-bg)',

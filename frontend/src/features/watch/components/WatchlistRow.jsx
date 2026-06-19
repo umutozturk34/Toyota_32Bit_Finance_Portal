@@ -40,7 +40,9 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
     <motion.div
       ref={setNodeRef}
       layout={draggable ? false : 'position'}
-      transition={{ layout: { type: 'spring', stiffness: 480, damping: 42 } }}
+      // A tween, not a spring: a spring overshoots and settles, so on a sort/direction change every row
+      // oscillates into place at once — the "rows shake" report. A fixed ease glides each row cleanly.
+      transition={{ layout: { duration: 0.2, ease: [0.22, 1, 0.36, 1] } }}
       style={style}
       onClick={route ? () => navigate(route) : undefined}
       onMouseEnter={triggerPrefetch}
@@ -109,7 +111,7 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
               <span>{formatPercent(item.changePercent)}</span>
               {item.changeAmount != null && (
                 <span className="font-normal opacity-70">
-                  ({isUp ? '+' : isDown ? '-' : ''}{money(Math.abs(Number(item.changeAmount)), priceCurrencyOf(item), { maxDecimals: 2 })})
+                  ({isUp ? '+' : isDown ? '-' : ''}{money(Math.abs(Number(item.changeAmount)), priceCurrencyOf(item))})
                 </span>
               )}
             </div>

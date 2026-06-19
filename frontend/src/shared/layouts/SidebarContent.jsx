@@ -1,7 +1,6 @@
-import { Link } from 'react-router-dom';
 import {
   TrendingUp, LogOut, Activity, Settings, Bell, User as UserIcon,
-  ChevronLeft, ChevronRight, Search,
+  ChevronLeft, Search,
 } from 'lucide-react';
 import SidebarNav from './SidebarNav';
 import CurrencySwitcher from '../components/CurrencySwitcher';
@@ -34,27 +33,32 @@ const SidebarContent = ({
 }) => (
   <div className="flex flex-col h-full">
     <div className={`flex items-center ${collapsed && !isMobile ? 'justify-center' : 'justify-between'} h-14 landscape:h-12 lg:landscape:h-14 px-3 border-b border-border-default shrink-0`}>
-      {(!collapsed || isMobile) && (
-        <Link to="/" className="flex items-center gap-2.5 no-underline group">
-          <span className="flex items-center justify-center w-8 h-8 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25 group-hover:shadow-accent/50 group-hover:scale-105 transition-all duration-300">
-            <TrendingUp className="w-4 h-4" />
-          </span>
-          <span className="text-sm font-bold text-fg tracking-tight font-display">Finance</span>
-        </Link>
-      )}
-      {collapsed && !isMobile && (
-        <Link to="/" className="flex items-center justify-center w-8 h-8 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25 hover:shadow-accent/50 hover:scale-105 transition-all duration-300 no-underline">
-          <TrendingUp className="w-4 h-4" />
-        </Link>
-      )}
-      {!isMobile && (
+      {collapsed && !isMobile ? (
         <button
           onClick={toggleSidebar}
-          className="hidden lg:flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
-          title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+          title={t('nav.expandSidebar')}
+          className="flex items-center justify-center w-8 h-8 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25 hover:shadow-accent/50 hover:scale-105 transition-all duration-300 bg-transparent border-none cursor-pointer p-0"
         >
-          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          <TrendingUp className="w-4 h-4" />
         </button>
+      ) : (
+        <>
+          <div className="flex items-center gap-2.5 select-none">
+            <span className="flex items-center justify-center w-8 h-8 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25">
+              <TrendingUp className="w-4 h-4" />
+            </span>
+            <span className="text-sm font-bold text-fg tracking-tight font-display">Finance</span>
+          </div>
+          {!isMobile && (
+            <button
+              onClick={toggleSidebar}
+              className="hidden lg:flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
+              title={t('nav.collapseSidebar')}
+            >
+              <ChevronLeft size={14} />
+            </button>
+          )}
+        </>
       )}
     </div>
 

@@ -14,6 +14,28 @@ processors:
     send_batch_max_size: 2048
     timeout: 5s
 
+  # Tail-based sampling: an UNSAMPLED span firehose ballooned the APM index to ~12M docs/day and pinned the
+  # OpenSearch node. In PRODUCTION we must NEVER drop an error or a slow trace (those are exactly the ones you
+  # debug), so instead of a blind 10% we KEEP 100% of error traces + 100% of slow (>1s) traces and sample only
+  # the fast happy-path at 10%. Accurate latency percentiles/SLOs come from the (unsampled) Micrometer METRICS
+  # pipeline — not these traces, which now lean slow by design. Single-collector, so tail_sampling sees every
+  # span of a trace; decision_wait buffers each trace until it is complete before deciding keep/drop.
+  tail_sampling:
+    decision_wait: 10s
+    policies:
+      - name: errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: slow
+        type: latency
+        latency:
+          threshold_ms: 1000
+      - name: baseline
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+
   memory_limiter:
     check_interval: 5s
     limit_mib: 400
@@ -52,6 +74,11 @@ processors:
       span:
         - 'attributes["http.target"] == "/actuator/health"'
         - 'attributes["url.path"] == "/actuator/health"'
+        # Long-lived SSE streams (notification bell, admin task panel) stay OPEN for minutes by design, so the
+        # auto-instrumentation records ONE multi-minute span per connection. Left in, they masquerade as
+        # "436s requests" and produce the p99/latency spikes — drop them so APM reflects REAL request latency.
+        - 'IsMatch(attributes["url.path"], "^/api/v1/(notifications|admin/tasks)/stream")'
+        - 'IsMatch(attributes["http.target"], "^/api/v1/(notifications|admin/tasks)/stream")'
 
   transform/traces:
     error_mode: ignore
@@ -123,7 +150,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [memory_limiter, resourcedetection, filter/health, resource, transform/traces, batch]
+      processors: [memory_limiter, filter/health, resourcedetection, resource, transform/traces, tail_sampling, batch]
       exporters: [routing/traces]
     traces/finance:
       receivers: [routing/traces]

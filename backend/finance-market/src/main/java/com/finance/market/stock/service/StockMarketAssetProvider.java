@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Read-side provider for BIST stocks: supports segment faceting, groups counts by segment, and
@@ -79,9 +80,23 @@ public class StockMarketAssetProvider extends BaseTrackedMarketAssetProvider<Sto
                 ? membershipRepository.findByIdIndexCodeOrderByWeightDesc(stripSuffix(symbol))
                 : List.of();
         if (profile == null && memberships.isEmpty() && constituents.isEmpty()) return base;
-        StockMetadata detail = stockResponseMapper.buildDetailMetadata(snapshot, profile, memberships, constituents);
+        Map<String, String> constituentNames = loadConstituentNames(constituents);
+        StockMetadata detail = stockResponseMapper.buildDetailMetadata(snapshot, profile, memberships, constituents, constituentNames);
         return new MarketAssetResponse(base.code(), base.name(), base.image(), base.type(),
                 base.price(), base.changeAmount(), base.changePercent(), base.lastUpdated(), detail);
+    }
+
+    /**
+     * Resolves each constituent symbol to its company name in one batch query, so the index detail view can
+     * show the full name on hover over the bare ticker. Empty for a normal stock (no constituents); a member
+     * with no name in the stocks table simply maps to no entry and the client falls back to the symbol.
+     */
+    private Map<String, String> loadConstituentNames(List<StockIndexMembership> constituents) {
+        if (constituents.isEmpty()) return Map.of();
+        List<String> symbols = constituents.stream().map(m -> m.getId().getStockSymbol()).toList();
+        return stockRepository.findAllById(symbols).stream()
+                .filter(s -> s.getName() != null && !s.getName().isBlank())
+                .collect(Collectors.toMap(Stock::getSymbol, Stock::getName, (a, b) -> a));
     }
 
     private static boolean isIndex(Stock stock) {

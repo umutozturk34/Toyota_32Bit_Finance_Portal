@@ -30,7 +30,11 @@ public record StockMetadata(
     public record IndexMembership(String indexCode, BigDecimal weight) {
     }
 
-    /** A member stock of an index (the reverse view, present only on an index's detail), with its weight. */
-    public record IndexConstituent(String stockSymbol, BigDecimal weight) {
+    /**
+     * A member stock of an index (the reverse view, present only on an index's detail), with its weight and
+     * full company name. {@code stockName} is null when the member stock has not been enriched with a name,
+     * so the client falls back to the bare symbol for the hover tooltip.
+     */
+    public record IndexConstituent(String stockSymbol, BigDecimal weight, String stockName) {
     }
 }

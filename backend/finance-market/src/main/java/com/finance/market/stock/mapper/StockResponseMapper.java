@@ -15,6 +15,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * MapStruct mapper exposing {@link Stock} and {@link StockCandle} entities as the generic market
@@ -72,12 +73,16 @@ public abstract class StockResponseMapper implements MarketMetadataBuilder<Stock
      */
     public StockMetadata buildDetailMetadata(Stock stock, CompanyProfile profile,
                                              List<StockIndexMembership> memberships,
-                                             List<StockIndexMembership> constituents) {
+                                             List<StockIndexMembership> constituents,
+                                             Map<String, String> constituentNames) {
         List<StockMetadata.IndexMembership> indexMemberships = memberships.stream()
                 .map(m -> new StockMetadata.IndexMembership(m.getId().getIndexCode(), m.getWeight()))
                 .toList();
         List<StockMetadata.IndexConstituent> indexConstituents = constituents.stream()
-                .map(m -> new StockMetadata.IndexConstituent(m.getId().getStockSymbol(), m.getWeight()))
+                .map(m -> new StockMetadata.IndexConstituent(
+                        m.getId().getStockSymbol(),
+                        m.getWeight(),
+                        constituentNames.get(m.getId().getStockSymbol())))
                 .toList();
         return new StockMetadata(
                 stock.getStockSegment(),

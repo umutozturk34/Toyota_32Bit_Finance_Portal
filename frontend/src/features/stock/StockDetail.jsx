@@ -220,6 +220,7 @@ function StockConstituents({ asset }) {
                 key={c.stockSymbol}
                 to={assetRoute('STOCK', c.stockSymbol)}
                 style={{ '--c': color }}
+                title={c.stockName || display}
                 className="group relative flex items-center justify-between gap-2 overflow-hidden rounded-lg border border-border-default bg-bg-base/30 px-2.5 py-2 transition-colors duration-200 hover:border-[color:var(--c)] hover:bg-bg-base/50"
               >
                 {hasWeight ? (

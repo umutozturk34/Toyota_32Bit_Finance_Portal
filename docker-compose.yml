@@ -319,9 +319,15 @@ services:
     image: axllent/mailpit:latest
     container_name: finance-mailpit
     restart: unless-stopped
+    environment:
+      # Persist messages to a SQLite file on the volume instead of the default in-memory store,
+      # so captured dev emails survive container recreation (compose down/up, image bump).
+      MP_DATABASE: /data/mailpit.db
     ports:
       - "127.0.0.1:8025:8025"
       - "127.0.0.1:1025:1025"
+    volumes:
+      - mailpit_data:/data
     networks:
       - finance-network
 
@@ -552,6 +558,7 @@ volumes:
   openldap_config:
   keycloak_data:
   redis_data:
+  mailpit_data:
   opensearch_data:
   kafka_data:
   sonar_db_data:

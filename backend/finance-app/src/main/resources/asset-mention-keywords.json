@@ -46,7 +46,7 @@
     "dijital", "yazilim", "bilisim", "iletisim", "enerji", "dogalgaz", "petrol", "akaryakit", "kimya",
     "plastik", "ambalaj", "seramik", "mobilya", "icecek", "kozmetik", "cimento", "makine", "savunma",
     "girisim", "sermaye", "portfoy", "ortaklik", "uretim", "dagitim", "pazarlama", "hizmetleri",
-    "sistemleri", "teknolojileri", "urunleri", "cozumleri", "gelistirme"
+    "sistemleri", "teknolojileri", "urunleri", "cozumleri", "gelistirme", "destek"
   ],
   "blockedTickers": [
     "ECB", "FED", "FOMC", "IMF", "OPEC", "OECD", "NATO", "TCMB", "SPK", "BDDK", "TMSF", "TUIK", "BIST", "KAP",

@@ -112,7 +112,7 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
             CodeType ct = cat.byTicker().get(ticker);
             if (ct != null) {
                 type.putIfAbsent(ct.code(), ct.type());
-                count.merge(ct.code(), 1, Integer::sum);
+                count.merge(ct.code(), 1, (a, b) -> a + b);
             }
         }
 
@@ -124,13 +124,13 @@ public class AssetMentionResolverImpl implements AssetMentionResolver {
         for (NameRef ref : cat.byName()) {
             int occ = countOccurrences(hay, " " + ref.core() + " ");
             if (occ > 0) {
-                nameOcc.merge(ref.code(), occ, Math::max);
+                nameOcc.merge(ref.code(), occ, (a, b) -> Math.max(a, b));
                 nameType.putIfAbsent(ref.code(), ref.type());
             }
         }
         nameOcc.forEach((code, occ) -> {
             type.putIfAbsent(code, nameType.get(code));
-            count.merge(code, occ, Integer::sum);
+            count.merge(code, occ, (a, b) -> a + b);
         });
 
         return type.entrySet().stream()

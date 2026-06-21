@@ -1,61 +1,32 @@
 package com.finance.app.config;
 
 import com.finance.shared.service.TaskTrackingService;
-
 import io.opentelemetry.instrumentation.annotations.WithSpan;
-
 import com.finance.market.stock.repository.StockRepository;
-
 import com.finance.market.stock.service.StockDataService;
-
 import com.finance.market.stock.repository.StockCandleRepository;
-
 import com.finance.news.service.article.NewsDataService;
-
 import com.finance.news.repository.NewsArticleRepository;
-
 import com.finance.market.fund.repository.FundRepository;
-
 import com.finance.market.fund.service.FundDataService;
-
 import com.finance.market.fund.repository.FundCandleRepository;
-
 import com.finance.market.forex.repository.ForexRepository;
-
 import com.finance.market.forex.service.ForexDataService;
-
 import com.finance.market.forex.repository.ForexCandleRepository;
-
 import com.finance.market.crypto.repository.CryptoRepository;
-
 import com.finance.market.crypto.service.CryptoDataService;
-
 import com.finance.market.crypto.repository.CryptoCandleRepository;
-
 import com.finance.market.commodity.repository.CommodityRepository;
-
 import com.finance.market.commodity.service.CommodityDataService;
-
 import com.finance.market.commodity.repository.CommodityCandleRepository;
-
 import com.finance.market.bond.repository.BondRepository;
-
 import com.finance.market.bond.service.BondDataService;
-
 import com.finance.market.macro.repository.MacroIndicatorRepository;
-
 import com.finance.market.macro.repository.MacroIndicatorPointRepository;
-
 import com.finance.market.macro.service.MacroIndicatorRegistryService;
-
 import com.finance.market.macro.service.MacroIndicatorFetchService;
-
 import com.finance.market.viop.repository.ViopContractRepository;
-
 import com.finance.market.viop.service.ViopDataService;
-
-
-
 import com.finance.common.market.MarketDataReadiness;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.client.EvdsCredentials;
@@ -67,7 +38,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 

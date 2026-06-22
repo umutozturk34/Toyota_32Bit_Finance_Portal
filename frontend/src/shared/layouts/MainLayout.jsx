@@ -6,12 +6,13 @@ import { Outlet, Link, useLocation, useNavigationType } from 'react-router-dom';
 import { useAuth } from '../../features/auth/useAuth';
 import { useTheme } from '../context/useTheme';
 import useAppStore from '../stores/useAppStore';
-import { TrendingUp, Shield, Menu, FolderOpen, Search, Plus } from 'lucide-react';
+import { TrendingUp, Menu, Search, Plus } from 'lucide-react';
 import {
   PiHouseDuotone, PiChartLineUpDuotone, PiTrendUpDuotone, PiCurrencyBtcDuotone,
   PiCurrencyDollarSimpleDuotone, PiBriefcaseDuotone, PiDiamondDuotone, PiBankDuotone,
   PiStackDuotone, PiNewspaperClippingDuotone, PiWalletDuotone, PiEyeDuotone,
   PiChartPieSliceDuotone, PiDatabaseDuotone, PiUsersThreeDuotone, PiGraduationCapDuotone,
+  PiFolderOpenDuotone, PiShieldDuotone,
 } from 'react-icons/pi';
 import TasksPanel from '../../features/admin/components/TasksPanel';
 import SettingsSidebar from '../../features/settings/SettingsSidebar';
@@ -21,6 +22,7 @@ import { useUnreadNotificationCount } from '../hooks/useNotifications';
 import useNotificationStream from '../hooks/useNotificationStream';
 import useScrollRestoration from '../hooks/useScrollRestoration';
 import useMediaQuery from '../hooks/useMediaQuery';
+import useOverlayDismiss from '../hooks/useOverlayDismiss';
 import useNavigationStore from '../stores/useNavigationStore';
 import OnboardingGate from '../../features/onboarding/OnboardingGate';
 import KeycloakActionToast from '../../features/auth/components/KeycloakActionToast';
@@ -45,7 +47,7 @@ const baseNavStructure = [
   },
   { kind: 'item', to: '/news', labelKey: 'nav.news', Icon: PiNewspaperClippingDuotone },
   {
-    kind: 'group', id: 'my', labelKey: 'nav.groupMy', Icon: FolderOpen,
+    kind: 'group', id: 'my', labelKey: 'nav.groupMy', Icon: PiFolderOpenDuotone,
     items: [
       { to: '/portfolio', labelKey: 'nav.portfolio', subKey: 'nav.subPortfolio', Icon: PiWalletDuotone },
       { to: '/watch',     labelKey: 'nav.watch',     subKey: 'nav.subWatch',     Icon: PiEyeDuotone },
@@ -55,9 +57,16 @@ const baseNavStructure = [
   { kind: 'item', to: '/learn', labelKey: 'nav.learn', Icon: PiGraduationCapDuotone },
 ];
 
-// One "Admin" entry — the separate admin screens are unified behind the shared AdminTabBar, so the sidebar no
-// longer needs a sub-group. Lands on tracked-assets; the in-page tab bar reaches users.
-const adminGroup = { kind: 'item', to: '/admin/tracked-assets', labelKey: 'nav.groupAdmin', Icon: Shield };
+// Admin is a collapsible GROUP (reusing the markets/my group machinery) so its destinations — Tracked Assets
+// and Users — sit under one expandable header instead of a lone leaf scattered apart from the admin Tasks
+// action. The in-page AdminTabBar still works as a secondary in-page switch.
+const adminGroup = {
+  kind: 'group', id: 'admin', labelKey: 'nav.groupAdmin', Icon: PiShieldDuotone,
+  items: [
+    { to: '/admin/tracked-assets', labelKey: 'nav.adminTrackedAssets', Icon: PiDatabaseDuotone },
+    { to: '/admin/users', labelKey: 'nav.adminUsers', Icon: PiUsersThreeDuotone },
+  ],
+};
 
 function findActiveGroupId(structure, pathname) {
   for (const node of structure) {
@@ -90,6 +99,9 @@ const MainLayout = () => {
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   useNotificationStream();
   useScrollRestoration();
+  // The mobile drawer was the only overlay not locking background scroll / closing on Escape — align it with
+  // every other overlay (BaseModal, SideDrawer) so the page no longer scrolls under the open menu on touch.
+  useOverlayDismiss(mobileOpen, () => setMobileOpen(false));
 
   // Auto-close the mobile drawer once the viewport grows into the lg breakpoint. Without this, a drawer
   // opened at mobile width leaves mobileOpen=true after enlarging, which keeps blurCls (pointer-events-none)
@@ -253,7 +265,7 @@ const MainLayout = () => {
           <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-border-default to-transparent" />
         </div>
         <div className="relative flex flex-col h-full">
-          <SidebarContent {...sidebarProps} />
+          <SidebarContent {...sidebarProps} navId="desktop" />
         </div>
       </motion.aside>
       <div className="hidden lg:block shrink-0" style={{ width: spacerWidth }} />
@@ -306,6 +318,9 @@ const MainLayout = () => {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
+              role="dialog"
+              aria-modal="true"
+              aria-label={t('common.openMenu')}
               className="lg:hidden fixed top-0 left-0 bottom-0 z-50 w-[82vw] max-w-[16rem] border-r pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] border-border-default"
               style={{
                 background: 'var(--sidebar-bg)',
@@ -313,7 +328,7 @@ const MainLayout = () => {
                 WebkitBackdropFilter: 'var(--sidebar-blur)',
               }}
             >
-              <SidebarContent {...sidebarProps} isMobile />
+              <SidebarContent {...sidebarProps} isMobile navId="mobile" />
             </motion.aside>
           </>
         )}

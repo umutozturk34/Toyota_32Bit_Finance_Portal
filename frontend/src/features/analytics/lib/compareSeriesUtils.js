@@ -211,6 +211,22 @@ export function colorFor(item, idx) {
   return PALETTE[idx % PALETTE.length];
 }
 
+// Cumulative % of a compare series over the shared window: first sample at-or-after the baseline → last sample,
+// ((last−first)/|first|)×100 — the identical headline the info-bar prints and the chart line ends at. The
+// Beater-cached backend return (authoritativeReturns[code]) overrides it verbatim so Compare and the Beater
+// table agree to the decimal. Null when the series has no usable endpoints (closed/empty/zero base).
+export function seriesWindowPct(indicator, points, baselineDate, authoritativeReturns) {
+  const auth = authoritativeReturns?.[indicator?.code];
+  if (auth != null) return Number(auth);
+  if (!points || points.length === 0) return null;
+  const sorted = [...points].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const last = sorted[sorted.length - 1]?.value;
+  const rawBaseIdx = baselineDate ? sorted.findIndex((p) => p.date >= baselineDate) : 0;
+  const first = sorted[rawBaseIdx >= 0 ? rawBaseIdx : 0]?.value;
+  if (last == null || first == null || Number(first) === 0) return null;
+  return ((Number(last) - Number(first)) / Math.abs(Number(first))) * 100;
+}
+
 export function parseInitialSelection(params) {
   const codes = params.get('codes');
   const types = params.get('types');

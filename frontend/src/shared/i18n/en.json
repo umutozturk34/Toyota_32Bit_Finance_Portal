@@ -34,7 +34,8 @@
     "learn": "Learn",
     "groupMarkets": "Markets",
     "groupMy": "My Portfolio",
-    "groupAdmin": "Admin"
+    "groupAdmin": "Admin",
+    "groupPreferences": "Quick settings"
   },
   "learn": {
     "title": "Financial Literacy",
@@ -714,7 +715,9 @@
   },
   "watchlistSection": {
     "fallbackName": "Watchlist",
-    "empty": "No tracked assets yet"
+    "empty": "No tracked assets yet",
+    "addAsset": "Add asset",
+    "removeAsset": "Remove"
   },
   "beatersSection": {
     "title": "Benchmark Beaters",
@@ -3037,6 +3040,14 @@
     "compareInfo": {
       "forwardFilledTooltip": "Extended to today from the last data point",
       "backfilledTooltip": "Extended with the last known value at the start of the range"
+    },
+    "compareVerdict": {
+      "gain": "Your return",
+      "real": "Real result",
+      "best": "Best",
+      "worst": "Worst",
+      "inflationSub": "Purchasing-power hurdle",
+      "since": "This window · {{date}} → today"
     },
     "returnsInCurrency": "Returns in {{currency}}",
     "simulationRunning": "Running simulation...",

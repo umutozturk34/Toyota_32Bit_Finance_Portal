@@ -1,6 +1,6 @@
 import { useState, useLayoutEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, LayoutGroup, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
@@ -18,6 +18,7 @@ function NavLeaf({ to, label, Icon, active, collapsed, isMobile, indented }) {
   // exiting, used to center the icon in the still-wide row and snap it right). Indented sub-items never collapse,
   // so they keep the original inline layout.
   const rail = !indented;
+  const reduceMotion = useReducedMotion();
   return (
     <Link
       to={to}
@@ -32,10 +33,16 @@ function NavLeaf({ to, label, Icon, active, collapsed, isMobile, indented }) {
     >
       {active && (
         <motion.span
-          layoutId="sidebar-active-bg"
+          layoutId={reduceMotion ? undefined : 'sidebar-active'}
           className="absolute inset-0 rounded-lg bg-gradient-to-r from-accent/20 via-accent/10 to-accent/5 border border-accent/20"
-          transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-        />
+          transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+        >
+          <span
+            className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-accent shadow-[0_0_8px_rgba(99,102,241,0.7)] ${
+              collapsed && !isMobile ? 'h-5' : indented ? 'h-4' : 'h-6'
+            }`}
+          />
+        </motion.span>
       )}
       {!active && (
         <span className="absolute inset-0 rounded-lg bg-surface/0 group-hover:bg-surface/60 transition-colors duration-200" />
@@ -78,15 +85,6 @@ function NavLeaf({ to, label, Icon, active, collapsed, isMobile, indented }) {
           </motion.span>
         )}
       </AnimatePresence>
-      {active && (
-        <motion.span
-          layoutId="sidebar-indicator"
-          className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-accent shadow-[0_0_8px_rgba(99,102,241,0.7)] ${
-            collapsed && !isMobile ? 'h-5' : indented ? 'h-4' : 'h-6'
-          }`}
-          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-        />
-      )}
     </Link>
   );
 }
@@ -170,10 +168,20 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
   const Icon = group.Icon;
 
   useLayoutEffect(() => {
-    if (open && buttonRef.current) {
+    if (!open || !buttonRef.current) return undefined;
+    const place = () => {
       const rect = buttonRef.current.getBoundingClientRect();
       setPos({ top: rect.top, left: rect.right + 8 });
-    }
+    };
+    place();
+    // position:fixed does not follow the scrollable <nav> or a window resize, so recompute while open —
+    // otherwise the portaled popover detaches at a stale top.
+    window.addEventListener('scroll', place, true);
+    window.addEventListener('resize', place);
+    return () => {
+      window.removeEventListener('scroll', place, true);
+      window.removeEventListener('resize', place);
+    };
   }, [open]);
 
   const openNow = () => {
@@ -186,7 +194,7 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
 
   const scheduleClose = () => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
-    closeTimerRef.current = setTimeout(() => setOpen(false), 140);
+    closeTimerRef.current = setTimeout(() => setOpen(false), 90);
   };
 
   return (
@@ -216,6 +224,10 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
         {hasActive && (
           <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_6px_rgba(99,102,241,0.6)]" />
         )}
+        <ChevronRight
+          size={10}
+          className="absolute right-0.5 top-1/2 -translate-y-1/2 text-fg-subtle opacity-40 group-hover:opacity-90 group-hover:text-accent transition pointer-events-none"
+        />
       </button>
       {createPortal(
         <AnimatePresence>
@@ -314,7 +326,7 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
   );
 }
 
-function SidebarNav({ structure, t, collapsed, isMobile, isActive, expandedGroups, toggleGroup }) {
+function SidebarNav({ structure, t, collapsed, isMobile, isActive, expandedGroups, toggleGroup, navId }) {
   const renderable = useMemo(() => {
     const out = [];
     structure.forEach((node, idx) => {
@@ -325,7 +337,8 @@ function SidebarNav({ structure, t, collapsed, isMobile, isActive, expandedGroup
   }, [structure]);
 
   return (
-    <nav className="flex-1 overflow-y-auto overflow-x-visible px-2 py-2 scrollbar-auto-hide">
+    <LayoutGroup id={navId}>
+      <nav className="flex-1 overflow-y-auto overflow-x-visible px-2 py-2 scrollbar-auto-hide">
       {renderable.map((node) => {
         if (node.kind === 'divider') {
           return <SectionDivider key={node.key} />;
@@ -368,7 +381,8 @@ function SidebarNav({ structure, t, collapsed, isMobile, isActive, expandedGroup
           />
         );
       })}
-    </nav>
+      </nav>
+    </LayoutGroup>
   );
 }
 

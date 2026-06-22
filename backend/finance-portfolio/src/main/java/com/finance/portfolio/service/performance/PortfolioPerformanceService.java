@@ -121,17 +121,27 @@ public class PortfolioPerformanceService {
         Map<String, TreeMap<LocalDate, BigDecimal>> fxByCcy = frameCalculator.fxSeriesByCcy(fps, end);
         Map<String, BigDecimal> fxStart = new LinkedHashMap<>();
         for (String ccy : FRAME_CCYS) fxStart.put(ccy, floorFx(fxByCcy.get(ccy), start));
-        twr.forEach((date, idxTry) -> {
+        // A genuinely CLOSED day (no spot lot / derivative still open — all value sits in realized cash) must
+        // keep the foreign-frame line flat, matching the flat TRY index and the exit-FX-locked pnlByCcy overlay.
+        // So the FX date is carried forward across each closed run: an OPEN day marks at its own FX and a CLOSED
+        // day reuses the last open day's, freezing each closed segment (interior or trailing) instead of drifting
+        // with post-close FX. The trigger is real open-exposure, NOT a flat TWR — an open book's flat-price day
+        // (weekend/holiday) still marks at that day's own FX so genuine FX moves show, not frozen as if closed.
+        LocalDate fxDate = null;
+        for (Map.Entry<LocalDate, BigDecimal> e : twr.entrySet()) {
+            LocalDate date = e.getKey();
+            BigDecimal idxTry = e.getValue();
+            if (fxDate == null || hasOpenExposureOn(date, positions, derivatives)) fxDate = date;
             Map<String, BigDecimal> index = new LinkedHashMap<>();
             for (String ccy : FRAME_CCYS) {
-                BigDecimal fxNow = floorFx(fxByCcy.get(ccy), date);
+                BigDecimal fxNow = floorFx(fxByCcy.get(ccy), fxDate);
                 BigDecimal fxBase = fxStart.get(ccy);
                 index.put(ccy, (fxNow != null && fxNow.signum() > 0 && fxBase != null && fxBase.signum() > 0)
                         ? idxTry.multiply(fxBase).divide(fxNow, 4, RoundingMode.HALF_UP)
                         : idxTry.setScale(4, RoundingMode.HALF_UP));
             }
             out.put(date, index);
-        });
+        }
         return out;
     }
 
@@ -139,6 +149,25 @@ public class PortfolioPerformanceService {
         if (series == null) return null;
         Map.Entry<LocalDate, BigDecimal> e = series.floorEntry(date);
         return e != null ? e.getValue() : null;
+    }
+
+    /**
+     * True if any spot lot or derivative still carries OPEN market exposure on {@code date}: entered on/before it
+     * and not yet exited as of it (exit/close strictly after, matching the snapshot writer's treat-as-closed-on-
+     * exit-day rule). {@link #dailyReturnIndexByCcy} uses this to tell a genuinely closed (all-cash) day from an
+     * open book's flat-price day (weekend/holiday) — only the former freezes its FX.
+     */
+    private static boolean hasOpenExposureOn(LocalDate date, List<PortfolioPosition> positions,
+                                             List<DerivativePosition> derivatives) {
+        for (PortfolioPosition p : positions) {
+            if (p.getEntryDate() == null || p.getEntryDate().toLocalDate().isAfter(date)) continue;
+            if (p.getExitDate() == null || p.getExitDate().toLocalDate().isAfter(date)) return true;
+        }
+        for (DerivativePosition d : derivatives) {
+            if (d.getEntryDate() == null || d.getEntryDate().isAfter(date)) continue;
+            if (d.getCloseDate() == null || d.getCloseDate().isAfter(date)) return true;
+        }
+        return false;
     }
 
     private Map<LocalDate, FrameMapsR> framesByCcy(Long portfolioId,

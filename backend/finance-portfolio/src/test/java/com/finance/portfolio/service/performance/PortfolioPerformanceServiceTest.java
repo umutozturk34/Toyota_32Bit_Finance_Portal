@@ -377,6 +377,116 @@ class PortfolioPerformanceServiceTest {
     }
 
     @Test
+    void dailyReturnIndexByCcy_freezesFxOnClosedFlatTail() {
+        // Active until d2 (+10% → TWR 110), then fully closed → TWR flat at 110 on d3. USD/TRY drifts 30→36 after
+        // close. The USD/EUR line must stay 110 on the closed tail (FX frozen at the freeze date), not 110×30/36≈91.67.
+        LocalDate d1 = LocalDate.of(2024, 6, 1);
+        LocalDate d2 = LocalDate.of(2024, 6, 2);
+        LocalDate d3 = LocalDate.of(2024, 6, 3);
+        java.util.Map<LocalDate, BigDecimal> fx = new java.util.HashMap<>();
+        fx.put(d1, new BigDecimal("30"));
+        fx.put(d2, new BigDecimal("30"));
+        fx.put(d3, new BigDecimal("36"));
+        org.mockito.Mockito.lenient().when(historicalPricingPort.getPriceSeries(any(), any(), any(), any()))
+                .thenReturn(fx);
+        // THYAO held from d1, sold on d3 → open d1/d2, fully closed from d3: the closed-day freeze is keyed on
+        // real exit (no open exposure), not a flat TWR.
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(
+                closedLot(AssetType.STOCK, "THYAO.IS", new BigDecimal("10"), new BigDecimal("200"),
+                        new BigDecimal("220"), d1.atStartOfDay(), d3.atStartOfDay())));
+        when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
+        PortfolioDailySnapshot s1 = PortfolioDailySnapshot.builder().portfolioId(PORTFOLIO_ID).snapshotDate(d1)
+                .totalValueTry(new BigDecimal("2000")).dailyPnlPercent(BigDecimal.ZERO).build();
+        PortfolioDailySnapshot s2 = PortfolioDailySnapshot.builder().portfolioId(PORTFOLIO_ID).snapshotDate(d2)
+                .totalValueTry(new BigDecimal("2200")).dailyPnlPercent(new BigDecimal("10")).build();
+        PortfolioDailySnapshot s3 = PortfolioDailySnapshot.builder().portfolioId(PORTFOLIO_ID).snapshotDate(d3)
+                .totalValueTry(new BigDecimal("2200")).dailyPnlPercent(BigDecimal.ZERO).build();
+
+        java.util.Map<LocalDate, java.util.Map<String, BigDecimal>> index =
+                service.dailyReturnIndexByCcy(PORTFOLIO_ID, List.of(s1, s2, s3));
+
+        assertThat(index.get(d2).get("USD")).isEqualByComparingTo(new BigDecimal("110"));
+        // Closed tail frozen at d2's FX (30) → 110×30/30 = 110, NOT 110×30/36 ≈ 91.67; EUR rides the same loop.
+        assertThat(index.get(d3).get("USD")).isEqualByComparingTo(new BigDecimal("110"));
+        assertThat(index.get(d3).get("EUR")).isEqualByComparingTo(new BigDecimal("110"));
+    }
+
+    @Test
+    void dailyReturnIndexByCcy_freezesEveryClosedSegment_notJustTrailing() {
+        // Active (d2 +10% → 110), fully closed [d3,d4] (TWR flat 110), reopened (d5 +10%). USD/TRY drifts
+        // 30→33→36 during the MIDDLE closed segment, which must stay flat (FX carried from the close) — proving
+        // the freeze covers any closed stretch, not only the trailing one.
+        LocalDate d1 = LocalDate.of(2024, 6, 1);
+        LocalDate d2 = LocalDate.of(2024, 6, 2);
+        LocalDate d3 = LocalDate.of(2024, 6, 3);
+        LocalDate d4 = LocalDate.of(2024, 6, 4);
+        LocalDate d5 = LocalDate.of(2024, 6, 5);
+        java.util.Map<LocalDate, BigDecimal> fx = new java.util.HashMap<>();
+        fx.put(d1, new BigDecimal("30"));
+        fx.put(d2, new BigDecimal("30"));
+        fx.put(d3, new BigDecimal("33"));
+        fx.put(d4, new BigDecimal("36"));
+        fx.put(d5, new BigDecimal("36"));
+        org.mockito.Mockito.lenient().when(historicalPricingPort.getPriceSeries(any(), any(), any(), any()))
+                .thenReturn(fx);
+        // THYAO held from d1, sold on d3 (closed [d3,d4]); GARAN bought on d5 (reopen). Each closed day has no
+        // open exposure → its FX freezes at the last open day (d2), proving interior segments freeze, not just
+        // trailing — while the d5 reopen rides its own FX again.
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(
+                closedLot(AssetType.STOCK, "THYAO.IS", new BigDecimal("10"), new BigDecimal("200"),
+                        new BigDecimal("220"), d1.atStartOfDay(), d3.atStartOfDay()),
+                lot(AssetType.STOCK, "GARAN.IS", new BigDecimal("10"), new BigDecimal("200"), d5.atStartOfDay())));
+        when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
+        PortfolioDailySnapshot s1 = PortfolioDailySnapshot.builder().snapshotDate(d1).dailyPnlPercent(BigDecimal.ZERO).build();
+        PortfolioDailySnapshot s2 = PortfolioDailySnapshot.builder().snapshotDate(d2).dailyPnlPercent(new BigDecimal("10")).build();
+        PortfolioDailySnapshot s3 = PortfolioDailySnapshot.builder().snapshotDate(d3).dailyPnlPercent(BigDecimal.ZERO).build();
+        PortfolioDailySnapshot s4 = PortfolioDailySnapshot.builder().snapshotDate(d4).dailyPnlPercent(BigDecimal.ZERO).build();
+        PortfolioDailySnapshot s5 = PortfolioDailySnapshot.builder().snapshotDate(d5).dailyPnlPercent(new BigDecimal("10")).build();
+
+        java.util.Map<LocalDate, java.util.Map<String, BigDecimal>> index =
+                service.dailyReturnIndexByCcy(PORTFOLIO_ID, List.of(s1, s2, s3, s4, s5));
+
+        // Middle closed segment [d3,d4] frozen at d2's FX (30) → 110, not 110×30/33 nor 110×30/36.
+        assertThat(index.get(d2).get("USD")).isEqualByComparingTo(new BigDecimal("110"));
+        assertThat(index.get(d3).get("USD")).isEqualByComparingTo(new BigDecimal("110"));
+        assertThat(index.get(d4).get("USD")).isEqualByComparingTo(new BigDecimal("110"));
+        assertThat(index.get(d4).get("EUR")).isEqualByComparingTo(new BigDecimal("110"));
+    }
+
+    @Test
+    void dailyReturnIndexByCcy_openFlatPriceDay_usesPerDateFx_notFrozen() {
+        // Guards against over-freezing: an OPEN book on a flat-price day (weekend/holiday → dailyPnlPercent 0, so
+        // TWR is flat at 110) is NOT a closed stretch. Its foreign line must still ride THAT day's own FX, not
+        // freeze. THYAO stays open throughout; USD/TRY moves 30→33 on the flat day, so the USD index must be
+        // 110×30/33 = 100 (genuine FX move shows), not the frozen 110 that a flat-TWR trigger would have produced.
+        LocalDate d1 = LocalDate.of(2024, 6, 1);
+        LocalDate d2 = LocalDate.of(2024, 6, 2);
+        LocalDate d3 = LocalDate.of(2024, 6, 3);
+        java.util.Map<LocalDate, BigDecimal> fx = new java.util.HashMap<>();
+        fx.put(d1, new BigDecimal("30"));
+        fx.put(d2, new BigDecimal("30"));
+        fx.put(d3, new BigDecimal("33"));
+        org.mockito.Mockito.lenient().when(historicalPricingPort.getPriceSeries(any(), any(), any(), any()))
+                .thenReturn(fx);
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(
+                lot(AssetType.STOCK, "THYAO.IS", new BigDecimal("10"), new BigDecimal("200"), d1.atStartOfDay())));
+        when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
+        PortfolioDailySnapshot s1 = PortfolioDailySnapshot.builder().portfolioId(PORTFOLIO_ID).snapshotDate(d1)
+                .totalValueTry(new BigDecimal("2000")).dailyPnlPercent(BigDecimal.ZERO).build();
+        PortfolioDailySnapshot s2 = PortfolioDailySnapshot.builder().portfolioId(PORTFOLIO_ID).snapshotDate(d2)
+                .totalValueTry(new BigDecimal("2200")).dailyPnlPercent(new BigDecimal("10")).build();
+        PortfolioDailySnapshot s3 = PortfolioDailySnapshot.builder().portfolioId(PORTFOLIO_ID).snapshotDate(d3)
+                .totalValueTry(new BigDecimal("2200")).dailyPnlPercent(BigDecimal.ZERO).build();
+
+        java.util.Map<LocalDate, java.util.Map<String, BigDecimal>> index =
+                service.dailyReturnIndexByCcy(PORTFOLIO_ID, List.of(s1, s2, s3));
+
+        assertThat(index.get(d2).get("USD")).isEqualByComparingTo(new BigDecimal("110"));
+        // Open flat-price day rides d3's own FX (33): 110×30/33 = 100, NOT the frozen 110.
+        assertThat(index.get(d3).get("USD")).isEqualByComparingTo(new BigDecimal("100"));
+    }
+
+    @Test
     void shouldReconstituteBlendedSeries_whenSplitViopByDirection() {
         // Snapshots are direction-blind, so a per-direction chart is RECOMPUTED from the shared unit price + only
         // that direction's lots. Hedge on ONE size-1 TRY contract: LONG entry 100, SHORT entry 100, unit 120 →

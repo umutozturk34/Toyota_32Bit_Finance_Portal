@@ -34,7 +34,8 @@
     "learn": "Öğren",
     "groupMarkets": "Piyasalar",
     "groupMy": "Portföyüm",
-    "groupAdmin": "Yönetim"
+    "groupAdmin": "Yönetim",
+    "groupPreferences": "Hızlı ayarlar"
   },
   "learn": {
     "title": "Finansal Okuryazarlık",
@@ -714,7 +715,9 @@
   },
   "watchlistSection": {
     "fallbackName": "Takip Listesi",
-    "empty": "Henüz takip varlığı yok"
+    "empty": "Henüz takip varlığı yok",
+    "addAsset": "Varlık ekle",
+    "removeAsset": "Kaldır"
   },
   "beatersSection": {
     "title": "Gösterge Sıralaması",
@@ -3037,6 +3040,14 @@
     "compareInfo": {
       "forwardFilledTooltip": "Son veri noktasından bugüne uzatıldı",
       "backfilledTooltip": "Aralık başına son bilinen değerle uzatıldı"
+    },
+    "compareVerdict": {
+      "gain": "Getirin",
+      "real": "Reel sonuç",
+      "best": "En iyi",
+      "worst": "En kötü",
+      "inflationSub": "Alım gücü eşiği",
+      "since": "Bu dönem · {{date}}'ten bugüne"
     },
     "returnsInCurrency": "Getiriler {{currency}} cinsinden",
     "simulationRunning": "Simülasyon hesaplanıyor...",

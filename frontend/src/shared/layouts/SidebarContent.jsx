@@ -30,6 +30,7 @@ const SidebarContent = ({
   unreadCount,
   user,
   logout,
+  navId,
 }) => (
   <div className="flex flex-col h-full">
     <div className={`flex items-center ${collapsed && !isMobile ? 'justify-center' : 'justify-between'} h-14 landscape:h-12 lg:landscape:h-14 px-3 border-b border-border-default shrink-0`}>
@@ -97,6 +98,7 @@ const SidebarContent = ({
       isActive={isActive}
       expandedGroups={expandedGroups}
       toggleGroup={toggleGroup}
+      navId={navId}
     />
 
     {hasRole('ADMIN') && (
@@ -134,57 +136,67 @@ const SidebarContent = ({
           <span className="ml-auto text-[10px] font-mono text-accent">{unreadCount}</span>
         )}
       </button>
-      <button
-        onClick={() => setProfileOpen(true)}
-        data-tour="profile-menu"
-        title={collapsed && !isMobile ? t('nav.profile') : undefined}
-        className={`w-full group flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
-      >
-        <span className="flex items-center justify-center w-12 shrink-0">
-          <UserIcon size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
-        </span>
-        {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.profile')}</span>}
-      </button>
-      <CurrencySwitcher collapsed={collapsed} isMobile={isMobile} />
-      <ThemeToggle collapsed={collapsed} isMobile={isMobile} />
-      <button
-        onClick={() => setSettingsOpen(true)}
-        data-tour="settings-menu"
-        title={collapsed && !isMobile ? t('nav.settings') : undefined}
-        className={`w-full group flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
-      >
-        <span className="flex items-center justify-center w-12 shrink-0">
-          <Settings size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
-        </span>
-        {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.settings')}</span>}
-      </button>
-      {(!collapsed || isMobile) && (
+      {collapsed && !isMobile && (
         <button
-          type="button"
           onClick={() => setProfileOpen(true)}
-          className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border-default hover:border-accent/40 hover:bg-accent/5 transition-colors cursor-pointer text-left"
+          data-tour="profile-menu"
+          title={t('nav.profile')}
+          className={`w-full group flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
         >
-          <span className="w-6 h-6 rounded-full bg-gradient-accent text-white flex items-center justify-center text-[11px] font-bold shrink-0">
-            {user?.username?.charAt(0).toUpperCase() || '?'}
+          <span className="flex items-center justify-center w-12 shrink-0">
+            <UserIcon size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
           </span>
-          <span className="text-[12px] font-medium text-fg truncate flex-1">{user?.username}</span>
-          {hasRole('ADMIN') && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-accent/10 text-accent tracking-wide shrink-0">
-              {t('nav.adminBadge')}
-            </span>
-          )}
         </button>
       )}
-      <button
-        onClick={logout}
-        title={collapsed && !isMobile ? t('nav.logout') : undefined}
-        className={`w-full group flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
-      >
-        <span className="flex items-center justify-center w-12 shrink-0">
-          <LogOut size={16} strokeWidth={1.6} className="group-hover:text-danger transition-colors" />
-        </span>
-        {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.logout')}</span>}
-      </button>
+
+      <div className="pt-1.5 mt-1.5 border-t border-border-default/60 space-y-1">
+        {(!collapsed || isMobile) && (
+          <p className="px-3 pb-0.5 text-[10px] font-mono uppercase tracking-[0.22em] text-fg-subtle">{t('nav.groupPreferences')}</p>
+        )}
+        <CurrencySwitcher collapsed={collapsed} isMobile={isMobile} />
+        <ThemeToggle collapsed={collapsed} isMobile={isMobile} />
+        <button
+          onClick={() => setSettingsOpen(true)}
+          data-tour="settings-menu"
+          title={collapsed && !isMobile ? t('nav.settings') : undefined}
+          className={`w-full group flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
+        >
+          <span className="flex items-center justify-center w-12 shrink-0">
+            <Settings size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
+          </span>
+          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.settings')}</span>}
+        </button>
+      </div>
+
+      <div className="pt-1.5 mt-1.5 border-t border-border-default/60 space-y-1">
+        {(!collapsed || isMobile) && (
+          <button
+            type="button"
+            onClick={() => setProfileOpen(true)}
+            className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border-default hover:border-accent/40 hover:bg-accent/5 transition-colors cursor-pointer text-left"
+          >
+            <span className="w-6 h-6 rounded-full bg-gradient-accent text-white flex items-center justify-center text-[11px] font-bold shrink-0">
+              {user?.username?.charAt(0).toUpperCase() || '?'}
+            </span>
+            <span className="text-[12px] font-medium text-fg truncate flex-1">{user?.username}</span>
+            {hasRole('ADMIN') && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-accent/10 text-accent tracking-wide shrink-0">
+                {t('nav.adminBadge')}
+              </span>
+            )}
+          </button>
+        )}
+        <button
+          onClick={logout}
+          title={collapsed && !isMobile ? t('nav.logout') : undefined}
+          className={`w-full group flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
+        >
+          <span className="flex items-center justify-center w-12 shrink-0">
+            <LogOut size={16} strokeWidth={1.6} className="group-hover:text-danger transition-colors" />
+          </span>
+          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.logout')}</span>}
+        </button>
+      </div>
     </div>
   </div>
 );

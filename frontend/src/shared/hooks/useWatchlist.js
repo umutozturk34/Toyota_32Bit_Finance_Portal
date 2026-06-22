@@ -110,6 +110,7 @@ export function useAddWatchlistItem() {
     onSuccess: (_data, { watchlistId }) => {
       queryClient.invalidateQueries({ queryKey: ITEMS_KEY(watchlistId) });
       queryClient.invalidateQueries({ queryKey: LISTS_KEY });
+      queryClient.invalidateQueries({ queryKey: ['marketOverview'] });
     },
   });
 }
@@ -133,6 +134,7 @@ export function useUpdateWatchlistItem(watchlistId) {
         queryClient.invalidateQueries({ queryKey: ['watchlists', watchlistId, 'items'] });
       }
       queryClient.invalidateQueries({ queryKey: LISTS_KEY });
+      queryClient.invalidateQueries({ queryKey: ['marketOverview'] });
     },
   });
 }
@@ -164,6 +166,9 @@ export function useRemoveWatchlistItem(activeListId) {
       ctx?.snapshots?.forEach(([key, data]) => queryClient.setQueryData(key, data));
       if (ctx?.prevLists) queryClient.setQueryData(LISTS_KEY, ctx.prevLists);
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: LISTS_KEY }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: LISTS_KEY });
+      queryClient.invalidateQueries({ queryKey: ['marketOverview'] });
+    },
   });
 }

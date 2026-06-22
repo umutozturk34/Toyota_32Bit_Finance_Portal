@@ -22,6 +22,7 @@ public record WatchlistData(
      * the current price and percent change, and the currency the price is quoted in.
      */
     public record WatchlistRow(
+            Long id,
             String assetCode,
             MarketType marketType,
             String image,

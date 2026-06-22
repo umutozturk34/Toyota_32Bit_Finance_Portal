@@ -35,6 +35,17 @@ export function formatMoneyDelta(value, locale = 'tr-TR') {
   return `${sign}${formatPrice(n, { locale, minDecimals: 0, maxDecimals: moneyDigits(n) })} ₺`;
 }
 
+// Geometric (Fisher) real excess of a return over a benchmark, both in %: ((1+r/100)/(1+b/100)−1)×100.
+// Mirrors backend ReturnMath.realExcessPct — NOT the arithmetic r−b, which at Turkish inflation overstates the
+// magnitude ~5× and would disagree with the inflation-beater's excessReturnPct (reading as a bug). Null when an
+// input is missing or the benchmark is ≤ −100% (the deflator would be non-positive).
+export function realExcessPct(returnPct, benchmarkPct) {
+  if (returnPct == null || benchmarkPct == null) return null;
+  const denom = 1 + Number(benchmarkPct) / 100;
+  if (!(denom > 0)) return null;
+  return ((1 + Number(returnPct) / 100) / denom - 1) * 100;
+}
+
 function isoDate(date) {
   const d = date instanceof Date ? date : new Date(date);
   // Local-zone sv-SE (never UTC toISOString, which shifts the day in non-Istanbul / pre-03:00 zones),

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useQueries } from '@tanstack/react-query';
+import { useQueries, keepPreviousData } from '@tanstack/react-query';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import { RANGES } from '../../macro/constants';
 import { buildOption, computeSharedBaselineDate } from '../lib/compareChartBuilder';
@@ -52,6 +52,10 @@ export default function useCompareSeries({
       queryFn: () => fetchSeries(s, bounds),
       enabled: !!s.code,
       staleTime: 5 * 60 * 1000,
+      // Keep the previous window's series on screen while a period change refetches, so the chart, the verdict
+      // hero (Best/Worst/CPI) and the info-bar update in place instead of collapsing to a skeleton and popping
+      // back — the new data swaps in smoothly once it arrives.
+      placeholderData: keepPreviousData,
     })),
   });
   const isLoading = queries.some((q) => q.isLoading);

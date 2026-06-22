@@ -23,6 +23,7 @@ import CompareChipBar from '../components/compare/CompareChipBar';
 import ComparePickerRow from '../components/compare/ComparePickerRow';
 import CompareRangeControls from '../components/compare/CompareRangeControls';
 import CompareNotices from '../components/compare/CompareNotices';
+import CompareVerdict from '../components/compare/CompareVerdict';
 import CompareChartArea from '../components/compare/CompareChartArea';
 
 // FX history (and therefore every convertible series) starts at the 2000-01-04 floor; the custom-range
@@ -357,6 +358,15 @@ export default function ComparePage() {
           forceTryFrame={forceTryFrame}
           targetCurrency={targetCurrency}
           macroUnitLoadFailed={macroUnitLoadFailed}
+          t={t}
+        />
+
+        <CompareVerdict
+          seriesData={seriesData}
+          targetCurrency={targetCurrency}
+          sharedBaselineDate={sharedBaselineDate}
+          authoritativeReturns={authoritativeReturns}
+          levelMode={levelMode}
           t={t}
         />
 

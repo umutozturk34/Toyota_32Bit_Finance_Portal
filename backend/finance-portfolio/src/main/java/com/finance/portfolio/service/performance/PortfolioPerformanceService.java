@@ -50,6 +50,7 @@ public class PortfolioPerformanceService {
     private final AggregatePerformanceBuilder aggregatePerformanceBuilder;
 
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
+    private static final List<String> FRAME_CCYS = List.of("USD", "EUR");
 
     /**
      * Per-snapshot portfolio P&L expressed per display currency (USD/EUR), keyed by snapshot date — the SAME
@@ -75,27 +76,69 @@ public class PortfolioPerformanceService {
     }
 
     /**
-     * Per-currency cumulative RETURN INDEX (USD/EUR) per snapshot date: {@code 100 + 100 × pnl / |cost|}, the
-     * per-currency analog of PortfolioSeriesProvider's TRY dailyReturnIndexSeries. The compare chart's
-     * normalized portfolio LINE reads this so its foreign-currency return is the real cost-based return
-     * (cost@entry-date FX, value@point-date FX, netted in-frame) instead of FX-converting the netted TRY index
-     * at a single date — which collapsed every lot's entry-date FX into the window start and distorted the
-     * slope. TRY is omitted (the TRY index already carries it); a zero/absent cost basis yields a flat 100.
+     * TRY time-weighted-return index (100-based) chained from each snapshot's cash-flow-neutral daily return
+     * ({@link PortfolioDailySnapshot#getDailyPnlPercent()}, computed per-asset over the prior-day base so a
+     * same-day buy never fakes a move). The first snapshot anchors at 100; each later day multiplies by
+     * {@code (1 + dailyReturn)}. TWR neutralises how much capital was at risk when, so the compare line answers
+     * "did my holdings beat the benchmark per unit time" independent of contribution size/timing — the
+     * money-weighted figure the portfolio card shows is deliberately different (it credits/penalises timing).
+     */
+    public Map<LocalDate, BigDecimal> twrIndexSeries(List<PortfolioDailySnapshot> snapshots) {
+        Map<LocalDate, BigDecimal> out = new LinkedHashMap<>();
+        if (snapshots == null || snapshots.isEmpty()) return out;
+        BigDecimal index = HUNDRED;
+        boolean first = true;
+        for (PortfolioDailySnapshot s : snapshots) {
+            if (s.getSnapshotDate() == null) continue;
+            if (!first) {
+                BigDecimal dailyPct = s.getDailyPnlPercent() != null ? s.getDailyPnlPercent() : BigDecimal.ZERO;
+                index = index.multiply(BigDecimal.ONE.add(dailyPct.divide(HUNDRED, 10, RoundingMode.HALF_UP)));
+            }
+            first = false;
+            out.put(s.getSnapshotDate(), index);
+        }
+        return out;
+    }
+
+    /**
+     * Per-currency (USD/EUR) time-weighted-return index per snapshot date: the TRY {@link #twrIndexSeries}
+     * re-expressed in each frame by the per-date FX change. Chaining a day's foreign return telescopes the daily
+     * FX into a single ratio, so {@code twr_ccy(t) = twr_try(t) × FX(start)/FX(date)} (FX = TRY per unit of the
+     * currency). A book flat in TRY still shows its real USD/EUR move from FX — the compare chart's foreign-frame
+     * portfolio line reads this so its slope is FX-aware, not a single-rate conversion of the TRY index. TRY is
+     * omitted (the TRY index already carries it).
      */
     public Map<LocalDate, Map<String, BigDecimal>> dailyReturnIndexByCcy(Long portfolioId,
                                                                          List<PortfolioDailySnapshot> snapshots) {
         Map<LocalDate, Map<String, BigDecimal>> out = new LinkedHashMap<>();
-        framesByCcy(portfolioId, snapshots, null).forEach((date, f) -> {
-            Map<String, BigDecimal> cost = f.cost();
+        Map<LocalDate, BigDecimal> twr = twrIndexSeries(snapshots);
+        if (twr.isEmpty()) return out;
+        List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
+        List<DerivativePosition> derivatives = derivativePositionRepository.findByPortfolioId(portfolioId);
+        List<RealReturnCalculator.EntryFootprint> fps = footprintBuilder.footprints(positions, derivatives);
+        LocalDate start = twr.keySet().stream().min(LocalDate::compareTo).orElseThrow();
+        LocalDate end = twr.keySet().stream().max(LocalDate::compareTo).orElseThrow();
+        Map<String, TreeMap<LocalDate, BigDecimal>> fxByCcy = frameCalculator.fxSeriesByCcy(fps, end);
+        Map<String, BigDecimal> fxStart = new LinkedHashMap<>();
+        for (String ccy : FRAME_CCYS) fxStart.put(ccy, floorFx(fxByCcy.get(ccy), start));
+        twr.forEach((date, idxTry) -> {
             Map<String, BigDecimal> index = new LinkedHashMap<>();
-            f.pnl().forEach((ccy, pnl) -> index.put(ccy,
-                    (cost == null || cost.get(ccy) == null || cost.get(ccy).signum() == 0 || pnl == null)
-                            ? HUNDRED
-                            : HUNDRED.add(pnl.divide(cost.get(ccy).abs(), 8, RoundingMode.HALF_UP).multiply(HUNDRED))
-                                    .setScale(4, RoundingMode.HALF_UP)));
+            for (String ccy : FRAME_CCYS) {
+                BigDecimal fxNow = floorFx(fxByCcy.get(ccy), date);
+                BigDecimal fxBase = fxStart.get(ccy);
+                index.put(ccy, (fxNow != null && fxNow.signum() > 0 && fxBase != null && fxBase.signum() > 0)
+                        ? idxTry.multiply(fxBase).divide(fxNow, 4, RoundingMode.HALF_UP)
+                        : idxTry.setScale(4, RoundingMode.HALF_UP));
+            }
             out.put(date, index);
         });
         return out;
+    }
+
+    private static BigDecimal floorFx(TreeMap<LocalDate, BigDecimal> series, LocalDate date) {
+        if (series == null) return null;
+        Map.Entry<LocalDate, BigDecimal> e = series.floorEntry(date);
+        return e != null ? e.getValue() : null;
     }
 
     private Map<LocalDate, FrameMapsR> framesByCcy(Long portfolioId,

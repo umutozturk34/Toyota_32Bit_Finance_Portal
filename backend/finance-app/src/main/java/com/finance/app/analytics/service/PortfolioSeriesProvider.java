@@ -51,22 +51,13 @@ public class PortfolioSeriesProvider {
                 .toList();
     }
 
-    private static final BigDecimal HUNDRED = new BigDecimal("100");
-
     /**
-     * Daily cumulative-return index over {@code [from, to]}: {@code 100 × (1 + cumulativeReturn)} where the
-     * cumulative return is the stored {@link PortfolioDailySnapshot#getPnlPercent()} (capital-weighted P&amp;L
-     * over cost basis — the SAME figure the portfolio's own headline shows). The compare chart normalizes it
-     * by ratio, so its plotted % equals the portfolio's real return from the window start.
-     *
-     * <p>This deliberately does NOT chain {@code dailyPnlPercent} into a time-weighted-return index anymore.
-     * TWR equal-weights each day's return irrespective of the capital at risk, so a book that was tiny-and-up
-     * then large-and-down reads as a gain while the investor lost money: a real portfolio that started at
-     * ₺20 of spot (up ~65%) then added a ₺606K gold-futures lot that lost ₺65.5K showed a TWR index of
-     * +30% against an actual −9.5% (−₺65,530) loss — the same magnitude, opposite sign, surfaced on the
-     * compare graph. No base/weighting tweak fixes that; it is inherent to TWR. The capital-weighted return
-     * matches the portfolio page and is what the user means by "the portfolio's return". Adding a lot dilutes
-     * the percent (return on a larger cost), which is truthful — the curve ends where the portfolio actually is.
+     * Daily time-weighted-return index over {@code [from, to]}, 100-based — the compare chart's portfolio line.
+     * It chains each snapshot's cash-flow-neutral daily return (see
+     * {@link PortfolioPerformanceService#twrIndexSeries}) so the return is independent of how much capital was
+     * invested when: it answers "did my holdings beat the benchmark / inflation over this window", which is what
+     * a benchmark comparison needs. This is deliberately NOT the money-weighted figure the portfolio card shows —
+     * that one credits/penalises contribution timing (the user's actual wallet result).
      *
      * @throws ResourceNotFoundException if the portfolio doesn't exist or isn't owned by {@code userSub}
      */
@@ -77,13 +68,9 @@ public class PortfolioSeriesProvider {
                         "error.portfolio.notFound", portfolioId));
         List<PortfolioDailySnapshot> snapshots = dailySnapshotRepository
                 .findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(portfolioId, from, to);
-        List<HistoryPoint> out = new ArrayList<>(snapshots.size());
-        for (PortfolioDailySnapshot s : snapshots) {
-            if (s.getSnapshotDate() == null) continue;
-            BigDecimal cumulativeReturnPct = s.getPnlPercent() != null ? s.getPnlPercent() : BigDecimal.ZERO;
-            BigDecimal index = HUNDRED.add(cumulativeReturnPct);
-            out.add(new HistoryPoint(s.getSnapshotDate(), index.setScale(4, RoundingMode.HALF_UP)));
-        }
+        Map<LocalDate, BigDecimal> twr = portfolioPerformanceService.twrIndexSeries(snapshots);
+        List<HistoryPoint> out = new ArrayList<>(twr.size());
+        twr.forEach((date, index) -> out.add(new HistoryPoint(date, index.setScale(4, RoundingMode.HALF_UP))));
         return out;
     }
 

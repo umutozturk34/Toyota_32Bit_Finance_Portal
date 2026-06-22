@@ -82,8 +82,8 @@ public class AnalyticsController {
 
     /**
      * Daily series for a portfolio over {@code [from, to]}, scoped to the JWT subject. Returns cumulative
-     * P/L in TRY when {@code pnl} is set, the capital-weighted return index when {@code twr} is set (pnl
-     * wins if both are set), otherwise the raw daily value.
+     * P/L in TRY when {@code pnl} is set, the time-weighted-return index when {@code twr} is set, otherwise
+     * the raw daily value (precedence: pnl &gt; twr &gt; value).
      */
     @GetMapping("/portfolio-series/{portfolioId}")
     @PreAuthorize("isAuthenticated()")
@@ -92,9 +92,9 @@ public class AnalyticsController {
             @PathVariable Long portfolioId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @Parameter(description = "Return cumulative profit/loss in TRY (the Kâr/Zarar Total line) — takes precedence over twr")
+            @Parameter(description = "Return cumulative profit/loss in TRY (the Kâr/Zarar Total line) — takes precedence over the others")
             @RequestParam(name = "pnl", defaultValue = "false") boolean pnl,
-            @Parameter(description = "Return the capital-weighted cumulative-return index instead of raw value")
+            @Parameter(description = "Return the time-weighted-return index (contribution-neutral) instead of raw value")
             @RequestParam(name = "twr", defaultValue = "false") boolean twr) {
         List<HistoryPoint> series;
         if (pnl) {

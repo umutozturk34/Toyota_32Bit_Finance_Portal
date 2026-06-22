@@ -333,30 +333,47 @@ class PortfolioPerformanceServiceTest {
     }
 
     @Test
-    void dailyReturnIndexByCcy_returnsCostBasedReturnIndex_perCurrency() {
-        // Arrange — a 2000 TRY-cost STOCK lot (entered 2024-06-01) worth 2200 TRY on 2024-06-04 (+10%).
-        // USD/TRY flat at 40, so the FX cancels and the USD return index must equal the TRY return index (110):
-        // the line plots the real cost-based return, not a single-date conversion of the netted TRY index.
-        LocalDate entry = LocalDate.of(2024, 6, 1);
-        LocalDate point = LocalDate.of(2024, 6, 4);
+    void twrIndexSeries_chainsCashFlowNeutralDailyReturns() {
+        // day1 anchors the index at 100; +10% then −5% → 100 × 1.10 × 0.95 = 104.5 (contribution-neutral chain).
+        PortfolioDailySnapshot s1 = PortfolioDailySnapshot.builder().snapshotDate(LocalDate.of(2024, 6, 1))
+                .dailyPnlPercent(BigDecimal.ZERO).build();
+        PortfolioDailySnapshot s2 = PortfolioDailySnapshot.builder().snapshotDate(LocalDate.of(2024, 6, 2))
+                .dailyPnlPercent(new BigDecimal("10")).build();
+        PortfolioDailySnapshot s3 = PortfolioDailySnapshot.builder().snapshotDate(LocalDate.of(2024, 6, 3))
+                .dailyPnlPercent(new BigDecimal("-5")).build();
+
+        java.util.Map<LocalDate, BigDecimal> twr = service.twrIndexSeries(List.of(s1, s2, s3));
+
+        assertThat(twr.get(LocalDate.of(2024, 6, 1))).isEqualByComparingTo("100");
+        assertThat(twr.get(LocalDate.of(2024, 6, 2))).isEqualByComparingTo("110");
+        assertThat(twr.get(LocalDate.of(2024, 6, 3))).isEqualByComparingTo("104.5");
+    }
+
+    @Test
+    void dailyReturnIndexByCcy_reexpressesTwrByPerDateFx() {
+        // Two snapshots: day1 anchors the TWR at 100, day2 has a +10% cash-flow-neutral daily return → TWR 110.
+        // USD/TRY flat at 40 so the FX ratio cancels and the USD TWR index equals the TRY one (110).
+        LocalDate day1 = LocalDate.of(2024, 6, 1);
+        LocalDate day2 = LocalDate.of(2024, 6, 2);
         java.util.Map<LocalDate, BigDecimal> flatFx = new java.util.HashMap<>();
-        flatFx.put(entry, new BigDecimal("40"));
-        flatFx.put(point, new BigDecimal("40"));
+        flatFx.put(day1, new BigDecimal("40"));
+        flatFx.put(day2, new BigDecimal("40"));
         org.mockito.Mockito.lenient().when(historicalPricingPort.getPriceSeries(any(), any(), any(), any()))
                 .thenReturn(flatFx);
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(
-                lot(AssetType.STOCK, "THYAO.IS", new BigDecimal("10"), new BigDecimal("200"), entry.atStartOfDay())));
-        when(assetSnapshotRepository.findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(eq(PORTFOLIO_ID), any(), any()))
-                .thenReturn(List.of());
-        PortfolioDailySnapshot snap = PortfolioDailySnapshot.builder()
-                .portfolioId(PORTFOLIO_ID).snapshotDate(point)
-                .totalValueTry(new BigDecimal("2200")).totalPnlTry(new BigDecimal("200")).build();
+                lot(AssetType.STOCK, "THYAO.IS", new BigDecimal("10"), new BigDecimal("200"), day1.atStartOfDay())));
+        when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
+        PortfolioDailySnapshot s1 = PortfolioDailySnapshot.builder()
+                .portfolioId(PORTFOLIO_ID).snapshotDate(day1)
+                .totalValueTry(new BigDecimal("2000")).dailyPnlPercent(BigDecimal.ZERO).build();
+        PortfolioDailySnapshot s2 = PortfolioDailySnapshot.builder()
+                .portfolioId(PORTFOLIO_ID).snapshotDate(day2)
+                .totalValueTry(new BigDecimal("2200")).dailyPnlPercent(new BigDecimal("10")).build();
 
         java.util.Map<LocalDate, java.util.Map<String, BigDecimal>> index =
-                service.dailyReturnIndexByCcy(PORTFOLIO_ID, List.of(snap));
+                service.dailyReturnIndexByCcy(PORTFOLIO_ID, List.of(s1, s2));
 
-        // 100 + 100 × (2200 − 2000)/2000 = 110, identical in USD because the flat FX cancels.
-        assertThat(index.get(point).get("USD")).isEqualByComparingTo(new BigDecimal("110"));
+        assertThat(index.get(day2).get("USD")).isEqualByComparingTo(new BigDecimal("110"));
     }
 
     @Test

@@ -1,20 +1,11 @@
 package com.finance.portfolio.service;
 import com.finance.portfolio.model.PortfolioPosition;
-
 import com.finance.portfolio.model.PortfolioDailySnapshot;
-
 import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
-
 import com.finance.portfolio.model.Portfolio;
-
 import com.finance.portfolio.model.AssetType;
-
 import com.finance.common.model.TrackedAsset;
-
 import com.finance.shared.service.AssetPricingPort;
-
-
-
 import com.finance.portfolio.model.MoneyScale;
 import com.finance.portfolio.derivative.model.DerivativePosition;
 import com.finance.portfolio.derivative.repository.DerivativePositionRepository;

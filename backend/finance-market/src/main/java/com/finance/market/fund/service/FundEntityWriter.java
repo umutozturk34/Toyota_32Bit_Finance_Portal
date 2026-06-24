@@ -62,6 +62,7 @@ public class FundEntityWriter implements MarketEntityWriter {
         this.scale = appProperties.getScale();
     }
 
+    /** Upserts the fund by code (update in place when it exists) and links its asset-registry entry. */
     public Fund saveSnapshot(TefasFundDto dto, FundType fundType) {
         LocalDateTime now = LocalDateTime.now();
         Fund existing = fundRepository.findById(dto.fundCode()).orElse(null);
@@ -78,13 +79,26 @@ public class FundEntityWriter implements MarketEntityWriter {
         return toPersist;
     }
 
-    /** Recomputes change vs. the candle before {@code currentDate}; saves and returns true only if it changed. */
+    /**
+     * Recomputes change vs. the candle before {@code currentDate}; saves and returns true only if it changed.
+     * Resolves the previous close with its own query — for single-fund callers (incremental refresh). A batch
+     * caller should pre-load all prior closes and use {@link #refreshChangePercent(Fund, LocalDateTime, BigDecimal)}.
+     */
     public boolean refreshChangePercent(Fund fund, LocalDateTime currentDate) {
         if (fund.getPrice() == null || currentDate == null) return false;
         BigDecimal previousPrice = fundCandleRepository
                 .findFirstByFundCodeAndCandleDateBeforeOrderByCandleDateDesc(fund.getFundCode(), currentDate)
                 .map(FundCandle::getPrice)
                 .orElse(null);
+        return refreshChangePercent(fund, currentDate, previousPrice);
+    }
+
+    /**
+     * Batch variant: the caller supplies the already-resolved previous close (e.g. from a single grouped
+     * query over all funds), so a whole-universe recompute does not issue a prior-candle query per fund.
+     */
+    public boolean refreshChangePercent(Fund fund, LocalDateTime currentDate, BigDecimal previousPrice) {
+        if (fund.getPrice() == null || currentDate == null) return false;
         BigDecimal oldPercent = fund.getChangePercent();
         fund.applyChange(fund.getPrice(), previousPrice, scale);
         if (Objects.equals(oldPercent, fund.getChangePercent())) return false;
@@ -92,6 +106,11 @@ public class FundEntityWriter implements MarketEntityWriter {
         return true;
     }
 
+    /**
+     * Idempotently upserts a candle batch, dropping rows with no/zero price before the upsert.
+     *
+     * @return the number of candles inserted or updated
+     */
     public int saveCandleBatch(Fund fund, FundType fundType, List<TefasFundDto> dtos) {
         List<TefasFundDto> priced = dtos.stream().filter(FundEntityWriter::hasValidPrice).toList();
         CandleBatchUpsertTemplate.UpsertResult<FundCandle> upsertResult = CandleBatchUpsertTemplate.upsert(
@@ -107,6 +126,7 @@ public class FundEntityWriter implements MarketEntityWriter {
         return upsertResult.totalChanged();
     }
 
+    /** Upserts a single candle for one date; a no/zero-price row is ignored. */
     public void upsertCandleFromDto(Fund fund, FundType fundType, TefasFundDto dto) {
         if (!hasValidPrice(dto)) return;
         FundCandle existing = fundCandleRepository
@@ -127,10 +147,12 @@ public class FundEntityWriter implements MarketEntityWriter {
                 && dto.price().signum() != 0;
     }
 
+    /** Auto-tracks a BYF (exchange-traded) fund the first time it is seen; a no-op if already tracked. */
     public void ensureByfTracked(String fundCode, String tefasName) {
         trackedAssetCommandService.autoTrack(TrackedAssetType.FUND, fundCode, tefasName, autoTrackSortOrder);
     }
 
+    /** Auto-tracks a YAT (mutual) fund the first time it is seen; a no-op if already tracked. */
     public void ensureYatTracked(String fundCode, String tefasName) {
         trackedAssetCommandService.autoTrack(TrackedAssetType.FUND, fundCode, tefasName, autoTrackSortOrder);
     }

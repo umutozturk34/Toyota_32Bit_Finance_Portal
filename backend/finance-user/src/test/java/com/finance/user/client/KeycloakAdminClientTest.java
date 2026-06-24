@@ -54,6 +54,10 @@ class KeycloakAdminClientTest {
     @Mock private WebClient.ResponseSpec getResponseSpec;
     @Mock private WebClient.ResponseSpec putResponseSpec;
     @Mock private WebClient.ResponseSpec deleteResponseSpec;
+    @Mock private WebClient.RequestBodyUriSpec postUriSpec;
+    @Mock private WebClient.RequestBodySpec postBodySpec;
+    @Mock private WebClient.RequestHeadersSpec<?> postHeadersSpec;
+    @Mock private WebClient.ResponseSpec postResponseSpec;
     @Mock private KeycloakAdminTokenManager tokenManager;
     @Mock private KeycloakAdminExceptionTranslator translator;
 
@@ -87,6 +91,14 @@ class KeycloakAdminClientTest {
         lenient().doReturn(deleteHeadersSpec).when(deleteHeadersSpec).header(any(String.class), any(String[].class));
         lenient().when(deleteHeadersSpec.retrieve()).thenReturn(deleteResponseSpec);
         lenient().when(deleteResponseSpec.toBodilessEntity()).thenReturn(Mono.empty());
+
+        lenient().doReturn(postUriSpec).when(webClient).post();
+        lenient().when(postUriSpec.uri(any(String.class), any(Object[].class))).thenReturn(postBodySpec);
+        lenient().when(postBodySpec.header(any(String.class), any(String[].class))).thenReturn(postBodySpec);
+        lenient().when(postBodySpec.contentType(any())).thenReturn(postBodySpec);
+        lenient().doReturn(postHeadersSpec).when(postBodySpec).bodyValue(any());
+        lenient().when(postHeadersSpec.retrieve()).thenReturn(postResponseSpec);
+        lenient().when(postResponseSpec.toBodilessEntity()).thenReturn(Mono.empty());
     }
 
     @Test
@@ -124,6 +136,36 @@ class KeycloakAdminClientTest {
 
         verify(webClient).delete();
         verify(deleteResponseSpec).toBodilessEntity();
+    }
+
+    @Test
+    void ensureRealmRole_skips_whenUserAlreadyHasRole() {
+        when(getResponseSpec.bodyToMono(List.class)).thenReturn(Mono.just(List.of(Map.of("name", "USER"))));
+
+        client.ensureRealmRole(USER_ID, "USER");
+
+        verify(webClient, never()).post();
+    }
+
+    @Test
+    void ensureRealmRole_grantsRole_whenUserMissingIt() {
+        when(getResponseSpec.bodyToMono(List.class)).thenReturn(Mono.just(List.of()));
+        when(getResponseSpec.bodyToMono(Map.class)).thenReturn(Mono.just(Map.of("id", "role-1", "name", "USER")));
+
+        client.ensureRealmRole(USER_ID, "USER");
+
+        verify(webClient).post();
+        verify(postResponseSpec).toBodilessEntity();
+    }
+
+    @Test
+    void ensureRealmRole_skipsGrant_whenRoleNotDefinedInRealm() {
+        when(getResponseSpec.bodyToMono(List.class)).thenReturn(Mono.just(List.of()));
+        when(getResponseSpec.bodyToMono(Map.class)).thenReturn(Mono.empty());
+
+        client.ensureRealmRole(USER_ID, "GHOST");
+
+        verify(webClient, never()).post();
     }
 
     @Test

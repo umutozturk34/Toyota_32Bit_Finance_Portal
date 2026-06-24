@@ -27,6 +27,11 @@ public class EvdsBondClientMapper {
 
     private static final DateTimeFormatter EVDS_DATE_FMT = AbstractEvdsClient.DATE_FMT;
 
+    /**
+     * Builds one snapshot per requested serie from the single latest EVDS row, pairing each serie's
+     * clean-price column with its coupon-rate ({@code .ORAN}) column. Series with neither value present
+     * are dropped; an empty response yields an empty list.
+     */
     public List<BondSnapshotDto> toSnapshotDtos(
             List<BondSerieDto> bondSeries,
             EvdsDataResponse response) {
@@ -66,6 +71,10 @@ public class EvdsBondClientMapper {
         return snapshots;
     }
 
+    /**
+     * Extracts the coupon-rate time series for one bond, keeping only rows that carry both a date and a
+     * rate. {@code priceCode} is optional — when null, the indexed price field is left unset on each item.
+     */
     public List<BondRateItemDto> toRateItemDtos(EvdsDataResponse response, String oranCode, String priceCode) {
         if (response.items() == null || response.items().isEmpty()) {
             log.debug("No items in EVDS response for rate extraction (code={})", oranCode);

@@ -31,6 +31,7 @@ public class DerivativePositionFormatter {
 
     private final DerivativePricingResolver pricingResolver;
 
+    /** Unified grid row for a derivative, valued live in TRY; returns {@code null} when the position has no contract. */
     public PositionResponse toPositionResponse(DerivativePosition position) {
         if (position.getViopContract() == null) return null;
         DerivativeFigures f = computeFigures(position);
@@ -108,6 +109,8 @@ public class DerivativePositionFormatter {
             if (LONG_DIRECTION.equals(position.getDirection().name())) maxLoss = f.entryNotional();
             else maxGain = f.entryNotional();
         }
+        String optionSide = position.getViopContract().getOptionSide() != null
+                ? position.getViopContract().getOptionSide().name() : null;
         return new DerivativeMeta(
                 position.getDirection().name(),
                 kindName,
@@ -117,6 +120,7 @@ public class DerivativePositionFormatter {
                 position.getViopContract().resolvePriceCurrency(),
                 f.closed(),
                 position.getViopContract().getStrikePrice(),
+                optionSide,
                 maxLoss,
                 maxGain,
                 position.getViopContract().getDisplayName());

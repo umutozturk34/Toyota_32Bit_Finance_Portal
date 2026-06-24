@@ -3,6 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { commodityService } from './services/commodityService';
 import { commodityName } from '../../shared/utils/commodityName';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
+import BankRatesSection from '../bankRates/BankRatesSection';
+
+// Commodity → the bank "gold/silver" product whose buy/sell rates the banks publish. Gram gold (XAUTRYG) and gram
+// silver (XAGTRYG) both have bank rates; other metals/energy have none, so they simply show no section.
+const COMMODITY_BANK_GOLD = { XAUTRYG: 'GRAM_ALTIN', XAGTRYG: 'GUMUS' };
 
 function CommodityHeader({ asset }) {
   const { t } = useTranslation();
@@ -37,6 +42,11 @@ export default function CommodityDetail() {
       backRoute="/commodities"
       excludeCompare={[code]}
       renderHeader={(asset) => <CommodityHeader asset={asset} />}
+      renderBelowChart={() => (
+        COMMODITY_BANK_GOLD[code]
+          ? <BankRatesSection currency={COMMODITY_BANK_GOLD[code]} kind="GOLD" />
+          : null
+      )}
       showBuyButton={true}
       getBuyProps={(asset) => ({
         assetType: 'COMMODITY',

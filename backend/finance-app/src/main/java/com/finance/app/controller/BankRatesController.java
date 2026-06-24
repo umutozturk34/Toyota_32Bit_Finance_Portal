@@ -31,6 +31,10 @@ public class BankRatesController {
     // letters-only {3} pattern rejected every gold code, so gold rate lookups failed validation with a 400.
     static final String CURRENCY_CODE_PATTERN = "^[A-Za-z0-9_]{1,32}$";
 
+    /**
+     * Lists bank rates, filtered by {@code currency} when given, otherwise all rates of the given
+     * {@code kind} (defaults to {@code CURRENCY}).
+     */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<BankExchangeRate>> list(
@@ -42,6 +46,7 @@ public class BankRatesController {
         return ApiResponse.success(translator.translate("api.bankRates.retrieved"), rows);
     }
 
+    /** Lists the distinct currency/asset codes available for the given {@code kind} (defaults to {@code CURRENCY}). */
     @GetMapping("/currencies")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<String>> listCurrencies(

@@ -53,7 +53,8 @@ public class PortfolioSnapshotReader {
                    s.portfolio_id,
                    p.name              AS portfolio_name,
                    s.total_value_try,
-                   s.daily_pnl_try
+                   s.daily_pnl_try,
+                   p.type              AS portfolio_type
             FROM portfolio_daily_snapshots s
             JOIN portfolios p ON p.id = s.portfolio_id
             WHERE p.user_sub = ANY(?)
@@ -66,8 +67,9 @@ public class PortfolioSnapshotReader {
     /** A user's portfolios rolled up: total value, daily P/L (amount and percent) and portfolio count. */
     public record AggregatedSnapshot(BigDecimal totalValue, BigDecimal dailyPnl, BigDecimal dailyPnlPercent, int portfolioCount) {}
 
-    /** One portfolio's latest snapshot for today: its id, name, value and daily P/L (amount + percent). */
-    public record PortfolioLine(Long portfolioId, String name, BigDecimal totalValue, BigDecimal dailyPnl, BigDecimal dailyPnlPercent) {}
+    /** One portfolio's latest snapshot for today: its id, name, TYPE (SPOT/FIXED), value and daily P/L. */
+    public record PortfolioLine(Long portfolioId, String name, String type,
+                                BigDecimal totalValue, BigDecimal dailyPnl, BigDecimal dailyPnlPercent) {}
 
     @Transactional(readOnly = true)
     public Map<String, AggregatedSnapshot> findTodayAggregateForUsers(Collection<String> userSubs) {
@@ -102,7 +104,7 @@ public class PortfolioSnapshotReader {
                     BigDecimal total = rs.getBigDecimal(4);
                     BigDecimal pnl = rs.getBigDecimal(5);
                     PortfolioLine line = new PortfolioLine(
-                            rs.getLong(2), rs.getString(3), total, pnl, computePercent(total, pnl));
+                            rs.getLong(2), rs.getString(3), rs.getString(6), total, pnl, computePercent(total, pnl));
                     result.computeIfAbsent(rs.getString(1), k -> new ArrayList<>()).add(line);
                     return null;
                 });

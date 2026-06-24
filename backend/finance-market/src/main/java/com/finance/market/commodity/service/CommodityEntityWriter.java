@@ -38,6 +38,10 @@ public class CommodityEntityWriter implements MarketEntityWriter {
     private final CommodityMapper commodityMapper;
     private final AssetRegistryService assetRegistry;
 
+    /**
+     * Persists the latest TRY snapshot and links the asset registry entry. {@code yahooSymbol} is only
+     * written on first sight (never overwritten), so a later resolver change can't clobber a stored symbol.
+     */
     public void applySnapshot(Commodity commodity, CommoditySnapshotInput snapshot,
                               String yahooSymbol, int scale) {
         commodity.applyPriceSnapshot(snapshot, scale);
@@ -48,6 +52,11 @@ public class CommodityEntityWriter implements MarketEntityWriter {
         commodityRepository.save(commodity);
     }
 
+    /**
+     * Back-fills daily change percent from the two most recent candles, but only when it is still unset.
+     *
+     * @return whether change percent was computed and saved
+     */
     public boolean refreshChangePercentFromCandles(Commodity commodity, int scale) {
         java.math.BigDecimal priorClose = commodityCandleRepository
                 .findFirstByCommodityCodeOrderByCandleDateDesc(commodity.getCommodityCode())
@@ -62,6 +71,10 @@ public class CommodityEntityWriter implements MarketEntityWriter {
         return changed;
     }
 
+    /**
+     * Idempotently upserts TRY candles, collapsing same-day duplicates (last one wins) to one row per day.
+     * Auto-registers the commodity first if it is not yet persisted; a blank code is ignored.
+     */
     public void upsertCandles(Commodity commodity, List<YahooCandleDto> candleDtos, int scale) {
         if (commodity.getCommodityCode() == null || commodity.getCommodityCode().isBlank()) return;
         if (commodityRepository.findById(commodity.getCommodityCode()).isEmpty()) {

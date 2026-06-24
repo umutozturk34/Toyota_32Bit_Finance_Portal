@@ -72,6 +72,10 @@ services:
       OTEL_TRACES_EXPORTER: otlp
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       KEYCLOAK_EXTERNAL_URL: ${VITE_KEYCLOAK_URL:-http://localhost/auth}
+      # Swagger UI is served on this backend's own port (8080), never via the public gateway. Its OAuth2
+      # callback must return to that SAME origin so the redirect popup can postMessage the code back to the
+      # Swagger tab; routing it to the gateway (:80) lands on the SPA's 404. Mirrors notification-backend's :8082.
+      SWAGGER_OAUTH2_REDIRECT: http://localhost:8080/swagger-ui/oauth2-redirect.html
     env_file:
       - .env
     depends_on:
@@ -110,7 +114,7 @@ services:
       JWK_SET_URI: http://keycloak:8080/auth/realms/finance-realm/protocol/openid-connect/certs
       KEYCLOAK_BASE_URL: http://keycloak:8080/auth
       KEYCLOAK_REALM: finance-realm
-      KEYCLOAK_EXTERNAL_URL: ${VITE_KEYCLOAK_URL:-http://localhost/auth}.
+      KEYCLOAK_EXTERNAL_URL: ${VITE_KEYCLOAK_URL:-http://localhost/auth}
       SWAGGER_OAUTH2_REDIRECT: http://localhost:8082/swagger-ui/oauth2-redirect.html
       KEYCLOAK_ADMIN_USER: admin
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
@@ -315,9 +319,15 @@ services:
     image: axllent/mailpit:latest
     container_name: finance-mailpit
     restart: unless-stopped
+    environment:
+      # Persist messages to a SQLite file on the volume instead of the default in-memory store,
+      # so captured dev emails survive container recreation (compose down/up, image bump).
+      MP_DATABASE: /data/mailpit.db
     ports:
       - "127.0.0.1:8025:8025"
       - "127.0.0.1:1025:1025"
+    volumes:
+      - mailpit_data:/data
     networks:
       - finance-network
 
@@ -473,7 +483,7 @@ services:
     environment:
       - discovery.type=single-node
       - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_PASSWORD}
-      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
     ports:
       - "127.0.0.1:9200:9200"
     volumes:
@@ -548,6 +558,7 @@ volumes:
   openldap_config:
   keycloak_data:
   redis_data:
+  mailpit_data:
   opensearch_data:
   kafka_data:
   sonar_db_data:

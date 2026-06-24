@@ -59,7 +59,7 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
     @Override
     public List<MarketAssetResponse> search(String searchTerm, MarketAssetFilters filters, String sortBy, String direction, int page, int size) {
         Specification<Forex> spec = buildSpecification(searchTerm);
-        List<Forex> forexList = forexRepository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS))).getContent();
+        List<Forex> forexList = forexRepository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS, "currencyCode"))).getContent();
         return forexResponseMapper.toMarketAssetResponses(forexList);
     }
 

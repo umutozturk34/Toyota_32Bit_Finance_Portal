@@ -21,8 +21,9 @@ public record PortfolioUpdatedPayload(
         String source
 ) implements NotificationPayload {
 
-    /** One portfolio's status in the summary: its name and its own value + daily P/L. */
-    public record Line(Long id, String name, BigDecimal totalValue, BigDecimal dailyPnl, BigDecimal dailyPnlPercent) {}
+    /** One portfolio's status in the summary: its name, TYPE (SPOT/FIXED) and its own value + daily P/L. */
+    public record Line(Long id, String name, String type,
+                       BigDecimal totalValue, BigDecimal dailyPnl, BigDecimal dailyPnlPercent) {}
 
     @Override
     public NotificationType type() {
@@ -44,6 +45,7 @@ public record PortfolioUpdatedPayload(
                 Map<String, Object> row = new HashMap<>();
                 if (line.id() != null) row.put("id", line.id());
                 row.put("name", line.name());
+                if (line.type() != null) row.put("type", line.type());
                 if (line.totalValue() != null) row.put("totalValue", line.totalValue());
                 if (line.dailyPnl() != null) row.put("dailyPnl", line.dailyPnl());
                 if (line.dailyPnlPercent() != null) row.put("dailyPnlPercent", line.dailyPnlPercent());

@@ -64,7 +64,7 @@ public abstract class MacroMarketAssetProvider implements MarketAssetProvider {
     @Override
     public MarketAssetResponse getByCode(String code) {
         try {
-            MacroIndicator indicator = queryService.findByCode(code);
+            MacroIndicator indicator = queryService.findByPublicId(code);
             return indicator.getCategory() == category ? toResponse(indicator) : null;
         } catch (Exception e) {
             log.debug("Macro indicator not found code={}", code);
@@ -146,7 +146,7 @@ public abstract class MacroMarketAssetProvider implements MarketAssetProvider {
     private MarketAssetResponse toResponse(MacroIndicator m) {
         BigDecimal price = m.getLastValue();
         return new MarketAssetResponse(
-                m.getCode(),
+                m.getSlug(),
                 resolveDisplayName(m.getLabel()),
                 null,
                 category.instrumentType(),

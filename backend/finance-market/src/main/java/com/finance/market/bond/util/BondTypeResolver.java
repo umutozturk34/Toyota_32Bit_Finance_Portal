@@ -32,8 +32,8 @@ public final class BondTypeResolver {
     private BondTypeResolver() {
     }
 
-    public static BondType resolve(Bond bond, List<BondRateHistory> history,
-                                    BigDecimal auctionThreshold, BigDecimal cpiFixedThreshold) {
+    public static BondType resolve(Bond bond, List<BondRateHistory> history, BigDecimal auctionThreshold,
+                                    BigDecimal cpiFixedThreshold, BigDecimal goldValueThreshold) {
         String isin = bond.getIsinCode();
         if (isin == null) {
             log.warn("Null ISIN on bond {}, defaulting to FIXED_COUPON", bond.getSeriesCode());
@@ -45,35 +45,46 @@ public final class BondTypeResolver {
 
         boolean sukuk = isin.startsWith(SUKUK_PREFIX);
         BigDecimal couponRate = bond.getCouponRate();
+        BigDecimal price = bond.getBaseIndex();
 
-        // A coupon far larger than any real semi-annual rate is the CPI reference index leaking into the
-        // .ORAN field (observed in the thousands for inflation-indexed bonds) — the bond is CPI-linked.
-        if (couponRate != null && couponRate.compareTo(COUPON_INDEX_CEILING) > 0) {
-            return sukuk ? BondType.SUKUK_CPI : BondType.FLOATING_CPI;
+        // Gold-linked (altına dayalı): a small rental-yield coupon (≈0.3-0.85%) on a PER-UNIT value in the
+        // thousands (gram gold × price), unmistakably above any per-100 indexed CPI price (≤ ~1200). Checked
+        // BEFORE CPI because gold shares the low-coupon signal but its value scale gives it away.
+        boolean lowCoupon = couponRate != null && couponRate.signum() > 0
+                && couponRate.compareTo(cpiFixedThreshold) < 0;
+        boolean goldScale = price != null && price.compareTo(goldValueThreshold) > 0;
+        if (lowCoupon && goldScale) {
+            return sukuk ? BondType.SUKUK_GOLD : BondType.GOLD;
         }
 
-        // No coupon: a price at or below par is a genuine zero-coupon discount instrument, whereas a price
-        // inflated well above par with no coupon is a zero-real-coupon CPI bond (its value carries the index
-        // uplift). Price is only trusted to mean "indexed" here, where there is no coupon to misinterpret.
+        // A coupon far above any real rate (e.g. a stray reference value of ~257 in the .ORAN field) is bad data,
+        // NOT a CPI signal — ignore it and fall through to rate-behaviour classification.
+        boolean usableCoupon = couponRate != null && couponRate.compareTo(COUPON_INDEX_CEILING) <= 0;
+
+        // No (or zero) coupon: a gold-scale value is gold; a value inflated well above par is a zero-real-coupon
+        // CPI bond (its index uplift carries the return); otherwise a genuine discount instrument. Price is only
+        // trusted to mean "indexed" here, where there is no coupon to misinterpret.
         if (couponRate == null || couponRate.compareTo(BigDecimal.ZERO) == 0) {
-            BigDecimal price = bond.getBaseIndex();
+            if (goldScale) {
+                return sukuk ? BondType.SUKUK_GOLD : BondType.GOLD;
+            }
             if (price != null && price.compareTo(HIGH_BASE_INDEX) > 0) {
                 return sukuk ? BondType.SUKUK_CPI : BondType.FLOATING_CPI;
             }
             return BondType.DISCOUNTED;
         }
 
-        // A low real coupon is the hallmark of a CPI-linked bond (inflation compensation accrues to
-        // principal, leaving only a small real coupon).
-        if (couponRate.compareTo(cpiFixedThreshold) < 0) {
+        // A low real coupon (and not gold) is the hallmark of a CPI-linked bond (inflation compensation accrues
+        // to principal, leaving only a small real coupon).
+        if (usableCoupon && couponRate.compareTo(cpiFixedThreshold) < 0) {
             BondType type = sukuk ? BondType.SUKUK_CPI : BondType.FLOATING_CPI;
             log.debug("Bond {} classified as {} (real coupon {} < cpiFixedThreshold {})",
                     isin, type, couponRate, cpiFixedThreshold);
             return type;
         }
 
-        // A normal coupon means a nominal bond; its market price must NOT reclassify it (above-par nominal
-        // bonds are normal). Fixed vs floating is decided purely by whether the coupon resets over time.
+        // A normal coupon means a nominal bond; its market price must NOT reclassify it. Fixed vs floating is
+        // decided purely by whether the coupon resets over time.
         boolean rateChanges = BondRateAnalyzer.hasRateChanges(history);
         BondType type = classifyByRateBehavior(sukuk, rateChanges, couponRate, auctionThreshold);
         log.debug("Bond {} classified as {} (sukuk={}, rateChanges={}, rate={}, historySize={})",
@@ -83,8 +94,10 @@ public final class BondTypeResolver {
 
     private static BondType classifyByRateBehavior(boolean sukuk, boolean rateChanges,
                                                     BigDecimal couponRate, BigDecimal auctionThreshold) {
+        // A sukuk whose rental rate resets is a FLOATING (değişken) kira sertifikası — NOT CPI. CPI is the
+        // low-real-coupon case already handled above; a resetting NORMAL coupon is a plain variable-rate sukuk.
         if (sukuk) {
-            return rateChanges ? BondType.SUKUK_CPI : BondType.SUKUK_FIXED;
+            return rateChanges ? BondType.SUKUK_FLOATING : BondType.SUKUK_FIXED;
         }
         if (rateChanges) {
             return couponRate.compareTo(auctionThreshold) >= 0

@@ -16,10 +16,13 @@ import com.finance.portfolio.dto.request.PositionRequest;
 import com.finance.portfolio.dto.request.PositionSellRequest;
 import com.finance.portfolio.dto.response.PortfolioResponse;
 import com.finance.portfolio.dto.response.PositionResponse;
+import com.finance.portfolio.fixedincome.bond.BondHoldingRepository;
+import com.finance.portfolio.fixedincome.deposit.DepositHoldingRepository;
 import com.finance.portfolio.mapper.PortfolioResponseMapper;
 import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.Portfolio;
 import com.finance.portfolio.model.PortfolioPosition;
+import com.finance.portfolio.model.PortfolioType;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
@@ -58,12 +61,15 @@ public class PortfolioCrudService {
     private final PortfolioDailySnapshotRepository dailySnapshotRepository;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     private final DerivativePositionRepository derivativePositionRepository;
+    private final DepositHoldingRepository depositHoldingRepository;
+    private final BondHoldingRepository bondHoldingRepository;
     private final TrackedAssetRepository trackedAssetRepository;
     private final PortfolioResponseMapper mapper;
     private final ApplicationEventPublisher eventPublisher;
     private final PortfolioProperties portfolioProperties;
     private final CurrencyConverter currencyConverter;
 
+    /** The caller's own portfolios (metadata only, no valuation); scoped by {@code userSub}. */
     @Transactional(readOnly = true)
     public List<PortfolioResponse> listPortfolios(String userSub) {
         return portfolioRepository.findByUserSub(userSub).stream()
@@ -86,10 +92,19 @@ public class PortfolioCrudService {
         portfolioRepository.findByUserSubAndName(userSub, request.name())
                 .ifPresent(p -> { throw new BusinessException("error.portfolio.duplicateName", request.name()); });
 
-        Portfolio portfolio = Portfolio.builder().userSub(userSub).name(request.name()).build();
+        Portfolio portfolio = Portfolio.builder()
+                .userSub(userSub)
+                .name(request.name())
+                .type(request.type())
+                .build();
         return mapper.toPortfolioResponse(portfolioRepository.save(portfolio));
     }
 
+    /**
+     * Renames an owned portfolio, re-checking the unique-name constraint (excluding itself).
+     *
+     * @throws BusinessException if another portfolio already uses the name
+     */
     @Transactional
     public PortfolioResponse renamePortfolio(String userSub, Long portfolioId, PortfolioCreateRequest request) {
         Portfolio portfolio = portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
@@ -101,12 +116,18 @@ public class PortfolioCrudService {
         return mapper.toPortfolioResponse(portfolioRepository.save(portfolio));
     }
 
-    /** Deletes the portfolio and cascades removal of its derivative/spot positions and all snapshots. */
+    /**
+     * Deletes the portfolio and cascades removal of its derivative/spot positions, fixed-income deposit
+     * and bond holdings, and all snapshots. All cleanup runs in the one transaction so a failure on any
+     * step rolls the whole delete back, leaving no orphaned holdings.
+     */
     @Transactional
     public void deletePortfolio(String userSub, Long portfolioId) {
         Portfolio portfolio = portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
                 .orElseThrow(() -> new ResourceNotFoundException("error.portfolio.notFound", portfolioId));
         derivativePositionRepository.deleteByPortfolio_Id(portfolioId);
+        depositHoldingRepository.deleteByPortfolioId(portfolioId);
+        bondHoldingRepository.deleteByPortfolioId(portfolioId);
         positionRepository.deleteByPortfolioId(portfolioId);
         assetSnapshotRepository.deleteByPortfolioId(portfolioId);
         dailySnapshotRepository.deleteByPortfolioId(portfolioId);
@@ -122,6 +143,15 @@ public class PortfolioCrudService {
     public PositionResponse addPosition(Long portfolioId, String userSub, PositionRequest request) {
         Portfolio portfolio = portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
                 .orElseThrow(() -> new ResourceNotFoundException("error.portfolio.notFound", portfolioId));
+        // Integrity gate AFTER the ownership load: a spot lot may only land in a SPOT portfolio. Ordering matters —
+        // an unowned portfolio must surface as 404 (not a type error) so we never leak that the id exists.
+        portfolio.requireType(PortfolioType.SPOT);
+        // Cap lots per portfolio AFTER the ownership/type gate: every snapshot rebuild revalues all lots in memory,
+        // so an unbounded portfolio exhausts heap and stalls the backfill. Mirrors the per-user portfolio cap.
+        int maxLots = portfolioProperties.getMaxLotsPerPortfolio();
+        if (positionRepository.countByPortfolioId(portfolioId) >= maxLots) {
+            throw new BusinessException("error.portfolio.maxLotsReached", maxLots);
+        }
         PortfolioValidator.validateLot(request, portfolioProperties.getLotLimits());
         AssetType assetType = EnumParser.parseOrBadRequest(AssetType.class,
                 request.assetType().toUpperCase(), "enum.field.assetType");
@@ -182,6 +212,7 @@ public class PortfolioCrudService {
         return mapper.toPositionResponseShell(saved);
     }
 
+    /** Removes one owned lot; drops the asset's snapshots when it was the last lot and recomputes from its entry date. */
     @Transactional
     public void deletePosition(Long portfolioId, Long positionId, String userSub) {
         PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
@@ -299,6 +330,7 @@ public class PortfolioCrudService {
         return mapper.toPositionResponseShell(resulting);
     }
 
+    /** Reverts a closed lot to open (clears exit fields) and recomputes its history from the entry date. */
     @Transactional
     public PositionResponse reopenPosition(Long portfolioId, Long positionId, String userSub) {
         PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
@@ -347,7 +379,14 @@ public class PortfolioCrudService {
     }
 
     private TrackedAsset requireTrackedAsset(AssetType assetType, String rawCode) {
-        TrackedAssetType trackedType = TrackedAssetType.valueOf(assetType.name());
+        // Safe lookup instead of TrackedAssetType.valueOf(assetType.name()): DEPOSIT/BOND have no tracked-asset
+        // peer (they live in their own fixed-income tables, added via the deposit/bond services — never as a spot
+        // lot), so valueOf would throw IllegalArgumentException and 500 the request. Treat the absence as
+        // "not tracked here" and surface the same localized 422 as an unknown spot code.
+        TrackedAssetType trackedType = assetType.trackedAssetType();
+        if (trackedType == null) {
+            throw new BusinessException("error.portfolio.assetNotTracked", assetType, rawCode);
+        }
         String normalizedCode = trackedType.normalizeCode(rawCode);
         return trackedAssetRepository
                 .findByAssetTypeAndAssetCodeIgnoreCase(trackedType, normalizedCode)

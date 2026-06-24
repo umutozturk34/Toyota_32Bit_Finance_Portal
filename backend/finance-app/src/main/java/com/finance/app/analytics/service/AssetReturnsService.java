@@ -123,6 +123,7 @@ public class AssetReturnsService {
         warmCache();
     }
 
+    /** Drops the cached dataset, forcing the next request to recompute. */
     public void clearCache() {
         cacheManager.clear();
     }

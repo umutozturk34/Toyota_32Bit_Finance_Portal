@@ -42,7 +42,9 @@ class InflationBeaterSchedulerTest {
 
     @BeforeEach
     void setUp() {
-        scheduler = new InflationBeaterScheduler(inflationBeaterService, taskTracker, marketDataInitializer);
+        // Runnable::run = a synchronous executor: the init-completion callback and the no-initializer path
+        // both run the warm inline, so the assertions below see it happen within warmCacheOnStartup().
+        scheduler = new InflationBeaterScheduler(inflationBeaterService, taskTracker, marketDataInitializer, Runnable::run);
         // Default: no cold-start init bean (so the warm-up proceeds immediately) and a small two-by-two
         // coverage matrix. Lenient because not every test exercises every stub.
         lenient().when(marketDataInitializer.getIfAvailable()).thenReturn(null);
@@ -119,7 +121,7 @@ class InflationBeaterSchedulerTest {
     }
 
     @Test
-    void shouldAwaitMarketDataInit_beforeWarming_whenInitializerPresent() {
+    void shouldWarmWhenInitCompletes_whenInitializerPresent() {
         // Arrange — a present cold-start initializer whose completion future is already done.
         MarketDataInitializer initializer = mock(MarketDataInitializer.class);
         when(initializer.completion()).thenReturn(CompletableFuture.completedFuture(null));
@@ -128,14 +130,14 @@ class InflationBeaterSchedulerTest {
         // Act
         scheduler.warmCacheOnStartup();
 
-        // Assert — the warm-up waited on init completion, then warmed every combination.
+        // Assert — the warm-up gated on the init-completion callback, then warmed every combination.
         verify(initializer).completion();
         verify(inflationBeaterService, times(4)).refresh(any(), any());
     }
 
     @Test
     void shouldWarmAnyway_whenMarketDataInitFails() {
-        // Arrange — a present initializer whose completion future fails (get() throws ExecutionException).
+        // Arrange — a present initializer whose completion future fails; whenComplete still fires the warm.
         MarketDataInitializer initializer = mock(MarketDataInitializer.class);
         when(initializer.completion())
                 .thenReturn(CompletableFuture.failedFuture(new RuntimeException("init boom")));

@@ -6,13 +6,16 @@ import com.finance.market.core.mapper.MarketMetadataBuilder;
 import com.finance.market.core.dto.response.CandleResponse;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.shared.dto.response.StockMetadata;
+import com.finance.market.stock.model.CompanyProfile;
 import com.finance.market.stock.model.Stock;
 import com.finance.market.stock.model.StockCandle;
+import com.finance.market.stock.model.StockIndexMembership;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * MapStruct mapper exposing {@link Stock} and {@link StockCandle} entities as the generic market
@@ -54,7 +57,45 @@ public abstract class StockResponseMapper implements MarketMetadataBuilder<Stock
                 stock.getExchange(),
                 stock.getOpenPrice(),
                 stock.getDayHigh(),
-                stock.getDayLow()
+                stock.getDayLow(),
+                null,
+                null,
+                null,
+                List.of(),
+                List.of()
+        );
+    }
+
+    /**
+     * Detail-only metadata: the base stock fields plus the company künye, the indices the stock belongs to
+     * ({@code memberships}) and — when the asset is itself an index — the member stocks that make it up
+     * ({@code constituents}). Used by the single-asset detail path; list responses keep the lean block.
+     */
+    public StockMetadata buildDetailMetadata(Stock stock, CompanyProfile profile,
+                                             List<StockIndexMembership> memberships,
+                                             List<StockIndexMembership> constituents,
+                                             Map<String, String> constituentNames) {
+        List<StockMetadata.IndexMembership> indexMemberships = memberships.stream()
+                .map(m -> new StockMetadata.IndexMembership(m.getId().getIndexCode(), m.getWeight()))
+                .toList();
+        List<StockMetadata.IndexConstituent> indexConstituents = constituents.stream()
+                .map(m -> new StockMetadata.IndexConstituent(
+                        m.getId().getStockSymbol(),
+                        m.getWeight(),
+                        constituentNames.get(m.getId().getStockSymbol())))
+                .toList();
+        return new StockMetadata(
+                stock.getStockSegment(),
+                stock.getVolume(),
+                stock.getExchange(),
+                stock.getOpenPrice(),
+                stock.getDayHigh(),
+                stock.getDayLow(),
+                profile != null ? profile.getSector() : null,
+                profile != null ? profile.getFoundedDate() : null,
+                profile != null ? profile.getCity() : null,
+                indexMemberships,
+                indexConstituents
         );
     }
 }

@@ -8,9 +8,10 @@ import { RefreshCw } from '../../shared/components/feedback/AnimatedIcons';
 import { newsService } from './services/newsService';
 import { COOLDOWN_MS } from './lib/newsConfig';
 import NewsFilters from './components/NewsFilters';
+import NewsAssetFilter from './components/NewsAssetFilter';
 import NewsCard from './components/NewsCard';
 import FeaturedCard from './components/FeaturedCard';
-import LoadingState from '../../shared/components/feedback/LoadingState';
+import { Skeleton, SkeletonCard, SkeletonCardGrid } from '../../shared/components/feedback/Skeleton';
 import ErrorState from '../../shared/components/feedback/ErrorState';
 import SearchInput from '../../shared/components/form/SearchInput';
 import Pagination from '../../shared/components/form/Pagination';
@@ -29,14 +30,25 @@ export default function News() {
     const [remaining, setRemaining] = useState(() => Math.max(0, cooldownEnd - Date.now()));
     const listParams = useListParams({ defaultSize: 9 });
     const activeTab = listParams.filter || 'ALL';
+    // The asset filter rides on the `sub` param as a comma-separated list (MULTI-SELECT). It composes WITH the
+    // category tab (backend ANDs category + the asset OR-set), so you can narrow to e.g. "Borsa İstanbul" news
+    // that mention THYAO or AKBNK at the same time.
+    const activeAssets = listParams.subFilter ? listParams.subFilter.split(',').filter(Boolean) : [];
+    const toggleAsset = (code) => {
+        const next = activeAssets.includes(code)
+            ? activeAssets.filter((c) => c !== code)
+            : [...activeAssets, code];
+        listParams.setSubFilter(next.length ? next.join(',') : null);
+    };
 
     const queryParams = {
         ...listParams.params,
         ...(activeTab !== 'ALL' && { category: activeTab }),
+        ...(activeAssets.length > 0 && { assetCode: activeAssets.join(',') }),
     };
 
     const { data, isLoading: loading, error, refetch } = useQuery({
-        queryKey: ['news', activeTab, listParams.params],
+        queryKey: ['news', activeTab, listParams.subFilter, listParams.params],
         queryFn: () => newsService.search(queryParams),
         placeholderData: (prev) => prev,
     });
@@ -73,7 +85,22 @@ export default function News() {
     const featuredArticles = isFirstPage ? articles.slice(0, 2) : [];
     const restArticles = isFirstPage ? articles.slice(2) : articles;
 
-    if (loading && articles.length === 0) return <LoadingState message={t('news.loading')} />;
+    if (loading && articles.length === 0) {
+        return (
+            <div className="space-y-6 py-6">
+                <div className="space-y-2">
+                    <Skeleton w="14rem" h="2rem" className="rounded-xl" />
+                    <Skeleton w="20rem" h="0.9rem" />
+                </div>
+                <Skeleton h="2.6rem" className="rounded-lg" />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <SkeletonCard />
+                    <SkeletonCard />
+                </div>
+                <SkeletonCardGrid count={8} />
+            </div>
+        );
+    }
     if (error) return <ErrorState message={t('news.error')} onRetry={refetch} />;
 
     return (
@@ -130,6 +157,12 @@ export default function News() {
                 onTabChange={handleTabChange}
             />
 
+            <NewsAssetFilter
+                activeAssets={activeAssets}
+                onToggle={toggleAsset}
+                onClear={() => listParams.setSubFilter(null)}
+            />
+
             {articles.length === 0 ? (
                 <motion.div
                     initial={{ opacity: 0, scale: 0.97 }}
@@ -147,7 +180,7 @@ export default function News() {
             ) : (
                 <AnimatePresence mode="wait">
                     <motion.div
-                        key={`${activeTab}-${listParams.page}`}
+                        key={`${activeTab}-${listParams.subFilter || 'all'}-${listParams.page}`}
                         data-tour="news-list"
                         variants={containerVariants}
                         initial="hidden"

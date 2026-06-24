@@ -12,7 +12,6 @@ import com.finance.market.fund.config.FundProperties;
 import com.finance.market.fund.dto.external.TefasFundDto;
 import com.finance.market.fund.model.Fund;
 import com.finance.market.fund.model.FundType;
-import com.finance.common.model.TrackedAssetType;
 import com.finance.market.core.util.ApiAssetValidator;
 import com.finance.shared.util.CodeNormalizer;
 import com.finance.market.fund.util.TefasHelper;
@@ -24,7 +23,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 /**
@@ -62,6 +63,7 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
         this.holidayLookbackDays = fundProperties.getHolidayLookbackDays();
     }
 
+    /** Bulk-refreshes both BYF and YAT snapshots for the latest publishing day, walking back over TEFAS holidays. */
     public void refreshAll() {
         long start = System.currentTimeMillis();
         LocalDate cursor = today();
@@ -125,7 +127,14 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
     }
 
     private boolean persistByf(TefasFundDto dto) {
-        if (!hasValidPrice(dto)) return false;
+        // A BYF is an exchange-traded fund. On a given day TEFAS often omits its NAV (fiyat) while the exchange
+        // bulletin price is present — gating ETFs on NAV alone silently DROPPED those (only ~10 of ~30 had a NAV
+        // that day, all from one issuer). A real, listed ETF (one with a NAV OR a bulletin price) must still be
+        // tracked so it shows in the list. We deliberately do NOT copy the bulletin into the NAV field: price
+        // stays the genuine NAV (null until TEFAS publishes it — upsertCandleFromDto skips the candle while it is),
+        // and bulletin_price keeps the exchange price. The next daily snapshot fills the NAV in cleanly once it
+        // publishes, with no flip and nothing faked.
+        if (!hasValidPrice(dto) && !hasValidBulletin(dto)) return false;
         Fund persisted = transactionTemplate.execute(s -> {
             Fund f = entityWriter.saveSnapshot(dto, FundType.BYF);
             entityWriter.upsertCandleFromDto(f, FundType.BYF, dto);
@@ -135,6 +144,10 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
         entityWriter.ensureByfTracked(persisted.getFundCode(), persisted.getName());
         fundCacheService.putSnapshot(persisted.getFundCode(), persisted);
         return true;
+    }
+
+    private static boolean hasValidBulletin(TefasFundDto dto) {
+        return dto != null && dto.bulletinPrice() != null && dto.bulletinPrice().signum() != 0;
     }
 
     private boolean persistYat(TefasFundDto dto) {
@@ -154,27 +167,55 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
         return dto != null && dto.price() != null && dto.price().signum() != 0;
     }
 
-    /** Bulk-fetches and persists one fund type for a date; returns saved count, or -1 if the breaker is open. */
+    /** A row carries a usable snapshot price — a NAV, or (for an exchange-traded BYF) a bulletin price. */
+    private static boolean hasUsablePrice(TefasFundDto dto) {
+        return hasValidPrice(dto)
+                || (dto != null && dto.bulletinPrice() != null && dto.bulletinPrice().signum() != 0);
+    }
+
+    /**
+     * Bulk-fetches one fund type over a short WINDOW (not a single day) and persists each fund's most recent
+     * usable observation, so a fund whose latest-day NAV isn't published yet snapshots at its last available
+     * price instead of being dropped — the cause of a fresh-DB cold start capturing only the funds that had
+     * already published that day (e.g. 10 of 30 ETFs). Returns the saved count, or -1 if the breaker is open.
+     */
     private int executeBulk(FundType fundType, LocalDate today,
                             Predicate<TefasFundDto> include,
                             Predicate<TefasFundDto> persist) {
         try {
-            List<TefasFundDto> bulk = tefasClient.bulkFetch(fundType, today, today);
-            int saved = 0;
+            LocalDate from = today.minusDays(holidayLookbackDays);
+            List<TefasFundDto> bulk = tefasClient.bulkFetch(fundType, from, today);
+            Map<String, TefasFundDto> latestPerFund = new LinkedHashMap<>();
             for (TefasFundDto dto : bulk) {
-                if (!include.test(dto)) continue;
+                if (dto == null || dto.fundCode() == null || !include.test(dto) || !hasUsablePrice(dto)) {
+                    continue;
+                }
+                TefasFundDto prev = latestPerFund.get(dto.fundCode());
+                if (prev == null || isNewer(dto, prev)) {
+                    latestPerFund.put(dto.fundCode(), dto);
+                }
+            }
+            int saved = 0;
+            for (TefasFundDto dto : latestPerFund.values()) {
                 try {
                     if (persist.test(dto)) saved++;
                 } catch (Exception e) {
-                    log.error("Failed to persist {} snapshot for fund {}",
-                            fundType, dto.fundCode(), e);
+                    log.error("Failed to persist {} snapshot for fund {}", fundType, dto.fundCode(), e);
                 }
             }
-            log.info("Bulk {} snapshot: {} rows fetched, {} saved", fundType, bulk.size(), saved);
+            log.info("Bulk {} snapshot: {} rows fetched, {} distinct funds, {} saved",
+                    fundType, bulk.size(), latestPerFund.size(), saved);
             return saved;
         } catch (CallNotPermittedException e) {
             log.warn("TEFAS circuit breaker is OPEN, aborting {} snapshot", fundType);
             return -1;
         }
+    }
+
+    /** True when {@code candidate} is a strictly more recent observation than {@code current} (null dates last). */
+    private static boolean isNewer(TefasFundDto candidate, TefasFundDto current) {
+        if (candidate.date() == null) return false;
+        if (current.date() == null) return true;
+        return candidate.date().isAfter(current.date());
     }
 }

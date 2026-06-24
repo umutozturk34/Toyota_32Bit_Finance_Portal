@@ -20,6 +20,13 @@
   --color-success: #34d399;
   --color-danger: #f87171;
   --color-warning: #fbbf24;
+  /* Gold "prestige" accent for the BIST size-index (BIST 30/50/100) tier. Theme-flipping so it reads on both
+     surfaces. A bright yellow-gold (not the muddy amber that looked bronze) on dark; a clearer golden amber on
+     light. Only the award icon + weight % use it now — the label text is neutral, so contrast is never an issue. */
+  --color-gold: #fcd34d;
+  --color-gold-soft: #fde68a;
+  --color-gold-bg: rgba(252, 211, 77, 0.12);
+  --color-gold-border: rgba(252, 211, 77, 0.34);
   --spacing: 0.25rem;
   /* Wider page shell for large monitors (≥1536px): page content caps at 7xl (1280px) up through xl, then
      expands to 8xl (1920px) at 2xl so big displays fill instead of sitting in a narrow centered column.
@@ -79,24 +86,41 @@
   100% { background-position: 200% 0; }
 }
 
-@keyframes skeleton-sweep-kf {
-  0% { background-position: -100% 50%; }
-  100% { background-position: 200% 50%; }
+/* Minimal button ripple — a soft circle expanding from the press point, tinted by the button's own text colour
+   (currentColor) so it suits every variant, then fading out. Kept subtle (low opacity) on purpose. */
+@keyframes btn-ripple-kf {
+  from { transform: scale(0); opacity: 0.28; }
+  to { transform: scale(2.2); opacity: 0; }
 }
-.skeleton-sweep {
-  background:
-    linear-gradient(
-      90deg,
-      transparent 0%,
-      transparent 42%,
-      rgba(255, 255, 255, 0.015) 48%,
-      rgba(255, 255, 255, 0.04) 50%,
-      rgba(255, 255, 255, 0.015) 52%,
-      transparent 58%,
-      transparent 100%
-    );
-  background-size: 200% 100%;
-  animation: skeleton-sweep-kf 2.8s linear infinite;
+.btn-ripple {
+  position: absolute;
+  border-radius: 9999px;
+  background: currentColor;
+  pointer-events: none;
+  transform: scale(0);
+  animation: btn-ripple-kf 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-ripple { animation: none; display: none; }
+}
+
+/* The premium skeleton surface: a clearly-visible tonal base with a soft sheen that glides across on a smooth
+   ease, theme-aware via tokens. Reads as "content materialising", not a flat grey box. */
+@keyframes skeleton-shimmer-kf {
+  0% { background-position: 160% 0; }
+  100% { background-position: -160% 0; }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--skeleton-base);
+  background-image: linear-gradient(100deg, transparent 28%, var(--skeleton-sheen) 50%, transparent 72%);
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  animation: skeleton-shimmer-kf 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
 }
 
 @keyframes widget-rise-kf {
@@ -109,7 +133,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skeleton-sweep,
   .widget-fade-in {
     animation: none;
   }
@@ -306,11 +329,20 @@ button {
 :root {
   --scrollbar-thumb: rgba(255, 255, 255, 0.06);
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.18);
+  /* Skeleton placeholder tones — a visible base block + a brighter sheen that sweeps across. Tuned per theme so
+     the shape always reads against the card it sits in, with a soft (not flat) surface. */
+  --skeleton-base: rgba(255, 255, 255, 0.06);
+  --skeleton-sheen: rgba(255, 255, 255, 0.13);
+  /* Elevation shadow colour — deep on dark, soft slate on light so dropped panels don't cast a harsh black box. */
+  --color-shadow: rgba(0, 0, 0, 0.5);
 }
 
 [data-theme="light"] {
   --scrollbar-thumb: rgba(15, 23, 42, 0.14);
   --scrollbar-thumb-hover: rgba(15, 23, 42, 0.32);
+  --skeleton-base: rgba(15, 23, 42, 0.07);
+  --skeleton-sheen: rgba(15, 23, 42, 0.13);
+  --color-shadow: rgba(15, 23, 42, 0.18);
 }
 
 ::-webkit-scrollbar {
@@ -536,6 +568,10 @@ button {
   --color-success: #16a34a;
   --color-danger: #dc2626;
   --color-warning: #d97706;
+  --color-gold: #d97706;
+  --color-gold-soft: #92400e;
+  --color-gold-bg: rgba(217, 119, 6, 0.14);
+  --color-gold-border: rgba(217, 119, 6, 0.40);
   --sidebar-bg: rgba(242, 246, 251, 0.97);
   --sidebar-blur: blur(20px);
 }
@@ -558,11 +594,12 @@ button {
   background: rgba(0, 52, 140, 0.2);
 }
 
+/* Light mode: drop the omnidirectional blue glow (it reads as a muddy halo around the card on a pale canvas — most
+   visible under a stacked panel like the chart Lens) for a clean, directional neutral-slate elevation. */
 [data-theme="light"] .card-hover {
   box-shadow:
-    0 0 30px rgba(0, 82, 255, 0.04),
-    0 0 12px rgba(108, 154, 255, 0.03),
-    0 1px 4px rgba(0, 40, 120, 0.06);
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 8px 24px rgba(15, 23, 42, 0.06);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -570,18 +607,16 @@ button {
 [data-theme="light"] .card-hover:hover {
   border-color: rgba(0, 82, 255, 0.22);
   box-shadow:
-    0 0 50px rgba(0, 82, 255, 0.06),
-    0 0 20px rgba(108, 154, 255, 0.04),
-    0 8px 24px rgba(0, 40, 120, 0.08);
+    0 2px 4px rgba(15, 23, 42, 0.06),
+    0 14px 32px rgba(15, 23, 42, 0.10);
   transform: translateY(-3px);
 }
 
 [data-theme="light"] .card-elevated {
   border-color: rgba(0, 82, 255, 0.12);
   box-shadow:
-    0 0 60px rgba(0, 82, 255, 0.06),
-    0 0 18px rgba(108, 154, 255, 0.04),
-    0 8px 26px rgba(0, 40, 120, 0.08),
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 10px 28px rgba(15, 23, 42, 0.07),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -590,9 +625,8 @@ button {
 [data-theme="light"] .card-elevated:hover {
   border-color: rgba(0, 82, 255, 0.22);
   box-shadow:
-    0 0 80px rgba(0, 82, 255, 0.10),
-    0 0 24px rgba(108, 154, 255, 0.05),
-    0 14px 32px rgba(0, 40, 120, 0.12),
+    0 2px 6px rgba(15, 23, 42, 0.07),
+    0 18px 40px rgba(15, 23, 42, 0.11),
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
@@ -600,21 +634,6 @@ button {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-}
-
-[data-theme="light"] .skeleton-sweep {
-  background:
-    linear-gradient(
-      90deg,
-      transparent 0%,
-      transparent 42%,
-      rgba(15, 23, 42, 0.02) 48%,
-      rgba(15, 23, 42, 0.05) 50%,
-      rgba(15, 23, 42, 0.02) 52%,
-      transparent 58%,
-      transparent 100%
-    );
-  background-size: 200% 100%;
 }
 
 [data-theme="light"] .text-gradient {
@@ -731,6 +750,17 @@ button {
 @keyframes theme-cross-in {
   from { opacity: 0; transform: scale(1.008); filter: blur(2px); }
   to   { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+/* Circular-reveal theme switch (in-app + homepage): JS animates the NEW layer's clip-path from the click point, so
+   suppress the default cross-fade here and just stack the incoming theme above the outgoing one. */
+:root.theme-ripple::view-transition-old(root) {
+  animation: none;
+  z-index: 1;
+}
+:root.theme-ripple::view-transition-new(root) {
+  animation: none;
+  z-index: 2;
 }
 
 /* CSS fallback (homepage, browsers without View Transitions API) */

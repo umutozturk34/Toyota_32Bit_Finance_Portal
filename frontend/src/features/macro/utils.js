@@ -1,4 +1,5 @@
 import { CATEGORY_THEME, FALLBACK_THEME } from './constants';
+import { visibleDecimals } from '../../shared/utils/formatters';
 
 export function themeFor(category) {
   return CATEGORY_THEME[category] || FALLBACK_THEME;
@@ -49,5 +50,5 @@ export function changeBadgeText(change, unit) {
     const absPts = Math.abs(change.delta);
     return `${sign}${absPts.toFixed(2)}pt`;
   }
-  return `${sign}${absPct.toFixed(2)}%`;
+  return `${sign}${absPct.toFixed(visibleDecimals(absPct, 2))}%`;
 }

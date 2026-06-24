@@ -39,7 +39,8 @@ function InitiateForm({ currentEmail, onInitiated }) {
     }
     try {
       await initiate.mutateAsync(trimmed);
-      toast.success(t('emailChange.toast.codeSent'), t('emailChange.toast.codeSentDesc', { email: currentEmail }));
+      // The code goes to the NEW address the user just entered, so the toast must name it (not the current one).
+      toast.success(t('emailChange.toast.codeSent'), t('emailChange.toast.codeSentDesc', { email: trimmed }));
       setDraft('');
       onInitiated?.();
     } catch (err) {
@@ -82,7 +83,7 @@ function InitiateForm({ currentEmail, onInitiated }) {
         </span>
       </motion.button>
       <p className="text-[10px] text-fg-subtle leading-relaxed px-1 mt-1.5">
-        {t('emailChange.sendHintBefore')} <span className="font-mono text-fg-muted">{currentEmail}</span> {t('emailChange.sendHintAfter')}
+        {t('emailChange.sendHint')}
       </p>
     </form>
   );

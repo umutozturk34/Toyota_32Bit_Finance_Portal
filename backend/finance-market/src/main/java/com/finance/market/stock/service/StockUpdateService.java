@@ -16,6 +16,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Function;
 
 /**
@@ -27,23 +28,28 @@ import java.util.function.Function;
 public class StockUpdateService implements MarketRefresher {
 
     private final StockSnapshotProcessor snapshotProcessor;
+    private final StockEnrichmentService enrichmentService;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final TrackedAssetCommandService trackedAssetCommandService;
     private final IsYatirimStockListProvider stockListProvider;
     private final StockProperties.Discovery discovery;
     private final int batchMinSample;
+    private final int updateParallelism;
 
     public StockUpdateService(StockSnapshotProcessor snapshotProcessor,
+                              StockEnrichmentService enrichmentService,
                               TrackedAssetQueryService trackedAssetQueryService,
                               TrackedAssetCommandService trackedAssetCommandService,
                               IsYatirimStockListProvider stockListProvider,
                               StockProperties stockProperties) {
         this.snapshotProcessor = snapshotProcessor;
+        this.enrichmentService = enrichmentService;
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.trackedAssetCommandService = trackedAssetCommandService;
         this.stockListProvider = stockListProvider;
         this.discovery = stockProperties.getDiscovery();
         this.batchMinSample = stockProperties.getBatchMinSample();
+        this.updateParallelism = stockProperties.getUpdateParallelism();
     }
 
     @Override
@@ -66,19 +72,22 @@ public class StockUpdateService implements MarketRefresher {
             log.error("No BIST stocks configured for tracking");
             throw new BusinessException("error.market.stockNoneTracked");
         }
-        log.info("Starting Yahoo stock sync for {} BIST stocks", bistStocks.size());
-        final int[] totalCandles = {0};
+        log.info("Starting Yahoo stock sync for {} BIST stocks (parallelism={})",
+                bistStocks.size(), updateParallelism);
+        // Yahoo's chart endpoint is per-symbol, so concurrency (not batching) is the lever; the counter is a
+        // LongAdder because the processor runs on the bounded pool. Snapshot writes each open their own tx.
+        LongAdder totalCandles = new LongAdder();
 
-        BatchUpdateRunner.Result result = MarketBatchRunner.run(
+        BatchUpdateRunner.Result result = MarketBatchRunner.runParallel(
                 bistStocks,
                 symbol -> {
-                    int candleCount = snapshotProcessor.updateOne(symbol);
-                    totalCandles[0] += candleCount;
+                    totalCandles.add(snapshotProcessor.updateOne(symbol));
+                    enrichSafely(symbol);
                 },
                 Function.identity(),
-                log, "Stock", "update", batchMinSample);
+                log, "Stock", "update", batchMinSample, updateParallelism);
 
-        BatchLogHelper.logSummaryWithMetric(log, "Stock update", result, "candles", totalCandles[0]);
+        BatchLogHelper.logSummaryWithMetric(log, "Stock update", result, "candles", (int) totalCandles.sum());
     }
 
     /** Refreshes a single stock by code; the code is upper-normalized first and blank codes are no-ops. */
@@ -87,6 +96,19 @@ public class StockUpdateService implements MarketRefresher {
         String normalized = CodeNormalizer.upper(code);
         if (normalized.isBlank()) return;
         snapshotProcessor.updateOne(normalized);
+        enrichSafely(normalized);
+    }
+
+    /**
+     * Enriches a stock's profile/index membership without letting a scrape or enrichment failure fail the
+     * stock update itself — the price snapshot is already saved, enrichment is best-effort on top.
+     */
+    private void enrichSafely(String symbol) {
+        try {
+            enrichmentService.enrichIfStale(symbol);
+        } catch (Exception e) {
+            log.warn("Stock enrichment failed for {}: {}", symbol, e.getMessage());
+        }
     }
 
     /** Whether a stock with the given code is already known to the snapshot store. */

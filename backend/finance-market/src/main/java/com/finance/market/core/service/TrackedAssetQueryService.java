@@ -33,12 +33,17 @@ public class TrackedAssetQueryService {
     private final TrackedAssetMapper trackedAssetMapper;
     private final TrackedAssetCodeCache codeCache;
 
+    /** All tracked assets of the type, ordered by sort order then code. */
     public List<TrackedAssetResponse> getTrackedAssets(TrackedAssetType type) {
         return trackedAssetRepository.findByAssetTypeOrderBySortOrderAscAssetCodeAsc(type).stream()
                 .map(trackedAssetMapper::toResponse)
                 .toList();
     }
 
+    /**
+     * Searches tracked assets across the given types, matching {@code search} against code or display name.
+     * An empty/null type list short-circuits to an empty result rather than scanning the whole catalogue.
+     */
     public List<TrackedAssetResponse> searchTrackedAssets(List<TrackedAssetType> types,
                                                            String search,
                                                            String sortBy,
@@ -81,6 +86,7 @@ public class TrackedAssetQueryService {
         return desc ? o.nullsFirst() : o.nullsLast();
     }
 
+    /** Single tracked asset by type and code (code normalized per type); empty when not tracked. */
     public Optional<TrackedAssetResponse> getTrackedAsset(TrackedAssetType type, String assetCode) {
         String normalizedCode = type.normalizeCode(assetCode);
         return trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode)
@@ -101,10 +107,12 @@ public class TrackedAssetQueryService {
         return normalizedCode;
     }
 
+    /** All tracked codes of the type (cache-backed); includes admin-disabled ones. */
     public List<String> getCodes(TrackedAssetType type) {
         return codeCache.get(type);
     }
 
+    /** Only the admin-enabled codes of the type (cache-backed); use for discovery/refresh loops. */
     public List<String> getEnabledCodes(TrackedAssetType type) {
         return codeCache.getEnabled(type);
     }

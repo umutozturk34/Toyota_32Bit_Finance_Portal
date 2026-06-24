@@ -26,9 +26,10 @@ export const analyticsService = {
   },
 
   portfolioSeries: async (portfolioId, { from, to }, mode = 'pnl') => {
-    // mode 'twr' → capital-weighted cumulative-return index (the compare % line; matches the portfolio's
-    // headline return, comparable to inflation); 'pnl' → cumulative profit/loss in TRY (the Kâr/Zarar Total
-    // amount, surfaced alongside the % so the money is still visible). Compare fetches both and zips by date.
+    // mode 'twr' → the time-weighted-return index (the compare % line; contribution-neutral, so it answers
+    // "did my holdings beat the benchmark/inflation over this window" — comparable to a generic CPI line);
+    // 'pnl' → cumulative profit/loss in TRY (the Kâr/Zarar Total amount, surfaced alongside the % so the
+    // money is still visible). Compare fetches twr+pnl together.
     const params = { from, to };
     if (mode === 'twr') params.twr = true;
     else if (mode === 'pnl') params.pnl = true;

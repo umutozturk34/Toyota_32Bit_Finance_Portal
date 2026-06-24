@@ -14,7 +14,7 @@ import PositionStatusBadge from './PositionStatusBadge';
 import PositionAssetBadge from './PositionAssetBadge';
 import PositionDerivativeChips from './PositionDerivativeChips';
 import SelectableCheckbox from './SelectableCheckbox';
-import { formatEntryDate, marketHref } from '../lib/positionsTableHelpers';
+import { formatEntryDate, marketHref, positionFrame } from '../lib/positionsTableHelpers';
 
 export default function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetClick, onEditClick, onDeleteClick, onCloseClick, onSellClick, onReopenClick }) {
   const { t } = useTranslation();
@@ -43,33 +43,11 @@ export default function PositionRow({ pos, pending, elapsed, selected, onToggleS
     ? { natural: nativeCurrency, dateAt: pos.exitDate }
     : { natural: nativeCurrency };
 
-  // Display-currency PnL must be value@today/exit − cost@entry-date, NOT the TRY PnL (a value−cost
-  // difference) converted at one FX — which is catastrophically wrong when the lot's entry-date FX differs
-  // from today's (e.g. a USD lot bought in 1995: the TRY PnL is ~+104000% but in USD it is ~0%). So convert
-  // the cost at its entry date and the value at today/exit, then difference. In TRY the backend figures are
-  // already correct, so only a USD/EUR (or ORIGINAL non-TRY) frame recomputes.
-  const frameCcy = resolveTarget('TRY', nativeCurrency);
-  const isNonTryFrame = frameCcy !== 'TRY';
-  // Use the backend's entry value directly. Deriving it as marketValue − pnlTry is WRONG for a VIOP SHORT,
-  // whose direction-aware pnl ≠ value − cost — that corrupted both the entry cost and the USD/EUR K/Z.
-  const entryValueTry = pos.entryValueTry != null
-    ? Number(pos.entryValueTry)
-    : Number(pos.marketValueTry) - Number(pos.pnlTry);
-  const costFrame = isNonTryFrame ? convert(entryValueTry, 'TRY', nativeCurrency, pos.entryDate) : null;
-  const valueFrame = isNonTryFrame
-    ? convert(pos.marketValueTry, 'TRY', nativeCurrency, isClosed ? pos.exitDate : undefined)
-    : null;
-  // VIOP K/Z is DIRECTION-AWARE: a SHORT profits as its notional (value) falls, so value − cost is backwards.
-  // Apply the canonical directionSign × (value − cost) — the SAME rule as useRateHistory.frame() and the
-  // backend MultiCurrencyPnlCalculator.pointFrame — instead of grafting the TRY PnL's sign onto the magnitude
-  // (which mis-signed a frame whose per-date FX move alone disagreed with the TRY direction). −1 only for a
-  // VIOP SHORT (derivative.direction, else the "SHORT · …" assetName prefix); spot/LONG stay +1 → a no-op.
-  const isShortDerivative = isDerivative
-    && (pos.derivative?.direction || String(pos.assetName || '').split(' · ')[0]) === 'SHORT';
-  const directionSign = isShortDerivative ? -1 : 1;
-  const framePnl = costFrame != null && valueFrame != null
-    ? directionSign * (valueFrame - costFrame)
-    : null;
+  // Display-currency PnL must be value@today/exit − cost@entry-date, NOT the TRY PnL (a value−cost difference)
+  // converted at one FX — which is catastrophically wrong when the lot's entry-date FX differs from today's. The
+  // ONE canonical implementation (shared with the P&L-by-type breakdown so they can never drift) lives in
+  // positionFrame(); in the TRY frame it returns null frame figures and we fall back to the backend's pnlTry.
+  const { frameCcy, isNonTryFrame, costFrame, framePnl, entryValueTry } = positionFrame(pos, { convert, resolveTarget });
   const framePnlPct = framePnl != null && costFrame ? (framePnl / Math.abs(costFrame)) * 100 : null;
   // TOPLAM column shows EQUITY = cost + K/Z (matches the donut/card), not the raw notional. For spot/LONG
   // equity == notional; for a profiting VIOP SHORT equity rises above cost while notional falls.
@@ -182,26 +160,26 @@ export default function PositionRow({ pos, pending, elapsed, selected, onToggleS
         </div>
         <div className="flex justify-start gap-1">
           {showEdit && (
-            <button onClick={(e) => { e.stopPropagation(); editClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')}>
+            <button onClick={(e) => { e.stopPropagation(); editClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')} title={t('common.edit')}>
               <Pencil className="h-3 w-3" />
             </button>
           )}
           {showSellButton && (
-            <button onClick={(e) => { e.stopPropagation(); sellClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.sell.title', 'Sell')}>
+            <button onClick={(e) => { e.stopPropagation(); sellClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.sell.title', { code: assetCodeLabel(pos.assetType, pos.assetCode), defaultValue: 'Sell' })} title={t('portfolio.sell.title', { code: assetCodeLabel(pos.assetType, pos.assetCode), defaultValue: 'Sell' })}>
               <ShoppingBag className="h-3 w-3" />
             </button>
           )}
           {showReopenButton && (
-            <button onClick={(e) => { e.stopPropagation(); reopenClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.reopen.title', 'Reopen')}>
+            <button onClick={(e) => { e.stopPropagation(); reopenClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.reopen.title', 'Reopen')} title={t('portfolio.reopen.title', 'Reopen')}>
               <RotateCcw className="h-3 w-3" />
             </button>
           )}
           {showCloseButton && (
-            <button onClick={(e) => { e.stopPropagation(); closeClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')}>
+            <button onClick={(e) => { e.stopPropagation(); closeClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')} title={t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')}>
               <XCircle className="h-3 w-3" />
             </button>
           )}
-          <button onClick={(e) => { e.stopPropagation(); deleteClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer" aria-label={t('common.delete')}>
+          <button onClick={(e) => { e.stopPropagation(); deleteClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer" aria-label={t('common.delete')} title={t('common.delete')}>
             <Trash2 className="h-3 w-3" />
           </button>
         </div>
@@ -241,26 +219,26 @@ export default function PositionRow({ pos, pending, elapsed, selected, onToggleS
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
             <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>{formatPercentSmart(shownPnlPct)}</span>
             {showEdit && (
-              <button onClick={(e) => { e.stopPropagation(); editClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')}>
+              <button onClick={(e) => { e.stopPropagation(); editClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')} title={t('common.edit')}>
                 <Pencil className="h-3 w-3" />
               </button>
             )}
             {showSellButton && (
-              <button onClick={(e) => { e.stopPropagation(); sellClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.sell.title', 'Sell')}>
+              <button onClick={(e) => { e.stopPropagation(); sellClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.sell.title', { code: assetCodeLabel(pos.assetType, pos.assetCode), defaultValue: 'Sell' })} title={t('portfolio.sell.title', { code: assetCodeLabel(pos.assetType, pos.assetCode), defaultValue: 'Sell' })}>
                 <ShoppingBag className="h-3 w-3" />
               </button>
             )}
             {showReopenButton && (
-              <button onClick={(e) => { e.stopPropagation(); reopenClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.reopen.title', 'Reopen')}>
+              <button onClick={(e) => { e.stopPropagation(); reopenClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.reopen.title', 'Reopen')} title={t('portfolio.reopen.title', 'Reopen')}>
                 <RotateCcw className="h-3 w-3" />
               </button>
             )}
             {showCloseButton && (
-              <button onClick={(e) => { e.stopPropagation(); closeClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')}>
+              <button onClick={(e) => { e.stopPropagation(); closeClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')} title={t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')}>
                 <XCircle className="h-3 w-3" />
               </button>
             )}
-            <button onClick={(e) => { e.stopPropagation(); deleteClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer" aria-label={t('common.delete')}>
+            <button onClick={(e) => { e.stopPropagation(); deleteClick(); }} className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer" aria-label={t('common.delete')} title={t('common.delete')}>
               <Trash2 className="h-3 w-3" />
             </button>
           </div>

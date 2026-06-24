@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AlertCircle, Star } from 'lucide-react';
+import { SPRING } from '../../../shared/utils/animations';
 
 export default function WatchViewTabs({ view, onChange, watchCount, alertsCount }) {
   const { t } = useTranslation();
@@ -25,7 +26,7 @@ export default function WatchViewTabs({ view, onChange, watchCount, alertsCount 
               <motion.span
                 layoutId="watch-view-tab"
                 className="absolute inset-0 rounded-lg bg-accent/12"
-                transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                transition={SPRING.tab}
               />
             )}
             <Icon className="relative z-10 h-3.5 w-3.5" />

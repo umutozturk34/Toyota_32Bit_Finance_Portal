@@ -25,6 +25,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,12 +37,14 @@ class FundMarketAssetProviderTest {
     @Mock private MarketCacheService<Fund> cacheService;
     @Mock private FundResponseMapper mapper;
     @Mock private TrackedAssetQueryService trackedAssetQueryService;
+    @Mock private FundDetailEnrichmentService detailEnrichmentService;
 
     private FundMarketAssetProvider provider;
 
     @BeforeEach
     void setUp() {
-        provider = new FundMarketAssetProvider(fundRepository, cacheService, mapper, trackedAssetQueryService);
+        provider = new FundMarketAssetProvider(fundRepository, cacheService, mapper, trackedAssetQueryService,
+                detailEnrichmentService);
     }
 
     @Test
@@ -59,6 +63,7 @@ class FundMarketAssetProviderTest {
     void getByCode_returnsFirstMappedResponse_whenSnapshotPresent() {
         Fund fund = Fund.builder().build();
         fund.setFundCode("TYH");
+        fund.setIsinCode("TRYTYH00001");
         MarketAssetResponse expected = response("TYH");
         when(cacheService.getSnapshot("TYH")).thenReturn(fund);
         when(mapper.toMarketAssetResponses(List.of(fund))).thenReturn(List.of(expected));
@@ -66,6 +71,49 @@ class FundMarketAssetProviderTest {
         MarketAssetResponse result = provider.getByCode("TYH");
 
         assertThat(result).isSameAs(expected);
+    }
+
+    @Test
+    void getByCode_lazilyEnrichesProfileInBackground_whenIsinMissing() {
+        Fund fund = Fund.builder().build();
+        fund.setFundCode("TYH");
+        when(cacheService.getSnapshot("TYH")).thenReturn(fund);
+        when(mapper.toMarketAssetResponses(List.of(fund))).thenReturn(List.of(response("TYH")));
+
+        provider.getByCode("TYH");
+
+        // Fired non-blocking on the task executor so the detail open never waits on the TEFAS profile fetch.
+        verify(detailEnrichmentService).enrichSingleFundDetailsAsync("TYH");
+    }
+
+    @Test
+    void getByCode_skipsEnrichment_whenIsinAndCategoryBothPresent() {
+        Fund fund = Fund.builder().build();
+        fund.setFundCode("TYH");
+        fund.setIsinCode("TRYTYH00001");
+        fund.setCategory("Endeks Fon");
+        when(cacheService.getSnapshot("TYH")).thenReturn(fund);
+        when(mapper.toMarketAssetResponses(List.of(fund))).thenReturn(List.of(response("TYH")));
+
+        provider.getByCode("TYH");
+
+        verify(detailEnrichmentService, never()).enrichSingleFundDetailsAsync(any());
+    }
+
+    @Test
+    void getByCode_enrichesInBackground_whenCategoryMissingThoughIsinPresent() {
+        // The bulk profile back-fill sets isin but never the info-only category; opening such a fund must still
+        // fire the (info + profile) fetch so the category column finally fills instead of staying empty forever.
+        Fund fund = Fund.builder().build();
+        fund.setFundCode("TYH");
+        fund.setIsinCode("TRYTYH00001");
+        // category intentionally left null
+        when(cacheService.getSnapshot("TYH")).thenReturn(fund);
+        when(mapper.toMarketAssetResponses(List.of(fund))).thenReturn(List.of(response("TYH")));
+
+        provider.getByCode("TYH");
+
+        verify(detailEnrichmentService).enrichSingleFundDetailsAsync("TYH");
     }
 
     @SuppressWarnings("unchecked")

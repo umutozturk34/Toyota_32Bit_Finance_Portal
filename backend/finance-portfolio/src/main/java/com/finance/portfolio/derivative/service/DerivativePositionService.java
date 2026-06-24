@@ -1,16 +1,11 @@
 package com.finance.portfolio.derivative.service;
 
 import com.finance.common.exception.BadRequestException;
-import com.finance.common.exception.BusinessException;
-import com.finance.common.exception.MarketDataNotReadyException;
 import com.finance.common.exception.ResourceNotFoundException;
-import com.finance.common.market.MarketDataReadiness;
 import com.finance.common.model.Currency;
 import com.finance.market.core.service.CurrencyConverter;
-import com.finance.market.viop.config.ViopProperties;
 import com.finance.market.viop.model.ViopContract;
 import com.finance.market.viop.repository.ViopContractRepository;
-import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.portfolio.derivative.dto.request.CloseDerivativePositionRequest;
 import com.finance.portfolio.derivative.dto.request.OpenDerivativePositionRequest;
 import com.finance.portfolio.derivative.dto.request.UpdateDerivativePositionRequest;
@@ -21,12 +16,12 @@ import com.finance.portfolio.derivative.model.DerivativePosition;
 import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
 import com.finance.portfolio.model.Portfolio;
 import com.finance.portfolio.model.AssetType;
+import com.finance.portfolio.model.PortfolioType;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioRepository;
 import com.finance.portfolio.service.PortfolioBackfillService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,46 +57,7 @@ public class DerivativePositionService {
     private final DerivativeSnapshotMaintenance snapshotMaintenance;
     private final DerivativePriceResolver priceResolver;
     private final CurrencyConverter currencyConverter;
-    private final ViopProperties viopProperties;
-    private final PortfolioProperties portfolioProperties;
-
-    // Optional: absent outside the full app context (e.g. unit tests), where the gate is a no-op. When present
-    // (the market-data initializer), blocks opening a position until the cold-start price/FX load has finished.
-    private final ObjectProvider<MarketDataReadiness> marketDataReadiness;
-
-    /**
-     * Rejects an entry date older than the VIOP history window ({@code today − max-history-years}). VIOP candle
-     * data only goes back that far, so an earlier entry has no price/candles to value against — the same
-     * floor the contract chart is clamped to. Mirrors the spot lot's min-entry-date guard.
-     */
-    private void requireEntryWithinViopHistory(LocalDate entryDate) {
-        LocalDate floor = LocalDate.now().minusYears(viopProperties.maxHistoryYears());
-        if (entryDate != null && entryDate.isBefore(floor)) {
-            throw new BusinessException("error.portfolio.lot.entryDateTooOld", floor);
-        }
-    }
-
-    /**
-     * Rejects a VIOP lot whose TRY notional (entry price × contract size × lots) would overflow the
-     * numeric(23,8) snapshot money columns — the same product the snapshot persists, so an absurd lot would
-     * otherwise abort the snapshot batch and break the portfolio's whole chart. Mirrors the spot lot-value cap.
-     */
-    private void requireNotionalWithinCap(BigDecimal entryPriceTry, BigDecimal contractSize, BigDecimal quantityLot) {
-        BigDecimal max = portfolioProperties.getLotLimits().getMaxLotValueTry();
-        if (entryPriceTry == null || quantityLot == null || max == null) return;
-        BigDecimal size = contractSize != null ? contractSize : BigDecimal.ONE;
-        if (entryPriceTry.multiply(size).multiply(quantityLot).compareTo(max) > 0) {
-            throw new BusinessException("error.portfolio.lot.valueTooHigh", max);
-        }
-    }
-
-    /** @throws MarketDataNotReadyException (HTTP 503) if the cold-start market-data load has not finished yet. */
-    private void requireMarketDataReady() {
-        MarketDataReadiness readiness = marketDataReadiness.getIfAvailable();
-        if (readiness != null && !readiness.isReady()) {
-            throw new MarketDataNotReadyException("error.market.dataNotReady");
-        }
-    }
+    private final DerivativePositionValidator validator;
 
     private void publishLotChange(Long portfolioId, DerivativePosition position, LocalDate from) {
         if (from == null) return;
@@ -119,12 +75,14 @@ public class DerivativePositionService {
         return a.isBefore(b) ? a : b;
     }
 
+    /** All positions (open and closed) of the {@code userSub}-owned portfolio; 404s if not owned. */
     @Transactional(readOnly = true)
     public List<DerivativePositionResponse> list(Long portfolioId, String userSub) {
         requireOwnedPortfolio(portfolioId, userSub);
         return mapper.toResponses(positionRepository.findByPortfolioId(portfolioId));
     }
 
+    /** Only the currently open positions of the {@code userSub}-owned portfolio; 404s if not owned. */
     @Transactional(readOnly = true)
     public List<DerivativePositionResponse> listOpen(Long portfolioId, String userSub) {
         requireOwnedPortfolio(portfolioId, userSub);
@@ -141,8 +99,11 @@ public class DerivativePositionService {
      */
     @Transactional
     public DerivativePositionResponse open(Long portfolioId, String userSub, OpenDerivativePositionRequest request) {
-        requireMarketDataReady();
+        validator.requireMarketDataReady();
         Portfolio portfolio = requireOwnedPortfolio(portfolioId, userSub);
+        // VIOP derivatives are spot-side product and belong only in a SPOT portfolio. Gated AFTER the ownership
+        // load so an unowned portfolio still 404s ahead of this type check (no existence leak).
+        portfolio.requireType(PortfolioType.SPOT);
         ViopContract contract = contractRepository.findBySymbol(request.contractSymbol())
                 .orElseThrow(() -> new ResourceNotFoundException("error.viop.contractNotFound", request.contractSymbol()));
         if (!contract.isActive()) {
@@ -154,14 +115,14 @@ public class DerivativePositionService {
         if (contract.getExpiryDate() != null && request.entryDate().isAfter(contract.getExpiryDate())) {
             throw new BadRequestException("error.viop.entryAfterExpiry", request.contractSymbol());
         }
-        requireEntryWithinViopHistory(request.entryDate());
+        validator.requireEntryWithinViopHistory(request.entryDate());
         BigDecimal entryPrice = request.entryPrice() != null
                 ? toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate())
                 : priceResolver.resolveHistoricalPriceTry(contract, request.entryDate());
         if (entryPrice == null) {
             throw new BadRequestException("error.viop.entryPriceUnavailable", request.contractSymbol());
         }
-        requireNotionalWithinCap(entryPrice, contract.getContractSize(), request.quantityLot());
+        validator.requireNotionalWithinCap(entryPrice, contract.getContractSize(), request.quantityLot());
         DerivativePosition position = DerivativePosition.builder()
                 .portfolio(portfolio)
                 .viopContract(contract)
@@ -323,14 +284,14 @@ public class DerivativePositionService {
         if (contract.getExpiryDate() != null && request.entryDate().isAfter(contract.getExpiryDate())) {
             throw new BadRequestException("error.viop.entryAfterExpiry", contract.getSymbol());
         }
-        requireEntryWithinViopHistory(request.entryDate());
+        validator.requireEntryWithinViopHistory(request.entryDate());
         BigDecimal entryPrice = request.entryPrice() != null
                 ? toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate())
                 : priceResolver.resolveHistoricalPriceTry(contract, request.entryDate());
         if (entryPrice == null) {
             throw new BadRequestException("error.viop.entryPriceUnavailable", contract.getSymbol());
         }
-        requireNotionalWithinCap(entryPrice, contract.getContractSize(), request.quantityLot());
+        validator.requireNotionalWithinCap(entryPrice, contract.getContractSize(), request.quantityLot());
         LocalDate previousEntry = position.getEntryDate();
         position.updateEntry(request.direction(), request.entryDate(), entryPrice, request.quantityLot());
         rebuildPeerSnapshots(portfolioId, contract.getSymbol(), position, null);
@@ -343,6 +304,7 @@ public class DerivativePositionService {
         return mapper.toResponse(position);
     }
 
+    /** Reverts a closed position back to open (clears close fields) and rebuilds the symbol's snapshots. */
     @Transactional
     public DerivativePositionResponse reopen(Long positionId, Long portfolioId, String userSub) {
         requireOwnedPortfolio(portfolioId, userSub);
@@ -358,6 +320,7 @@ public class DerivativePositionService {
         return mapper.toResponse(position);
     }
 
+    /** Removes one owned position; the symbol's snapshots are wiped and rebuilt from its surviving peer lots. */
     @Transactional
     public void delete(Long positionId, Long portfolioId, String userSub) {
         requireOwnedPortfolio(portfolioId, userSub);
@@ -430,6 +393,13 @@ public class DerivativePositionService {
     /**
      * Force-closes any still-open positions whose contract has expired, using the contract's settlement
      * price (falling back to last price), converted to TRY at expiry. Skips positions with no price.
+     * <p>
+     * This is correct for OPTIONS too, and does NOT need a separate {@code max(0, spot - strike)} intrinsic
+     * branch: a VIOP contract is quoted by its own price (an option by its premium, not the underlying spot),
+     * so {@code settlementPrice}/{@code lastPrice} here is the option's settlement PREMIUM — which the exchange
+     * already fixes to the option's intrinsic value at expiry (0 when out-of-the-money). Closing at that premium
+     * therefore yields the right P&L: an in-the-money option realises (intrinsic − premium paid), an OTM one
+     * loses exactly the premium. Subtracting the strike from this premium-basis number would corrupt the close.
      *
      * @return the number of positions auto-closed
      */
@@ -461,7 +431,13 @@ public class DerivativePositionService {
                 continue;
             }
             pos.closeWith(contract.getExpiryDate(), settlementTry, DerivativeCloseReason.EXPIRED);
-            rebuildPeerSnapshots(pos.getPortfolio().getId(), contract.getSymbol(), pos, null);
+            Long pid = pos.getPortfolio().getId();
+            rebuildPeerSnapshots(pid, contract.getSymbol(), pos, null);
+            // Like close(): publish a backfill event from the expiry date so the daily portfolio aggregate
+            // recomputes forward. visibleToUi=false — this is a scheduled auto-close, not a user action, so it
+            // must not light up the per-portfolio "pending" indicator.
+            eventPublisher.publishEvent(new PortfolioBackfillService.LotChangedEvent(
+                    pid, AssetType.VIOP, contract.getSymbol(), contract.getExpiryDate(), false));
             closed++;
         }
         if (closed > 0 || skippedNoPrice > 0 || skippedNoFx > 0) {

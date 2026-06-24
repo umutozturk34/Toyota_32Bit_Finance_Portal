@@ -34,13 +34,16 @@ class StockMarketAssetProviderTest {
     @SuppressWarnings("unchecked")
     @Mock private MarketCacheService<Stock> cacheService;
     @Mock private StockResponseMapper mapper;
+    @Mock private com.finance.market.stock.repository.CompanyProfileRepository companyProfileRepository;
+    @Mock private com.finance.market.stock.repository.StockIndexMembershipRepository membershipRepository;
     @Mock private TrackedAssetQueryService trackedAssetQueryService;
 
     private StockMarketAssetProvider provider;
 
     @BeforeEach
     void setUp() {
-        provider = new StockMarketAssetProvider(stockRepository, cacheService, mapper, trackedAssetQueryService);
+        provider = new StockMarketAssetProvider(stockRepository, cacheService, mapper,
+                companyProfileRepository, membershipRepository, trackedAssetQueryService);
     }
 
     @Test

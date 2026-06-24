@@ -14,6 +14,9 @@ export default function PortfolioActions({
   pdfPending,
   pdfElapsedMs,
   hasPositions = true,
+  showExtras = true,
+  autoCreatePortfolio = false,
+  onAutoCreateConsumed,
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -33,7 +36,7 @@ export default function PortfolioActions({
         loading={loading}
       />
       <div className="flex items-center gap-2 flex-wrap">
-        {portfolio && (
+        {showExtras && portfolio && (
           <button
             type="button"
             onClick={() => navigate(`/analytics?codes=${portfolio.id}&types=PORTFOLIO&from=portfolio`)}
@@ -44,7 +47,7 @@ export default function PortfolioActions({
             <span>{t('portfolio.actions.compare')}</span>
           </button>
         )}
-        {portfolio && (
+        {showExtras && portfolio && (
           <button
             type="button"
             onClick={onDownloadPdf}
@@ -101,6 +104,8 @@ export default function PortfolioActions({
             portfolios={portfolios}
             activeId={portfolio?.id}
             onSelect={onSelectPortfolio}
+            autoCreate={autoCreatePortfolio}
+            onAutoCreateConsumed={onAutoCreateConsumed}
           />
         )}
       </div>

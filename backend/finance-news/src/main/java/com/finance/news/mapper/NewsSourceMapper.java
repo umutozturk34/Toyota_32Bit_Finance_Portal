@@ -19,11 +19,13 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public abstract class NewsSourceMapper {
 
+    /** Entity to API response, exposing the source type enum as its name. */
     @Mapping(target = "sourceType", expression = "java(entity.getSourceType().name())")
     public abstract NewsSourceResponse toResponse(NewsSource entity);
 
     public abstract List<NewsSourceResponse> toResponses(List<NewsSource> entities);
 
+    /** New source from a create request; trims name/URL and defaults enabled→true, sortOrder→0, blank type→RSS. */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -34,6 +36,7 @@ public abstract class NewsSourceMapper {
     @Mapping(target = "sortOrder", expression = "java(request.getSortOrder() != null ? request.getSortOrder() : 0)")
     public abstract NewsSource toEntity(UpsertNewsSourceRequest request);
 
+    /** In-place update of an existing source from a request, applying the same trims/defaults as {@link #toEntity}. */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)

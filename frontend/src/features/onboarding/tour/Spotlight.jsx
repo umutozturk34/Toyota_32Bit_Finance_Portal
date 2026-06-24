@@ -34,14 +34,13 @@ export function SpotlightMask({ rect, padding, viewportW, viewportH, fill }) {
         <mask id="tour-spotlight-mask">
           <rect width={viewportW} height={viewportH} fill="white" />
           {rect && (
+            // Between STEPS the cutout never glides — ProductTour keys this mask per step, so a step change
+            // remounts it fresh AT the new target (no circle flying across the viewport). The CSS geometry
+            // transition therefore only smooths a SAME-step reflow (e.g. the stock chart finishing its async
+            // load and growing the target), turning the old instant jump into a gentle resize.
             <rect
-              x={x}
-              y={y}
-              width={w}
-              height={h}
-              rx={14}
-              ry={14}
-              fill="black"
+              x={x} y={y} width={w} height={h} rx={14} ry={14} fill="black"
+              style={{ transition: 'x 0.35s ease, y 0.35s ease, width 0.35s ease, height 0.35s ease' }}
             />
           )}
         </mask>
@@ -69,6 +68,9 @@ export function SpotlightRing({ rect, padding, viewportW, viewportH }) {
         aria-hidden="true"
         className="pointer-events-none"
         initial={{ opacity: 0 }}
+        // The glow box appears AT the target directly (position is static below) and only fades in + keeps its
+        // gentle breathing pulse — it never glides across the screen between steps. Remounting per step (key in
+        // ProductTour) replays the fade so each target gets a fresh, in-place reveal.
         animate={{
           opacity: 1,
           scale: [1, 1.04, 1],
@@ -92,6 +94,8 @@ export function SpotlightRing({ rect, padding, viewportW, viewportH }) {
           borderRadius: 14,
           zIndex: Z_RING,
           willChange: 'transform, box-shadow',
+          // Glide same-step reflows (keyed remount keeps step changes instant — see SpotlightMask).
+          transition: 'top 0.35s ease, left 0.35s ease, width 0.35s ease, height 0.35s ease',
         }}
       />
       <svg
@@ -101,17 +105,22 @@ export function SpotlightRing({ rect, padding, viewportW, viewportH }) {
         style={{ position: 'fixed', top: 0, left: 0, zIndex: Z_RING }}
         aria-hidden="true"
       >
+        {/* The crisp stroke draws itself in on appearance (pathLength). `d` is applied directly so the ring is
+            placed at the new target instantly — no morphing/gliding across the viewport between steps. */}
         <motion.path
-          d={ringPath}
           fill="none"
           stroke="var(--color-accent)"
           strokeWidth="1.5"
           strokeLinecap="round"
+          d={ringPath}
           initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: 1 }}
+          // d is morphed (not snapped) so a same-step reflow resizes the stroke in lockstep with the cutout and
+          // glow; the per-step keyed remount replays the draw-in, so step changes still appear instantly.
+          animate={{ pathLength: 1, opacity: 1, d: ringPath }}
           transition={{
             pathLength: { duration: RING_DRAW_MS / 1000, ease: EASE_OUT_EXPO },
             opacity: { duration: 0.2, ease: 'easeOut' },
+            d: { duration: 0.35, ease: 'easeOut' },
           }}
         />
       </svg>

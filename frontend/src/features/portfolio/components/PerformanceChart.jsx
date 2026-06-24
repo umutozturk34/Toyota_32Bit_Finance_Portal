@@ -7,10 +7,11 @@ import ReactECharts from 'echarts-for-react';
 import { TrendingUp } from '../../../shared/components/feedback/AnimatedIcons';
 import { usePortfolioPerformance, useBackfillStatus } from '../hooks/usePortfolioData';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
-import { formatPrice, formatPercentSmart } from '../../../shared/utils/formatters';
+import { formatPrice, formatPercentSmart, visibleDecimals } from '../../../shared/utils/formatters';
 import { cardVariants } from '../../../shared/utils/animations';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
+import { SkeletonChart } from '../../../shared/components/feedback/Skeleton';
 import { useTheme } from '../../../shared/context/useTheme';
 import useElapsedSeconds from '../../../shared/hooks/useElapsedSeconds';
 import RangeSelector from '../../../shared/components/form/RangeSelector';
@@ -49,9 +50,7 @@ function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = fals
   const safeCurrency = currency === 'USD' || currency === 'EUR' ? currency : 'TRY';
   const money = useCallback((value) => {
     if (value == null) return '—';
-    const abs = Math.abs(value);
-    const maxDecimals = abs < 10 ? 4 : abs < 1000 ? 3 : 2;
-    return formatPrice(value, { currency: safeCurrency, minDecimals: 2, maxDecimals });
+    return formatPrice(value, { currency: safeCurrency, minDecimals: 2 });
   }, [safeCurrency]);
 
   // PnL in a non-TRY frame = value − entry-date-FX cost, supplied PER POINT by the backend. value/cost now
@@ -123,7 +122,7 @@ function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = fals
     if (activePoint.value != null) fields.push({ key: 'val', value: money(activePoint.value), tone: 'muted' });
     if (activePoint.pnl != null) {
       const pct = activePoint.pnlPercent != null
-        ? ` (${activePoint.pnl >= 0 ? '+' : ''}${Number(activePoint.pnlPercent).toFixed(2)}%)`
+        ? ` (${activePoint.pnl >= 0 ? '+' : ''}${Number(activePoint.pnlPercent).toFixed(visibleDecimals(Number(activePoint.pnlPercent), 2))}%)`
         : '';
       fields.push({ key: 'pnl', value: `${activePoint.pnl >= 0 ? '+' : ''}${money(activePoint.pnl)}${pct}`, tone: activePoint.pnl >= 0 ? 'pos' : 'neg' });
     }
@@ -273,8 +272,8 @@ function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = fals
 
         <div className="relative min-h-[240px] sm:min-h-[360px] px-2">
           {loading ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Spinner size="md" tone="accent" />
+            <div className="absolute inset-0">
+              <SkeletonChart h="100%" />
             </div>
           ) : option ? (
             <ReactECharts

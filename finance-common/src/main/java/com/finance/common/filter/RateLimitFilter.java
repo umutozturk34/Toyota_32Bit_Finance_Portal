@@ -38,25 +38,52 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private final ObjectMapper objectMapper;
     private final AppProperties appProperties;
-    private final LettuceBasedProxyManager<String> proxyManager;
+    private final Supplier<StatefulRedisConnection<String, byte[]>> connectionSupplier;
     private final List<RateLimitTier> tiers;
     private final com.finance.common.i18n.Translator translator;
+    private volatile LettuceBasedProxyManager<String> proxyManager;
 
     public RateLimitFilter(ObjectMapper objectMapper,
                            AppProperties appProperties,
                            StatefulRedisConnection<String, byte[]> connection,
                            List<RateLimitTier> tiers,
                            com.finance.common.i18n.Translator translator) {
+        this(objectMapper, appProperties, () -> connection, tiers, translator);
+    }
+
+    public RateLimitFilter(ObjectMapper objectMapper,
+                           AppProperties appProperties,
+                           Supplier<StatefulRedisConnection<String, byte[]>> connectionSupplier,
+                           List<RateLimitTier> tiers,
+                           com.finance.common.i18n.Translator translator) {
         this.objectMapper = objectMapper;
         this.appProperties = appProperties;
+        this.connectionSupplier = connectionSupplier;
         this.tiers = tiers;
         this.translator = translator;
-        this.proxyManager = Bucket4jLettuce.casBasedBuilder(connection)
-                .expirationAfterWrite(
-                        ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(
-                                Duration.ofHours(appProperties.getRateLimit().getBucketExpirationHours()))
-                )
-                .build();
+    }
+
+    /**
+     * Lazily builds the proxy manager on first use so a Redis-down boot does not fail startup; any
+     * connect/build failure here surfaces as a RuntimeException and is handled fail-open by the caller.
+     */
+    private LettuceBasedProxyManager<String> proxyManager() {
+        LettuceBasedProxyManager<String> local = proxyManager;
+        if (local == null) {
+            synchronized (this) {
+                local = proxyManager;
+                if (local == null) {
+                    local = Bucket4jLettuce.casBasedBuilder(connectionSupplier.get())
+                            .expirationAfterWrite(
+                                    ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(
+                                            Duration.ofHours(appProperties.getRateLimit().getBucketExpirationHours()))
+                            )
+                            .build();
+                    proxyManager = local;
+                }
+            }
+        }
+        return local;
     }
 
     @Override
@@ -72,9 +99,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String bucketKey = "rate-limit:" + userId + ":" + tier.name();
 
         Supplier<BucketConfiguration> configSupplier = () -> createBucketConfiguration(tier);
-        ConsumptionProbe probe = proxyManager.builder()
-                .build(bucketKey, configSupplier)
-                .tryConsumeAndReturnRemaining(1);
+        ConsumptionProbe probe;
+        try {
+            probe = proxyManager().builder()
+                    .build(bucketKey, configSupplier)
+                    .tryConsumeAndReturnRemaining(1);
+        } catch (RuntimeException e) {
+            // Fail open: a Redis outage/timeout must not 500 every /api/ request. Skip the limit.
+            log.warn("Rate limit backend unavailable, allowing request user={} tier={} path={}: {}",
+                    userId, tier.name(), path, e.toString());
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         log.debug("[RateLimit] user={} tier={} path={} remaining={} consumed={}",
                 userId, tier.name(), path, probe.getRemainingTokens(), probe.isConsumed());

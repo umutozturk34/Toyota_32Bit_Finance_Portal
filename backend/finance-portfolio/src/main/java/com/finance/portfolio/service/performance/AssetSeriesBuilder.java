@@ -65,7 +65,11 @@ class AssetSeriesBuilder {
                             && assetCode.equalsIgnoreCase(d.getViopContract().getSymbol()))
                     .toList();
         } else {
-            TrackedAssetType trackedType = TrackedAssetType.valueOf(type.name());
+            // Safe lookup instead of TrackedAssetType.valueOf(type.name()): DEPOSIT/BOND have no tracked-asset
+            // peer (they snapshot through the fixed-income view, not spot PortfolioAssetDailySnapshot rows), so
+            // valueOf would throw IllegalArgumentException and 500 this read. Return an empty series instead.
+            TrackedAssetType trackedType = type.trackedAssetType();
+            if (trackedType == null) return List.of();
             String normalizedCode = trackedType.normalizeCode(assetCode);
             TrackedAsset tracked = trackedAssetRepository
                     .findByAssetTypeAndAssetCodeIgnoreCase(trackedType, normalizedCode)

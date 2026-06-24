@@ -122,13 +122,19 @@ export function useRateHistory() {
   const frame = useCallback((costTry, valueTry, costDate, valueDate, fallbackPnl, fallbackPct, directionSign = 1) => {
     const fallback = { pnl: Number(fallbackPnl) || 0, pnlPercent: fallbackPct, base: 'TRY' };
     if (displayCurrency !== 'USD' && displayCurrency !== 'EUR') return fallback;
+    // Rate-readiness gate (mirrors useMoney.dateRatesReady): on cold load the FX history query is unresolved,
+    // so rateAt misses and convertAt returns the raw TRY scalar UNCHANGED (not null) — which would render a
+    // TRY-magnitude K/Z under a $/€ symbol for the few hundred ms until the query resolves. Hold the TRY
+    // fallback until BOTH legs' display-currency rates exist (TRY base is always rate 1), so the K/Z matches
+    // its sibling cells (correct ₺ magnitude/symbol) instead of flashing a ~30× wrong figure.
+    if (rateAt(displayCurrency, costDate) == null || rateAt(displayCurrency, valueDate) == null) return fallback;
     const cost = convertAt(costTry, 'TRY', costDate);
     const value = convertAt(valueTry, 'TRY', valueDate);
     if (cost == null || value == null) return fallback;
     const pnl = directionSign * (Number(value) - Number(cost));
     const pnlPercent = Math.abs(cost) > 1e-9 ? (pnl / Math.abs(cost)) * 100 : fallbackPct;
     return { pnl, pnlPercent, base: displayCurrency };
-  }, [displayCurrency, convertAt]);
+  }, [displayCurrency, convertAt, rateAt]);
 
   return useMemo(
     () => ({ currency: displayCurrency, convertAt, convertBetween, rateAt, resolveTarget, frame }),

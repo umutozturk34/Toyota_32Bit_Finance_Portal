@@ -12,12 +12,16 @@ import PortfolioSelect from '../../../shared/components/form/PortfolioSelect';
 export default function MarketAddPositionModal({ assetType, assetCode, assetName, assetImage, currentPrice, onClose, onComplete }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data: portfolios, isLoading } = usePortfolioList();
+  const { data: allPortfolios, isLoading } = usePortfolioList();
   const activePortfolioId = useAppStore((s) => s.activePortfolioId);
   const setActivePortfolioId = useAppStore((s) => s.setActivePortfolioId);
   const [chosenId, setChosenId] = useState(null);
 
   if (isLoading) return null;
+
+  // Spot positions (stocks/crypto/forex/funds) belong ONLY in a SPOT portfolio — never offer FIXED
+  // (bond/deposit) portfolios in the picker.
+  const portfolios = (allPortfolios || []).filter((p) => p.type !== 'FIXED');
 
   const resolvedId = chosenId
     ?? portfolios?.find((p) => String(p.id) === String(activePortfolioId))?.id

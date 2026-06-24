@@ -35,7 +35,7 @@ function buildGrid(year, month) {
 const NEXT_VIEW = { day: 'month', month: 'year', year: 'day' };
 
 export default function DatePickerPopover({
-  value, onChange, onMonthChange, minDate, maxDate, highlightedDates, loading, compact = false,
+  value, onChange, onMonthChange, minDate, maxDate, highlightedDates, loading, compact = false, large = false,
 }) {
   const { t } = useTranslation();
   const localeTag = currentLocaleTag();
@@ -68,12 +68,14 @@ export default function DatePickerPopover({
     if (open) { setOpen(false); return; }
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      const estimatedPopupHeight = 360;
+      const estimatedPopupHeight = large ? 420 : 360;
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
       const up = spaceBelow < estimatedPopupHeight && spaceAbove > spaceBelow + 80;
       setOpenUp(up);
-      const width = compact ? 264 : rect.width;
+      // `large` pins a generous fixed width (a roomy, legible month grid) independent of the small trigger;
+      // `compact` is the icon-only 264px; otherwise the popover tracks the full-width trigger.
+      const width = compact ? 264 : large ? 336 : rect.width;
       const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
       setPopoverPos(up
         ? { left, width, bottom: window.innerHeight - rect.top + 6 }
@@ -210,7 +212,7 @@ export default function DatePickerPopover({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: openUp ? 2 : -2 }}
             transition={{ duration: 0.1, ease: 'easeOut' }}
-            className="rounded-xl border border-border-default p-3 space-y-2 fixed z-[200] max-w-[calc(100vw-1rem)]"
+            className={`rounded-xl border border-border-default fixed z-[200] max-w-[calc(100vw-1rem)] ${large ? 'p-4 space-y-3' : 'p-3 space-y-2'}`}
             style={{ left: popoverPos?.left, top: popoverPos?.top, bottom: popoverPos?.bottom, width: popoverPos?.width, backgroundColor: 'var(--color-bg-base, #0f0f17)', boxShadow: '0 12px 40px -8px rgba(0,0,0,0.6)' }}
           >
             <div className="flex items-center justify-between gap-1">
@@ -220,7 +222,7 @@ export default function DatePickerPopover({
               <button
                 type="button"
                 onClick={() => setView((v) => NEXT_VIEW[v])}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium tracking-tight text-fg hover:text-accent hover:bg-surface transition-colors bg-transparent border-none cursor-pointer flex-1 justify-center"
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium tracking-tight text-fg hover:text-accent hover:bg-surface transition-colors bg-transparent border-none cursor-pointer flex-1 justify-center ${large ? 'text-sm' : 'text-xs'}`}
                 title={t('datePicker.toggleView')}
               >
                 {headerLabel}
@@ -233,9 +235,9 @@ export default function DatePickerPopover({
 
             {view === 'day' && (
               <>
-                <div className="grid grid-cols-7 gap-0.5">
+                <div className={`grid grid-cols-7 ${large ? 'gap-1' : 'gap-0.5'}`}>
                   {WEEKDAYS.map((d) => (
-                    <span key={d} className="text-center text-[10px] text-fg-subtle font-medium py-1">{d}</span>
+                    <span key={d} className={`text-center text-fg-subtle font-medium py-1 ${large ? 'text-[11px]' : 'text-[10px]'}`}>{d}</span>
                   ))}
                   {grid.map((date, idx) => {
                     const inMonth = date.getMonth() === cursor.month;
@@ -245,7 +247,7 @@ export default function DatePickerPopover({
                     const iso = toIso(date);
                     const hasData = highlights ? highlights.has(iso) : false;
 
-                    let cls = 'relative flex items-center justify-center h-8 rounded-md text-xs font-mono transition-colors border-none cursor-pointer ';
+                    let cls = `relative flex items-center justify-center rounded-md font-mono transition-colors border-none cursor-pointer ${large ? 'h-10 text-sm' : 'h-8 text-xs'} `;
                     if (disabled) cls += 'text-fg-subtle/40 cursor-not-allowed bg-transparent';
                     else if (isSelected) cls += 'bg-accent text-white';
                     else if (!inMonth) cls += 'text-fg-subtle bg-transparent hover:bg-surface';

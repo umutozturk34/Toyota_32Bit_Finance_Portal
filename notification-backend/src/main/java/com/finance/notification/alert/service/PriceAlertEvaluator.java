@@ -11,6 +11,7 @@ import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.payload.PriceAlertPayload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,29 +36,43 @@ public class PriceAlertEvaluator {
     private final AssetSnapshotCache assetSnapshotCache;
     private final PriceAlertMapper priceAlertMapper;
 
+    // Keyset scan batch size: how many active alerts are pulled into memory (with their snapshots) at a time.
+    // Bounds peak memory on the per-tick scan regardless of how many active alerts a market accumulates.
+    @Value("${notification.alert.scan-page-size:500}")
+    private int scanPageSize;
+
     /**
-     * Loads active alerts for the market, fires those whose threshold is crossed and dispatches
-     * them in a single batch.
+     * Scans active alerts for the market in bounded keyset pages, fires those whose threshold is crossed, and
+     * dispatches each page's fires. Keyset (id-ascending) paging — not offset — is used because firing an alert
+     * deactivates it mid-scan, which would shift an offset window and skip rows.
      *
-     * @return the number of notifications successfully dispatched
+     * @return the number of notifications successfully dispatched across all pages
      */
     @Transactional
     public int evaluate(MarketType marketType) {
-        List<PriceAlert> alerts = priceAlertService.activeAlerts(marketType);
-        if (alerts.isEmpty()) return 0;
+        long lastId = 0L;
+        int totalDispatched = 0;
+        while (true) {
+            List<PriceAlert> alerts = priceAlertService.activeAlertsAfter(marketType, lastId, scanPageSize);
+            if (alerts.isEmpty()) break;
+            // Alerts come back id-ascending, so the last one is the high-water mark for the next page's cursor.
+            lastId = alerts.get(alerts.size() - 1).getId();
 
-        Set<String> codes = alerts.stream()
-                .map(PriceAlert::getAssetCode)
-                .collect(Collectors.toUnmodifiableSet());
-        Map<String, AssetSnapshot> snapshots = assetSnapshotCache.findByCodes(marketType, codes);
+            Set<String> codes = alerts.stream()
+                    .map(PriceAlert::getAssetCode)
+                    .collect(Collectors.toUnmodifiableSet());
+            Map<String, AssetSnapshot> snapshots = assetSnapshotCache.findByCodes(marketType, codes);
 
-        List<NotificationRequest> firedRequests = collectFires(alerts, snapshots, marketType);
-        if (firedRequests.isEmpty()) return 0;
-
-        BatchResult result = dispatcher.dispatchBatched(firedRequests);
-        log.info("Price alert dispatch type={} fires={} dispatched={} failed={}",
-                marketType, firedRequests.size(), result.dispatched(), result.failed());
-        return result.dispatched();
+            List<NotificationRequest> firedRequests = collectFires(alerts, snapshots, marketType);
+            if (!firedRequests.isEmpty()) {
+                BatchResult result = dispatcher.dispatchBatched(firedRequests);
+                totalDispatched += result.dispatched();
+                log.info("Price alert dispatch type={} fires={} dispatched={} failed={}",
+                        marketType, firedRequests.size(), result.dispatched(), result.failed());
+            }
+            if (alerts.size() < scanPageSize) break;
+        }
+        return totalDispatched;
     }
 
     private List<NotificationRequest> collectFires(List<PriceAlert> alerts,
@@ -68,13 +83,19 @@ public class PriceAlertEvaluator {
             AssetSnapshot snapshot = resolveSnapshot(alert, snapshots);
             if (snapshot == null) continue;
             if (!alert.evaluate(snapshot.priceTry())) continue;
-            alert.markFired();
-            priceAlertService.persist(alert);
-            PriceAlertPayload payload = priceAlertMapper.toFiredPayload(alert, snapshot, marketType);
-            fired.add(NotificationRequest.of(alert.getUserSub(), payload));
-            log.info("Price alert fired alertId={} userSub={} market={} code={} dir={} threshold={} price={}",
-                    alert.getId(), alert.getUserSub(), marketType, alert.getAssetCode(),
-                    alert.getDirection(), alert.getThreshold(), snapshot.priceTry());
+            // Isolate each alert: one bad row must not abort the whole batch.
+            try {
+                alert.markFired();
+                priceAlertService.persist(alert);
+                PriceAlertPayload payload = priceAlertMapper.toFiredPayload(alert, snapshot, marketType);
+                fired.add(NotificationRequest.of(alert.getUserSub(), payload));
+                log.info("Price alert fired alertId={} userSub={} market={} code={} dir={} threshold={} price={}",
+                        alert.getId(), alert.getUserSub(), marketType, alert.getAssetCode(),
+                        alert.getDirection(), alert.getThreshold(), snapshot.priceTry());
+            } catch (RuntimeException ex) {
+                log.warn("Price alert fire failed alertId={} code={}: {}",
+                        alert.getId(), alert.getAssetCode(), ex.getMessage());
+            }
         }
         return fired;
     }

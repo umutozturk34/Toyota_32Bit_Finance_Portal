@@ -13,6 +13,7 @@ import Card from '../../../shared/components/card';
 import { clampNumberInput } from '../../../shared/utils/numberInput';
 import TrackedAssetAdminPanel from './TrackedAssetAdminPanel';
 import NewsSourceAdminPanel from './NewsSourceAdminPanel';
+import AdminTabBar from './AdminTabBar';
 
 const MAX_SORT_ORDER = 100000;
 
@@ -167,6 +168,8 @@ export default function AdminTrackedAssetsPage() {
                 onRefresh={handleChanged}
                 loading={false}
             />
+
+            <AdminTabBar />
 
             <div className="flex gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 w-fit">
                 {adminTabs.map(({ id, label, icon: Icon }) => (

@@ -24,16 +24,21 @@ import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
 
 import com.finance.portfolio.model.AssetType;
+import com.finance.portfolio.model.PortfolioType;
+import com.finance.portfolio.fixedincome.FixedIncomeSummaryService;
+import com.finance.portfolio.dto.response.FixedIncomeSummaryResponse;
 
 
 import com.finance.shared.util.BatchLogHelper;
 import com.finance.shared.util.BatchUpdateRunner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -58,14 +63,28 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
     private final PortfolioDailySnapshotRepository dailySnapshotRepository;
     private final TransactionTemplate transactionTemplate;
     private final ObjectProvider<EventPublisherPort> events;
+    private final FixedIncomeSummaryService fixedIncomeSummaryService;
+
+    private static final BigDecimal HUNDRED = new BigDecimal("100");
 
     @Override
     public void onMarketUpdate(MarketType marketType) {
         AssetType type = AssetType.fromMarketType(marketType);
-        if (type == null) {
+        // Skip asset classes that snapshot through their own pipeline rather than spot PortfolioPosition rows.
+        // DEPOSIT/BOND now map to a non-null AssetType but have NO TrackedAssetType peer, so the later
+        // TrackedAssetType.valueOf(type.name()) would throw IllegalArgumentException; VIOP also has no spot rows
+        // but routes to its own derivative valuation below, so it must NOT be skipped here.
+        if (type == null
+                || (type != AssetType.VIOP && type.trackedAssetType() == null)) {
             return;
         }
-        List<Portfolio> portfolios = portfolioRepository.findAll();
+        // A spot market tick (STOCK/CRYPTO/FOREX/VIOP/…) cannot change a FIXED (deposit/bond) portfolio's value, and
+        // the spot aggregate path below has no fixed-income branch — running it for a FIXED portfolio would write a
+        // 0/empty daily row and DELETE the correct fixed-income snapshot the daily scheduler produced
+        // (generateFixedIncomeSnapshot). So exclude FIXED here; it is snapshotted only on the daily schedule.
+        List<Portfolio> portfolios = portfolioRepository.findAll().stream()
+                .filter(p -> p.getType() != PortfolioType.FIXED)
+                .toList();
         LocalDateTime batchTimestamp = LocalDateTime.now();
 
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(
@@ -130,7 +149,6 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
 
     /** Writes a full per-asset + aggregate snapshot for every portfolio; {@code source} labels the trigger (e.g. morning/evening). */
     public void generateDailySnapshots(String source) {
-        LocalDate today = LocalDate.now();
         List<Portfolio> portfolios = portfolioRepository.findAll();
 
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(
@@ -182,6 +200,13 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
     }
 
     private PortfolioDailySnapshot generateFullSnapshot(Portfolio portfolio) {
+        // FIXED (deposit/bond) portfolios have NO spot/derivative rows, so the spot path below would always
+        // return null and they'd never get a daily snapshot — silently dropping them from the morning/evening
+        // digest. Route them through their own dedicated summary instead, writing the SAME aggregate row so the
+        // existing notification reader (and the performance charts) pick them up with no downstream change.
+        if (portfolio.getType() == PortfolioType.FIXED) {
+            return generateFixedIncomeSnapshot(portfolio);
+        }
         Long pid = portfolio.getId();
         LocalDateTime batchTimestamp = LocalDateTime.now();
         LocalDate today = batchTimestamp.toLocalDate();
@@ -219,5 +244,65 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
         }
 
         return insertAggregateSnapshot(portfolio, batchTimestamp);
+    }
+
+    /**
+     * Daily aggregate snapshot for a FIXED (deposit + Türkiye Hazine bond) portfolio, built from
+     * {@link FixedIncomeSummaryService#summary} rather than the spot calculator. Writes into the SAME
+     * {@code portfolio_daily_snapshots} table (cash 0; daily P/L = today's value − the latest prior day's value)
+     * so the morning/evening notification digest and the performance charts treat it like any other portfolio.
+     * An empty fixed-income book (no deposits/bonds) snapshots nothing, mirroring the empty spot case.
+     */
+    private PortfolioDailySnapshot generateFixedIncomeSnapshot(Portfolio portfolio) {
+        Long pid = portfolio.getId();
+        LocalDate today = LocalDate.now();
+        FixedIncomeSummaryResponse summary = fixedIncomeSummaryService.summary(pid, portfolio.getUserSub());
+        // Match the live headline EXACTLY: it folds the received coupon cash into the holder's total value and K/Z
+        // (the bond clean-price value alone is only the mark-to-market leg). Snapshotting the clean total would make
+        // the daily digest and history diverge from what the user sees on the card, so add the coupons in here too.
+        BigDecimal coupons = nz(summary.bondCouponsReceivedTry());
+        BigDecimal totalValue = nz(summary.totalValueTry()).add(coupons);
+        BigDecimal totalCost = nz(summary.totalCostTry());
+        if (totalValue.signum() == 0 && totalCost.signum() == 0) {
+            return null;
+        }
+        BigDecimal totalPnl = nz(summary.totalPnlTry()).add(coupons);
+        BigDecimal pnlPercent = totalCost.signum() == 0
+                ? null
+                : totalPnl.multiply(HUNDRED).divide(totalCost, 4, RoundingMode.HALF_UP);
+
+        BigDecimal priorValue = priorValueBeforeToday(pid, today);
+        BigDecimal dailyPnl = priorValue == null ? BigDecimal.ZERO : totalValue.subtract(priorValue);
+        BigDecimal dailyPnlPercent = (priorValue == null || priorValue.signum() == 0)
+                ? null
+                : dailyPnl.multiply(HUNDRED).divide(priorValue, 4, RoundingMode.HALF_UP);
+
+        PortfolioDailySnapshot snapshot = PortfolioDailySnapshot.builder()
+                .portfolioId(pid)
+                .snapshotDate(today)
+                .totalValueTry(totalValue)
+                .cashTry(BigDecimal.ZERO)
+                .totalCostTry(totalCost)
+                .totalPnlTry(totalPnl)
+                .pnlPercent(pnlPercent)
+                .dailyPnlTry(dailyPnl)
+                .dailyPnlPercent(dailyPnlPercent)
+                .version(0L)
+                .build();
+        dailySnapshotRepository.deleteByPortfolioIdAndSnapshotDate(pid, today);
+        return dailySnapshotRepository.save(snapshot);
+    }
+
+    /** Total value of the most recent snapshot strictly before {@code today} (yesterday's, typically), or null. */
+    private BigDecimal priorValueBeforeToday(Long pid, LocalDate today) {
+        return dailySnapshotRepository.findRecentByPortfolioId(pid, PageRequest.of(0, 5)).stream()
+                .filter(s -> s.getSnapshotDate() != null && s.getSnapshotDate().isBefore(today))
+                .map(PortfolioDailySnapshot::getTotalValueTry)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static BigDecimal nz(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 }

@@ -1,7 +1,6 @@
 package com.finance.market.fund.service;
 
 import com.finance.common.config.AppProperties;
-import com.finance.common.model.TrackedAssetType;
 import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.core.service.TrackedAssetQueryService;
 import com.finance.market.fund.client.TefasClient;
@@ -24,7 +23,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.mockito.ArgumentCaptor;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -86,6 +88,50 @@ class FundSnapshotProcessorTest {
         verify(entityWriter).upsertCandleFromDto(savedByf, FundType.BYF, byfDto);
         verify(entityWriter).ensureByfTracked("BTC1", "name BTC1");
         verify(fundCacheService).putSnapshot("BTC1", savedByf);
+    }
+
+    @Test
+    void refreshAll_usesMostRecentUsableRow_whenLatestDayNavMissing() {
+        // Window holds two rows for one YAT fund: the latest day has no NAV, the prior day does. The snapshot must
+        // persist the prior day's valid NAV (its most recent usable price) instead of dropping the fund.
+        TefasFundDto older = new TefasFundDto("YF1", "name YF1",
+                LocalDateTime.of(2026, 5, 11, 0, 0), new BigDecimal("5.00"), null, null, null, null);
+        TefasFundDto newerNull = new TefasFundDto("YF1", "name YF1",
+                LocalDateTime.of(2026, 5, 12, 0, 0), null, null, null, null, null);
+        when(tefasClient.bulkFetch(eq(FundType.YAT), any(), any())).thenReturn(List.of(older, newerNull));
+        when(tefasClient.bulkFetch(eq(FundType.BYF), any(), any())).thenReturn(List.of());
+        stubTransactionTemplate();
+        when(entityWriter.saveSnapshot(any(), eq(FundType.YAT))).thenReturn(fund("YF1"));
+
+        processor.refreshAll();
+
+        ArgumentCaptor<TefasFundDto> captor = ArgumentCaptor.forClass(TefasFundDto.class);
+        verify(entityWriter).saveSnapshot(captor.capture(), eq(FundType.YAT));
+        assertThat(captor.getValue().price()).isEqualByComparingTo("5.00");
+        assertThat(captor.getValue().date()).isEqualTo(LocalDateTime.of(2026, 5, 11, 0, 0));
+    }
+
+    @Test
+    void refreshAll_tracksByf_whenNavMissingButBulletinPresent_withoutFakingNav() {
+        // An ETF whose NAV (fiyat) wasn't published that day but has a valid exchange bulletin price must still be
+        // TRACKED so it shows in the list (the cause of "only 10 of 30" was dropping these) — WITHOUT faking the
+        // NAV: price stays null, bulletin is preserved, and the next daily snapshot fills the NAV once published.
+        TefasFundDto navlessEtf = new TefasFundDto("ETF1", "name ETF1",
+                LocalDateTime.of(2026, 5, 12, 0, 0),
+                null, new BigDecimal("690.00"), null, null, null);
+        Fund saved = fund("ETF1");
+        when(tefasClient.bulkFetch(eq(FundType.BYF), any(), any())).thenReturn(List.of(navlessEtf));
+        when(tefasClient.bulkFetch(eq(FundType.YAT), any(), any())).thenReturn(List.of());
+        stubTransactionTemplate();
+        when(entityWriter.saveSnapshot(any(), eq(FundType.BYF))).thenReturn(saved);
+
+        processor.refreshAll();
+
+        ArgumentCaptor<TefasFundDto> captor = ArgumentCaptor.forClass(TefasFundDto.class);
+        verify(entityWriter).saveSnapshot(captor.capture(), eq(FundType.BYF));
+        assertThat(captor.getValue().price()).isNull();                       // NAV not faked
+        assertThat(captor.getValue().bulletinPrice()).isEqualByComparingTo("690.00");
+        verify(entityWriter).ensureByfTracked("ETF1", "name ETF1");           // still tracked → shows in list
     }
 
     @Test
@@ -245,13 +291,14 @@ class FundSnapshotProcessorTest {
     }
 
     @Test
-    void exists_returnsFalse_whenLookupThrows() {
+    void exists_propagatesTemporarilyUnavailable_whenLookupFailsTransiently() {
         when(tefasClient.post(eq(FundType.YAT), eq("X"), any(), any()))
                 .thenThrow(new RuntimeException("WAF block"));
 
-        boolean result = processor.exists("X");
-
-        assertThat(result).isFalse();
+        // A transient upstream failure must NOT be reported as "does not exist"; it propagates so the caller retries.
+        assertThatThrownBy(() -> processor.exists("X"))
+                .isInstanceOf(com.finance.common.exception.BusinessException.class)
+                .hasMessage("error.market.dataTemporarilyUnavailable");
     }
 
     @Test

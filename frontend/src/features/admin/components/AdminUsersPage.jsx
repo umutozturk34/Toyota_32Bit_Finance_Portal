@@ -4,7 +4,9 @@ import { motion } from 'framer-motion';
 import { Users, Search, Ban, ShieldCheck, AlertCircle, Mail, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import PageHeader from '../../../shared/components/layout/PageHeader';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
+import AdminTabBar from './AdminTabBar';
 import Spinner from '../../../shared/components/feedback/Spinner';
+import { SkeletonRow } from '../../../shared/components/feedback/Skeleton';
 import { toast } from '../../../shared/components/feedback/toastBus';
 import { useAuth } from '../../auth/useAuth';
 import { useAdminUsers, useAdminUserCount, useBanUser, useUnbanUser } from '../hooks/useAdminUsers';
@@ -25,6 +27,32 @@ function StatusBadge({ enabled }) {
       {enabled ? <ShieldCheck className="h-3 w-3" /> : <Ban className="h-3 w-3" />}
       {enabled ? t('adminUsers.statusActive') : t('adminUsers.statusBanned')}
     </span>
+  );
+}
+
+// The user's app roles (USER/ADMIN); ADMIN is accent-highlighted. Keycloak's default realm roles are already
+// filtered out backend-side, so an empty list just renders a dash.
+function RoleBadges({ roles }) {
+  if (!Array.isArray(roles) || roles.length === 0) {
+    return <span className="text-[11px] text-fg-subtle">—</span>;
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {roles.map((role) => {
+        const isAdmin = String(role).toUpperCase() === 'ADMIN';
+        return (
+          <span
+            key={role}
+            className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+              isAdmin ? 'bg-accent/15 text-accent' : 'bg-surface text-fg-muted'
+            }`}
+          >
+            {isAdmin ? <ShieldCheck className="h-2.5 w-2.5" /> : <User className="h-2.5 w-2.5" />}
+            {role}
+          </span>
+        );
+      })}
+    </div>
   );
 }
 
@@ -92,6 +120,8 @@ export default function AdminUsersPage() {
         loading={isFetching}
       />
 
+      <AdminTabBar />
+
       <form onSubmit={handleSearchSubmit} className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-fg-muted pointer-events-none" />
@@ -113,17 +143,19 @@ export default function AdminUsersPage() {
       </form>
 
       <div className="rounded-xl border border-border-default bg-bg-elevated overflow-hidden">
-        <div className="hidden md:grid grid-cols-[2fr_2fr_1fr_1fr_140px] gap-3 px-4 py-3 border-b border-border-default text-[11px] font-semibold text-fg-muted uppercase tracking-wide">
+        <div className="hidden md:grid grid-cols-[2fr_2fr_1fr_1fr_1fr_140px] gap-3 px-4 py-3 border-b border-border-default text-[11px] font-semibold text-fg-muted uppercase tracking-wide">
           <span>{t('adminUsers.col.user')}</span>
           <span>{t('adminUsers.col.email')}</span>
           <span>{t('adminUsers.col.signupDate')}</span>
           <span>{t('adminUsers.col.status')}</span>
+          <span>{t('adminUsers.col.roles')}</span>
           <span className="text-right">{t('adminUsers.col.action')}</span>
         </div>
         {isLoading && (
-          <div className="flex items-center justify-center gap-2 py-12 text-sm text-fg-muted">
-            <Spinner size="sm" tone="accent" />
-            {t('common.loading')}
+          <div aria-hidden="true">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonRow key={i} cols={4} />
+            ))}
           </div>
         )}
         {!isLoading && (!users || users.length === 0) && (
@@ -137,7 +169,7 @@ export default function AdminUsersPage() {
             key={user.id}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-1 md:grid-cols-[2fr_2fr_1fr_1fr_140px] gap-2 md:gap-3 items-start md:items-center px-4 py-3 border-b border-border-default last:border-b-0 text-sm hover:bg-surface transition-colors"
+            className="grid grid-cols-1 md:grid-cols-[2fr_2fr_1fr_1fr_1fr_140px] gap-2 md:gap-3 items-start md:items-center px-4 py-3 border-b border-border-default last:border-b-0 text-sm hover:bg-surface transition-colors"
           >
             <div className="min-w-0">
               <div className="font-medium text-fg truncate">{user.username}</div>
@@ -153,6 +185,7 @@ export default function AdminUsersPage() {
             </div>
             <span className="text-[11px] text-fg-muted font-mono">{formatDate(user.createdAt, localeTag)}</span>
             <StatusBadge enabled={user.enabled} />
+            <RoleBadges roles={user.roles} />
             {user.id === currentUser?.id ? (
               <span className="justify-self-end flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold bg-accent/10 text-accent">
                 <User className="h-3 w-3" /> {t('adminUsers.you')}

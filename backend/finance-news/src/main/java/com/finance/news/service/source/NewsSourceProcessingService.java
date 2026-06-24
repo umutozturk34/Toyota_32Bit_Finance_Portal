@@ -35,6 +35,7 @@ public class NewsSourceProcessingService {
     private final NewsArticleRepository articleRepository;
     private final NewsCacheService newsCacheService;
     private final TransactionTemplate transactionTemplate;
+    private final NewsAssetEnricher assetEnricher;
     private final int maxArticlesPerSource;
 
     public NewsSourceProcessingService(NewsSourceFetcher sourceFetcher,
@@ -42,12 +43,14 @@ public class NewsSourceProcessingService {
                                        NewsArticleRepository articleRepository,
                                        NewsCacheService newsCacheService,
                                        TransactionTemplate transactionTemplate,
+                                       NewsAssetEnricher assetEnricher,
                                        com.finance.news.config.NewsProperties newsProperties) {
         this.sourceFetcher = sourceFetcher;
         this.articleMapper = articleMapper;
         this.articleRepository = articleRepository;
         this.newsCacheService = newsCacheService;
         this.transactionTemplate = transactionTemplate;
+        this.assetEnricher = assetEnricher;
         this.maxArticlesPerSource = newsProperties.getMaxArticlesPerSource();
     }
 
@@ -83,6 +86,7 @@ public class NewsSourceProcessingService {
                 }
                 NewsArticle entity = articleMapper.toEntity(dto, now);
                 entity.setSource(source);
+                assetEnricher.enrich(entity);
                 NewsArticle saved = transactionTemplate.execute(status -> articleRepository.save(entity));
                 newsCacheService.cacheArticle(saved);
                 savedCount++;

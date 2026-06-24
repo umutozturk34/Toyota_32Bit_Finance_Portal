@@ -4,6 +4,7 @@ import { forexService } from './services/forexService';
 import { getBaseCurrency } from '../../shared/constants/forex';
 import { forexName } from '../../shared/utils/commodityName';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
+import BankRatesSection from '../bankRates/BankRatesSection';
 
 function ForexHeader({ asset, code }) {
   const { t } = useTranslation();
@@ -38,6 +39,7 @@ export default function ForexDetail() {
       fetchHistory={(_, range) => forexService.getHistory(code, range)}
       backRoute="/forex"
       renderHeader={(asset) => <ForexHeader asset={asset} code={code} />}
+      renderBelowChart={() => <BankRatesSection currency={getBaseCurrency(code)} kind="CURRENCY" />}
       getBuyProps={(asset) => ({
         assetType: 'FOREX',
         assetCode: code,

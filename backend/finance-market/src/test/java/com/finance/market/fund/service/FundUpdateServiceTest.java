@@ -60,6 +60,19 @@ class FundUpdateServiceTest {
     }
 
     @Test
+    void refreshAll_triggersProfileBackFillOffTheCriticalPath() {
+        when(fundCandleRepository.findCandleDateRangePerFund()).thenReturn(List.of());
+        when(fundRepository.findAll()).thenReturn(List.of());
+
+        service.refreshAll();
+
+        // The per-fund profile back-fill is fired asynchronously so the (init/daily) refresh never blocks on the
+        // ~1h, rate-limited TEFAS profile crawl — it must NOT be called on the synchronous path.
+        verify(detailEnrichmentService).enrichMissingProfilesAsync();
+        verify(detailEnrichmentService, org.mockito.Mockito.never()).enrichMissingProfiles();
+    }
+
+    @Test
     void refreshAll_updatesCacheForFundsWithChangedPercent() {
         Fund fund = fundWithCode("TYH");
         LocalDateTime ts = LocalDateTime.now();
@@ -67,7 +80,8 @@ class FundUpdateServiceTest {
         rangeRows.add(new Object[]{"TYH", ts, ts});
         when(fundCandleRepository.findCandleDateRangePerFund()).thenReturn(rangeRows);
         when(fundRepository.findAll()).thenReturn(List.of(fund));
-        when(entityWriter.refreshChangePercent(fund, ts)).thenReturn(true);
+        // No previous-close row stubbed → the batch map is empty, so the pre-resolved prior price is null.
+        when(entityWriter.refreshChangePercent(fund, ts, null)).thenReturn(true);
 
         service.refreshAll();
 
@@ -82,7 +96,7 @@ class FundUpdateServiceTest {
         rangeRows.add(new Object[]{"TYH", ts, ts});
         when(fundCandleRepository.findCandleDateRangePerFund()).thenReturn(rangeRows);
         when(fundRepository.findAll()).thenReturn(List.of(fund));
-        when(entityWriter.refreshChangePercent(fund, ts)).thenReturn(false);
+        when(entityWriter.refreshChangePercent(fund, ts, null)).thenReturn(false);
 
         service.refreshAll();
 

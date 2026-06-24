@@ -5,11 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.notification.config.PdfExportProperties;
 import com.finance.notification.reports.client.ForexHistoryClient;
 import com.finance.notification.reports.client.PortfolioDataClient;
+import com.finance.notification.reports.dto.PerformanceSeriesPoint;
 import com.finance.notification.reports.dto.PortfolioPdfRequest;
 import com.finance.notification.reports.dto.PortfolioReportBundle;
 import com.finance.notification.reports.dto.ReportAllocation;
 import com.finance.notification.reports.dto.ReportPosition;
+import com.finance.notification.reports.dto.ReportSummary;
 import com.finance.notification.reports.fx.ForexRatePoint;
+import com.finance.notification.reports.view.AllocationViewItem;
 import com.finance.notification.reports.view.RealizedViewItem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.http.client.reactive.MockClientHttpRequest;
@@ -29,6 +33,7 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import reactor.core.publisher.Flux;
@@ -51,6 +56,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -78,7 +85,8 @@ class PortfolioPdfServiceTest {
         PdfExportProperties props = new PdfExportProperties(
                 new PdfExportProperties.Pdf("http://pdf-service:8080", 10000),
                 "http://localhost:5173");
-        return new PortfolioPdfService(builder, dataClient, forexHistoryClient, templateEngine, messageSource, svgService, props);
+        return new PortfolioPdfService(builder, dataClient, forexHistoryClient, templateEngine, messageSource,
+                svgService, new ReportCurrencyConverter(), props);
     }
 
     @BeforeEach
@@ -309,6 +317,149 @@ class PortfolioPdfServiceTest {
         assertThat(PortfolioPdfService.largestRemainderPercents(
                 List.of(new BigDecimal("0"), new BigDecimal("0")), BigDecimal.ZERO, 1))
                 .hasSize(2).allSatisfy(s -> assertThat(s).isEqualByComparingTo("0.0"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void generate_eurReport_buildsAllocationItemsConvertsSummaryFramesAndSeries_atEurRate() {
+        // Arrange: a full EUR report. FX history is a flat 5 ₺/€, so as-of conversions divide by 5.
+        // The summary carries a EUR frame (consumed verbatim) so its totals are observable independent
+        // of the as-of rate. The regular allocation pie has two non-zero slices (drives
+        // buildAllocationItems: filter + largest-remainder shares + colour cycling). The performance
+        // series has one TRY point (1000) converted at the same 5 ₺ rate -> 200.
+        PortfolioPdfService service = buildService();
+        PortfolioPdfRequest req = new PortfolioPdfRequest(50L, "My Fund", "DARK", "tr", "EUR");
+        ReportSummary.ReportCurrencyFrame eurFrame = new ReportSummary.ReportCurrencyFrame(
+                new BigDecimal("12.5"), new BigDecimal("1.1"),
+                new BigDecimal("250"), new BigDecimal("220"),
+                new BigDecimal("30"), new BigDecimal("3"));
+        ReportSummary summary = new ReportSummary(
+                new BigDecimal("1250"), new BigDecimal("1100"), new BigDecimal("150"),
+                new BigDecimal("13"), new BigDecimal("15"), new BigDecimal("1.2"),
+                new BigDecimal("100"), new BigDecimal("9"), new BigDecimal("4"),
+                Map.of("EUR", eurFrame));
+        ReportAllocation slotA = new ReportAllocation(
+                "Hisse", "STOCK", new BigDecimal("750"), new BigDecimal("75"),
+                new BigDecimal("700"), BigDecimal.ZERO);
+        ReportAllocation slotB = new ReportAllocation(
+                "Kripto", "CRYPTO", new BigDecimal("250"), new BigDecimal("25"),
+                new BigDecimal("240"), BigDecimal.ZERO);
+        PerformanceSeriesPoint point = new PerformanceSeriesPoint(
+                LocalDate.of(2025, 1, 2).atStartOfDay(), 1000d);
+        when(dataClient.fetch(eq(50L), anyString(), anyString()))
+                .thenReturn(new PortfolioReportBundle(50L, summary, List.of(slotA, slotB), List.of(),
+                        List.of(stubPosition(50L)), List.of(point), List.of()));
+        when(forexHistoryClient.fetchHistory(eq("EUR"), anyString())).thenReturn(List.of(
+                new ForexRatePoint(LocalDate.of(2024, 1, 2), new BigDecimal("5"))));
+        when(svgService.allocationDonut(any(), any())).thenReturn("<svg/>");
+        when(svgService.performanceLineChart(any(), any(), any(Locale.class), anyString())).thenReturn("<svg/>");
+        when(messageSource.getMessage(anyString(), any(), anyString(), any(Locale.class)))
+                .thenAnswer(inv -> inv.getArgument(2));
+        ArgumentCaptor<Context> ctx = ArgumentCaptor.forClass(Context.class);
+        when(templateEngine.process(eq("pdf/portfolio-report"), ctx.capture())).thenReturn("<html/>");
+        queuedResponses.add(pdfResponse(new byte[]{9}));
+
+        // Act
+        service.generate(req, "sub", "tok");
+
+        // Assert: EUR currency + symbol survive (history present), the summary consumes the EUR frame
+        // verbatim (250/220/30), the two allocation slices become 75%/25% legend items, and the value
+        // series point converts at the 5 ₺ rate (1000 / 5 = 200).
+        assertThat(ctx.getValue().getVariable("currency")).isEqualTo("EUR");
+        assertThat(ctx.getValue().getVariable("currencySymbol")).isEqualTo("€");
+        ReportSummary outSummary = (ReportSummary) ctx.getValue().getVariable("summary");
+        assertThat(outSummary.totalValueTry()).isEqualByComparingTo("250");
+        assertThat(outSummary.totalEntryValueTry()).isEqualByComparingTo("220");
+        assertThat(outSummary.totalPnlTry()).isEqualByComparingTo("30");
+        assertThat(outSummary.pnlPercent()).isEqualByComparingTo("12.5");
+        List<AllocationViewItem> items = (List<AllocationViewItem>) ctx.getValue().getVariable("allocationItems");
+        assertThat(items).hasSize(2);
+        assertThat(items.get(0).sharePct()).isEqualByComparingTo("75.0");
+        assertThat(items.get(1).sharePct()).isEqualByComparingTo("25.0");
+        ArgumentCaptor<List<PerformanceSeriesPoint>> seriesCaptor = ArgumentCaptor.forClass(List.class);
+        verify(svgService, atLeastOnce())
+                .performanceLineChart(seriesCaptor.capture(), any(), any(Locale.class), eq("€"));
+        assertThat(seriesCaptor.getValue()).hasSize(1);
+        assertThat(seriesCaptor.getValue().get(0).value()).isEqualTo(200d);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void generate_tryReport_convertsSummaryViaFallback_andBuildsAllocationAndSeriesUnchanged() {
+        // Arrange: a TRY report (no FX) with a summary that has NO per-currency frame, so convertSummary
+        // takes the as-of fallback branch (pass-through for TRY). Allocation + series exercise their
+        // non-empty paths without any currency conversion.
+        PortfolioPdfService service = buildService();
+        PortfolioPdfRequest req = new PortfolioPdfRequest(60L, "TL Fund", "LIGHT", "en", "TRY");
+        ReportSummary summary = new ReportSummary(
+                new BigDecimal("5000"), new BigDecimal("4000"), new BigDecimal("1000"),
+                new BigDecimal("25"), new BigDecimal("50"), new BigDecimal("1"),
+                new BigDecimal("300"), new BigDecimal("7"), new BigDecimal("3"));
+        ReportAllocation slot = new ReportAllocation(
+                "Fon", "FUND", new BigDecimal("5000"), new BigDecimal("100"),
+                new BigDecimal("4000"), BigDecimal.ZERO);
+        PerformanceSeriesPoint point = new PerformanceSeriesPoint(
+                LocalDate.of(2025, 6, 1).atStartOfDay(), 4200d);
+        when(dataClient.fetch(eq(60L), anyString(), anyString()))
+                .thenReturn(new PortfolioReportBundle(60L, summary, List.of(slot), List.of(),
+                        List.of(stubPosition(60L)), List.of(point), List.of()));
+        when(svgService.allocationDonut(any(), any())).thenReturn("<svg/>");
+        when(svgService.performanceLineChart(any(), any(), any(Locale.class), anyString())).thenReturn("<svg/>");
+        when(messageSource.getMessage(anyString(), any(), anyString(), any(Locale.class)))
+                .thenAnswer(inv -> inv.getArgument(2));
+        ArgumentCaptor<Context> ctx = ArgumentCaptor.forClass(Context.class);
+        when(templateEngine.process(eq("pdf/portfolio-report"), ctx.capture())).thenReturn("<html/>");
+        queuedResponses.add(pdfResponse(new byte[]{7}));
+
+        // Act
+        service.generate(req, "sub", "tok");
+
+        // Assert: TRY pass-through keeps every summary scalar untouched (fallback branch), the single
+        // allocation slice is 100% of the pie, and the TRY value series point is unchanged.
+        assertThat(ctx.getValue().getVariable("currency")).isEqualTo("TRY");
+        ReportSummary outSummary = (ReportSummary) ctx.getValue().getVariable("summary");
+        assertThat(outSummary.totalValueTry()).isEqualByComparingTo("5000");
+        assertThat(outSummary.totalEntryValueTry()).isEqualByComparingTo("4000");
+        assertThat(outSummary.totalPnlTry()).isEqualByComparingTo("1000");
+        assertThat(outSummary.realPnlTry()).isEqualByComparingTo("300");
+        List<AllocationViewItem> items = (List<AllocationViewItem>) ctx.getValue().getVariable("allocationItems");
+        assertThat(items).hasSize(1);
+        assertThat(items.get(0).sharePct()).isEqualByComparingTo("100.0");
+    }
+
+    @Test
+    void generate_wrapsForexHistoryRuntimeFailure_asPdfGenerationException() {
+        // Arrange: the concurrent FX history fetch throws a RuntimeException. joinFxRates must unwrap the
+        // CompletionException and re-throw the original RuntimeException, which generate's generic handler
+        // then wraps as a PdfGenerationException.
+        PortfolioPdfService service = buildService();
+        PortfolioPdfRequest req = new PortfolioPdfRequest(70L, null, "DARK", "tr", "USD");
+        when(dataClient.fetch(eq(70L), anyString(), anyString()))
+                .thenReturn(new PortfolioReportBundle(70L, null, List.of(), List.of(),
+                        List.of(stubPosition(70L)), List.of(), List.of()));
+        when(forexHistoryClient.fetchHistory(eq("USD"), anyString()))
+                .thenThrow(new IllegalStateException("forex upstream down"));
+
+        // Act / Assert
+        assertThatThrownBy(() -> service.generate(req, "sub", "tok"))
+                .isInstanceOf(PdfGenerationException.class);
+    }
+
+    @Test
+    void generate_wrapsWebClientResponseException_fromDataFetch_asPdfGenerationException() {
+        // Arrange: the portfolio data fetch fails with a WebClientResponseException. generate has a
+        // dedicated catch for it that re-wraps it as a PdfGenerationException carrying the http status.
+        PortfolioPdfService service = buildService();
+        PortfolioPdfRequest req = new PortfolioPdfRequest(80L, null, "DARK", "tr", "TRY");
+        WebClientResponseException http = WebClientResponseException.create(
+                502, "Bad Gateway", HttpHeaders.EMPTY, "upstream exploded".getBytes(StandardCharsets.UTF_8),
+                StandardCharsets.UTF_8);
+        when(dataClient.fetch(eq(80L), anyString(), anyString())).thenThrow(http);
+
+        // Act / Assert
+        assertThatThrownBy(() -> service.generate(req, "sub", "tok"))
+                .isInstanceOf(PdfGenerationException.class)
+                .hasMessageContaining("http error");
     }
 
     private static ReportPosition stubPosition(long id) {

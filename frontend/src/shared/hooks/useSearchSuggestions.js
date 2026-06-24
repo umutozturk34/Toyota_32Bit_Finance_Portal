@@ -77,17 +77,21 @@ export default function useSearchSuggestions({
     return () => document.removeEventListener('mousedown', handler);
   }, [onClose]);
 
-  const buildKeyDown = useCallback((onSelect, onEscape) => (e) => {
-    if (suggestions.length === 0) return;
+  // navItems lets a caller drive arrow/Enter navigation over a SECONDARY list (the recent-searches panel,
+  // shown while the query is too short for live results) instead of the live suggestions — so the keyboard
+  // works on whichever list is actually on screen, not only when an API result set exists.
+  const buildKeyDown = useCallback((onSelect, onEscape, navItems = null) => (e) => {
+    const list = navItems ?? suggestions;
+    if (list.length === 0) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setActiveIndex(i => (i + 1) % suggestions.length);
+      setActiveIndex(i => (i + 1) % list.length);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setActiveIndex(i => (i - 1 + suggestions.length) % suggestions.length);
-    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      setActiveIndex(i => (i - 1 + list.length) % list.length);
+    } else if (e.key === 'Enter' && activeIndex >= 0 && activeIndex < list.length) {
       e.preventDefault();
-      onSelect(suggestions[activeIndex]);
+      onSelect(list[activeIndex]);
     } else if (e.key === 'Escape') {
       (onEscape || onClose)?.();
     }

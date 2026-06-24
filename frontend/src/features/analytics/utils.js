@@ -1,10 +1,10 @@
-import { formatPrice } from '../../shared/utils/formatters';
+import { formatPrice, visibleDecimals } from '../../shared/utils/formatters';
 
 export function formatPercent(value, locale = 'tr-TR') {
   if (value == null) return '—';
   const n = Number(value);
   const sign = n > 0 ? '+' : '';
-  return `${sign}${n.toLocaleString(locale, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}%`;
+  return `${sign}${n.toLocaleString(locale, { maximumFractionDigits: visibleDecimals(n, 2), minimumFractionDigits: 2 })}%`;
 }
 
 // Decimals scaled to magnitude: big figures (crypto can be millions per unit) drop decimals for
@@ -33,6 +33,17 @@ export function formatMoneyDelta(value, locale = 'tr-TR') {
   const n = Number(value);
   const sign = n > 0 ? '+' : '';
   return `${sign}${formatPrice(n, { locale, minDecimals: 0, maxDecimals: moneyDigits(n) })} ₺`;
+}
+
+// Geometric (Fisher) real excess of a return over a benchmark, both in %: ((1+r/100)/(1+b/100)−1)×100.
+// Mirrors backend ReturnMath.realExcessPct — NOT the arithmetic r−b, which at Turkish inflation overstates the
+// magnitude ~5× and would disagree with the inflation-beater's excessReturnPct (reading as a bug). Null when an
+// input is missing or the benchmark is ≤ −100% (the deflator would be non-positive).
+export function realExcessPct(returnPct, benchmarkPct) {
+  if (returnPct == null || benchmarkPct == null) return null;
+  const denom = 1 + Number(benchmarkPct) / 100;
+  if (!(denom > 0)) return null;
+  return ((1 + Number(returnPct) / 100) / denom - 1) * 100;
 }
 
 function isoDate(date) {

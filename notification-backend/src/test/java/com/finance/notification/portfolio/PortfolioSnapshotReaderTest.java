@@ -7,7 +7,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementSetter;
-import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.util.List;
@@ -159,6 +158,7 @@ class PortfolioSnapshotReaderTest {
         org.mockito.Mockito.when(rs.getString(3)).thenReturn("Spot");
         org.mockito.Mockito.when(rs.getBigDecimal(4)).thenReturn(new java.math.BigDecimal("110"));
         org.mockito.Mockito.when(rs.getBigDecimal(5)).thenReturn(new java.math.BigDecimal("10"));
+        org.mockito.Mockito.when(rs.getString(6)).thenReturn("FIXED");
         org.mockito.Mockito.doAnswer(inv -> {
             RowMapper<?> mapper = inv.getArgument(2);
             mapper.mapRow(rs, 0);
@@ -173,6 +173,7 @@ class PortfolioSnapshotReaderTest {
         List<PortfolioSnapshotReader.PortfolioLine> lines = result.get("user-1");
         assertThat(lines).hasSize(1);
         assertThat(lines.get(0).name()).isEqualTo("Spot");
+        assertThat(lines.get(0).type()).isEqualTo("FIXED");
         assertThat(lines.get(0).portfolioId()).isEqualTo(7L);
         assertThat(lines.get(0).dailyPnlPercent()).isEqualByComparingTo("10");
     }

@@ -62,7 +62,7 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
 
   if (!a) return null;
 
-  const money = (v) => (v == null ? '—' : `${symbol}${formatPrice(v, { locale, minDecimals: 0, maxDecimals: priceDecimals(v) })}`);
+  const money = (v) => (v == null ? '—' : `${symbol}${formatPrice(v, { locale, minDecimals: 2, maxDecimals: priceDecimals(v) })}`);
   const pct1 = (v) => (v == null ? '—' : `${v.toLocaleString(locale, { maximumFractionDigits: 1 })}%`);
   const compactPct = (v, signed = true) => {
     if (v == null) return '—';
@@ -81,7 +81,7 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
   // ─── Top summary strip: brand/date · CLOSE hero · range (stretches to fill) ───
   if (variant === 'summary') {
     return (
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 px-3 sm:px-4 py-2.5 sm:overflow-x-auto sm:scrollbar-hide overscroll-x-contain">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 px-3 sm:px-4 py-2.5 sm:pr-12 sm:overflow-x-auto sm:scrollbar-hide overscroll-x-contain">
         <div className="shrink-0 flex flex-col justify-center gap-1 w-full sm:w-[88px]">
           <span className="inline-flex items-center gap-1.5 text-xs font-display font-bold uppercase tracking-[0.16em] text-fg leading-none">
             <ScanSearch className="h-4 w-4 text-accent" />
@@ -127,7 +127,7 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
         </div>
 
         {a.hiLo?.positionPct != null && (
-          <div className="shrink-0 w-full sm:w-36 lg:w-48 pt-2 pl-0 sm:pt-0 sm:pl-4 border-t sm:border-t-0 sm:border-l border-border-default/60">
+          <div className="w-full sm:ml-auto sm:w-48 lg:w-56 sm:shrink-0 pt-2 pl-0 sm:pt-0 sm:pl-4 border-t sm:border-t-0 sm:border-l border-border-default/60">
             <PositionBar pct={a.hiLo.positionPct} lowLabel={money(a.hiLo.low)} highLabel={money(a.hiLo.high)} />
           </div>
         )}

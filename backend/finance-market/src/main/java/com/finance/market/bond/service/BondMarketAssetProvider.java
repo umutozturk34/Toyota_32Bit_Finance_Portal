@@ -58,7 +58,7 @@ public class BondMarketAssetProvider implements MarketAssetProvider {
                                             String sortBy, String direction, int page, int size) {
         Specification<Bond> spec = buildSpec(searchTerm, filters);
         List<Bond> bonds = bondRepository.findAll(spec,
-                PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS))).getContent();
+                PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS, "seriesCode"))).getContent();
         return bonds.stream().map(this::toResponse).toList();
     }
 

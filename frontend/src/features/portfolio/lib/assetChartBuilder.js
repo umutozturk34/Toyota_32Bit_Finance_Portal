@@ -16,8 +16,7 @@ export function formatChartMoney(value, currency) {
       maximumFractionDigits: 2,
     }).format(value);
   }
-  const maxDecimals = abs < 10 ? 4 : abs < 1000 ? 3 : 2;
-  return formatPrice(value, { currency, minDecimals: 2, maxDecimals });
+  return formatPrice(value, { currency, minDecimals: 2 });
 }
 
 /** Full-precision money for the chart TOOLTIP — never compact. The axis labels stay compact (limited width),
@@ -25,9 +24,7 @@ export function formatChartMoney(value, currency) {
  *  decimal) and looked rounded; here it reads the full "₺1.234.567,89". */
 export function formatChartMoneyFull(value, currency) {
   if (value == null || !Number.isFinite(value)) return '—';
-  const abs = Math.abs(value);
-  const maxDecimals = abs < 10 ? 4 : abs < 1000 ? 3 : 2;
-  return formatPrice(value, { currency, minDecimals: 2, maxDecimals });
+  return formatPrice(value, { currency, minDecimals: 2 });
 }
 
 function buildEventMarkPoints(seriesData) {

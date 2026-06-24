@@ -64,6 +64,7 @@ public class NewsSourceAdminService {
         return newsSourceMapper.toResponse(newsSourceRepository.save(entity));
     }
 
+    /** Toggles a source's enabled flag; disabled sources are skipped by the ingest refresh. */
     @Transactional
     public void setEnabled(Long id, boolean enabled) {
         NewsSource entity = newsSourceService.findOrThrow(id);

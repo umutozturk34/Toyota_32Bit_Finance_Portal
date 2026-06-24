@@ -5,7 +5,7 @@ export default function PositionAssetBadge({ pos }) {
   const typeStyle = ASSET_TYPE_STYLES[pos.assetType] || ASSET_TYPE_STYLES.CRYPTO;
   if (pos.assetImage) {
     return /^https?:\/\//i.test(pos.assetImage)
-      ? <img src={pos.assetImage} alt={pos.assetCode} className="w-8 h-8 rounded-lg shrink-0" />
+      ? <img src={pos.assetImage} alt={pos.assetCode} width={32} height={32} loading="lazy" className="w-8 h-8 rounded-lg shrink-0 object-cover" />
       : <span className="flex items-center justify-center w-8 h-8 rounded-lg text-xl shrink-0">{pos.assetImage}</span>;
   }
   return (

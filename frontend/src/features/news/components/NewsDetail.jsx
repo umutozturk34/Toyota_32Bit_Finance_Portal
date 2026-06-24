@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useParams } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import { ArrowLeft, Calendar, ExternalLink, Building2 } from 'lucide-react';
 import { newsService } from '../services/newsService';
 import { formatDateTimeFull } from '../../../shared/utils/formatters';
 import { CategoryBadge } from '../lib/newsConfig.jsx';
+import AssetMentionTags from './AssetMentionTags';
 import { getFallbackImage } from '../lib/newsConfig';
 import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
@@ -41,6 +43,9 @@ export default function NewsDetail() {
 
     const imgSrc = article.imageUrl || getFallbackImage(article.category, article.id);
     const hasContent = article.content && article.content.trim().length > 0;
+    // Third-party RSS content:encoded is raw HTML — sanitize before injecting it so a malicious/compromised feed
+    // can't run script (drops <script>, on*= handlers, javascript: URLs) while keeping safe formatting/images.
+    const safeContent = hasContent ? DOMPurify.sanitize(article.content) : '';
 
     return (
         <div className="max-w-4xl mx-auto py-6 space-y-6 min-w-0">
@@ -93,6 +98,13 @@ export default function NewsDetail() {
                         {article.title}
                     </h1>
 
+                    {Array.isArray(article.assets) && article.assets.length > 0 && (
+                        <div className="space-y-2 rounded-xl border border-border-default bg-bg-elevated/40 p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-fg-subtle">{t('news.mentionedAssets')}</p>
+                            <AssetMentionTags assets={article.assets} date={article.publishedAt} limit={12} />
+                        </div>
+                    )}
+
                     {article.description && !hasContent && (
                         <p className="text-fg-muted text-sm sm:text-base leading-relaxed break-words">
                             {article.description}
@@ -106,7 +118,7 @@ export default function NewsDetail() {
                                        prose-img:rounded-lg prose-img:w-full prose-img:h-auto prose-img:max-h-96 prose-img:object-cover
                                        prose-p:mb-4 prose-li:mb-1
                                        prose-pre:overflow-x-auto prose-pre:whitespace-pre"
-                            dangerouslySetInnerHTML={{ __html: article.content }}
+                            dangerouslySetInnerHTML={{ __html: safeContent }}
                         />
                     )}
 

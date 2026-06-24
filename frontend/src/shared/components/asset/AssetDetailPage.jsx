@@ -1,20 +1,21 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, GitCompare } from 'lucide-react';
+import { ArrowLeft, GitCompare, ChevronDown, LineChart } from 'lucide-react';
 import { ShoppingCart } from '../feedback/AnimatedIcons';
 import useChartRange from '../../hooks/useChartRange';
 import useNavigationBack from '../../hooks/useNavigationBack';
 import Button from '../buttons/Button';
 import IconButton from '../buttons/IconButton';
-import LoadingState from '../feedback/LoadingState';
+import { Skeleton, SkeletonChart, SkeletonStat } from '../feedback/Skeleton';
 import ErrorState from '../feedback/ErrorState';
 import MarketAddPositionModal from '../../../features/portfolio/components/MarketAddPositionModal';
 import LightweightChart from '../../../features/chart/components/LightweightChart';
 import AssetActionsBar from '../../../features/watch/components/AssetActionsBar';
 import MarketStatusBadge from '../layout/MarketStatusBadge';
+import AssetRelatedNews from '../../../features/news/components/AssetRelatedNews';
 import { transformCandles, transformFundCandles } from '../../utils/candleTransform';
 import { useRateHistory } from '../../hooks/useRateHistory';
 import { priceCurrencyOf, viopQuoteCurrency } from '../../utils/priceCurrency';
@@ -85,28 +86,38 @@ export default function AssetDetailPage({
   fetchAsset,
   fetchHistory,
   queryKeyPrefix,
-  loadingMessage,
   errorMessage,
   notFoundMessage,
   backRoute,
   renderHeader,
   renderMetadata,
-  renderSidebar,
+  renderBelowChart,
   getBuyProps,
   showBuyButton = true,
   buyModalComponent: BuyModalComponent = MarketAddPositionModal,
   clientSideRangeFilter = false,
+  collapsibleChart = false,
   dataTour,
 }) {
   const { t } = useTranslation();
   const { convertAt, resolveTarget } = useRateHistory();
   const goBack = useNavigationBack(backRoute);
   const navigate = useNavigate();
-  const resolvedLoading = loadingMessage ?? t('marketDetail.loading');
   const resolvedError = errorMessage ?? t('marketDetail.error');
   const resolvedNotFound = notFoundMessage ?? t('marketDetail.notFound');
   const [buyOpen, setBuyOpen] = useState(false);
   const [showSecondaryLines, setShowSecondaryLines] = useState(true);
+  // The user's open/closed choice for THIS asset; null means "use the per-asset default". Reset on every asset
+  // switch below so each detail page starts from its own default instead of inheriting the previous one.
+  const [chartOpenOverride, setChartOpenOverride] = useState(null);
+  const [chartOverrideFor, setChartOverrideFor] = useState(assetCode);
+  if (chartOverrideFor !== assetCode) {
+    // Navigated to a different asset within the same mounted page (route param changed, no remount) — drop the
+    // previous asset's manual toggle so the new asset's default applies. Set-state-during-render is the React-
+    // endorsed way to reset state on a prop change (re-renders immediately, before paint).
+    setChartOverrideFor(assetCode);
+    setChartOpenOverride(null);
+  }
   const [timeRange, setTimeRange] = useChartRange();
   const effectiveRange = clientSideRangeFilter && !CLIENT_FILTER_RANGES.has(timeRange) ? '1Y' : timeRange;
 
@@ -114,6 +125,14 @@ export default function AssetDetailPage({
     queryKey: [queryKeyPrefix, assetCode],
     queryFn: () => fetchAsset(assetCode),
   });
+
+  // Whether this asset's chart is collapsible + collapsed by default. A predicate form lets the caller decide
+  // from the LOADED asset (e.g. a stock is an index when its segment isn't EQUITY) so detection never depends on
+  // a hand-kept code list. The chart shows open unless the user toggled it (override) for this asset.
+  const collapsibleChartActive = typeof collapsibleChart === 'function'
+    ? Boolean(collapsibleChart(asset))
+    : Boolean(collapsibleChart);
+  const chartOpen = chartOpenOverride !== null ? chartOpenOverride : !collapsibleChartActive;
 
   const fetchRange = clientSideRangeFilter ? '5Y' : timeRange;
   const { data: historyRaw } = useQuery({
@@ -140,13 +159,33 @@ export default function AssetDetailPage({
     return convertCandleSet(transformedData, convertAt, baseCurrency, naturalCurrency);
   }, [transformedData, convertTarget, baseCurrency, naturalCurrency, convertAt]);
 
-  if (isLoading) return <LoadingState message={resolvedLoading} />;
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton w="3.5rem" h="3.5rem" circle />
+          <div className="space-y-2">
+            <Skeleton w="9rem" h="1.6rem" className="rounded-lg" />
+            <Skeleton w="6rem" h="0.85rem" />
+          </div>
+          <Skeleton w="8rem" h="2.5rem" className="ml-auto hidden rounded-xl sm:block" />
+        </div>
+        <SkeletonChart h="22rem" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <SkeletonStat />
+          <SkeletonStat />
+          <SkeletonStat />
+          <SkeletonStat />
+        </div>
+      </div>
+    );
+  }
   if (error || !asset) {
     return (
       <ErrorState
         message={error ? resolvedError : resolvedNotFound}
-        onRetry={error ? refetchAsset : goBack}
-        retryLoading={error ? isFetching : false}
+        onRetry={refetchAsset}
+        retryLoading={isFetching}
       />
     );
   }
@@ -219,25 +258,59 @@ export default function AssetDetailPage({
         </div>
       </motion.div>
 
-      {renderMetadata && renderMetadata(asset)}
-
-      {/* Asset-specific extra (e.g. the fund's "Fon Detayını Görüntüle" card) sits ABOVE the chart so it's always
-          visible — it used to be passed into the chart's Lens, which is collapsed by default and hid it. */}
-      {renderSidebar && (
-        <div data-tour="detail-sidebar">{renderSidebar(asset)}</div>
+      {collapsibleChartActive && (
+        <button
+          type="button"
+          onClick={() => setChartOpenOverride(!chartOpen)}
+          className="flex w-full items-center gap-2.5 rounded-2xl border border-border-default bg-bg-elevated/50 px-4 py-3 text-left backdrop-blur transition-colors hover:bg-surface/40 cursor-pointer"
+        >
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/15 text-accent">
+            <LineChart className="h-4 w-4" />
+          </span>
+          <span className="text-sm font-bold uppercase tracking-wider text-fg">{t('marketDetail.priceChart')}</span>
+          <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-fg-subtle transition-transform duration-200 ${chartOpen ? 'rotate-180' : ''}`} />
+        </button>
       )}
 
-      <div data-tour="detail-chart">
-        <LightweightChart
-          data={chartData}
-          symbol={assetCode}
-          assetType={chartAssetType || assetType}
-          timeRange={effectiveRange}
-          onTimeRangeChange={setTimeRange}
-          showSecondaryLines={showSecondaryLines}
-          onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
-        />
-      </div>
+      {/* The chart expands/collapses with a height glide instead of snapping — the chart's own ResizeObserver
+          re-measures as the container grows, so the canvas sizes correctly. initial={false} keeps a normal
+          (always-open) detail page's chart static on first load; only a toggle on an index page animates. */}
+      <AnimatePresence initial={false}>
+        {chartOpen && (
+          <motion.div
+            key="detail-chart"
+            data-tour="detail-chart"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            style={{ overflow: 'hidden' }}
+          >
+            <LightweightChart
+              data={chartData}
+              symbol={assetCode}
+              assetType={chartAssetType || assetType}
+              timeRange={effectiveRange}
+              onTimeRangeChange={setTimeRange}
+              showSecondaryLines={showSecondaryLines}
+              onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Everything that isn't the price chart sits BELOW it — the asset's property strip first, then any
+          asset-specific supporting block (fund profile, index constituents), then the news. This order is the
+          same on every detail page so the chart is always the primary, top-of-page view. */}
+      {renderMetadata && <div data-tour="detail-metadata">{renderMetadata(asset)}</div>}
+
+      {renderBelowChart && renderBelowChart(asset)}
+
+      <AssetRelatedNews
+        assetCode={assetCode}
+        assetName={asset?.name ?? asset?.assetName ?? asset?.shortName ?? asset?.longName ?? asset?.title ?? null}
+        assetType={assetType}
+      />
 
       {buyOpen && buyProps && (
         <BuyModalComponent

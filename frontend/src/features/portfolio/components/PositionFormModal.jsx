@@ -9,8 +9,7 @@ import { useMoney } from '../../../shared/hooks/useMoney';
 import { assetCodeLabel } from '../../../shared/utils/assetCode';
 import { usePositionForm } from '../hooks/usePositionForm';
 import PositionFormConfirmPanel from './PositionFormConfirmPanel';
-import PositionFormSuccessPanel from './PositionFormSuccessPanel';
-import { todayInputValue, preventDecimal, describeAction } from '../lib/positionFormHelpers';
+import { todayInputValue, preventDecimal } from '../lib/positionFormHelpers';
 import { currencySymbolOf } from '../../../shared/utils/priceCurrency';
 import { MAX_MONEY, PRICE_DECIMALS, sanitizeNumberInput } from '../../../shared/utils/numberInput';
 import { commodityLabel } from '../../../shared/utils/commodityName';
@@ -71,12 +70,6 @@ export default function PositionFormModal({ mode, portfolioId, portfolioPicker, 
           </button>
         </div>
 
-        {phase === 'success' && (
-          <PositionFormSuccessPanel
-            title={isEdit ? t('positionForm.success.titleEdit') : t('positionForm.success.titleAdd')}
-            subtitle={describeAction(t, isEdit, form, displayCode, isFractional)}
-          />
-        )}
 
         {phase === 'processing' && <ProcessingSteps steps={processingSteps} currentStep={processingStep} />}
 

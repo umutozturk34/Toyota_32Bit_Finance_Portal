@@ -49,7 +49,7 @@ class FundDetailEnrichmentServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new FundDetailEnrichmentService(tefasClient, fundRepository, allocationRepository, trackedAssetQueryService, fundCacheService, new com.finance.market.fund.config.FundProperties(), new com.finance.common.config.AppProperties());
+        service = new FundDetailEnrichmentService(tefasClient, fundRepository, allocationRepository, trackedAssetQueryService, fundCacheService, new com.finance.market.fund.config.FundProperties(), new com.finance.common.config.AppProperties(), new com.finance.shared.service.TaskTrackingService(new com.finance.common.config.AppProperties()));
         when(fundRepository.save(any(Fund.class))).thenAnswer(inv -> inv.getArgument(0));
         when(fundRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
         when(fundRepository.findAllFundCodes()).thenReturn(List.of("AAL"));
@@ -194,6 +194,10 @@ class FundDetailEnrichmentServiceTest {
         assertThat(fund.getIsinCode()).isEqualTo("TRMAALWWWWW5");
         assertThat(fund.getKapLink()).isEqualTo("https://kap.org.tr/aal");
         assertThat(fund.getRiskValue()).isEqualTo(1);
+        assertThat(fund.getSellValor()).isZero();
+        assertThat(fund.getBuybackValor()).isZero();
+        assertThat(fund.getTradeStartTime()).isEqualTo("09:00");
+        assertThat(fund.getTradeEndTime()).isEqualTo("13:30");
     }
 
     @Test
@@ -204,6 +208,40 @@ class FundDetailEnrichmentServiceTest {
 
         assertThat(result).isNull();
         verify(tefasClient, never()).fetchInfo(any(), anyString());
+    }
+
+    @Test
+    void should_backFillProfile_when_trackedFundMissingIsin() {
+        when(trackedAssetQueryService.getCodes(com.finance.common.model.TrackedAssetType.FUND)).thenReturn(List.of("AAL"));
+        when(fundRepository.findFundCodesNeedingProfile(any())).thenReturn(List.of("AAL"));
+        Fund fund = Fund.builder().fundCode("AAL").fundType(FundType.YAT).build();
+        when(fundRepository.findById("AAL")).thenReturn(Optional.of(fund));
+        TefasFundProfileDto profile = new TefasFundProfileDto("AAL", "ATA",
+                "TRMAALWWWWW5", "https://kap.org.tr/aal", "TEFAS'ta işlem görüyor",
+                BigDecimal.TEN, BigDecimal.TEN, null, null, null, null,
+                "09:00", "17:45", 2, 1, null, "6");
+        when(tefasClient.fetchProfile(FundType.YAT, "AAL")).thenReturn(profile);
+
+        int enriched = service.enrichMissingProfiles();
+
+        assertThat(enriched).isEqualTo(1);
+        assertThat(fund.getSellValor()).isEqualTo(2);
+        assertThat(fund.getBuybackValor()).isEqualTo(1);
+        assertThat(fund.getIsinCode()).isEqualTo("TRMAALWWWWW5");
+        // The profile is stamped enriched so the next bulk pass skips it until the refresh window lapses.
+        assertThat(fund.getProfileEnrichedAt()).isNotNull();
+        verify(fundCacheService).putSnapshot("AAL", fund);
+    }
+
+    @Test
+    void should_skipProfileBackFill_when_noTrackedFundMissingProfile() {
+        when(trackedAssetQueryService.getCodes(com.finance.common.model.TrackedAssetType.FUND)).thenReturn(List.of("AAL"));
+        when(fundRepository.findFundCodesNeedingProfile(any())).thenReturn(List.of());
+
+        int enriched = service.enrichMissingProfiles();
+
+        assertThat(enriched).isZero();
+        verify(tefasClient, never()).fetchProfile(any(), anyString());
     }
 
     @Test

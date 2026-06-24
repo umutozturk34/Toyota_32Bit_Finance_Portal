@@ -132,7 +132,10 @@ public class MailSendConsumer {
                     row.getId(), row.getAttempts(), row.getRecipientEmail());
         } else {
             row.setStatus(EmailOutbox.Status.PENDING);
-            Duration backoff = properties.backoffs().get(row.getAttempts() - 1);
+            // Clamp: max-attempts may exceed the backoff schedule length; reuse the last backoff
+            // for any further attempts instead of throwing IndexOutOfBounds.
+            int i = Math.min(row.getAttempts() - 1, properties.backoffs().size() - 1);
+            Duration backoff = properties.backoffs().get(i);
             row.setNextAttemptAt(now.plus(backoff));
             retriedCounter.increment();
             log.warn("Email outbox row {} attempt={} failed retryIn={} to={}: {}",

@@ -64,10 +64,15 @@ class PortfolioSummaryServiceTest {
     void setUp() {
         counting = new CountingAssetPricingPort();
         responseMapper = new PortfolioResponseMapperImpl();
+        CurrencyFrameConverter frameConverter = new CurrencyFrameConverter();
+        AllocationFxFrameLoader allocationFxFrameLoader = new AllocationFxFrameLoader(
+                positionRepository, derivativePositionRepository, (type, code, from, to) -> java.util.Map.of());
+        RealizedPnlAllocationCalculator realizedPnlCalculator = new RealizedPnlAllocationCalculator(
+                positionRepository, derivativePositionRepository, responseMapper, frameConverter, allocationFxFrameLoader);
         AllocationCalculator allocationCalculator = new AllocationCalculator(
                 counting, positionRepository, derivativePositionRepository, responseMapper,
-                (type, code, from, to) -> java.util.Map.of(), viopCandleRepository,
-                assetSnapshotRepository);
+                viopCandleRepository, assetSnapshotRepository, frameConverter,
+                allocationFxFrameLoader, realizedPnlCalculator);
         DerivativePricingResolver pricingResolver = new DerivativePricingResolver(viopCandleRepository, counting);
         DerivativePositionFormatter derivativeFormatter = new DerivativePositionFormatter(pricingResolver);
         DerivativeAggregationService derivativeAggregationService =

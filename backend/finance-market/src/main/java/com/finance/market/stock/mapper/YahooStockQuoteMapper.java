@@ -17,6 +17,7 @@ import java.util.Objects;
 @Component
 public class YahooStockQuoteMapper {
 
+    /** Maps one Yahoo chart result for {@code symbol}; open/previous-close fall back to the series when meta omits them. */
     public YahooStockQuoteDto toDto(Result result, String symbol) {
         Meta meta = result.meta();
         Quote quote = result.firstQuote();

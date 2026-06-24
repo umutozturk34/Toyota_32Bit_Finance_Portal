@@ -1,16 +1,18 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { panelVariants } from '../utils/animations';
 import { Outlet, Link, useLocation, useNavigationType } from 'react-router-dom';
 import { useAuth } from '../../features/auth/useAuth';
 import { useTheme } from '../context/useTheme';
 import useAppStore from '../stores/useAppStore';
-import { TrendingUp, Shield, Menu, FolderOpen, Search } from 'lucide-react';
+import { TrendingUp, Menu, Search, Plus } from 'lucide-react';
 import {
   PiHouseDuotone, PiChartLineUpDuotone, PiTrendUpDuotone, PiCurrencyBtcDuotone,
   PiCurrencyDollarSimpleDuotone, PiBriefcaseDuotone, PiDiamondDuotone, PiBankDuotone,
   PiStackDuotone, PiNewspaperClippingDuotone, PiWalletDuotone, PiEyeDuotone,
-  PiChartPieSliceDuotone, PiDatabaseDuotone, PiUsersThreeDuotone,
+  PiChartPieSliceDuotone, PiDatabaseDuotone, PiUsersThreeDuotone, PiGraduationCapDuotone,
+  PiFolderOpenDuotone, PiShieldDuotone,
 } from 'react-icons/pi';
 import TasksPanel from '../../features/admin/components/TasksPanel';
 import SettingsSidebar from '../../features/settings/SettingsSidebar';
@@ -20,11 +22,14 @@ import { useUnreadNotificationCount } from '../hooks/useNotifications';
 import useNotificationStream from '../hooks/useNotificationStream';
 import useScrollRestoration from '../hooks/useScrollRestoration';
 import useMediaQuery from '../hooks/useMediaQuery';
+import useOverlayDismiss from '../hooks/useOverlayDismiss';
 import useNavigationStore from '../stores/useNavigationStore';
 import OnboardingGate from '../../features/onboarding/OnboardingGate';
 import KeycloakActionToast from '../../features/auth/components/KeycloakActionToast';
 import SidebarContent from './SidebarContent';
 import CommandPalette from '../components/modal/CommandPalette';
+import BackToTop from '../components/BackToTop';
+import { usePortfolioList } from '../../features/portfolio/hooks/usePortfolioData';
 
 const baseNavStructure = [
   { kind: 'item', to: '/market', labelKey: 'nav.overview', Icon: PiHouseDuotone },
@@ -42,27 +47,33 @@ const baseNavStructure = [
   },
   { kind: 'item', to: '/news', labelKey: 'nav.news', Icon: PiNewspaperClippingDuotone },
   {
-    kind: 'group', id: 'my', labelKey: 'nav.groupMy', Icon: FolderOpen,
+    kind: 'group', id: 'my', labelKey: 'nav.groupMy', Icon: PiFolderOpenDuotone,
     items: [
       { to: '/portfolio', labelKey: 'nav.portfolio', subKey: 'nav.subPortfolio', Icon: PiWalletDuotone },
       { to: '/watch',     labelKey: 'nav.watch',     subKey: 'nav.subWatch',     Icon: PiEyeDuotone },
     ],
   },
   { kind: 'item', to: '/analytics', labelKey: 'nav.analytics', Icon: PiChartPieSliceDuotone },
+  { kind: 'item', to: '/learn', labelKey: 'nav.learn', Icon: PiGraduationCapDuotone },
 ];
 
+// Admin is a collapsible GROUP (reusing the markets/my group machinery) so its destinations — Tracked Assets
+// and Users — sit under one expandable header instead of a lone leaf scattered apart from the admin Tasks
+// action. The in-page AdminTabBar still works as a secondary in-page switch.
 const adminGroup = {
-  kind: 'group', id: 'admin', labelKey: 'nav.groupAdmin', Icon: Shield,
+  kind: 'group', id: 'admin', labelKey: 'nav.groupAdmin', Icon: PiShieldDuotone,
   items: [
-    { to: '/admin/tracked-assets', labelKey: 'nav.adminTrackedAssets', subKey: 'nav.subAdminTrackedAssets', Icon: PiDatabaseDuotone },
-    { to: '/admin/users',          labelKey: 'nav.adminUsers',         subKey: 'nav.subAdminUsers',         Icon: PiUsersThreeDuotone },
+    { to: '/admin/tracked-assets', labelKey: 'nav.adminTrackedAssets', Icon: PiDatabaseDuotone },
+    { to: '/admin/users', labelKey: 'nav.adminUsers', Icon: PiUsersThreeDuotone },
   ],
 };
 
 function findActiveGroupId(structure, pathname) {
   for (const node of structure) {
     if (node.kind !== 'group') continue;
-    if (node.items.some((i) => i.to === pathname)) return node.id;
+    // Compare on the pathname part only so query-parameterised items (e.g. /portfolio?portfolio=2) still
+    // resolve their owning group.
+    if (node.items.some((i) => i.to.split('?')[0] === pathname)) return node.id;
   }
   return null;
 }
@@ -72,6 +83,7 @@ const MainLayout = () => {
   const { user, logout, hasRole } = useAuth();
   const { isDark } = useTheme();
   const location = useLocation();
+  const reduceMotion = useReducedMotion();
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const openSearch = useAppStore((s) => s.openSearch);
@@ -87,6 +99,9 @@ const MainLayout = () => {
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   useNotificationStream();
   useScrollRestoration();
+  // The mobile drawer was the only overlay not locking background scroll / closing on Escape — align it with
+  // every other overlay (BaseModal, SideDrawer) so the page no longer scrolls under the open menu on touch.
+  useOverlayDismiss(mobileOpen, () => setMobileOpen(false));
 
   // Auto-close the mobile drawer once the viewport grows into the lg breakpoint. Without this, a drawer
   // opened at mobile width leaves mobileOpen=true after enlarging, which keeps blurCls (pointer-events-none)
@@ -132,9 +147,30 @@ const MainLayout = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [toggleSearch]);
 
-  const navStructure = useMemo(() => (
-    hasRole('ADMIN') ? [...baseNavStructure, adminGroup] : baseNavStructure
-  ), [hasRole]);
+  const { data: portfolios } = usePortfolioList();
+  // The "Portföy" entry expands into the user's actual portfolios so any one is one click from the sidebar
+  // (deep-links to /portfolio?portfolio=<id>, the same param the page reads). Watch becomes its own leaf.
+  const navStructure = useMemo(() => {
+    const list = Array.isArray(portfolios) ? portfolios : [];
+    // No "All portfolios" entry (there's no aggregate view — /portfolio just lands on the first one, which
+    // confused users). When the account has ≥1 portfolio we show a group: each portfolio + a "New portfolio"
+    // action (deep-links to /portfolio?new=1 so one can be created without navigating in first). With none yet,
+    // a plain "Portföy" leaf → /portfolio (the onboarding wizard handles the first create).
+    const portfolioItems = list.map((p) => ({
+      to: `/portfolio?portfolio=${p.id}`,
+      label: p.name,
+      sub: t(`portfolio.typeSwitcher.${p.type === 'FIXED' ? 'fixed' : 'spot'}`),
+      Icon: p.type === 'FIXED' ? PiBankDuotone : PiWalletDuotone,
+    }));
+    const newPortfolioItem = { to: '/portfolio?new=1', labelKey: 'nav.newPortfolio', Icon: Plus };
+    const portfoliosGroup = portfolioItems.length >= 1
+      ? { kind: 'group', id: 'portfolios', labelKey: 'nav.portfolio', Icon: PiWalletDuotone, items: [...portfolioItems, newPortfolioItem] }
+      : { kind: 'item', to: '/portfolio', labelKey: 'nav.portfolio', Icon: PiWalletDuotone };
+    const watchItem = { kind: 'item', to: '/watch', labelKey: 'nav.watch', Icon: PiEyeDuotone };
+    const base = baseNavStructure.flatMap((node) =>
+      node.kind === 'group' && node.id === 'my' ? [portfoliosGroup, watchItem] : [node]);
+    return hasRole('ADMIN') ? [...base, adminGroup] : base;
+  }, [portfolios, hasRole, t]);
 
   const [expandedGroups, setExpandedGroups] = useState(() => {
     const active = findActiveGroupId(navStructure, location.pathname);
@@ -166,11 +202,22 @@ const MainLayout = () => {
   const anyOverlayOpen = settingsOpen || notificationsOpen || tasksOpen || mobileOpen || profileOpen;
   const blurCls = anyOverlayOpen ? 'blur-sm pointer-events-none select-none' : '';
 
-  const isActive = (path) => location.pathname === path;
-  // rem (not px) so the sidebar scales with the content on wider screens.
+  // Query-aware: a deep-linked portfolio item (/portfolio?portfolio=2) is active only when its id matches the
+  // current ?portfolio= param; the plain /portfolio ("All Portfolios") item is active only with no param set.
+  const isActive = (path) => {
+    const [p, q] = path.split('?');
+    if (location.pathname !== p) return false;
+    const qp = new URLSearchParams(q || '');
+    if (qp.has('new')) return false; // the "New portfolio" action is never a highlighted destination
+    const current = new URLSearchParams(location.search).get('portfolio');
+    if (q) return qp.get('portfolio') === current;
+    return p === '/portfolio' ? !current : true;
+  };
+  // rem (not px) so the sidebar scales with the content on wider screens. The spacer must always match the
+  // sidebar's actual width so content clears it: a previous Overview-only 4rem override left the page sliding
+  // under the (now rem-scaled, up to ~1.8×) 14rem expanded sidebar on wide monitors.
   const sidebarWidth = collapsed ? '4rem' : '14rem';
-  const overviewOverlayMode = location.pathname === '/market';
-  const spacerWidth = overviewOverlayMode ? '4rem' : sidebarWidth;
+  const spacerWidth = sidebarWidth;
 
   const sidebarProps = {
     collapsed,
@@ -203,7 +250,9 @@ const MainLayout = () => {
       <motion.aside
         animate={{ width: sidebarWidth }}
         initial={false}
-        transition={{ type: 'spring', stiffness: 380, damping: 36, mass: 0.8 }}
+        // A tween, not a spring: a spring's settle oscillates the width a hair past its target, and every icon
+        // inside rides that overshoot — reading as a collapse "wobble". A fixed-duration ease glides cleanly.
+        transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}
         className="hidden lg:flex flex-col fixed top-0 left-0 h-screen h-[100dvh] border-r border-border-default z-30 overflow-visible"
         style={{
           background: 'var(--sidebar-bg)',
@@ -213,11 +262,10 @@ const MainLayout = () => {
         }}
       >
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-accent/20 to-transparent" />
-          <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-accent/[0.03] to-transparent" />
+          <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-border-default to-transparent" />
         </div>
         <div className="relative flex flex-col h-full">
-          <SidebarContent {...sidebarProps} />
+          <SidebarContent {...sidebarProps} navId="desktop" />
         </div>
       </motion.aside>
       <div className="hidden lg:block shrink-0" style={{ width: spacerWidth }} />
@@ -270,6 +318,9 @@ const MainLayout = () => {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
+              role="dialog"
+              aria-modal="true"
+              aria-label={t('common.openMenu')}
               className="lg:hidden fixed top-0 left-0 bottom-0 z-50 w-[82vw] max-w-[16rem] border-r pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] border-border-default"
               style={{
                 background: 'var(--sidebar-bg)',
@@ -277,16 +328,27 @@ const MainLayout = () => {
                 WebkitBackdropFilter: 'var(--sidebar-blur)',
               }}
             >
-              <SidebarContent {...sidebarProps} isMobile />
+              <SidebarContent {...sidebarProps} isMobile navId="mobile" />
             </motion.aside>
           </>
         )}
       </AnimatePresence>
 
-      <div className={`flex-1 flex flex-col min-w-0 relative overflow-x-hidden ${blurCls}`}>
+      <div className={`flex-1 flex flex-col min-w-0 relative overflow-x-clip ${blurCls}`}>
         <main className="flex-1 w-full">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:py-6 pt-[calc(4rem+env(safe-area-inset-top))] lg:pt-6">
-            <Outlet />
+            {/* Route-level transition: a keyed ENTRANCE only (no AnimatePresence/exit). Wrapping <Outlet> in
+                AnimatePresence mode="wait" is a known pitfall — the exiting page's Outlet already renders the NEW
+                route's content (Outlet reads the live location), which flashed a blank/mismatched frame when
+                navigating back. Remounting on pathname change plays the entrance fresh (so pages still land on F5
+                and on navigation) while the new content replaces the old instantly. */}
+            {reduceMotion ? (
+              <Outlet />
+            ) : (
+              <motion.div key={location.pathname} variants={panelVariants} initial="initial" animate="animate">
+                <Outlet />
+              </motion.div>
+            )}
           </div>
         </main>
         <footer className="border-t border-border-default">
@@ -306,6 +368,7 @@ const MainLayout = () => {
       <CommandPalette />
       <OnboardingGate />
       <KeycloakActionToast />
+      {!anyOverlayOpen && <BackToTop />}
     </div>
   );
 };

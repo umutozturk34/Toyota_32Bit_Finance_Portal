@@ -59,6 +59,11 @@ public class StockEntityWriter implements MarketEntityWriter {
         this.scale = appProperties.getScale();
     }
 
+    /**
+     * Upserts the stock by symbol (update in place when it exists), resolving its segment from tracked config.
+     *
+     * @throws BusinessException if {@code dto} is null (upstream failure) or carries no price
+     */
     public Stock saveSnapshot(YahooStockQuoteDto dto, String symbol) {
         if (dto == null) {
             throw new BusinessException(
@@ -85,10 +90,16 @@ public class StockEntityWriter implements MarketEntityWriter {
         return toPersist;
     }
 
+    /** Stored stock for the symbol, or {@code null} if not yet persisted. */
     public Stock findExisting(String symbol) {
         return stockRepository.findById(symbol).orElse(null);
     }
 
+    /**
+     * Back-fills daily change percent from the two most recent candles, but only when it is still unset.
+     *
+     * @return whether change percent was computed and saved
+     */
     public boolean refreshChangePercentFromCandles(Stock stock) {
         BigDecimal priorClose = stockCandleRepository
                 .findFirstByStockSymbolOrderByCandleDateDesc(stock.getSymbol())
@@ -103,6 +114,11 @@ public class StockEntityWriter implements MarketEntityWriter {
         return changed;
     }
 
+    /**
+     * Idempotently upserts daily candles after applying split correction to the historical series.
+     *
+     * @return the number of candles inserted or updated
+     */
     public int upsertCandles(String symbol, Stock stock, List<YahooCandleDto> candleDtos) {
         List<YahooCandleDto> corrected = HistoricalSplitCorrector.correct(candleDtos);
         CandleBatchUpsertTemplate.UpsertResult<StockCandle> upsertResult = CandleBatchUpsertTemplate.upsert(

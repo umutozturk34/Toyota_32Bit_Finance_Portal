@@ -23,6 +23,10 @@ export function useWatchlistItems(id, { sort = 'CUSTOM', direction = 'ASC', enab
     queryFn: () => watchlistService.listItems(id, { sort, direction }),
     enabled: enabled && isAuthenticated && !loading && id != null,
     staleTime: STALE.SHORT,
+    // Keep the current rows on screen while a sort/direction change refetches under a new query key. Without
+    // this the new key has no cached data → isLoading flips true → the list/empty-state unmounts and re-runs its
+    // entrance animation, which reads as a jarring "snap" when you only changed the sort.
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -106,6 +110,7 @@ export function useAddWatchlistItem() {
     onSuccess: (_data, { watchlistId }) => {
       queryClient.invalidateQueries({ queryKey: ITEMS_KEY(watchlistId) });
       queryClient.invalidateQueries({ queryKey: LISTS_KEY });
+      queryClient.invalidateQueries({ queryKey: ['marketOverview'] });
     },
   });
 }
@@ -129,6 +134,7 @@ export function useUpdateWatchlistItem(watchlistId) {
         queryClient.invalidateQueries({ queryKey: ['watchlists', watchlistId, 'items'] });
       }
       queryClient.invalidateQueries({ queryKey: LISTS_KEY });
+      queryClient.invalidateQueries({ queryKey: ['marketOverview'] });
     },
   });
 }
@@ -160,6 +166,9 @@ export function useRemoveWatchlistItem(activeListId) {
       ctx?.snapshots?.forEach(([key, data]) => queryClient.setQueryData(key, data));
       if (ctx?.prevLists) queryClient.setQueryData(LISTS_KEY, ctx.prevLists);
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: LISTS_KEY }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: LISTS_KEY });
+      queryClient.invalidateQueries({ queryKey: ['marketOverview'] });
+    },
   });
 }

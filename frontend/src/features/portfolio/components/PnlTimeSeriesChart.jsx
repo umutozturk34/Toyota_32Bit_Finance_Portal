@@ -125,9 +125,7 @@ function PnlTimeSeriesChart({ series = [], loading = false, range, onRangeChange
   // Always formats a TRY amount as the display currency (used for the secondary "price"/value).
   const fmtMoney = useCallback((value) => {
     if (value == null) return '—';
-    const abs = Math.abs(value);
-    const maxDecimals = abs < 10 ? 4 : abs < 1000 ? 3 : 2;
-    return formatPrice(value, { currency: safeCurrency, minDecimals: 2, maxDecimals });
+    return formatPrice(value, { currency: safeCurrency, minDecimals: 2 });
   }, [safeCurrency]);
   // Mode-aware: percent in percent mode (no FX), currency otherwise. Drives the y-axis + plotted value.
   const money = useCallback((value) => {

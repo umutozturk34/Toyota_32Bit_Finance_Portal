@@ -15,6 +15,7 @@ import com.finance.portfolio.mapper.PortfolioResponseMapper;
 import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.Portfolio;
 import com.finance.portfolio.model.PortfolioPosition;
+import com.finance.portfolio.model.PortfolioType;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
 import com.finance.portfolio.repository.PortfolioRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,6 +51,8 @@ class PortfolioCrudServiceTest {
     @Mock private com.finance.portfolio.repository.PortfolioDailySnapshotRepository dailySnapshotRepository;
     @Mock private com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     @Mock private com.finance.portfolio.derivative.repository.DerivativePositionRepository derivativePositionRepository;
+    @Mock private com.finance.portfolio.fixedincome.deposit.DepositHoldingRepository depositHoldingRepository;
+    @Mock private com.finance.portfolio.fixedincome.bond.BondHoldingRepository bondHoldingRepository;
     @Mock private TrackedAssetRepository trackedAssetRepository;
     @Mock private PortfolioResponseMapper mapper;
     @Mock private ApplicationEventPublisher eventPublisher;
@@ -62,6 +65,7 @@ class PortfolioCrudServiceTest {
     void setUp() {
         service = new PortfolioCrudService(portfolioRepository, positionRepository,
                 dailySnapshotRepository, assetSnapshotRepository, derivativePositionRepository,
+                depositHoldingRepository, bondHoldingRepository,
                 trackedAssetRepository, mapper, eventPublisher, portfolioProperties, currencyConverter);
     }
 
@@ -77,8 +81,8 @@ class PortfolioCrudServiceTest {
         Portfolio one = Portfolio.builder().id(1L).userSub(USER_SUB).name("Main").build();
         Portfolio two = Portfolio.builder().id(2L).userSub(USER_SUB).name("Alt").build();
         when(portfolioRepository.findByUserSub(USER_SUB)).thenReturn(List.of(one, two));
-        when(mapper.toPortfolioResponse(one)).thenReturn(new PortfolioResponse(1L, "Main", null));
-        when(mapper.toPortfolioResponse(two)).thenReturn(new PortfolioResponse(2L, "Alt", null));
+        when(mapper.toPortfolioResponse(one)).thenReturn(new PortfolioResponse(1L, "Main", "SPOT", null));
+        when(mapper.toPortfolioResponse(two)).thenReturn(new PortfolioResponse(2L, "Alt", "SPOT", null));
 
         List<PortfolioResponse> responses = service.listPortfolios(USER_SUB);
 
@@ -90,7 +94,7 @@ class PortfolioCrudServiceTest {
         when(portfolioRepository.findByUserSubAndName(USER_SUB, "New")).thenReturn(Optional.empty());
         Portfolio saved = Portfolio.builder().id(99L).userSub(USER_SUB).name("New").build();
         when(portfolioRepository.save(any(Portfolio.class))).thenReturn(saved);
-        when(mapper.toPortfolioResponse(saved)).thenReturn(new PortfolioResponse(99L, "New", null));
+        when(mapper.toPortfolioResponse(saved)).thenReturn(new PortfolioResponse(99L, "New", "SPOT", null));
 
         PortfolioResponse response = service.createPortfolio(USER_SUB, new PortfolioCreateRequest("New"));
 
@@ -99,6 +103,49 @@ class PortfolioCrudServiceTest {
         verify(portfolioRepository).save(captor.capture());
         assertThat(captor.getValue().getUserSub()).isEqualTo(USER_SUB);
         assertThat(captor.getValue().getName()).isEqualTo("New");
+    }
+
+    @Test
+    void shouldPersistRequestedType_whenCreatingFixedPortfolio() {
+        when(portfolioRepository.findByUserSubAndName(USER_SUB, "Bonds")).thenReturn(Optional.empty());
+        when(portfolioRepository.save(any(Portfolio.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(mapper.toPortfolioResponse(any(Portfolio.class)))
+                .thenReturn(new PortfolioResponse(5L, "Bonds", "FIXED", null));
+
+        service.createPortfolio(USER_SUB, new PortfolioCreateRequest("Bonds", PortfolioType.FIXED));
+
+        ArgumentCaptor<Portfolio> captor = ArgumentCaptor.forClass(Portfolio.class);
+        verify(portfolioRepository).save(captor.capture());
+        assertThat(captor.getValue().getType()).isEqualTo(PortfolioType.FIXED);
+    }
+
+    @Test
+    void shouldDefaultTypeToSpot_whenCreateRequestOmitsType() {
+        when(portfolioRepository.findByUserSubAndName(USER_SUB, "Default")).thenReturn(Optional.empty());
+        when(portfolioRepository.save(any(Portfolio.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(mapper.toPortfolioResponse(any(Portfolio.class)))
+                .thenReturn(new PortfolioResponse(6L, "Default", "SPOT", null));
+
+        service.createPortfolio(USER_SUB, new PortfolioCreateRequest("Default", null));
+
+        ArgumentCaptor<Portfolio> captor = ArgumentCaptor.forClass(Portfolio.class);
+        verify(portfolioRepository).save(captor.capture());
+        assertThat(captor.getValue().getType()).isEqualTo(PortfolioType.SPOT);
+    }
+
+    @Test
+    void shouldRejectAddPosition_whenPortfolioIsFixedType() {
+        Portfolio fixed = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB)
+                .type(PortfolioType.FIXED).build();
+        PositionRequest request = new PositionRequest(
+                "STOCK", "THYAO.IS", new BigDecimal("100"),
+                LocalDateTime.of(2024, 1, 15, 10, 0), new BigDecimal("40"));
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(fixed));
+
+        assertThatThrownBy(() -> service.addPosition(PORTFOLIO_ID, USER_SUB, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.notSpotType");
+        verify(positionRepository, never()).save(any());
     }
 
     @Test
@@ -122,6 +169,24 @@ class PortfolioCrudServiceTest {
                 .hasMessage("error.portfolio.maxCountReached");
         verify(portfolioRepository, never()).save(any());
         verify(portfolioRepository, never()).findByUserSubAndName(any(), any());
+    }
+
+    @Test
+    void shouldThrowBusinessException_whenPortfolioAlreadyHoldsMaxLots() {
+        // Arrange: an owned SPOT portfolio already at the lot cap.
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.countByPortfolioId(PORTFOLIO_ID))
+                .thenReturn((long) portfolioProperties.getMaxLotsPerPortfolio());
+        PositionRequest request = new PositionRequest(
+                "STOCK", "THYAO.IS", new BigDecimal("100"),
+                LocalDateTime.of(2024, 1, 15, 10, 0), new BigDecimal("40"));
+
+        // Act + Assert: the add is rejected with the localized cap key and nothing is persisted.
+        assertThatThrownBy(() -> service.addPosition(PORTFOLIO_ID, USER_SUB, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("error.portfolio.maxLotsReached");
+        verify(positionRepository, never()).save(any());
     }
 
     @Test
@@ -780,7 +845,7 @@ class PortfolioCrudServiceTest {
         when(portfolioRepository.findByUserSubAndName(USER_SUB, "New Name")).thenReturn(Optional.empty());
         when(portfolioRepository.save(any(Portfolio.class))).thenAnswer(inv -> inv.getArgument(0));
         when(mapper.toPortfolioResponse(any(Portfolio.class)))
-                .thenReturn(new PortfolioResponse(PORTFOLIO_ID, "New Name", null));
+                .thenReturn(new PortfolioResponse(PORTFOLIO_ID, "New Name", "SPOT", null));
 
         PortfolioResponse result = service.renamePortfolio(USER_SUB, PORTFOLIO_ID, request);
 
@@ -811,7 +876,7 @@ class PortfolioCrudServiceTest {
         when(portfolioRepository.findByUserSubAndName(USER_SUB, "Main")).thenReturn(Optional.of(portfolio));
         when(portfolioRepository.save(any(Portfolio.class))).thenAnswer(inv -> inv.getArgument(0));
         when(mapper.toPortfolioResponse(any(Portfolio.class)))
-                .thenReturn(new PortfolioResponse(PORTFOLIO_ID, "Main", null));
+                .thenReturn(new PortfolioResponse(PORTFOLIO_ID, "Main", "SPOT", null));
 
         PortfolioResponse result = service.renamePortfolio(USER_SUB, PORTFOLIO_ID, request);
 
@@ -837,6 +902,8 @@ class PortfolioCrudServiceTest {
         service.deletePortfolio(USER_SUB, PORTFOLIO_ID);
 
         verify(derivativePositionRepository).deleteByPortfolio_Id(PORTFOLIO_ID);
+        verify(depositHoldingRepository).deleteByPortfolioId(PORTFOLIO_ID);
+        verify(bondHoldingRepository).deleteByPortfolioId(PORTFOLIO_ID);
         verify(positionRepository).deleteByPortfolioId(PORTFOLIO_ID);
         verify(assetSnapshotRepository).deleteByPortfolioId(PORTFOLIO_ID);
         verify(dailySnapshotRepository).deleteByPortfolioId(PORTFOLIO_ID);

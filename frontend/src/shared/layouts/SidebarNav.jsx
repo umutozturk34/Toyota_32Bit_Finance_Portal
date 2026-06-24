@@ -1,6 +1,6 @@
 import { useState, useLayoutEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, LayoutGroup, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
@@ -11,39 +11,65 @@ function SectionDivider() {
 }
 
 function NavLeaf({ to, label, Icon, active, collapsed, isMobile, indented }) {
+  // Rail (top-level) items keep their icon in a FIXED-WIDTH, left-anchored column (w-12 == the collapsed
+  // content width: 4rem rail − 2×px-2 nav padding). The icon centers inside that box at a constant x in BOTH
+  // states, so collapsing the rail can no longer drift it sideways. The label simply gets clipped by the row's
+  // overflow-hidden as the width animates down — no justify-center toggle (which, while the label was still
+  // exiting, used to center the icon in the still-wide row and snap it right). Indented sub-items never collapse,
+  // so they keep the original inline layout.
+  const rail = !indented;
+  const reduceMotion = useReducedMotion();
   return (
     <Link
       to={to}
       title={collapsed && !isMobile ? label : undefined}
-      className={`group relative flex items-center gap-2.5 rounded-lg no-underline overflow-hidden transition-all duration-200 ease-out ${
-        collapsed && !isMobile
-          ? 'justify-center px-0 py-2'
-          : indented ? 'pl-3 pr-2 py-1.5' : 'px-3 py-2'
+      className={`group relative flex items-center rounded-lg no-underline overflow-hidden transition-all duration-200 ease-out ${
+        rail ? 'px-0 py-2' : 'gap-2.5 pl-3 pr-2 py-1.5'
       } ${
         active
           ? 'text-fg shadow-[0_4px_20px_-6px_rgba(99,102,241,0.35)]'
-          : 'text-fg-muted hover:text-fg hover:translate-x-0.5'
+          : 'text-fg-muted hover:text-fg'
       }`}
     >
       {active && (
         <motion.span
-          layoutId="sidebar-active-bg"
+          layoutId={reduceMotion ? undefined : 'sidebar-active'}
           className="absolute inset-0 rounded-lg bg-gradient-to-r from-accent/20 via-accent/10 to-accent/5 border border-accent/20"
-          transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-        />
+          transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+        >
+          <span
+            className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-accent shadow-[0_0_8px_rgba(99,102,241,0.7)] ${
+              collapsed && !isMobile ? 'h-5' : indented ? 'h-4' : 'h-6'
+            }`}
+          />
+        </motion.span>
       )}
       {!active && (
         <span className="absolute inset-0 rounded-lg bg-surface/0 group-hover:bg-surface/60 transition-colors duration-200" />
       )}
-      <Icon
-        size={indented ? 14 : 16}
-        strokeWidth={1.6}
-        className={`relative shrink-0 transition-all duration-200 ${
-          active
-            ? 'text-accent scale-110 drop-shadow-[0_0_6px_rgba(99,102,241,0.5)]'
-            : 'group-hover:text-fg-muted group-hover:scale-105'
-        }`}
-      />
+      {rail ? (
+        <span className="relative flex items-center justify-center w-12 shrink-0">
+          <Icon
+            size={16}
+            strokeWidth={1.6}
+            className={`transition-all duration-200 ${
+              active
+                ? 'text-accent scale-110 drop-shadow-[0_0_6px_rgba(99,102,241,0.5)]'
+                : 'group-hover:text-fg-muted group-hover:scale-105'
+            }`}
+          />
+        </span>
+      ) : (
+        <Icon
+          size={14}
+          strokeWidth={1.6}
+          className={`relative shrink-0 transition-all duration-200 ${
+            active
+              ? 'text-accent scale-110 drop-shadow-[0_0_6px_rgba(99,102,241,0.5)]'
+              : 'group-hover:text-fg-muted group-hover:scale-105'
+          }`}
+        />
+      )}
       <AnimatePresence initial={false}>
         {(!collapsed || isMobile) && (
           <motion.span
@@ -51,7 +77,7 @@ function NavLeaf({ to, label, Icon, active, collapsed, isMobile, indented }) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -4 }}
             transition={{ duration: 0.16, ease: 'easeOut' }}
-            className={`relative whitespace-nowrap ${
+            className={`relative whitespace-nowrap ${rail ? 'pr-3' : ''} ${
               indented ? 'text-[12px]' : 'text-[13px] font-medium'
             } ${active ? 'font-semibold' : ''}`}
           >
@@ -59,15 +85,6 @@ function NavLeaf({ to, label, Icon, active, collapsed, isMobile, indented }) {
           </motion.span>
         )}
       </AnimatePresence>
-      {active && (
-        <motion.span
-          layoutId="sidebar-indicator"
-          className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-accent shadow-[0_0_8px_rgba(99,102,241,0.7)] ${
-            collapsed && !isMobile ? 'h-5' : indented ? 'h-4' : 'h-6'
-          }`}
-          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-        />
-      )}
     </Link>
   );
 }
@@ -80,20 +97,22 @@ function NavGroupExpanded({ group, t, expanded, onToggle, isActive, hasActive, i
       <button
         type="button"
         onClick={onToggle}
-        className={`w-full group relative flex items-center gap-2.5 rounded-lg px-3 py-2 transition-all duration-200 ease-out border-none cursor-pointer bg-transparent ${
+        className={`w-full group relative flex items-center pl-0 pr-2 py-2 rounded-lg transition-all duration-200 ease-out border-none cursor-pointer bg-transparent ${
           hasActive ? 'text-fg' : 'text-fg-muted hover:text-fg'
         }`}
       >
         <span className={`absolute inset-0 rounded-lg transition-colors duration-200 ${
           hasActive ? 'bg-surface/40' : 'bg-surface/0 group-hover:bg-surface/40'
         }`} />
-        <Icon
-          size={16}
-          strokeWidth={1.6}
-          className={`relative shrink-0 transition-all ${
-            hasActive ? 'text-accent' : 'group-hover:text-fg-muted'
-          }`}
-        />
+        <span className="relative flex items-center justify-center w-12 shrink-0">
+          <Icon
+            size={16}
+            strokeWidth={1.6}
+            className={`transition-all ${
+              hasActive ? 'text-accent' : 'group-hover:text-fg-muted'
+            }`}
+          />
+        </span>
         <span className={`relative flex-1 text-left text-[13px] font-semibold whitespace-nowrap ${
           hasActive ? 'text-fg' : ''
         }`}>
@@ -125,7 +144,7 @@ function NavGroupExpanded({ group, t, expanded, onToggle, isActive, hasActive, i
                 <NavLeaf
                   key={item.to}
                   to={item.to}
-                  label={t(item.labelKey)}
+                  label={item.label ?? t(item.labelKey)}
                   Icon={item.Icon}
                   active={isActive(item.to)}
                   collapsed={false}
@@ -149,10 +168,20 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
   const Icon = group.Icon;
 
   useLayoutEffect(() => {
-    if (open && buttonRef.current) {
+    if (!open || !buttonRef.current) return undefined;
+    const place = () => {
       const rect = buttonRef.current.getBoundingClientRect();
       setPos({ top: rect.top, left: rect.right + 8 });
-    }
+    };
+    place();
+    // position:fixed does not follow the scrollable <nav> or a window resize, so recompute while open —
+    // otherwise the portaled popover detaches at a stale top.
+    window.addEventListener('scroll', place, true);
+    window.addEventListener('resize', place);
+    return () => {
+      window.removeEventListener('scroll', place, true);
+      window.removeEventListener('resize', place);
+    };
   }, [open]);
 
   const openNow = () => {
@@ -165,7 +194,7 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
 
   const scheduleClose = () => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
-    closeTimerRef.current = setTimeout(() => setOpen(false), 140);
+    closeTimerRef.current = setTimeout(() => setOpen(false), 90);
   };
 
   return (
@@ -195,6 +224,10 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
         {hasActive && (
           <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_6px_rgba(99,102,241,0.6)]" />
         )}
+        <ChevronRight
+          size={10}
+          className="absolute right-0.5 top-1/2 -translate-y-1/2 text-fg-subtle opacity-40 group-hover:opacity-90 group-hover:text-accent transition pointer-events-none"
+        />
       </button>
       {createPortal(
         <AnimatePresence>
@@ -262,14 +295,14 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
                       />
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className={`text-[12.5px] font-semibold whitespace-nowrap ${
+                      <div className={`text-[12.5px] font-semibold truncate ${
                         active ? 'text-fg' : 'text-fg group-hover/item:text-fg'
                       }`}>
-                        {t(item.labelKey)}
+                        {item.label ?? t(item.labelKey)}
                       </div>
-                      {item.subKey && (
+                      {(item.sub || item.subKey) && (
                         <div className="text-[10px] text-fg-subtle font-mono mt-0.5 whitespace-nowrap truncate">
-                          {t(item.subKey, { defaultValue: '' })}
+                          {item.sub ?? t(item.subKey, { defaultValue: '' })}
                         </div>
                       )}
                     </div>
@@ -293,7 +326,7 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
   );
 }
 
-function SidebarNav({ structure, t, collapsed, isMobile, isActive, expandedGroups, toggleGroup }) {
+function SidebarNav({ structure, t, collapsed, isMobile, isActive, expandedGroups, toggleGroup, navId }) {
   const renderable = useMemo(() => {
     const out = [];
     structure.forEach((node, idx) => {
@@ -304,7 +337,8 @@ function SidebarNav({ structure, t, collapsed, isMobile, isActive, expandedGroup
   }, [structure]);
 
   return (
-    <nav className="flex-1 overflow-y-auto overflow-x-visible px-2 py-2 scrollbar-auto-hide">
+    <LayoutGroup id={navId}>
+      <nav className="flex-1 overflow-y-auto overflow-x-visible px-2 py-2 scrollbar-auto-hide">
       {renderable.map((node) => {
         if (node.kind === 'divider') {
           return <SectionDivider key={node.key} />;
@@ -314,7 +348,7 @@ function SidebarNav({ structure, t, collapsed, isMobile, isActive, expandedGroup
             <NavLeaf
               key={node.to}
               to={node.to}
-              label={t(node.labelKey)}
+              label={node.label ?? t(node.labelKey)}
               Icon={node.Icon}
               active={isActive(node.to)}
               collapsed={collapsed}
@@ -347,7 +381,8 @@ function SidebarNav({ structure, t, collapsed, isMobile, isActive, expandedGroup
           />
         );
       })}
-    </nav>
+      </nav>
+    </LayoutGroup>
   );
 }
 

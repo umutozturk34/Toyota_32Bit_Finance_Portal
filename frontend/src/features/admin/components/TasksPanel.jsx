@@ -4,7 +4,7 @@ import SideDrawer from '../../../shared/components/modal/SideDrawer';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import {
     Activity, Play, CheckCircle2, XCircle, Clock,
-    Loader2, Zap, Database,
+    Loader2, Zap, Database, KeyRound,
     TrendingUp, DollarSign, Bitcoin, Briefcase, Landmark, Newspaper, Gem, Layers, BarChart3,
 } from 'lucide-react';
 import { adminService } from '../services/adminService';
@@ -187,6 +187,9 @@ const statusConfig = {
     RUNNING: { icon: Loader2, color: 'text-accent', bg: 'bg-accent/10', border: 'border-accent/30', spin: true },
     COMPLETED: { icon: CheckCircle2, color: 'text-success', bg: 'bg-success/10', border: 'border-success/30', spin: false },
     FAILED: { icon: XCircle, color: 'text-danger', bg: 'bg-danger/10', border: 'border-danger/30', spin: false },
+    // A missing upstream API key is a configuration problem, not a transient failure — amber + a key icon so it
+    // reads as "fix the config", distinct from a red runtime FAILED.
+    API_KEY_MISSING: { icon: KeyRound, color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/30', spin: false },
 };
 
 function StatusBadge({ status }) {
@@ -318,16 +321,25 @@ export default function TasksPanel({ open, onClose }) {
                                         {taskData.history.map((row, i) => (
                                             <div
                                                 key={`${row.type}-${row.startedAt}-${i}`}
-                                                className="flex items-center justify-between gap-2 rounded-md border border-border-default bg-bg-elevated px-3 py-2 flex-wrap"
+                                                className="rounded-md border border-border-default bg-bg-elevated px-3 py-2"
                                             >
-                                                <div className="flex items-center gap-2 min-w-0">
-                                                    <StatusBadge status={row.status} />
-                                                    <span className="text-xs font-medium text-fg truncate">{row.type}</span>
+                                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <StatusBadge status={row.status} />
+                                                        <span className="text-xs font-medium text-fg truncate">{row.type}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 shrink-0 text-[10px] text-fg-muted ml-auto">
+                                                        <span>{formatDuration(row.durationMs)}</span>
+                                                        <span>{formatTime(row.startedAt)}</span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-2 shrink-0 text-[10px] text-fg-muted ml-auto">
-                                                    <span>{formatDuration(row.durationMs)}</span>
-                                                    <span>{formatTime(row.startedAt)}</span>
-                                                </div>
+                                                {row.status === 'API_KEY_MISSING' ? (
+                                                    <p className="mt-1 text-[10px] leading-snug text-warning">
+                                                        {t('tasksPanel.apiKeyHint', { defaultValue: 'EVDS_API_KEY tanımlı değil — ortam değişkenini ayarlayın.' })}
+                                                    </p>
+                                                ) : (row.status === 'FAILED' && row.error) ? (
+                                                    <p className="mt-1 text-[10px] leading-snug text-danger break-words">{row.error}</p>
+                                                ) : null}
                                             </div>
                                         ))}
                                     </div>

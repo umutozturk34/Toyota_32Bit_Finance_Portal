@@ -79,6 +79,19 @@ public class TaskTrackingService {
                 started.startedAt(), Instant.now(), errorMsg));
     }
 
+    /**
+     * Records the task as ended in the distinct {@code API_KEY_MISSING} state — a configuration problem (a
+     * required upstream API key is absent), not a transient runtime failure — so the UI can show an actionable
+     * "API key missing" status instead of a generic failure that hides the real, fixable cause.
+     *
+     * @param started  the TaskInfo returned by {@link #startTask}
+     * @param errorMsg human-readable description of which key is missing
+     */
+    public void failApiKeyMissing(String taskType, TaskInfo started, String errorMsg) {
+        finishTask(taskType, new TaskInfo(taskType, "API_KEY_MISSING", started.message(),
+                started.startedAt(), Instant.now(), errorMsg));
+    }
+
     private void finishTask(String taskType, TaskInfo finalState) {
         runningTasks.remove(taskType);
         taskHistory.removeIf(t -> t.type().equals(taskType));

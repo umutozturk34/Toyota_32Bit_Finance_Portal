@@ -5,6 +5,8 @@ import com.finance.news.service.article.NewsCacheService;
 import com.finance.shared.dto.response.GroupCount;
 import com.finance.news.dto.response.NewsArticleDetailResponse;
 import com.finance.news.dto.response.NewsArticleResponse;
+import com.finance.news.dto.response.NewsAssetCountResponse;
+import com.finance.news.dto.response.NewsAssetCountsResponse;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.shared.util.EnumParser;
@@ -33,11 +35,12 @@ public class NewsQueryService {
     private final NewsCacheService newsCacheService;
     private final NewsResponseMapper responseMapper;
 
+    /** Paged search; all filter args are optional and {@code assetCode} accepts a comma-separated OR-list of codes. */
     @Transactional(readOnly = true)
-    public PagedResponse<NewsArticleResponse> search(String category, String searchTerm,
+    public PagedResponse<NewsArticleResponse> search(String category, String searchTerm, String assetCode,
                                                       String sortBy, String direction,
                                                       int page, int size) {
-        Specification<NewsArticle> spec = buildSpecification(category, searchTerm);
+        Specification<NewsArticle> spec = buildSpecification(category, searchTerm, assetCode);
 
         PageRequest pageRequest = PageRequest.of(page, size, buildSort(sortBy, direction));
         Page<NewsArticle> result = articleRepository.findAll(spec, pageRequest);
@@ -47,6 +50,7 @@ public class NewsQueryService {
                 page, size, result.getTotalElements());
     }
 
+    /** Cache-backed detail lookup; throws {@link ResourceNotFoundException} when no article has that id. */
     @Transactional(readOnly = true)
     public NewsArticleDetailResponse getById(Long id) {
         NewsArticle article = newsCacheService.getById(id)
@@ -54,6 +58,7 @@ public class NewsQueryService {
         return responseMapper.toDetailResponse(article);
     }
 
+    /** Article count per category, for the news page's category facet. */
     @Transactional(readOnly = true)
     public List<GroupCount> getCategoryCounts() {
         return articleRepository.countByCategory().stream()
@@ -61,8 +66,24 @@ public class NewsQueryService {
                 .toList();
     }
 
-    /** Composes optional category-equality and accent-insensitive multi-token search over title/description/content. */
-    private Specification<NewsArticle> buildSpecification(String category, String searchTerm) {
+    /**
+     * The {@code limit} most-mentioned assets across all news, with their article counts, PLUS the grand total
+     * of all asset mentions — the share-% denominator. The total is summed from the full GROUP BY result before
+     * truncating to {@code limit} (one query), so each asset's share isn't inflated by the cap.
+     */
+    @Transactional(readOnly = true)
+    public NewsAssetCountsResponse getAssetCounts(int limit) {
+        List<Object[]> rows = articleRepository.countArticlesByAsset();
+        long totalMentions = rows.stream().mapToLong(row -> ((Number) row[2]).longValue()).sum();
+        List<NewsAssetCountResponse> assets = rows.stream()
+                .map(row -> new NewsAssetCountResponse(row[0].toString(), row[1].toString(), ((Number) row[2]).longValue()))
+                .limit(limit)
+                .toList();
+        return new NewsAssetCountsResponse(assets, totalMentions);
+    }
+
+    /** Composes optional category-equality, accent-insensitive multi-token text search, and an asset-mention filter. */
+    private Specification<NewsArticle> buildSpecification(String category, String searchTerm, String assetCode) {
         Specification<NewsArticle> spec = (root, query, cb) -> cb.conjunction();
 
         NewsCategory newsCategory = category == null || category.isBlank()
@@ -76,6 +97,19 @@ public class NewsQueryService {
         if (searchTerm != null && !searchTerm.isBlank()) {
             spec = spec.and((root, query, cb) ->
                     LikeSearchSpec.byFieldsContainsAllTokensUnaccent(root, cb, searchTerm, "title", "description", "content"));
+        }
+
+        if (assetCode != null && !assetCode.isBlank()) {
+            // Accept a comma-separated list so the news page can filter by SEVERAL assets at once (OR): an article
+            // matches if its resolved asset set contains ANY of the codes — the backend news↔asset link, joined here.
+            List<String> codes = java.util.Arrays.stream(assetCode.split(","))
+                    .map(String::trim).filter(s -> !s.isBlank()).distinct().toList();
+            if (!codes.isEmpty()) {
+                spec = spec.and((root, query, cb) -> {
+                    query.distinct(true);
+                    return root.join("assets").get("assetCode").in(codes);
+                });
+            }
         }
 
         return spec;

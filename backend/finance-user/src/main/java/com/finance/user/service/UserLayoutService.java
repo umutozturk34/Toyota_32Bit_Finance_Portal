@@ -24,6 +24,7 @@ public class UserLayoutService {
     private final UserLayoutMapper mapper;
     private final List<OverviewSaveSanitizer> sanitizers;
 
+    /** The user's stored layout, or an empty layout when none has been saved yet. */
     @Transactional(readOnly = true)
     public UserLayoutResponse getOrEmpty(String userSub) {
         return repository.findById(userSub)

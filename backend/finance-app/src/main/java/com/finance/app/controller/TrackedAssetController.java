@@ -28,6 +28,10 @@ public class TrackedAssetController {
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final Translator translator;
 
+    /**
+     * Searches the tracked-asset registry, optionally narrowed by comma-separated {@code type} and a
+     * code/name {@code search} term, sorted by {@code sort}/{@code direction} (defaults {@code sortOrder} asc).
+     */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<TrackedAssetResponse>> getTrackedAssets(
@@ -45,6 +49,7 @@ public class TrackedAssetController {
                 data);
     }
 
+    /** Fetches a single tracked asset by {@code type}+{@code code}, returning 404 when none matches. */
     @GetMapping("/{type}/{code}")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<TrackedAssetResponse> getTrackedAsset(

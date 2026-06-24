@@ -1,5 +1,5 @@
 import { Info } from 'lucide-react';
-import { isRateLike, compareTypeLabel } from '../lib/compareSeriesUtils';
+import { isRateLike, compareTypeLabel, seriesWindowPct } from '../lib/compareSeriesUtils';
 import { formatPercentSmart, fitMoney } from '../../../shared/utils/formatters';
 import { moneyDigits } from '../utils';
 
@@ -15,29 +15,14 @@ export default function CompareInfoBar({ selected, targetCurrency, commonStartDa
           ? [...points].sort((a, b) => String(a.date).localeCompare(String(b.date)))
           : [];
         const lastPoint = sorted.length > 0 ? sorted[sorted.length - 1] : null;
-        // commonStartDate here is the SHARED baseline date computed once in ComparePage
-        // (computeSharedBaselineDate) — the common start already advanced past any series' leading split-like
-        // cliff. The chart rebases EVERY series from this single date, so the info-bar must anchor at the
-        // identical point: take the first sample at-or-after it. Recomputing a per-series skipLeadingSplit here
-        // (as before) anchored each series at its OWN cliff-skip, so when one series advanced the shared
-        // baseline the others' % was taken at the earlier common start — headline % ≠ chart line end.
-        const rawBaseIdx = commonStartDate ? sorted.findIndex((p) => p.date >= commonStartDate) : 0;
-        const baseIdx = rawBaseIdx >= 0 ? rawBaseIdx : 0;
-        const firstPoint = sorted.length > 0 ? sorted[baseIdx] : null;
         const lastValue = lastPoint?.value;
-        const firstValue = firstPoint?.value;
         const isPortfolio = ind.type === 'PORTFOLIO';
         // Portfolio: % is the cumulative return (last/first of the index); the headline number is the
         // cumulative TL P&L carried alongside as pnlTry — "% to compare against inflation, ₺ to feel the money".
         const lastPnl = isPortfolio && lastPoint?.pnlTry != null ? Number(lastPoint.pnlTry) : null;
-        let pct = (lastValue != null && firstValue != null && firstValue !== 0)
-          ? ((Number(lastValue) - Number(firstValue)) / Math.abs(Number(firstValue))) * 100
-          : null;
-        // When opened from a Beater row, the table's cached (backend-computed) return is the source of truth
-        // for the headline %; show it verbatim instead of the frontend re-compound so the two screens match
-        // to the decimal. The plotted line keeps its own per-date values (visually within ~0.5pt).
-        const authPct = authoritativeReturns?.[ind.code];
-        if (authPct != null) pct = authPct;
+        // Headline % over the shared window via the single shared source — it also applies the Beater-cached
+        // (backend) return override so this row, the chart line and the verdict hero all agree to the decimal.
+        const pct = seriesWindowPct(ind, points, commonStartDate, authoritativeReturns);
 
         let formattedLast = '—';
         // True when formattedLast already carries the cumulative % (growth-index headline), so the

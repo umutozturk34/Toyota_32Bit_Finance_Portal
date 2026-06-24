@@ -5,17 +5,22 @@ import com.finance.news.service.article.NewsCacheService;
 import tools.jackson.databind.ObjectMapper;
 import com.finance.news.config.NewsProperties;
 import com.finance.news.model.NewsArticle;
+import com.finance.news.model.NewsArticleAsset;
 import com.finance.news.model.NewsCategory;
 import com.finance.news.model.NewsSource;
 import com.finance.news.repository.NewsArticleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -98,5 +103,28 @@ class NewsCacheServiceTest {
         service.cacheArticle(a);
 
         verify(valueOps).set(eq("news:article:3"), eq(a), any(Duration.class));
+    }
+
+    @Test
+    void cacheArticleCachesTaggedArticleAsLinkedHashSetCopy_withoutMutatingEntity() {
+        // Arrange: a tagged article whose `assets` is NOT a LinkedHashSet (a HashSet stands in for Hibernate's
+        // PersistentSet). It used to be skipped entirely; it must now cache a detached copy.
+        NewsArticle a = article(4L, "Akbank");
+        Set<NewsArticleAsset> hibernateLikeSet = new HashSet<>();
+        hibernateLikeSet.add(new NewsArticleAsset("AKBNK.IS", "STOCK"));
+        a.setAssets(hibernateLikeSet);
+
+        // Act
+        service.cacheArticle(a);
+
+        // Assert: it IS cached (not skipped), the cached copy carries a plain LinkedHashSet with the same asset, and
+        // the managed entity's own collection is left untouched (no risk of a stray DB write).
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(valueOps).set(eq("news:article:4"), captor.capture(), any(Duration.class));
+        NewsArticle cached = (NewsArticle) captor.getValue();
+        assertThat(cached).isNotSameAs(a);
+        assertThat(cached.getAssets()).isInstanceOf(LinkedHashSet.class);
+        assertThat(cached.getAssets()).extracting(NewsArticleAsset::getAssetCode).containsExactly("AKBNK.IS");
+        assertThat(a.getAssets()).isSameAs(hibernateLikeSet);
     }
 }

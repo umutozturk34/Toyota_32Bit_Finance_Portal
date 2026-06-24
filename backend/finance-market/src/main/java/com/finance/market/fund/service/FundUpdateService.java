@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -44,7 +45,11 @@ public class FundUpdateService implements MarketRefresher {
 
     /**
      * Runs the full fund refresh in order: snapshots, bulk candle sync, change-percent recompute,
-     * returns/risk enrichment, then allocation enrichment as of today.
+     * returns/risk enrichment, allocation enrichment as of today. The per-fund profile (valör/ISIN/seans)
+     * back-fill is fired OFF this critical path: TEFAS serves the profile per fund only and the rate limiter
+     * caps it at 1/2s, so back-filling ~2000 funds is a ~1h job that must not block the init/daily update (which
+     * used to balloon past an hour). It drains in the background; the lazy detail-open path fills any fund a user
+     * opens instantly.
      */
     public void refreshAll() {
         long totalStart = System.currentTimeMillis();
@@ -53,7 +58,9 @@ public class FundUpdateService implements MarketRefresher {
         recomputeChangePercents();
         detailEnrichmentService.enrichReturnsAndRisk();
         detailEnrichmentService.enrichAllocations(LocalDate.now());
-        log.info("[TIMING] Total fund update took {}s", (System.currentTimeMillis() - totalStart) / 1000);
+        detailEnrichmentService.enrichMissingProfilesAsync();
+        log.info("[TIMING] Total fund update (excl. async profile back-fill) took {}s",
+                (System.currentTimeMillis() - totalStart) / 1000);
     }
 
     /**
@@ -92,11 +99,17 @@ public class FundUpdateService implements MarketRefresher {
                 .collect(Collectors.toMap(
                         row -> (String) row[0],
                         row -> (LocalDateTime) row[2]));
+        // Pre-load every fund's previous close in ONE grouped query (instead of a prior-candle lookup per fund)
+        // so the whole-universe recompute over ~800 funds stays at a couple of queries, not ~800.
+        Map<String, BigDecimal> previousCloseByFund = fundCandleRepository.findPreviousClosePricePerFund().stream()
+                .collect(Collectors.toMap(
+                        row -> (String) row[0],
+                        row -> (BigDecimal) row[1]));
         int updated = 0;
         for (Fund fund : fundRepository.findAll()) {
             LocalDateTime latestDate = latestCandleDates.get(fund.getFundCode());
             if (latestDate == null) continue;
-            if (entityWriter.refreshChangePercent(fund, latestDate)) {
+            if (entityWriter.refreshChangePercent(fund, latestDate, previousCloseByFund.get(fund.getFundCode()))) {
                 fundCacheService.putSnapshot(fund.getFundCode(), fund);
                 updated++;
             }

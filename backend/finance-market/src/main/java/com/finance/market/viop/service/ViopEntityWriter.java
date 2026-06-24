@@ -178,6 +178,11 @@ public class ViopEntityWriter implements MarketEntityWriter {
         return saved;
     }
 
+    /**
+     * Deactivates contracts whose expiry is on or before {@code today} (they stop refreshing but stay queryable).
+     *
+     * @return the number of contracts marked expired
+     */
     @Transactional
     public int markExpired(LocalDate today) {
         List<ViopContract> expired = repository.findExpired(today);

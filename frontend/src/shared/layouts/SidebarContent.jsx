@@ -1,10 +1,10 @@
-import { Link } from 'react-router-dom';
 import {
   TrendingUp, LogOut, Activity, Settings, Bell, User as UserIcon,
-  ChevronLeft, ChevronRight, Search,
+  ChevronLeft, Search,
 } from 'lucide-react';
 import SidebarNav from './SidebarNav';
 import CurrencySwitcher from '../components/CurrencySwitcher';
+import ThemeToggle from '../components/layout/ThemeToggle';
 
 // The ⌘/Ctrl modifier is platform-specific — show the Apple key on macOS/iOS and "Ctrl" elsewhere, since
 // this is a general (non-Apple) web app. Resolved once at module load (client-only Vite bundle).
@@ -30,30 +30,36 @@ const SidebarContent = ({
   unreadCount,
   user,
   logout,
+  navId,
 }) => (
   <div className="flex flex-col h-full">
     <div className={`flex items-center ${collapsed && !isMobile ? 'justify-center' : 'justify-between'} h-14 landscape:h-12 lg:landscape:h-14 px-3 border-b border-border-default shrink-0`}>
-      {(!collapsed || isMobile) && (
-        <Link to="/" className="flex items-center gap-2.5 no-underline group">
-          <span className="flex items-center justify-center w-8 h-8 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25 group-hover:shadow-accent/50 group-hover:scale-105 transition-all duration-300">
-            <TrendingUp className="w-4 h-4" />
-          </span>
-          <span className="text-sm font-bold text-fg tracking-tight font-display">Finance</span>
-        </Link>
-      )}
-      {collapsed && !isMobile && (
-        <Link to="/" className="flex items-center justify-center w-8 h-8 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25 hover:shadow-accent/50 hover:scale-105 transition-all duration-300 no-underline">
-          <TrendingUp className="w-4 h-4" />
-        </Link>
-      )}
-      {!isMobile && (
+      {collapsed && !isMobile ? (
         <button
           onClick={toggleSidebar}
-          className="hidden lg:flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
-          title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+          title={t('nav.expandSidebar')}
+          className="flex items-center justify-center w-8 h-8 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25 hover:shadow-accent/50 hover:scale-105 transition-all duration-300 bg-transparent border-none cursor-pointer p-0"
         >
-          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          <TrendingUp className="w-4 h-4" />
         </button>
+      ) : (
+        <>
+          <div className="flex items-center gap-2.5 select-none">
+            <span className="flex items-center justify-center w-8 h-8 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25">
+              <TrendingUp className="w-4 h-4" />
+            </span>
+            <span className="text-sm font-bold text-fg tracking-tight font-display">Finance</span>
+          </div>
+          {!isMobile && (
+            <button
+              onClick={toggleSidebar}
+              className="hidden lg:flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
+              title={t('nav.collapseSidebar')}
+            >
+              <ChevronLeft size={14} />
+            </button>
+          )}
+        </>
       )}
     </div>
 
@@ -64,13 +70,15 @@ const SidebarContent = ({
         data-tour="global-search"
         title={collapsed && !isMobile ? t('nav.search') : undefined}
         aria-label={t('nav.search')}
-        className={`w-full group flex items-center rounded-lg border transition-all duration-150 cursor-pointer ${
+        className={`w-full group flex items-center overflow-hidden rounded-lg border px-0 py-2 transition-all duration-150 cursor-pointer ${
           collapsed && !isMobile
-            ? 'justify-center px-0 py-2 border-transparent text-fg-muted hover:text-fg hover:bg-surface'
-            : 'gap-2.5 px-3 py-2 border-border-default bg-surface/60 text-fg-subtle hover:text-fg hover:border-accent/40 hover:bg-accent/5'
+            ? 'border-transparent text-fg-muted hover:text-fg hover:bg-surface'
+            : 'pr-3 border-border-default bg-surface/60 text-fg-subtle hover:text-fg hover:border-accent/40 hover:bg-accent/5'
         }`}
       >
-        <Search size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
+        <span className="flex items-center justify-center w-12 shrink-0">
+          <Search size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
+        </span>
         {(!collapsed || isMobile) && (
           <>
             <span className="flex-1 text-left text-[13px] font-medium">{t('searchSuggestions.openLabel')}</span>
@@ -90,6 +98,7 @@ const SidebarContent = ({
       isActive={isActive}
       expandedGroups={expandedGroups}
       toggleGroup={toggleGroup}
+      navId={navId}
     />
 
     {hasRole('ADMIN') && (
@@ -97,11 +106,11 @@ const SidebarContent = ({
         <button
           onClick={() => setTasksOpen(true)}
           title={collapsed && !isMobile ? t('nav.tasks') : undefined}
-          className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
-            collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-          }`}
+          className={`w-full group flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
         >
-          <Activity size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
+          <span className="flex items-center justify-center w-12 shrink-0">
+            <Activity size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
+          </span>
           {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.tasks')}</span>}
         </button>
       </div>
@@ -112,71 +121,82 @@ const SidebarContent = ({
         onClick={() => setNotificationsOpen(true)}
         data-tour="notifications-bell"
         title={collapsed && !isMobile ? t('nav.notifications') : undefined}
-        className={`w-full group relative flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
-          collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-        }`}
+        className={`w-full group relative flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
       >
-        <span className="relative shrink-0">
-          <Bell size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent ring-2 ring-bg-base" aria-label={t('common.unreadNotifications', { count: unreadCount })} />
-          )}
+        <span className="flex items-center justify-center w-12 shrink-0">
+          <span className="relative inline-flex">
+            <Bell size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-accent ring-2 ring-bg-base" aria-label={t('common.unreadNotifications', { count: unreadCount })} />
+            )}
+          </span>
         </span>
         {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.notifications')}</span>}
         {(!collapsed || isMobile) && unreadCount > 0 && (
           <span className="ml-auto text-[10px] font-mono text-accent">{unreadCount}</span>
         )}
       </button>
-      <button
-        onClick={() => setProfileOpen(true)}
-        data-tour="profile-menu"
-        title={collapsed && !isMobile ? t('nav.profile') : undefined}
-        className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
-          collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-        }`}
-      >
-        <UserIcon size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
-        {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.profile')}</span>}
-      </button>
-      <CurrencySwitcher collapsed={collapsed} isMobile={isMobile} />
-      <button
-        onClick={() => setSettingsOpen(true)}
-        data-tour="settings-menu"
-        title={collapsed && !isMobile ? t('nav.settings') : undefined}
-        className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
-          collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-        }`}
-      >
-        <Settings size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
-        {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.settings')}</span>}
-      </button>
-      {(!collapsed || isMobile) && (
+      {collapsed && !isMobile && (
         <button
-          type="button"
           onClick={() => setProfileOpen(true)}
-          className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border-default hover:border-accent/40 hover:bg-accent/5 transition-colors cursor-pointer text-left"
+          data-tour="profile-menu"
+          title={t('nav.profile')}
+          className={`w-full group flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
         >
-          <span className="w-6 h-6 rounded-full bg-gradient-accent text-white flex items-center justify-center text-[11px] font-bold shrink-0">
-            {user?.username?.charAt(0).toUpperCase() || '?'}
+          <span className="flex items-center justify-center w-12 shrink-0">
+            <UserIcon size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
           </span>
-          <span className="text-[12px] font-medium text-fg truncate flex-1">{user?.username}</span>
-          {hasRole('ADMIN') && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-accent/10 text-accent tracking-wide shrink-0">
-              {t('nav.adminBadge')}
-            </span>
-          )}
         </button>
       )}
-      <button
-        onClick={logout}
-        title={collapsed && !isMobile ? t('nav.logout') : undefined}
-        className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
-          collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-        }`}
-      >
-        <LogOut size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-danger transition-colors" />
-        {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.logout')}</span>}
-      </button>
+
+      <div className="pt-1.5 mt-1.5 border-t border-border-default/60 space-y-1">
+        {(!collapsed || isMobile) && (
+          <p className="px-3 pb-0.5 text-[10px] font-mono uppercase tracking-[0.22em] text-fg-subtle">{t('nav.groupPreferences')}</p>
+        )}
+        <CurrencySwitcher collapsed={collapsed} isMobile={isMobile} />
+        <ThemeToggle collapsed={collapsed} isMobile={isMobile} />
+        <button
+          onClick={() => setSettingsOpen(true)}
+          data-tour="settings-menu"
+          title={collapsed && !isMobile ? t('nav.settings') : undefined}
+          className={`w-full group flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
+        >
+          <span className="flex items-center justify-center w-12 shrink-0">
+            <Settings size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
+          </span>
+          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.settings')}</span>}
+        </button>
+      </div>
+
+      <div className="pt-1.5 mt-1.5 border-t border-border-default/60 space-y-1">
+        {(!collapsed || isMobile) && (
+          <button
+            type="button"
+            onClick={() => setProfileOpen(true)}
+            className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border-default hover:border-accent/40 hover:bg-accent/5 transition-colors cursor-pointer text-left"
+          >
+            <span className="w-6 h-6 rounded-full bg-gradient-accent text-white flex items-center justify-center text-[11px] font-bold shrink-0">
+              {user?.username?.charAt(0).toUpperCase() || '?'}
+            </span>
+            <span className="text-[12px] font-medium text-fg truncate flex-1">{user?.username}</span>
+            {hasRole('ADMIN') && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-accent/10 text-accent tracking-wide shrink-0">
+                {t('nav.adminBadge')}
+              </span>
+            )}
+          </button>
+        )}
+        <button
+          onClick={logout}
+          title={collapsed && !isMobile ? t('nav.logout') : undefined}
+          className={`w-full group flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer`}
+        >
+          <span className="flex items-center justify-center w-12 shrink-0">
+            <LogOut size={16} strokeWidth={1.6} className="group-hover:text-danger transition-colors" />
+          </span>
+          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.logout')}</span>}
+        </button>
+      </div>
     </div>
   </div>
 );

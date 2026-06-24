@@ -99,7 +99,7 @@ public class WatchlistWidgetProvider implements OverviewWidgetProvider {
             BigDecimal change = snapshot != null ? snapshot.changePercent() : null;
             String image = snapshot != null ? snapshot.image() : null;
             String currency = snapshot != null ? snapshot.currency() : "TRY";
-            rows.add(new WatchlistData.WatchlistRow(item.getAssetCode(), item.getMarketType(), image, price, change, currency));
+            rows.add(new WatchlistData.WatchlistRow(item.getId(), item.getAssetCode(), item.getMarketType(), image, price, change, currency));
         }
         return rows;
     }

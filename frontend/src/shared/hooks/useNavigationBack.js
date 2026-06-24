@@ -1,19 +1,18 @@
 import { useCallback } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import useNavigationStore from '../stores/useNavigationStore';
 
 export default function useNavigationBack(fallbackRoute) {
   const navigate = useNavigate();
-  const location = useLocation();
   const consumeOrigin = useNavigationStore((s) => s.consumeOrigin);
 
   return useCallback(() => {
-    const origin = consumeOrigin();
-    const here = location.pathname + (location.search || '');
-    if (origin?.route && origin.route !== here) {
-      navigate(origin.route, { replace: true });
-      return;
-    }
+    // Clear the one-shot origin marker (MainLayout re-records the previous path on the next push; scroll is
+    // restored separately by useScrollRestoration), then step back through real browser history so a
+    // detail→detail→detail chain traverses correctly. The old code navigated to origin.route with
+    // {replace:true} — but MainLayout sets origin to the IMMEDIATE previous page, so that replaced the current
+    // entry with a duplicate of it, making the NEXT back a no-op (stock → constituent → index → back → stuck).
+    consumeOrigin();
     const canGoBack = typeof window !== 'undefined' && window.history.length > 1;
     if (canGoBack) {
       navigate(-1);
@@ -22,5 +21,5 @@ export default function useNavigationBack(fallbackRoute) {
     if (fallbackRoute) {
       navigate(fallbackRoute, { replace: true });
     }
-  }, [navigate, consumeOrigin, fallbackRoute, location.pathname, location.search]);
+  }, [navigate, consumeOrigin, fallbackRoute]);
 }

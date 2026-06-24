@@ -33,6 +33,13 @@ const LAUNCH_ARGS = [
   '--mute-audio',
   '--hide-scrollbars',
   '--metrics-recording-only',
+  // VDS/headless hardening: bypass any proxy for the (localhost/internal) report+API origin so chart data isn't
+  // stalled by proxy resolution, keep the renderer thread hot (CPU-only SwiftShader render is the bottleneck with
+  // no GPU), and pin a deterministic colour profile so chart colours match the on-screen app.
+  '--proxy-bypass-list=*',
+  '--disable-renderer-backgrounding',
+  '--disable-backgrounding-occluded-windows',
+  '--force-color-profile=srgb',
   '--disable-features=Translate,BackForwardCache,AcceptCHFrame',
 ];
 

@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -147,6 +148,18 @@ public class PriceAlertService {
     public List<PriceAlert> activeAlerts(MarketType marketType) {
         return repository.findByActiveTrueAndTrackedAsset_AssetType(
                 TrackedAssetType.valueOf(marketType.name()));
+    }
+
+    /**
+     * A keyset page (id &gt; {@code lastId}, ascending, at most {@code size}) of active, not-yet-triggered alerts
+     * for the market. Keyset (not offset) paging lets the evaluator scan in bounded memory batches without
+     * skipping rows as fired alerts deactivate mid-scan and would shift an offset window.
+     */
+    @Transactional(readOnly = true)
+    public List<PriceAlert> activeAlertsAfter(MarketType marketType, long lastId, int size) {
+        return repository.findByActiveTrueAndTrackedAsset_AssetTypeAndIdGreaterThan(
+                TrackedAssetType.valueOf(marketType.name()), lastId,
+                PageRequest.of(0, size, Sort.by("id").ascending()));
     }
 
     @Transactional

@@ -7,6 +7,8 @@ import lombok.*;
 import com.finance.news.model.NewsSource;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * An ingested news article. The {@code link} is unique and acts as the natural dedup key alongside
@@ -75,4 +77,15 @@ public class NewsArticle {
 
     @Column(name = "guid", length = 1024)
     private String guid;
+
+    /**
+     * The market assets this article mentions, resolved server-side at ingest (see {@code AssetMentionResolver}).
+     * EAGER on purpose: articles are read through a Redis cache that serializes/deserializes detached entities, so a
+     * lazy collection would throw {@code LazyInitializationException} when the cache (re)serializes outside a
+     * session. The set is tiny (0–3 codes), so eager loading is cheap.
+     */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "news_article_assets", joinColumns = @JoinColumn(name = "article_id"))
+    @Builder.Default
+    private Set<NewsArticleAsset> assets = new LinkedHashSet<>();
 }

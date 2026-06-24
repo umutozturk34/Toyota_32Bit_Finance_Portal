@@ -1,0 +1,64 @@
+{
+  "commodityCurrencyKeywords": [
+    { "keyword": "altin", "code": "XAUTRYG", "type": "COMMODITY" },
+    { "keyword": "gumus", "code": "XAGTRYG", "type": "COMMODITY" },
+    { "keyword": "platin", "code": "XPTTRY", "type": "COMMODITY" },
+    { "keyword": "paladyum", "code": "XPDTRY", "type": "COMMODITY" },
+    { "keyword": "ham petrol", "code": "BZ=F", "type": "COMMODITY" },
+    { "keyword": "brent", "code": "BZ=F", "type": "COMMODITY" },
+    { "keyword": "bakir", "code": "HG=F", "type": "COMMODITY" },
+    { "keyword": "bugday", "code": "ZW=F", "type": "COMMODITY" },
+    { "keyword": "dolar", "code": "USD", "type": "FOREX" },
+    { "keyword": "euro", "code": "EUR", "type": "FOREX" },
+    { "keyword": "avro", "code": "EUR", "type": "FOREX" },
+    { "keyword": "sterlin", "code": "GBP", "type": "FOREX" },
+    { "keyword": "yen", "code": "JPY", "type": "FOREX" },
+    { "keyword": "frank", "code": "CHF", "type": "FOREX" },
+    { "keyword": "yuan", "code": "CNY", "type": "FOREX" },
+    { "keyword": "ruble", "code": "RUB", "type": "FOREX" },
+    { "keyword": "won", "code": "KRW", "type": "FOREX" },
+    { "keyword": "manat", "code": "AZN", "type": "FOREX" },
+    { "keyword": "tenge", "code": "KZT", "type": "FOREX" },
+    { "keyword": "dirhem", "code": "AED", "type": "FOREX" },
+    { "keyword": "kanada dolari", "code": "CAD", "type": "FOREX" },
+    { "keyword": "avustralya dolari", "code": "AUD", "type": "FOREX" },
+    { "keyword": "isvec kronu", "code": "SEK", "type": "FOREX" },
+    { "keyword": "norvec kronu", "code": "NOK", "type": "FOREX" },
+    { "keyword": "danimarka kronu", "code": "DKK", "type": "FOREX" },
+    { "keyword": "suudi riyali", "code": "SAR", "type": "FOREX" },
+    { "keyword": "katar riyali", "code": "QAR", "type": "FOREX" },
+    { "keyword": "kuveyt dinari", "code": "KWD", "type": "FOREX" },
+    { "keyword": "pakistan rupisi", "code": "PKR", "type": "FOREX" },
+    { "keyword": "rumen leyi", "code": "RON", "type": "FOREX" }
+  ],
+  "entityAliases": [
+    { "keyword": "THY", "code": "THYAO.IS", "type": "STOCK" },
+    { "keyword": "İş Bankası", "code": "ISCTR.IS", "type": "STOCK" },
+    { "keyword": "Şişecam", "code": "SISE.IS", "type": "STOCK" }
+  ],
+  "commonNameWords": [
+    "turk", "yukselen", "buyuk", "yeni", "ozel", "milli", "genel", "birlesik", "guclu", "ileri", "ortak",
+    "turkiye", "anadolu", "akdeniz", "marmara", "avrupa", "ulusal", "global", "dunya", "merkez",
+    "karadeniz", "istanbul", "ankara", "amerika", "avrasya", "uluslararasi", "international",
+    "platform", "federal", "turizm", "holding", "yatirim", "sanayi", "ticaret", "teknoloji", "finansal",
+    "finans", "faktoring", "sigorta", "gayrimenkul", "insaat", "otomotiv", "tekstil", "elektrik",
+    "elektronik", "madencilik", "lojistik", "saglik", "egitim", "denizcilik", "havacilik", "perakende",
+    "dijital", "yazilim", "bilisim", "iletisim", "enerji", "dogalgaz", "petrol", "akaryakit", "kimya",
+    "plastik", "ambalaj", "seramik", "mobilya", "icecek", "kozmetik", "cimento", "makine", "savunma",
+    "girisim", "sermaye", "portfoy", "ortaklik", "uretim", "dagitim", "pazarlama", "hizmetleri",
+    "sistemleri", "teknolojileri", "urunleri", "cozumleri", "gelistirme", "destek", "hareket",
+    "gelecek", "birlik", "birikim", "servet", "idealist"
+  ],
+  "blockedTickers": [
+    "ECB", "FED", "FOMC", "IMF", "OPEC", "OECD", "NATO", "TCMB", "SPK", "BDDK", "TMSF", "TUIK", "BIST", "KAP",
+    "PPK", "KDV", "GDP", "GSYH", "CPI", "PPI", "PMI", "ABD", "CEO", "CFO"
+  ],
+  "nameStopwords": ["ve", "the", "a.s", "as", "ao"],
+  "thresholds": {
+    "stockCoreMin": 5,
+    "cryptoNameMin": 3,
+    "fundNameMinChars": 18,
+    "fundNameMinWords": 4,
+    "catalogTtlMs": 3600000
+  }
+}

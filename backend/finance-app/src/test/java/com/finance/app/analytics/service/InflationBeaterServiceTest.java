@@ -56,9 +56,14 @@ class InflationBeaterServiceTest {
     void wireTrackedDefaults() {
         // Built by hand rather than @InjectMocks: both cold-start guards are erased-type ObjectProvider, which
         // constructor injection can't disambiguate. Each getIfAvailable() defaults to null — treated as ready
-        // and TRY-based — until a test stubs it.
+        // and TRY-based — until a test stubs it. The universe builder/simulator collaborators are wired from
+        // the same catalog/scenario mocks so the universe is still driven by these stubs.
+        InflationBeaterUniverseBuilder universeBuilder =
+                new InflationBeaterUniverseBuilder(macroQueryService, trackedAssetQueryService);
+        InflationBeaterUniverseSimulator universeSimulator =
+                new InflationBeaterUniverseSimulator(scenarioService);
         service = new InflationBeaterService(scenarioService, historyService, macroQueryService,
-                trackedAssetQueryService, cacheManager, nativeCurrencyResolver, marketDataInitializer);
+                cacheManager, universeBuilder, universeSimulator, nativeCurrencyResolver, marketDataInitializer);
         for (TrackedAssetType t : TrackedAssetType.values()) {
             lenient().when(trackedAssetQueryService.getCodes(t)).thenReturn(List.of());
             lenient().when(trackedAssetQueryService.getEnabledCodes(t)).thenReturn(List.of());
@@ -193,6 +198,35 @@ class InflationBeaterServiceTest {
         assertThat(response.entries()).hasSize(1);
         // Geometric excess: asset +60% vs policy-rate benchmark +45% -> (1.60/1.45-1) = 10.3448%.
         assertThat(response.entries().get(0).excessReturnPct()).isEqualByComparingTo("10.3448");
+    }
+
+    @Test
+    void shouldResolveBenchmarkByPublicSlug() {
+        // Regression: the API sends the EVDS-free public slug ("cpiindex"), not the raw EVDS code. The service
+        // must canonicalise it to the EVDS-coded indicator and compute — it used to 404 because compute() only
+        // knew findByCode (EVDS column). The heavy compute/cache must still key on the canonical EVDS code so a
+        // slug request hits the warm cache the scheduler filled, and the response carries the slug back.
+        MacroIndicator cpi = mock(MacroIndicator.class);
+        lenient().when(cpi.getCategory()).thenReturn(MacroCategory.INFLATION);
+        lenient().when(cpi.getUnit()).thenReturn(MacroUnit.INDEX);
+        lenient().when(cpi.getLabel()).thenReturn("cpiIndex");
+        lenient().when(cpi.getCode()).thenReturn("TP.GENENDEKS.T1");
+        lenient().when(cpi.getSlug()).thenReturn("cpiindex");
+        when(macroQueryService.findByPublicId("cpiindex")).thenReturn(cpi);
+        when(macroQueryService.findByCode("TP.GENENDEKS.T1")).thenReturn(cpi);
+        when(historyService.getMacroSeries(anyString(), any(), any())).thenReturn(List.of(
+                new HistoryPoint(LocalDate.now().minusYears(1), new BigDecimal("1000")),
+                new HistoryPoint(LocalDate.now(), new BigDecimal("1250"))));
+        when(scenarioService.simulate(any())).thenReturn(new ScenarioResponse(
+                new BigDecimal("10000"), LocalDate.now().minusYears(1), LocalDate.now(),
+                new BigDecimal("25"), null,
+                List.of(buildSeries(AnalyticsInstrumentType.SPOT, "A", new BigDecimal("100")))));
+
+        InflationBeaterResponse response = service.rank("1Y", "cpiindex");
+
+        assertThat(response.entries()).isNotEmpty();
+        assertThat(response.benchmarkCode()).isEqualTo("cpiindex");
+        verify(macroQueryService).findByCode("TP.GENENDEKS.T1");
     }
 
     @Test

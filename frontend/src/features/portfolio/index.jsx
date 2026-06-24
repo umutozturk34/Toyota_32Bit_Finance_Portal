@@ -1,22 +1,32 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import { SPRING } from '../../shared/utils/animations';
 import { useSearchParams } from 'react-router-dom';
 import { LayoutDashboard, TrendingUp as TrendingUpIcon, Layers } from 'lucide-react';
 import useNavigationBack from '../../shared/hooks/useNavigationBack';
 import { useUserPreferences } from '../../shared/hooks/useUserPreferences';
 import useAppStore from '../../shared/stores/useAppStore';
-import LoadingState from '../../shared/components/feedback/LoadingState';
+import { Skeleton, SkeletonChart, SkeletonStat, SkeletonList } from '../../shared/components/feedback/Skeleton';
 import ErrorState from '../../shared/components/feedback/ErrorState';
 import SummaryCards from './components/SummaryCards';
 import PositionsTable from './components/PositionsTable';
 import PositionSearchBar from './components/PositionSearchBar';
+import BondSearchBar from './components/BondSearchBar';
 import AllocationChart from './components/AllocationChart';
 import RealizedPnlChart from './components/RealizedPnlChart';
+import CostBreakdownChart from './components/CostBreakdownChart';
+import PnlByTypeChart from './components/PnlByTypeChart';
 import PerformanceChart from './components/PerformanceChart';
 import PnlBreakdownChart from './components/PnlBreakdownChart';
 import AssetDetail from './components/AssetDetail';
 import PortfolioActions from './components/PortfolioActions';
+import DepositsList from './components/DepositsList';
+import BondsList from './components/BondsList';
+import FixedIncomeSummaryCard from './components/FixedIncomeSummaryCard';
+import FixedIncomeChart from './components/FixedIncomeChart';
+import FixedIncomePnlChart from './components/FixedIncomePnlChart';
+import CouponCashflowChart from './components/CouponCashflowChart';
 import PortfolioModalsHost from './components/PortfolioModalsHost';
 import PortfolioOnboardingHost from './components/PortfolioOnboardingHost';
 import usePortfolioPageState from './hooks/usePortfolioPageState';
@@ -58,6 +68,15 @@ export default function Portfolio() {
   const portfolio = (portfolios ?? []).find((p) => String(p.id) === urlPortfolioId)
     ?? portfolios?.[0]
     ?? null;
+  const portfolioType = portfolio?.type === 'FIXED' ? 'fixed' : 'spot';
+  // The sidebar's "New portfolio" entry deep-links here with ?new=1 so a portfolio can be created without first
+  // navigating in; the switcher opens straight into create mode and we drop the flag so it fires once.
+  const wantsCreate = searchParams.get('new') === '1';
+  const clearCreateFlag = () => setSearchParams((prev) => {
+    const next = new URLSearchParams(prev);
+    next.delete('new');
+    return next;
+  }, { replace: true });
   const setActivePortfolio = (id) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -125,7 +144,21 @@ export default function Portfolio() {
   const reopenSpot = useReopenPosition(portfolio?.id);
   const reopenViop = useReopenDerivativePosition(portfolio?.id);
 
-  if (loading) return <LoadingState message={t('portfolio.loading')} />;
+  if (loading) {
+    return (
+      <div className="space-y-6 py-2">
+        <div className="flex items-center justify-between">
+          <Skeleton w="12rem" h="2rem" className="rounded-xl" />
+          <Skeleton w="8rem" h="2.4rem" className="rounded-xl" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <SkeletonStat /><SkeletonStat /><SkeletonStat /><SkeletonStat />
+        </div>
+        <SkeletonChart h="18rem" />
+        <SkeletonList rows={5} cols={4} />
+      </div>
+    );
+  }
   if (error) return <ErrorState message={error} onRetry={invalidatePortfolio} />;
 
   if (needsOnboarding) {
@@ -150,7 +183,7 @@ export default function Portfolio() {
 
   return (
     <>
-      {selectedAsset ? (
+      {portfolioType === 'spot' && selectedAsset ? (
         <AssetDetail
           portfolioId={portfolio.id}
           asset={selectedAsset}
@@ -161,6 +194,38 @@ export default function Portfolio() {
           onReopenLot={handleReopen}
           hasActiveDialog={hasActiveDialog}
         />
+      ) : portfolioType === 'fixed' ? (
+        <div className="space-y-6">
+          <PortfolioActions
+            portfolio={portfolio}
+            portfolios={portfolios}
+            loading={loading}
+            onRefresh={invalidatePortfolio}
+            onSelectPortfolio={setActivePortfolio}
+            hasPositions={false}
+            showExtras={false}
+            autoCreatePortfolio={wantsCreate}
+            onAutoCreateConsumed={clearCreateFlag}
+          />
+
+          {portfolio?.id && (
+            <div className="space-y-6">
+              <FixedIncomeSummaryCard portfolioId={portfolio.id} />
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+                <FixedIncomeChart portfolioId={portfolio.id} />
+                <CouponCashflowChart portfolioId={portfolio.id} />
+              </div>
+              <FixedIncomePnlChart portfolioId={portfolio.id} />
+            </div>
+          )}
+
+          <BondSearchBar />
+
+          <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 items-start">
+            <DepositsList portfolioId={portfolio?.id} />
+            <BondsList portfolioId={portfolio?.id} />
+          </div>
+        </div>
       ) : (
         <div className="space-y-6">
           <PortfolioActions
@@ -173,6 +238,8 @@ export default function Portfolio() {
             pdfPending={pdfPending}
             pdfElapsedMs={pdfElapsedMs}
             hasPositions={viewPositions.length > 0}
+            autoCreatePortfolio={wantsCreate}
+            onAutoCreateConsumed={clearCreateFlag}
           />
 
           {summary && <SummaryCards summary={summary} portfolioId={portfolio?.id} />}
@@ -188,7 +255,7 @@ export default function Portfolio() {
                   <motion.span
                     layoutId="portfolio-tab"
                     className="absolute inset-0 rounded-lg bg-accent/15"
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    transition={SPRING.tab}
                   />
                 )}
                 <Icon className={`relative z-10 h-3.5 w-3.5 ${activeTab === id ? 'text-accent' : 'text-fg-muted'}`} />
@@ -199,11 +266,19 @@ export default function Portfolio() {
             ))}
           </div>
 
-          <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
+          <motion.div
+            animate={{ opacity: activeTab === 'overview' ? 1 : 0 }}
+            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            style={{ display: activeTab === 'overview' ? 'block' : 'none' }}
+          >
             <div className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 min-w-0">
                 <AllocationChart allocation={allocation} portfolioId={portfolio?.id} />
                 <RealizedPnlChart portfolioId={portfolio?.id} />
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 min-w-0">
+                <CostBreakdownChart portfolioId={portfolio?.id} />
+                <PnlByTypeChart portfolioId={portfolio?.id} />
               </div>
               <PositionSearchBar />
               <div className="min-w-0">
@@ -218,18 +293,26 @@ export default function Portfolio() {
                 />
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Toggle visibility (not mount) like the overview tab above, so the chart's React Query cache and
-              rendered canvas survive tab switches — conditional unmounting made the tab flash blank/empty on
-              every re-entry while its query re-validated. The chart mounts once the portfolio loads. */}
-          <div style={{ display: portfolio && activeTab === 'performance' ? 'block' : 'none' }}>
+          {/* Toggle visibility (not mount) so the chart's React Query cache and rendered canvas survive tab
+              switches — conditional unmounting made the tab flash blank on every re-entry. Opacity cross-fades on
+              show so switching reads smooth instead of an instant cut, without ever remounting the chart. */}
+          <motion.div
+            animate={{ opacity: portfolio && activeTab === 'performance' ? 1 : 0 }}
+            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            style={{ display: portfolio && activeTab === 'performance' ? 'block' : 'none' }}
+          >
             {portfolio && <PerformanceChart portfolioId={portfolio.id} backfill={backfill} />}
-          </div>
+          </motion.div>
 
-          <div style={{ display: portfolio && activeTab === 'pnl' ? 'block' : 'none' }}>
+          <motion.div
+            animate={{ opacity: portfolio && activeTab === 'pnl' ? 1 : 0 }}
+            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            style={{ display: portfolio && activeTab === 'pnl' ? 'block' : 'none' }}
+          >
             {portfolio && <PnlBreakdownChart portfolioId={portfolio.id} />}
-          </div>
+          </motion.div>
         </div>
       )}
 

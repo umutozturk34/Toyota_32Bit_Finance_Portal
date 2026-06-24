@@ -31,22 +31,27 @@ export default function CurrencySwitcher({ collapsed = false, isMobile = false }
         onClick={() => setDisplayCurrency(next)}
         title={`${label}: ${displayCurrency}`}
         aria-label={`${label}: ${displayCurrency}`}
-        className="w-full flex items-center justify-center py-2 rounded-lg text-fg-muted hover:text-accent hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer font-mono text-[15px] font-bold tabular-nums"
+        className="w-full flex items-center overflow-hidden px-0 py-2 rounded-lg text-fg-muted hover:text-accent hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer font-mono text-[15px] font-bold tabular-nums"
       >
-        {SYMBOL[displayCurrency] || '⇄'}
+        <span className="flex items-center justify-center w-12 shrink-0">
+          {SYMBOL[displayCurrency] || '⇄'}
+        </span>
       </button>
     );
   }
 
   return (
-    <div className="px-3 py-1.5">
+    <div className="px-2 py-1">
       <div
         role="group"
         aria-label={label}
-        className="flex items-center gap-0.5 rounded-lg border border-border-default bg-bg-elevated p-0.5"
+        className="flex items-stretch gap-0.5 rounded-lg border border-border-default bg-bg-elevated p-0.5"
       >
         {SWITCHER_CURRENCIES.map((ccy) => {
           const active = displayCurrency === ccy;
+          const text = ccy === 'ORIGINAL'
+            ? t('settings.currencyOriginalShort', { defaultValue: 'Orj' })
+            : ccy;
           return (
             <button
               key={ccy}
@@ -54,7 +59,8 @@ export default function CurrencySwitcher({ collapsed = false, isMobile = false }
               onClick={() => setDisplayCurrency(ccy)}
               aria-pressed={active}
               aria-label={ccy}
-              className="relative flex-1 rounded-md px-2 py-1 text-[11px] font-mono font-semibold transition-colors border-none cursor-pointer bg-transparent"
+              title={ccy === 'ORIGINAL' ? label : ccy}
+              className="relative flex-1 min-w-0 rounded-md px-1 py-1.5 text-[10.5px] font-mono font-semibold transition-colors border-none cursor-pointer bg-transparent"
             >
               {active && (
                 <motion.span
@@ -63,9 +69,9 @@ export default function CurrencySwitcher({ collapsed = false, isMobile = false }
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 />
               )}
-              <span className={`relative z-10 inline-flex items-center gap-0.5 ${active ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
-                <span className="text-[12px]">{SYMBOL[ccy]}</span>
-                {ccy === 'ORIGINAL' ? t('settings.currencyOriginalShort', { defaultValue: 'Orj' }) : ccy}
+              <span className={`relative z-10 flex items-center justify-center gap-0.5 leading-none ${active ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
+                <span className="text-[12px] leading-none">{SYMBOL[ccy]}</span>
+                <span className="leading-none">{text}</span>
               </span>
             </button>
           );

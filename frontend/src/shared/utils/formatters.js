@@ -25,7 +25,7 @@ export const changeBg = {
 
 // Fewest decimals (capped) that keep a small but non-zero magnitude from rounding to a flat zero, so a
 // genuine 0.0001 move is never shown as "0.00". Magnitudes already visible at `base` are returned unchanged.
-const visibleDecimals = (value, base, cap = 8) => {
+export const visibleDecimals = (value, base, cap = 8) => {
     const n = Math.abs(Number(value));
     if (!Number.isFinite(n) || n === 0) return base;
     let d = base;
@@ -42,25 +42,29 @@ const visibleDecimals = (value, base, cap = 8) => {
     return d;
 };
 
-// Decimal places that keep a price legible across magnitudes without collapsing toward zero. Shared by the
-// chart axis, the crosshair legend, and the metadata/money formatting so a single value never renders three
-// different ways: sub-0.001 (a sub-cent fund NAV in USD, cheap crypto) gets 6 places, sub-0.1 gets 4, and an
-// ordinary price keeps 2.
+// Decimal places that keep a price legible across magnitudes without collapsing toward zero. The SINGLE
+// source of truth for price precision — shared by the chart axis, the crosshair legend, the headline cards
+// and the metadata/money formatting so a value never renders different ways across surfaces. A sub-1 price
+// (fund NAV like 0,4631, cheap crypto/forex) keeps 4 significant decimals (≥1 ticks in kuruş, so 2 is exact),
+// and a sub-0.001 value gets 6. Trailing zeros are trimmed by the minDecimals floor at the format step.
 export const priceDecimals = (value) => {
     const n = Math.abs(Number(value));
     if (!Number.isFinite(n) || n === 0) return 2;
     if (n < 0.001) return 6;
-    if (n < 0.1) return 4;
+    if (n < 1) return 4;
     return 2;
 };
 
 export const formatPrice = (
     price,
-    { currency, locale, minDecimals = 2, maxDecimals = 2 } = {},
+    { currency, locale, minDecimals = 2, maxDecimals } = {},
 ) => {
     if (price === null || price === undefined) return 'N/A';
     const resolvedLocale = locale || currentLocaleTag();
-    const effectiveMax = Math.max(maxDecimals, visibleDecimals(price, maxDecimals));
+    // Default the cap to the shared magnitude-aware ladder (so a bare formatPrice(0.4631) shows 0,4631, not
+    // a collapsed 0,46); an explicit maxDecimals still wins for callers that need a fixed width.
+    const cap = maxDecimals ?? priceDecimals(price);
+    const effectiveMax = Math.max(cap, visibleDecimals(price, cap));
     const opts = {
         minimumFractionDigits: Math.min(minDecimals, effectiveMax),
         maximumFractionDigits: effectiveMax,
@@ -75,12 +79,8 @@ export const formatPrice = (
 export const formatPriceUSD = (price, maxDecimals = 2) =>
     formatPrice(price, { currency: 'USD', locale: 'en-US', maxDecimals });
 
-export const formatPriceTRY = (price) => {
-    if (price === null || price === undefined) return 'N/A';
-    const num = Number(price);
-    const decimals = num < 10 ? 4 : num < 1000 ? 3 : 2;
-    return formatPrice(num, { currency: 'TRY', minDecimals: 2, maxDecimals: decimals });
-};
+export const formatPriceTRY = (price) =>
+    formatPrice(price, { currency: 'TRY' });
 
 export const formatCompactNumber = (number, currency = 'USD') => {
     if (number === null || number === undefined) return 'N/A';

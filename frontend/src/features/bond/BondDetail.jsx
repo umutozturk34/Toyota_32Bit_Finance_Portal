@@ -1,12 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactECharts from 'echarts-for-react';
 import {
-  ArrowLeft,
-  Landmark,
   Calendar,
   Percent,
   TrendingUp,
@@ -14,16 +12,20 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
+  Repeat,
 } from 'lucide-react';
 import { bondService } from './services/bondService';
+import { inferCouponCadence } from './lib/couponCadence';
+import AssetRelatedNews from '../news/components/AssetRelatedNews';
 import { useTheme } from '../../shared/context/useTheme';
 import useSessionState from '../../shared/hooks/useSessionState';
 import useNavigationBack from '../../shared/hooks/useNavigationBack';
-import IconButton from '../../shared/components/buttons/IconButton';
-import LoadingState from '../../shared/components/feedback/LoadingState';
+import { Skeleton, SkeletonChart, SkeletonStat } from '../../shared/components/feedback/Skeleton';
 import ErrorState from '../../shared/components/feedback/ErrorState';
-import MarketStatusBadge from '../../shared/components/layout/MarketStatusBadge';
+import MarketAddBondModal from '../portfolio/components/MarketAddBondModal';
+import BondDetailHeader from './components/BondDetailHeader';
 import { BOND_TYPE_COLORS, CHART_LINE_COLORS, CHART_RATE_COLORS, DEFAULT_RATE_COLOR } from './lib/bondConstants';
+import { priceDecimals } from '../../shared/utils/formatters';
 
 function formatRate(val) {
   if (val == null) return '—';
@@ -32,7 +34,7 @@ function formatRate(val) {
 
 function formatPrice(val, localeTag = 'en-US') {
   if (val == null) return '—';
-  return new Intl.NumberFormat(localeTag, { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(val);
+  return new Intl.NumberFormat(localeTag, { minimumFractionDigits: 2, maximumFractionDigits: priceDecimals(val) }).format(val);
 }
 
 function formatDate(val, localeTag = 'en-US') {
@@ -154,6 +156,7 @@ export default function BondDetail() {
   const goBack = useNavigationBack('/bonds');
   const localeTag = t('common.localeTag');
   const [rateOpen, setRateOpen] = useSessionState('bond-detail-rate-open', true);
+  const [addOpen, setAddOpen] = useState(false);
 
   const { data: bond, isLoading: bondLoading, error: bondError, refetch } = useQuery({
     queryKey: ['bond', seriesCode],
@@ -174,12 +177,25 @@ export default function BondDetail() {
     }
     return bond?.baseIndex != null ? Number(bond.baseIndex) : null;
   }, [history, bond?.baseIndex]);
+  // Clean-price change vs the previous observation in the rate history — the bond's day-over-day move. Null when
+  // there are fewer than two priced points (a freshly-listed or sparsely-quoted bond).
+  const priceChangePct = useMemo(() => {
+    const priced = history.filter((d) => d.price != null);
+    if (priced.length < 2) return null;
+    const last = Number(priced[priced.length - 1].price);
+    const prev = Number(priced[priced.length - 2].price);
+    if (!(prev > 0)) return null;
+    return ((last - prev) / prev) * 100;
+  }, [history]);
   const latestRate = useMemo(() => {
     for (let i = history.length - 1; i >= 0; i--) {
       if (history[i].rate != null) return Number(history[i].rate);
     }
     return bond?.couponRate != null ? Number(bond.couponRate) : null;
   }, [history, bond?.couponRate]);
+  // Coupon rhythm read off the price-history SHAPE (jumps), not the declared schedule — most telling for CPI/gold
+  // linkers whose indexed price steps at each coupon. Null (→ nothing rendered) when the price shows no jump.
+  const cadence = useMemo(() => inferCouponCadence(history, bond?.maturityStart), [history, bond?.maturityStart]);
   const priceOption = useMemo(
     () => buildLineOption({
       history, valueKey: 'price', color: priceColor, isDark,
@@ -195,7 +211,23 @@ export default function BondDetail() {
     [history, rateColor, isDark],
   );
 
-  if (bondLoading) return <LoadingState message={t('market.bond.loading')} />;
+  if (bondLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton w="3.25rem" h="3.25rem" circle />
+          <div className="space-y-2">
+            <Skeleton w="10rem" h="1.5rem" className="rounded-lg" />
+            <Skeleton w="6rem" h="0.85rem" />
+          </div>
+        </div>
+        <SkeletonChart h="20rem" />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => <SkeletonStat key={i} />)}
+        </div>
+      </div>
+    );
+  }
   if (bondError || !bond) {
     return <ErrorState message={t('market.bond.error')} onRetry={refetch} />;
   }
@@ -208,37 +240,16 @@ export default function BondDetail() {
 
   return (
     <div className="space-y-6 py-6" data-tour="bond-detail-card">
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="flex items-center justify-between gap-3 flex-wrap"
-      >
-        <div className="flex items-center gap-3 min-w-0 flex-wrap">
-          <IconButton
-            variant="secondary"
-            size={9}
-            shape="square"
-            icon={<ArrowLeft className="h-4 w-4" />}
-            aria-label={t('common.back', { defaultValue: 'back' })}
-            onClick={goBack}
-          />
-          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 text-accent shrink-0">
-            <Landmark className="h-5 w-5" />
-          </span>
-          <div className="min-w-0">
-            <h1 className="text-base sm:text-xl font-bold text-fg leading-tight truncate">{bond.isinCode}</h1>
-            <p className="text-[10px] sm:text-xs font-mono text-fg-muted mt-0.5 truncate">{bond.seriesCode}</p>
-          </div>
-          <MarketStatusBadge market="BOND" compact />
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          <span className={`rounded-lg border px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold tracking-wider ${typeColor}`}>
-            {t(`market.bond.types.${bond.bondType}`, { defaultValue: bond.bondType })}
-          </span>
-          <span className="font-mono text-lg sm:text-2xl font-bold text-fg">{formatPrice(bond.baseIndex, localeTag)}</span>
-        </div>
-      </motion.div>
+      <BondDetailHeader
+        bond={bond}
+        t={t}
+        localeTag={localeTag}
+        typeColor={typeColor}
+        priceChangePct={priceChangePct}
+        formatPrice={formatPrice}
+        onBack={goBack}
+        onAdd={() => setAddOpen(true)}
+      />
 
       <div className="rounded-2xl border border-border-default bg-bg-elevated p-6">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
@@ -284,6 +295,26 @@ export default function BondDetail() {
           )}
         </div>
 
+        {cadence && (cadence.cadenceKey || (cadence.firstJumpDaysFromStart != null && cadence.firstJumpDaysFromStart >= 0)) && (
+          <div className="px-5 pb-4 -mt-1 flex items-start gap-2 text-[11px] text-fg-subtle">
+            <Repeat className="h-3.5 w-3.5 mt-0.5 shrink-0 text-fg-muted" />
+            <span>
+              {cadence.cadenceKey ? (
+                <>
+                  <span className="font-medium text-fg-muted">{t('market.bond.cadence.title')}:</span>{' '}
+                  {t('market.bond.cadence.everyDays', { days: cadence.approxDays })}{' '}
+                  ({t(`market.bond.cadence.labels.${cadence.cadenceKey}`)})
+                  {cadence.firstJumpDaysFromStart != null && cadence.firstJumpDaysFromStart >= 0 && (
+                    <> · {t('market.bond.cadence.firstJump', { n: cadence.firstJumpDaysFromStart })}</>
+                  )}
+                </>
+              ) : (
+                t('market.bond.cadence.jumpOnly', { n: cadence.firstJumpDaysFromStart })
+              )}
+            </span>
+          </div>
+        )}
+
         <div className="border-t border-border-default">
           <button
             type="button"
@@ -325,6 +356,16 @@ export default function BondDetail() {
           </AnimatePresence>
         </div>
       </div>
+
+      <AssetRelatedNews assetCode={bond.isinCode} assetName={bond.seriesCode} assetType="BOND" />
+
+      {addOpen && (
+        <MarketAddBondModal
+          bond={bond}
+          onClose={() => setAddOpen(false)}
+          onComplete={() => setAddOpen(false)}
+        />
+      )}
     </div>
   );
 }

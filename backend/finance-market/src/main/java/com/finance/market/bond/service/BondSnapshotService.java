@@ -44,6 +44,11 @@ public class BondSnapshotService {
         this.batchSize = bondProperties.getBatchSize();
     }
 
+    /**
+     * Lists the EVDS serie catalogue and narrows it to unique, active, tradable bonds.
+     *
+     * @throws BusinessException if filtering leaves no bonds (treated as a bad upstream response)
+     */
     public List<BondSerieDto> fetchAndFilterSeries() {
         log.info("Fetching bond serie list from EVDS");
         List<EvdsSerieResponse> allSeries = evdsClient.fetchBondSerieList();
@@ -58,6 +63,10 @@ public class BondSnapshotService {
         return filtered;
     }
 
+    /**
+     * Pulls today's price/coupon snapshot for the given series, batched to stay within EVDS request limits.
+     * A failed batch is logged and skipped; an open circuit breaker aborts the remaining batches early.
+     */
     public List<BondSnapshotDto> fetchSnapshotData(List<BondSerieDto> bondSeries) {
         List<List<BondSerieDto>> batches = BondSerieFilterUtil.partition(bondSeries, batchSize);
         String today = LocalDate.now().format(EVDS_DATE_FMT);

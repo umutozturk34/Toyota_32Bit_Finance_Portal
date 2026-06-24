@@ -62,6 +62,21 @@ class AdminUserServiceTest {
     }
 
     @Test
+    void shouldExposeOnlyAppRoles_filteringKeycloakDefaults_whenListing() {
+        KeycloakUser u = new KeycloakUser("id-1", "alice", "alice@example.com",
+                "Alice", "Wonder", true, true, 1714560000000L);
+        when(client.listUsers(0, 50, null)).thenReturn(List.of(u));
+        // Keycloak returns the app roles mixed with its built-in defaults; only ADMIN/USER must surface.
+        when(client.getRealmRoleNames("id-1")).thenReturn(List.of(
+                "offline_access", "USER", "default-roles-finance", "ADMIN", "uma_authorization"));
+
+        List<AdminUserResponse> result = service.listUsers(0, 50, null);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).roles()).containsExactly("ADMIN", "USER");
+    }
+
+    @Test
     void shouldDelegateBan_toClientWithFalseEnabled() {
         service.banUser("user-id-123", "admin-sub");
 

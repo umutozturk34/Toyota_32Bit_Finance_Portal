@@ -21,11 +21,13 @@ public class NewsSourceService {
     private final NewsSourceRepository newsSourceRepository;
     private final NewsSourceMapper newsSourceMapper;
 
+    /** Enabled sources in sort order; entity-returning for the ingest path (not API responses). */
     @Transactional(readOnly = true)
     public List<NewsSource> getEnabledSources() {
         return newsSourceRepository.findByEnabledTrueOrderBySortOrderAsc();
     }
 
+    /** All sources in sort order, or only enabled ones when {@code includeDisabled} is false. */
     @Transactional(readOnly = true)
     public List<NewsSourceResponse> getAllSources(boolean includeDisabled) {
         List<NewsSource> sources = includeDisabled
@@ -34,6 +36,7 @@ public class NewsSourceService {
         return newsSourceMapper.toResponses(sources);
     }
 
+    /** Single source as an API response; {@link #findOrThrow} is the entity-returning variant for write paths. */
     @Transactional(readOnly = true)
     public NewsSourceResponse getById(Long id) {
         return newsSourceMapper.toResponse(findOrThrow(id));

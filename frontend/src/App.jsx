@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
   Outlet,
+  useLocation,
 } from 'react-router-dom';
 import { AuthProvider } from './features/auth/AuthContext';
 import { useAuth } from './features/auth/useAuth';
@@ -48,6 +49,7 @@ import ViopDetail from './features/viop/ViopDetail';
 import Portfolio from './features/portfolio';
 import WatchPage from './features/watch/WatchPage';
 import AnalyticsPage from './features/analytics/AnalyticsPage';
+import LearnPage from './features/learn/LearnPage';
 import AdminTrackedAssetsPage from './features/admin/components/AdminTrackedAssetsPage';
 import AdminUsersPage from './features/admin/components/AdminUsersPage';
 
@@ -58,8 +60,11 @@ function LandingRedirect() {
 }
 
 function RootLayout() {
+  // Key the boundary by pathname so a one-off render crash clears on the next navigation; without this
+  // the boundary stays latched in its error state forever (it never resets itself across route changes).
+  const location = useLocation();
   return (
-    <ErrorBoundary>
+    <ErrorBoundary key={location.pathname}>
       <Outlet />
     </ErrorBoundary>
   );
@@ -94,6 +99,7 @@ const router = createBrowserRouter(
         <Route path="portfolio" element={<Portfolio />} />
         <Route path="watch" element={<WatchPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="learn" element={<LearnPage />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Route>

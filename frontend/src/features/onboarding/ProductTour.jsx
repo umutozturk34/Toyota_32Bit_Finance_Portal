@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
 import tourSteps from './tourSteps';
 import {
   DEFAULT_PADDING,
@@ -28,6 +27,7 @@ import {
 import { SpotlightMask, SpotlightRing } from './tour/Spotlight';
 import ArrowConnector from './tour/Arrow';
 import { SummaryGrid, SummaryTitle, TooltipPointer, TooltipProgress } from './tour/TooltipParts';
+import TooltipNav from './tour/TooltipNav';
 import SkipButton from './tour/SkipButton';
 import useTourTarget from './tour/useTourTarget';
 
@@ -36,7 +36,12 @@ export default function ProductTour({ open, onFinish, onSkip }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [stepIndex, setStepIndex] = useState(0);
+  const [stepIndex, setStepIndex] = useState(() => {
+    try {
+      const saved = parseInt(sessionStorage.getItem('onboarding:tourStep') ?? '', 10);
+      return Number.isInteger(saved) && saved > 0 && saved < tourSteps.length ? saved : 0;
+    } catch { return 0; }
+  });
   const [tooltipSize, setTooltipSize] = useState({ width: 320, height: 200 });
   const [viewport, setViewport] = useState(() => ({
     w: typeof window !== 'undefined' ? window.innerWidth : 0,
@@ -50,6 +55,13 @@ export default function ProductTour({ open, onFinish, onSkip }) {
   const isMobileLayout = viewport.w > 0 && viewport.w < TABLET_BREAKPOINT;
   const step = tourSteps[stepIndex];
   const isLast = stepIndex === tourSteps.length - 1;
+
+  // Persist the tour position so a remount — or the full-page reload keycloak.onTokenExpired triggers via
+  // doLogin() — resumes the same step instead of restarting at 0. Mirrors OnboardingGate's phase persistence;
+  // the key is cleared by OnboardingGate when the tour finishes.
+  useEffect(() => {
+    try { sessionStorage.setItem('onboarding:tourStep', String(stepIndex)); } catch { /* ignore */ }
+  }, [stepIndex]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -276,6 +288,7 @@ export default function ProductTour({ open, onFinish, onSkip }) {
       )}
       {!isSummary && hasTarget && targetInView && (
         <SpotlightRing
+          key={step?.id ?? stepIndex}
           rect={rect}
           padding={padding}
           viewportW={viewport.w}
@@ -368,74 +381,14 @@ export default function ProductTour({ open, onFinish, onSkip }) {
               </motion.p>
             )}
 
-            <div className="mt-5 landscape:mt-3 flex items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={handleBack}
-                disabled={stepIndex === 0}
-                className={`inline-flex items-center gap-1 px-2 min-h-[44px] sm:min-h-0 text-[12px] font-medium transition-colors bg-transparent border-none cursor-pointer ${
-                  stepIndex === 0
-                    ? 'invisible'
-                    : 'text-fg-muted hover:text-fg'
-                }`}
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                {t('onboarding.back')}
-              </button>
-
-              <motion.button
-                type="button"
-                onClick={handleNext}
-                initial={isSummary ? { opacity: 0, y: 10, scale: 0.92 } : false}
-                animate={isSummary
-                  ? {
-                      opacity: 1,
-                      y: 0,
-                      scale: 1,
-                      boxShadow: [
-                        '0 6px 18px -4px rgba(99,102,241,0.4)',
-                        '0 12px 36px -4px rgba(99,102,241,0.7)',
-                        '0 6px 18px -4px rgba(99,102,241,0.4)',
-                      ],
-                    }
-                  : undefined}
-                whileHover={{
-                  y: -2,
-                  scale: isSummary ? 1.05 : 1,
-                  boxShadow: '0 14px 32px -8px rgba(99,102,241,0.65), 0 4px 12px -2px rgba(99,102,241,0.45)',
-                }}
-                whileTap={{ y: 0, scale: 0.97 }}
-                transition={isSummary
-                  ? {
-                      opacity: { delay: 0.95, duration: 0.4, ease: EASE_OUT_EXPO },
-                      y: { delay: 0.95, duration: 0.4, ease: EASE_OUT_EXPO },
-                      scale: { delay: 0.95, duration: 0.4, ease: EASE_OUT_EXPO },
-                      boxShadow: { delay: 1.4, duration: 2.4, repeat: Infinity, ease: 'easeInOut' },
-                    }
-                  : { type: 'spring', stiffness: 360, damping: 26 }}
-                className={`relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg bg-gradient-accent ${isSummary ? 'px-5 py-3 text-[13px]' : 'px-4 py-2.5 sm:py-2 text-[12px]'} min-h-[44px] sm:min-h-0 font-semibold text-white shadow-md shadow-accent/25 border-none cursor-pointer`}
-              >
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 rounded-lg shimmer opacity-70 mix-blend-screen"
-                />
-                <span className="relative z-[1] inline-flex items-center gap-1.5">
-                  {isSummary
-                    ? t('onboarding.tour.summary.cta', { defaultValue: 'Başla' })
-                    : isLast
-                      ? t('onboarding.tour.finish')
-                      : t('onboarding.continue')}
-                  <motion.span
-                    aria-hidden="true"
-                    animate={isSummary ? { x: [0, 4, 0] } : undefined}
-                    transition={isSummary ? { duration: 1.4, repeat: Infinity, ease: 'easeInOut' } : undefined}
-                    className="inline-flex"
-                  >
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </motion.span>
-                </span>
-              </motion.button>
-            </div>
+            <TooltipNav
+              t={t}
+              stepIndex={stepIndex}
+              isSummary={isSummary}
+              isLast={isLast}
+              onBack={handleBack}
+              onNext={handleNext}
+            />
           </div>
         </motion.div>
         )}

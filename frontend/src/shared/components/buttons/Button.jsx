@@ -1,10 +1,12 @@
-import { forwardRef } from 'react';
+import { forwardRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Spinner from '../feedback/Spinner';
 
 const cx = (...parts) => parts.filter(Boolean).join(' ');
 
-const BASE = 'inline-flex items-center justify-center gap-1.5 font-display font-semibold transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base';
+// `relative overflow-hidden` lets the press ripple stay clipped to the button shape; the focus ring + shadows are
+// the element's own box-shadow so they are NOT clipped by overflow-hidden.
+const BASE = 'relative overflow-hidden inline-flex items-center justify-center gap-1.5 font-display font-semibold transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base';
 
 const VARIANTS = {
   primary: 'text-white bg-accent hover:bg-accent-bright border-none shadow-sm shadow-accent/20',
@@ -28,9 +30,12 @@ const SIZES = {
 
 const SEGMENT_ACTIVE = 'text-accent';
 
+// A snappy spring on press so buttons feel physical (a quick settle, not a linear shrink) — the light, premium
+// micro-interaction the rest of the UI's motion language already uses, applied to every button by default.
+const PRESS_SPRING = { type: 'spring', stiffness: 420, damping: 24, mass: 0.6 };
 const MOTION_PRESETS = {
-  tap: { whileTap: { scale: 0.94 } },
-  tapHover: { whileTap: { scale: 0.94 }, whileHover: { y: -1 } },
+  tap: { whileTap: { scale: 0.96 }, transition: PRESS_SPRING },
+  tapHover: { whileTap: { scale: 0.96 }, whileHover: { y: -1.5 }, transition: PRESS_SPRING },
   none: {},
 };
 
@@ -63,6 +68,22 @@ const Button = forwardRef(function Button(
   const sizeClass = SIZES[size] ?? SIZES.md;
   const inlineStyle = accent ? { ...(style || {}), '--accent-dynamic': accent } : style;
 
+  // Minimal press ripple: spawn a short-lived circle at the pointer-down point; CSS animates + fades it, then it's
+  // dropped from state. Skipped when disabled/loading. Composes with the caller's own onPointerDown.
+  const [ripples, setRipples] = useState([]);
+  const spawnRipple = useCallback((e) => {
+    if (loading || disabled) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const id = `${e.timeStamp}-${size}-${e.clientX}`;
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top - size / 2;
+    setRipples((rs) => [...rs, { id, x, y, size }]);
+    window.setTimeout(() => setRipples((rs) => rs.filter((r) => r.id !== id)), 600);
+  }, [loading, disabled]);
+  const onPointerDown = (e) => { spawnRipple(e); rest.onPointerDown?.(e); };
+  const restProps = { ...rest, onPointerDown };
+
   return (
     <Component
       ref={ref}
@@ -80,8 +101,16 @@ const Button = forwardRef(function Button(
         className,
       )}
       style={inlineStyle}
-      {...rest}
+      {...restProps}
     >
+      {ripples.map((r) => (
+        <span
+          key={r.id}
+          aria-hidden="true"
+          className="btn-ripple"
+          style={{ left: r.x, top: r.y, width: r.size, height: r.size, opacity: 0.22 }}
+        />
+      ))}
       {variant === 'segment' && segmentActive && layoutId && (
         <motion.span
           layoutId={layoutId}

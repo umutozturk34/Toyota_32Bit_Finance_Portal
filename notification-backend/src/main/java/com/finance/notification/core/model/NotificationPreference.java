@@ -20,7 +20,6 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * Per-user notification preferences: a master email switch plus independent in-app/email toggles per

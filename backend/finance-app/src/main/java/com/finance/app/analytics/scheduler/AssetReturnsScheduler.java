@@ -7,13 +7,10 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.Executor;
 
 /**
  * Keeps the in-app asset-returns dataset warm. Startup warm-up first waits for the cold-start market-data
@@ -25,26 +22,37 @@ import java.util.concurrent.TimeoutException;
 @Component
 public class AssetReturnsScheduler {
 
-    /** Upper bound on waiting for cold-start init before warming anyway; a hung fetch must never block forever. */
-    private static final long INIT_WAIT_MINUTES = 30;
-
     private final AssetReturnsService assetReturnsService;
     private final TaskTrackingService taskTracker;
     private final ObjectProvider<MarketDataInitializer> marketDataInitializer;
+    private final Executor taskExecutor;
 
     public AssetReturnsScheduler(AssetReturnsService assetReturnsService,
                                  TaskTrackingService taskTracker,
-                                 ObjectProvider<MarketDataInitializer> marketDataInitializer) {
+                                 ObjectProvider<MarketDataInitializer> marketDataInitializer,
+                                 Executor taskExecutor) {
         this.assetReturnsService = assetReturnsService;
         this.taskTracker = taskTracker;
         this.marketDataInitializer = marketDataInitializer;
+        this.taskExecutor = taskExecutor;
     }
 
-    /** Warms the dataset once the app is up, after waiting for the cold-start market-data init to finish. */
-    @Async
+    /** Warms the dataset the moment the cold-start market-data init finishes — never on a fixed wait window
+     *  that could elapse mid-init and warm against half-loaded data. Mirrors {@link InflationBeaterScheduler}. */
     @EventListener(ApplicationReadyEvent.class)
     public void warmCacheOnStartup() {
-        awaitMarketDataInit();
+        MarketDataInitializer initializer = marketDataInitializer.getIfAvailable();
+        if (initializer == null) {
+            // Init is disabled (a populated DB is assumed) — warm right away, off the startup event thread.
+            taskExecutor.execute(this::warmStartup);
+            return;
+        }
+        // A failed/empty init still completes the future, which is fine: the gate is "init DONE", not "init OK".
+        // A genuinely hung init leaves the daily precompute + on-demand warm to cover it.
+        initializer.completion().whenCompleteAsync((v, ex) -> warmStartup(), taskExecutor);
+    }
+
+    private void warmStartup() {
         taskTracker.runTracked("returns-startup-warmup",
                 "Asset returns cache warmup on startup",
                 assetReturnsService::warmCache);
@@ -61,20 +69,4 @@ public class AssetReturnsScheduler {
                 });
     }
 
-    /** Blocks (off the startup thread, via {@code @Async}) until the cold-start data load finishes; warms
-     *  anyway on timeout/interrupt so a stalled fetch can't strand the dataset permanently empty. */
-    private void awaitMarketDataInit() {
-        MarketDataInitializer initializer = marketDataInitializer.getIfAvailable();
-        if (initializer == null) {
-            return;
-        }
-        try {
-            initializer.completion().get(INIT_WAIT_MINUTES, TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("Interrupted while awaiting market-data init; warming asset returns anyway");
-        } catch (ExecutionException | TimeoutException e) {
-            log.warn("Market-data init did not finish in time; warming asset returns anyway: {}", e.getMessage());
-        }
-    }
 }

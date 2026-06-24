@@ -100,9 +100,11 @@ public class AppProperties {
     @Getter
     @Setter
     public static class Async {
-        private int corePoolSize = 3;
-        private int maxPoolSize = 5;
-        private int queueCapacity = 25;
+        // Conservative headroom for the single shared executor (init + warm-ups + backfill + @Async) so
+        // bursts queue rather than hit AbortPolicy. Kept in sync with app.yaml.
+        private int corePoolSize = 4;
+        private int maxPoolSize = 8;
+        private int queueCapacity = 200;
     }
 
 

@@ -103,76 +103,32 @@ class PortfolioSeriesProviderTest {
         assertThat(series).isEmpty();
     }
 
-    private PortfolioDailySnapshot returnIndexSnapshot(LocalDate date, BigDecimal pnlPercent) {
-        return PortfolioDailySnapshot.builder()
-                .snapshotDate(date)
-                .pnlPercent(pnlPercent)
-                .build();
-    }
-
     @Test
-    void shouldBuildCapitalWeightedReturnIndex_fromCumulativePnlPercent() {
-        // Arrange
+    void shouldMapTwrIndexToHistoryPoints_whenReturnIndexRequested() {
+        // dailyReturnIndexSeries delegates the time-weighted-return math to PortfolioPerformanceService and just
+        // maps the resulting index to history points (the TWR chaining itself is unit-tested there). TWR is the
+        // contribution-neutral compare line: it intentionally CAN read above 100 on a loss (the money-weighted
+        // card is the one that reflects the actual wallet) — so no "loss must read below 100" assertion here.
         LocalDate from = LocalDate.of(2024, 1, 1);
         LocalDate to = LocalDate.of(2024, 6, 1);
+        LocalDate d1 = LocalDate.of(2024, 2, 1);
+        LocalDate d2 = LocalDate.of(2024, 2, 2);
         when(portfolioRepository.findByIdAndUserSub(7L, "u"))
                 .thenReturn(Optional.of(new Portfolio()));
         when(dailySnapshotRepository
                 .findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(7L, from, to))
-                .thenReturn(List.of(
-                        returnIndexSnapshot(LocalDate.of(2024, 2, 1), new BigDecimal("0")),       // 0%   → 100
-                        returnIndexSnapshot(LocalDate.of(2024, 2, 2), new BigDecimal("10.50")),    // +10.5% → 110.5
-                        returnIndexSnapshot(LocalDate.of(2024, 2, 3), new BigDecimal("-4.25"))));  // -4.25% → 95.75
+                .thenReturn(List.of(snapshot(d1, new BigDecimal("100")), snapshot(d2, new BigDecimal("110"))));
+        java.util.LinkedHashMap<LocalDate, BigDecimal> twr = new java.util.LinkedHashMap<>();
+        twr.put(d1, new BigDecimal("100"));
+        twr.put(d2, new BigDecimal("110.5"));
+        when(portfolioPerformanceService.twrIndexSeries(org.mockito.ArgumentMatchers.anyList())).thenReturn(twr);
 
-        // Act
         List<HistoryPoint> series = provider.dailyReturnIndexSeries(7L, "u", from, to);
 
-        // Assert
-        assertThat(series).hasSize(3);
+        assertThat(series).hasSize(2);
+        assertThat(series.get(0).date()).isEqualTo(d1);
         assertThat(series.get(0).value()).isEqualByComparingTo("100");
         assertThat(series.get(1).value()).isEqualByComparingTo("110.5");
-        assertThat(series.get(2).value()).isEqualByComparingTo("95.75");
-    }
-
-    @Test
-    void shouldYieldIndexBelow100_whenPortfolioAtLoss() {
-        // Arrange — a losing book must read as a loss (index < 100), never a phantom gain (regression: a
-        // leveraged VIOP book that lost -9.51% previously showed a +30% time-weighted index on the compare graph).
-        LocalDate from = LocalDate.of(2024, 1, 1);
-        LocalDate to = LocalDate.of(2024, 6, 1);
-        when(portfolioRepository.findByIdAndUserSub(7L, "u"))
-                .thenReturn(Optional.of(new Portfolio()));
-        when(dailySnapshotRepository
-                .findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(7L, from, to))
-                .thenReturn(List.of(
-                        returnIndexSnapshot(LocalDate.of(2024, 2, 1), new BigDecimal("0")),
-                        returnIndexSnapshot(LocalDate.of(2024, 2, 28), new BigDecimal("-9.5124"))));
-
-        // Act
-        List<HistoryPoint> series = provider.dailyReturnIndexSeries(7L, "u", from, to);
-
-        // Assert
-        assertThat(series.get(1).value()).isEqualByComparingTo("90.4876");
-        assertThat(series.get(1).value()).isLessThan(new BigDecimal("100"));
-    }
-
-    @Test
-    void shouldDefaultIndexTo100_whenPnlPercentMissing() {
-        // Arrange
-        LocalDate from = LocalDate.of(2024, 1, 1);
-        LocalDate to = LocalDate.of(2024, 6, 1);
-        when(portfolioRepository.findByIdAndUserSub(7L, "u"))
-                .thenReturn(Optional.of(new Portfolio()));
-        when(dailySnapshotRepository
-                .findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(7L, from, to))
-                .thenReturn(List.of(returnIndexSnapshot(LocalDate.of(2024, 2, 1), null)));
-
-        // Act
-        List<HistoryPoint> series = provider.dailyReturnIndexSeries(7L, "u", from, to);
-
-        // Assert
-        assertThat(series).hasSize(1);
-        assertThat(series.get(0).value()).isEqualByComparingTo("100");
     }
 
     @Test

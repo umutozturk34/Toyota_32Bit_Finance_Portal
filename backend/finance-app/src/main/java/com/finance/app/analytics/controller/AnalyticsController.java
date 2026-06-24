@@ -47,6 +47,7 @@ public class AnalyticsController {
     private final PortfolioSeriesProvider portfolioSeriesProvider;
     private final Translator translator;
 
+    /** Runs a what-if scenario (shocks applied to a hypothetical holding set) and returns the projected outcome. */
     @PostMapping("/scenarios")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<ScenarioResponse> simulate(@Valid @RequestBody ScenarioRequest request) {
@@ -54,6 +55,10 @@ public class AnalyticsController {
                 scenarioService.simulate(request));
     }
 
+    /**
+     * Ranks tracked assets by real return against a macro benchmark over the given period. When
+     * {@code targetCurrency} is null the comparison currency is derived from the benchmark.
+     */
     @GetMapping("/inflation-beaters")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<InflationBeaterResponse> inflationBeaters(
@@ -67,6 +72,7 @@ public class AnalyticsController {
                 inflationBeaterService.rank(period, benchmark, targetCurrency));
     }
 
+    /** Realized-return ranking of the tracked spot asset types (per-currency, multi-period). */
     @GetMapping("/returns")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<AssetReturnsResponse> assetReturns() {
@@ -74,6 +80,11 @@ public class AnalyticsController {
                 assetReturnsService.getReturns());
     }
 
+    /**
+     * Daily series for a portfolio over {@code [from, to]}, scoped to the JWT subject. Returns cumulative
+     * P/L in TRY when {@code pnl} is set, the time-weighted-return index when {@code twr} is set, otherwise
+     * the raw daily value (precedence: pnl &gt; twr &gt; value).
+     */
     @GetMapping("/portfolio-series/{portfolioId}")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<HistoryPoint>> portfolioSeries(
@@ -81,9 +92,9 @@ public class AnalyticsController {
             @PathVariable Long portfolioId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @Parameter(description = "Return cumulative profit/loss in TRY (the Kâr/Zarar Total line) — takes precedence over twr")
+            @Parameter(description = "Return cumulative profit/loss in TRY (the Kâr/Zarar Total line) — takes precedence over the others")
             @RequestParam(name = "pnl", defaultValue = "false") boolean pnl,
-            @Parameter(description = "Return the capital-weighted cumulative-return index instead of raw value")
+            @Parameter(description = "Return the time-weighted-return index (contribution-neutral) instead of raw value")
             @RequestParam(name = "twr", defaultValue = "false") boolean twr) {
         List<HistoryPoint> series;
         if (pnl) {

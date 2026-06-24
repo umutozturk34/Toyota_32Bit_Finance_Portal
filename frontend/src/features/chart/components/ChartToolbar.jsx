@@ -34,7 +34,7 @@ const ChartToolbar = ({
                         : 'chart.toolbar.activeInstruction.twoPoint')
                     : 'chart.toolbar.activeInstruction.dragDraw';
     return (
-    <>
+    <div className="relative">
         <div className="flex items-stretch border-b border-border-default bg-surface/40 min-h-[44px]">
           <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 overflow-x-auto scrollbar-thin flex-1 min-w-0">
             <button
@@ -152,7 +152,9 @@ const ChartToolbar = ({
             standalone indicator/drawings strip is gone — it duplicated SMA/EMA values and ate a whole row above
             the chart (worse on mobile). Drawings stay visible on the chart and in the "Çizimlerim" sidebar tab. */}
         {isAnyToolActive && (
-            <div className="flex items-center justify-between px-3 py-1.5 bg-accent/10 border-b border-[rgba(94,106,210,0.15)]">
+            // Floats over the chart's top edge as an absolute overlay instead of taking a layout row, so
+            // entering/leaving draw mode never shifts the chart down and back up (the "chart jumps" report).
+            <div className="absolute top-full left-0 right-0 z-20 flex items-center justify-between px-3 py-1.5 bg-accent/15 border-b border-[rgba(94,106,210,0.15)] backdrop-blur-md">
                 <span className="flex items-center gap-1.5 text-[11px] text-accent">
                     <Crosshair className="w-3.5 h-3.5 text-accent" />
                     {t('chart.toolbar.active')}: <strong className="text-fg">{TOOL_LABEL_KEYS[activeTool || activeFibTool] ? t(TOOL_LABEL_KEYS[activeTool || activeFibTool]) : (activeTool || activeFibTool)}</strong>
@@ -168,7 +170,7 @@ const ChartToolbar = ({
                 </button>
             </div>
         )}
-    </>
+    </div>
     );
 };
 

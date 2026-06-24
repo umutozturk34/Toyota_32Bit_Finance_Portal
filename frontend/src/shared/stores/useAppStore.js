@@ -5,7 +5,12 @@ const useAppStore = create(
   persist(
     (set, get) => ({
       sidebarCollapsed: false,
-      cooldowns: JSON.parse(sessionStorage.getItem('cooldowns') || '{}'),
+      // Guard the module-load read: a corrupt/non-JSON 'cooldowns' value must NOT throw during store creation,
+      // which would fail-fast the whole app to a blank screen. Degrade to empty (and clear the bad key).
+      cooldowns: (() => {
+        try { return JSON.parse(sessionStorage.getItem('cooldowns') || '{}'); }
+        catch { try { sessionStorage.removeItem('cooldowns'); } catch { /* sessionStorage unavailable */ } return {}; }
+      })(),
       activeWatchlistId: null,
       activePortfolioId: null,
       chartSidebarOpen: false,

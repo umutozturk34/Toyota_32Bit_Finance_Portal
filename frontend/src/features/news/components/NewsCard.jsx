@@ -6,6 +6,7 @@ import { Calendar, ChevronRight } from 'lucide-react';
 import { formatDateTimeShort } from '../../../shared/utils/formatters';
 import { CategoryBadge } from '../lib/newsConfig.jsx';
 import { getFallbackImage } from '../lib/newsConfig';
+import AssetMentionTags from './AssetMentionTags';
 import Card from '../../../shared/components/card';
 
 const cardVariants = {
@@ -19,6 +20,8 @@ export default function NewsCard({ article, index }) {
     const fallbackSrc = getFallbackImage(article.category, article.id ?? index);
     const [imgSrc, setImgSrc] = useState(article.imageUrl || fallbackSrc);
     const [imgLoaded, setImgLoaded] = useState(false);
+    // The assets this article mentions (stocks + crypto) are resolved server-side and arrive on the article.
+    const mentions = Array.isArray(article.assets) ? article.assets : [];
 
     const handleClick = () => {
         if (article.id) navigate(`/news/${article.id}`);
@@ -55,7 +58,7 @@ export default function NewsCard({ article, index }) {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-bg-elevated/80 via-transparent to-transparent" />
                 <div className="absolute bottom-2.5 left-3 max-w-[calc(100%-1.5rem)]">
-                    <CategoryBadge category={article.category} />
+                    <CategoryBadge category={article.category} overlay />
                 </div>
             </div>
 
@@ -67,6 +70,8 @@ export default function NewsCard({ article, index }) {
                 <h3 className="text-fg text-[14px] font-semibold leading-snug line-clamp-2 break-words group-hover:text-accent-bright transition-colors duration-150">
                     {article.title}
                 </h3>
+
+                <AssetMentionTags assets={mentions} date={article.publishedAt} limit={6} />
 
                 {article.description && (
                     <p className="text-fg-muted text-xs leading-relaxed line-clamp-2 break-words">

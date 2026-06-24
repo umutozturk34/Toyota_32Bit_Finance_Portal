@@ -34,6 +34,10 @@ public class CryptoEntityWriter implements MarketEntityWriter {
     private final CryptoMapper cryptoMapper;
     private final AssetRegistryService assetRegistry;
 
+    /**
+     * Upserts the coin by CoinGecko id, updating in place when it already exists. {@code tryPrice} is the
+     * separately-fetched TRY value stored alongside the native USD price; may be {@code null} if unavailable.
+     */
     public Crypto saveSnapshot(CoinGeckoSnapshotDto usdDto, BigDecimal tryPrice) {
         LocalDateTime now = LocalDateTime.now();
         Crypto existing = cryptoRepository.findById(usdDto.id()).orElse(null);
@@ -55,6 +59,11 @@ public class CryptoEntityWriter implements MarketEntityWriter {
         cryptoCandleRepository.saveAll(candles);
     }
 
+    /**
+     * Incrementally upserts candles by date (update existing, insert new).
+     *
+     * @return the number of candles inserted or updated
+     */
     public int upsertCandles(String coinId, Crypto crypto, List<CoinGeckoCandleDto> dtos) {
         CandleBatchUpsertTemplate.UpsertResult<CryptoCandle> upsertResult = CandleBatchUpsertTemplate.upsert(
                 dtos,

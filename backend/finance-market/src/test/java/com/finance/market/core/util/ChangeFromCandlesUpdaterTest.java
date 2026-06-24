@@ -1,6 +1,5 @@
 package com.finance.market.core.util;
 
-import com.finance.market.core.model.BaseAsset;
 import com.finance.market.stock.model.Stock;
 import org.junit.jupiter.api.Test;
 
@@ -44,8 +43,9 @@ class ChangeFromCandlesUpdaterTest {
     }
 
     @Test
-    void applyFromPriorCloseIfMissing_computes_whenSourcePercentIsZero() {
-        // Arrange
+    void applyFromPriorCloseIfMissing_preserves_whenSourcePercentIsZero() {
+        // Arrange: the source reported a legitimately FLAT session (0%). That is a real value, not an omission,
+        // so the candle back-fill must leave it untouched (only null means "source omitted the change").
         Stock stock = baseStock();
         stock.setChangePercent(BigDecimal.ZERO);
 
@@ -53,10 +53,9 @@ class ChangeFromCandlesUpdaterTest {
         boolean applied = ChangeFromCandlesUpdater.applyFromPriorCloseIfMissing(
                 stock, new BigDecimal("95"), new BigDecimal("100"), 2);
 
-        // Assert
-        assertThat(applied).isTrue();
-        assertThat(stock.getChangeAmount()).isEqualByComparingTo("-5.00");
-        assertThat(stock.getChangePercent()).isEqualByComparingTo("-5.00");
+        // Assert: nothing recomputed; the flat 0% stands.
+        assertThat(applied).isFalse();
+        assertThat(stock.getChangePercent()).isEqualByComparingTo("0");
     }
 
     @Test

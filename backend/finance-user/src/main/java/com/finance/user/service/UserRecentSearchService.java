@@ -32,6 +32,7 @@ public class UserRecentSearchService {
     private final UserRecentSearchRepository repository;
     private final ObjectMapper objectMapper;
 
+    /** The user's recent searches newest-first, or an empty list when none are stored. */
     @Transactional(readOnly = true)
     public List<RecentSearchItem> getItems(String userSub) {
         return repository.findById(userSub)

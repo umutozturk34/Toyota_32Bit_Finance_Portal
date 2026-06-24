@@ -29,6 +29,7 @@ public class RealmConfigBootstrap {
 
     private final KeycloakAdminClient client;
 
+    /** Turns on the realm's {@code editUsernameAllowed} flag so the profile screen can rename users. */
     @Bean
     public ApplicationRunner ensureRealmEditableUsername() {
         return args -> {
@@ -40,6 +41,7 @@ public class RealmConfigBootstrap {
         };
     }
 
+    /** Registers the Expo/native deep-link redirect URIs on the frontend client so mobile OAuth callbacks are accepted. */
     @Bean
     public ApplicationRunner ensureMobileRedirectUris() {
         return args -> {

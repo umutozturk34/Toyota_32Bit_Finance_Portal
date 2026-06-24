@@ -10,8 +10,10 @@ import com.finance.shared.dto.response.GroupCount;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.shared.model.CandlePeriod;
 import com.finance.market.bond.service.BondQueryService;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,15 +22,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/bonds")
 @RequiredArgsConstructor
+@Validated
 public class BondController {
 
     private final BondQueryService bondQueryService;
     private final Translator translator;
 
+    /** Paged bond list with optional name/code {@code search}, {@code bondType} filter, and sort. */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<PagedResponse<BondResponse>> getAllBonds(
-            @RequestParam(required = false) String search,
+            @RequestParam(required = false) @Size(max = 100) String search,
             @RequestParam(required = false) String bondType,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String direction,
@@ -38,6 +42,7 @@ public class BondController {
                 bondQueryService.search(search, bondType, sort, direction, page, size));
     }
 
+    /** The distinct bond types with how many bonds each holds — drives the type filter facets. */
     @GetMapping("/types")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<GroupCount>> getDistinctBondTypes() {
@@ -45,6 +50,7 @@ public class BondController {
                 bondQueryService.getTypeCounts());
     }
 
+    /** Single bond looked up by its series code. */
     @GetMapping("/{seriesCode}")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<BondResponse> getBondByCode(@PathVariable String seriesCode) {
@@ -52,6 +58,7 @@ public class BondController {
                 bondQueryService.getByCode(seriesCode));
     }
 
+    /** Rate (yield) history for a bond keyed by ISIN over the given {@code period} (default {@code ALL}). */
     @GetMapping("/rate-history/{isinCode}")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<BondRateResponse>> getRateHistory(

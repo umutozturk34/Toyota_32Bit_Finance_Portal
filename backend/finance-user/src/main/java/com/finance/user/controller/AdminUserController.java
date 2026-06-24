@@ -30,6 +30,7 @@ public class AdminUserController {
     private final AdminUserService service;
     private final Translator translator;
 
+    /** Paged listing of Keycloak users, optionally filtered by {@code search}; {@code first} is a row offset, {@code max} is capped at 200. */
     @GetMapping
     public ApiResponse<List<AdminUserResponse>> listUsers(
             @RequestParam(defaultValue = "0") @Min(0) int first,
@@ -38,11 +39,13 @@ public class AdminUserController {
         return ApiResponse.success(translator.translate("api.admin.usersRetrieved"), service.listUsers(first, max, search));
     }
 
+    /** Total number of users matching {@code search} (for paging the listing). */
     @GetMapping("/count")
     public ApiResponse<Long> countUsers(@RequestParam(required = false) String search) {
         return ApiResponse.success(translator.translate("api.admin.userCountRetrieved"), service.countUsers(search));
     }
 
+    /** Bans (disables) the user {@code id}; the acting admin's subject is passed through for audit/self-ban guarding. */
     @PutMapping("/{id}/ban")
     public ApiResponse<Void> banUser(
             @AuthenticationPrincipal Jwt jwt,
@@ -51,6 +54,7 @@ public class AdminUserController {
         return ApiResponse.success(translator.translate("api.admin.userBanned"), null);
     }
 
+    /** Unbans (re-enables) the user {@code id}. */
     @PutMapping("/{id}/unban")
     public ApiResponse<Void> unbanUser(@PathVariable String id) {
         service.unbanUser(id);

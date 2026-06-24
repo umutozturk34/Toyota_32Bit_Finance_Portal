@@ -11,6 +11,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Admin operations over user accounts: listing/counting via Keycloak and ban/unban. Banning maps to
@@ -26,6 +27,12 @@ public class AdminUserService {
     private final KeycloakUserMapper mapper;
     private final UserStatusRepository userStatusRepository;
 
+    // Keycloak's built-in realm roles carry no product meaning, so they're hidden from the admin view — only the
+    // app roles (USER/ADMIN) are shown. {@code default-roles-<realm>} is matched by prefix since it embeds the
+    // realm name.
+    private static final Set<String> DEFAULT_REALM_ROLES = Set.of("offline_access", "uma_authorization");
+    private static final String DEFAULT_ROLES_PREFIX = "default-roles-";
+
     /**
      * Returns a page of users from Keycloak mapped to the admin response DTO; an empty list when
      * Keycloak yields none.
@@ -37,7 +44,21 @@ public class AdminUserService {
     public List<AdminUserResponse> listUsers(int first, int max, String search) {
         List<KeycloakUser> users = client.listUsers(first, max, search);
         if (users == null) return List.of();
-        return users.stream().map(mapper::toResponse).toList();
+        return users.stream().map(u -> mapper.toResponse(u, appRoles(u.id()))).toList();
+    }
+
+    /**
+     * The user's meaningful app roles (USER/ADMIN), with Keycloak's built-in defaults filtered out and the rest
+     * sorted for a stable display. Empty for a null id or a user with no realm roles.
+     */
+    private List<String> appRoles(String userId) {
+        if (userId == null) return List.of();
+        List<String> realmRoles = client.getRealmRoleNames(userId);
+        if (realmRoles == null) return List.of();
+        return realmRoles.stream()
+                .filter(role -> !DEFAULT_REALM_ROLES.contains(role) && !role.startsWith(DEFAULT_ROLES_PREFIX))
+                .sorted()
+                .toList();
     }
 
     /**

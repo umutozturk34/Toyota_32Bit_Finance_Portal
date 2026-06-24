@@ -6,6 +6,8 @@ import SearchSuggestions from '../../../shared/components/form/SearchSuggestions
 import { INSTRUMENT_TYPES, PRESET_INSTRUMENTS, SERIES_COLORS } from '../constants';
 import { commodityLabel } from '../../../shared/utils/commodityName';
 
+// BOND is intentionally absent: bonds are excluded from scenario/analytics, so a bond reaching handleSearchSelect
+// (e.g. via a stale recent search) maps to undefined and is rejected rather than added.
 const MARKET_TO_ANALYTICS = {
   STOCK: 'SPOT',
   CRYPTO: 'CRYPTO',
@@ -13,7 +15,6 @@ const MARKET_TO_ANALYTICS = {
   FUND: 'FUND',
   COMMODITY: 'COMMODITY',
   VIOP: 'VIOP',
-  BOND: 'BOND',
   MACRO_DEPOSIT: 'DEPOSIT',
   MACRO_INFLATION: 'MACRO',
   MACRO_RATE: 'MACRO',

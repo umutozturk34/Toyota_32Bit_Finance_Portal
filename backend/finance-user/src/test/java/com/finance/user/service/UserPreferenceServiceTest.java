@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -210,6 +211,68 @@ class UserPreferenceServiceTest {
 
         // Assert
         verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void should_grantBaselineUserRole_when_newPreferenceRowIsCreated() {
+        // Arrange
+        when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
+        when(keycloakAdminClient.getUserAttribute(eq(USER_SUB), any())).thenReturn(Optional.empty());
+        when(repository.save(any(UserPreference.class))).thenAnswer(i -> i.getArgument(0));
+
+        // Act
+        service.getOrDefault(USER_SUB);
+
+        // Assert
+        verify(keycloakAdminClient).ensureRealmRole(USER_SUB, "USER");
+    }
+
+    @Test
+    void should_grantBaselineUserRole_when_existingUserVisits() {
+        // Arrange
+        UserPreference persisted = UserPreference.builder()
+                .userSub(USER_SUB).theme(ThemePreference.DARK).language("tr")
+                .timezone("UTC").defaultChartRange("1Y").onboardingCompleted(true).build();
+        when(repository.findById(USER_SUB)).thenReturn(Optional.of(persisted));
+
+        // Act
+        service.getOrDefault(USER_SUB);
+
+        // Assert
+        verify(keycloakAdminClient).ensureRealmRole(USER_SUB, "USER");
+    }
+
+    @Test
+    void should_ensureBaselineRoleOnce_when_sameUserVisitsRepeatedly() {
+        // Arrange
+        UserPreference persisted = UserPreference.builder()
+                .userSub(USER_SUB).theme(ThemePreference.DARK).language("tr")
+                .timezone("UTC").defaultChartRange("1Y").onboardingCompleted(true).build();
+        when(repository.findById(USER_SUB)).thenReturn(Optional.of(persisted));
+
+        // Act
+        service.getOrDefault(USER_SUB);
+        service.getOrDefault(USER_SUB);
+
+        // Assert
+        verify(keycloakAdminClient, times(1)).ensureRealmRole(USER_SUB, "USER");
+    }
+
+    @Test
+    void should_notBlockOnboarding_when_baselineRoleGrantFails() {
+        // Arrange
+        when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
+        when(keycloakAdminClient.getUserAttribute(eq(USER_SUB), any())).thenReturn(Optional.empty());
+        when(repository.save(any(UserPreference.class))).thenAnswer(i -> i.getArgument(0));
+        doThrow(new RuntimeException("keycloak down"))
+                .when(keycloakAdminClient).ensureRealmRole(USER_SUB, "USER");
+
+        // Act
+        UserPreferenceResponse response = service.getOrDefault(USER_SUB);
+
+        // Assert
+        assertThat(response.userSub()).isEqualTo(USER_SUB);
+        verify(eventPublisher).publish(any(UserRegisteredEvent.class));
     }
 
     @Test

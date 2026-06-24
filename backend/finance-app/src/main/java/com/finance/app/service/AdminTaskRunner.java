@@ -36,8 +36,11 @@ class AdminTaskRunner {
             log.warn("All {} worker threads busy — rejecting {}", workerCapacity(), taskType);
             throw new TaskCapacityExceededException("error.task.capacityExceeded");
         }
-        inFlight.incrementAndGet();
+        // Register the task BEFORE claiming the in-flight slot: if startTask throws (e.g. the type is already
+        // running), we must not leak the counter — a leaked slot would permanently shrink capacity and turn
+        // every later admin refresh into a 429.
         TaskTrackingService.TaskInfo info = taskTracker.startTask(taskType, message);
+        inFlight.incrementAndGet();
         log.info("Task started: {}", taskType);
 
         try {

@@ -25,6 +25,8 @@ export default function PositionsTable({ portfolioId, backfill: backfillProp, on
   const setStatusFilter = (next) => setSearchParams((prev) => {
     const sp = new URLSearchParams(prev);
     if (next === 'all') sp.delete('status'); else sp.set('status', next);
+    // Reset to the first page: staying on page 2 after a filter shrinks the list lands the user on a blank page.
+    sp.delete('pos.page');
     return sp;
   }, { replace: true });
 

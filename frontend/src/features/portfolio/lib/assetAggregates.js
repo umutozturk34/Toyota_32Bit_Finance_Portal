@@ -4,6 +4,7 @@ export function computeViopAggregate(assetType, lots) {
   if (openLots.length === 0) return null;
   let totalQty = 0;
   let weightedNum = 0;
+  let totalEntryValue = 0;
   let totalMarket = 0;
   let totalPnl = 0;
   let earliest = null;
@@ -13,6 +14,7 @@ export function computeViopAggregate(assetType, lots) {
     const ep = Number(l.entryPrice) || 0;
     totalQty += q;
     weightedNum += q * ep;
+    totalEntryValue += Number(l.entryValueTry) || 0;
     totalMarket += Number(l.marketValueTry) || 0;
     totalPnl += Number(l.pnlTry) || 0;
     if (l.entryDate && (!earliest || new Date(l.entryDate) < new Date(earliest))) {
@@ -21,9 +23,12 @@ export function computeViopAggregate(assetType, lots) {
     if (currentPrice == null && l.currentPriceTry != null) currentPrice = Number(l.currentPriceTry);
   }
   const weightedAvg = totalQty > 0 ? weightedNum / totalQty : 0;
-  const pnlPercent = weightedAvg > 0 && totalQty > 0
-    ? (totalPnl / (weightedAvg * totalQty)) * 100
-    : 0;
+  // % base = the size-INCLUSIVE entry notional (entryValueTry), NOT entryPrice × qty: for a VIOP whose contract
+  // size ≠ 1, entryPrice is the per-unit price, so that base inflates the % by the contract size (a +1% reads as
+  // +100% on a size-100 contract). pnlTry already includes the size, so the denominator must too — matching the
+  // backend pnl×100/entryNotional. Falls back to entryPrice × qty only when entryValueTry is absent (size-1).
+  const costBasis = totalEntryValue > 0 ? totalEntryValue : weightedAvg * totalQty;
+  const pnlPercent = costBasis > 0 ? (totalPnl / costBasis) * 100 : 0;
   return {
     lotCount: openLots.length,
     totalQuantity: totalQty,
@@ -42,6 +47,7 @@ export function computeClosedAggregate(lots) {
   if (!allClosed) return null;
   let totalEntryQty = 0;
   let weightedNum = 0;
+  let totalEntryValue = 0;
   let totalRealizedPnl = 0;
   let totalClosedMarket = 0;
   let earliest = null;
@@ -54,6 +60,7 @@ export function computeClosedAggregate(lots) {
     const ep = Number(l.entryPrice) || 0;
     totalEntryQty += q;
     weightedNum += q * ep;
+    totalEntryValue += Number(l.entryValueTry) || 0;
     totalRealizedPnl += Number(l.realizedPnlTry ?? l.pnlTry ?? 0);
     totalClosedMarket += Number(l.marketValueTry) || 0;
     if (closePrice == null && l.currentPriceTry != null) closePrice = Number(l.currentPriceTry);
@@ -62,9 +69,10 @@ export function computeClosedAggregate(lots) {
     }
   }
   const weightedAvg = totalEntryQty > 0 ? weightedNum / totalEntryQty : 0;
-  const pnlPercent = weightedAvg > 0 && totalEntryQty > 0
-    ? (totalRealizedPnl / (weightedAvg * totalEntryQty)) * 100
-    : 0;
+  // Same size-inclusive notional base as the open path (computeViopAggregate): entryPrice × qty inflates a
+  // closed VIOP's realized % by its contract size, since realizedPnlTry includes the size but that base doesn't.
+  const costBasis = totalEntryValue > 0 ? totalEntryValue : weightedAvg * totalEntryQty;
+  const pnlPercent = costBasis > 0 ? (totalRealizedPnl / costBasis) * 100 : 0;
   return {
     lotCount: lots.length,
     totalQuantity: totalEntryQty,

@@ -6,19 +6,38 @@ import { useCreatePortfolio, useRenamePortfolio, useDeletePortfolio } from '../h
 import { extractApiError } from '../../../shared/utils/apiError';
 import { portfolioName } from '../../../shared/utils/portfolioName';
 import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
+import { PORTFOLIO_TYPES } from './switcher/portfolioTypes';
+import PortfolioTotal from './switcher/PortfolioTotal';
+import TypeBadge from './switcher/TypeBadge';
 
 const PANEL_TRANSITION = { duration: 0.18, ease: [0.16, 1, 0.3, 1] };
 
-export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect }) {
+export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect, autoCreate = false, onAutoCreateConsumed }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState(null);
   const [renameValue, setRenameValue] = useState('');
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
+  const [newType, setNewType] = useState('SPOT');
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [error, setError] = useState(null);
   const ref = useRef(null);
+
+  // External trigger (e.g. the sidebar's "New portfolio" entry → /portfolio?new=1): open the dropdown straight
+  // into create mode, then tell the parent to clear the flag so it fires once. The state is then local, so
+  // clearing the flag doesn't re-close the form. (Legit prop→UI sync; the generic set-state-in-effect lint
+  // false-positives here.)
+  useEffect(() => {
+    if (!autoCreate) return;
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setOpen(true);
+    setCreating(true);
+    setNewType('SPOT');
+    setError(null);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    onAutoCreateConsumed?.();
+  }, [autoCreate, onAutoCreateConsumed]);
 
   const create = useCreatePortfolio();
   const rename = useRenamePortfolio();
@@ -29,6 +48,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
   const closePanel = useCallback(() => {
     setOpen(false);
     setCreating(false);
+    setNewType('SPOT');
     setRenameTarget(null);
     setDeleteTarget(null);
     setError(null);
@@ -49,9 +69,10 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
     if (!newName.trim()) return;
     setError(null);
     try {
-      const created = await create.mutateAsync(newName.trim());
+      const created = await create.mutateAsync({ name: newName.trim(), type: newType });
       setCreating(false);
       setNewName('');
+      setNewType('SPOT');
       onSelect?.(created.id);
     } catch (e) {
       setError(extractApiError(e, t('portfolioSwitcher.createFailed', { defaultValue: 'Oluşturma başarısız' })));
@@ -100,7 +121,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
         <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-accent/25 to-accent/10 ring-1 ring-inset ring-accent/30">
           <Wallet className="h-3.5 w-3.5 text-accent" />
         </span>
-        <span className="text-sm font-semibold text-fg max-w-[120px] sm:max-w-[180px] truncate tracking-tight">
+        <span className="text-sm font-semibold text-fg max-w-[160px] sm:max-w-[240px] truncate tracking-tight">
           {active ? portfolioName(t, active) : t('portfolio.headerTitle')}
         </span>
         {portfolios.length > 1 && (
@@ -119,7 +140,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
             exit={{ opacity: 0, scale: 0.97, y: -6 }}
             transition={PANEL_TRANSITION}
             style={{ background: 'var(--color-bg-deep)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
-            className="absolute right-0 z-50 mt-2 w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-180px)] overflow-y-auto overscroll-contain rounded-2xl border border-border-default shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)]"
+            className="absolute right-0 z-50 mt-2 w-[min(26rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-180px)] overflow-y-auto overscroll-contain rounded-2xl border border-border-default shadow-[0_30px_60px_-20px_var(--color-shadow)]"
           >
             <div className="flex items-center justify-between px-3 pt-3 pb-2">
               <span className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-muted">
@@ -199,10 +220,14 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
                               isActive ? 'bg-accent shadow-[0_0_8px] shadow-accent/70' : 'bg-fg-muted/30 group-hover/item:bg-fg-muted/60'
                             }`}
                           />
-                          <span className={`text-sm truncate ${isActive ? 'font-semibold text-fg' : 'font-medium text-fg/85'}`}>
-                            {portfolioName(t, p)}
+                          <span className="min-w-0 flex flex-col">
+                            <span className={`text-sm truncate ${isActive ? 'font-semibold text-fg' : 'font-medium text-fg/85'}`}>
+                              {portfolioName(t, p)}
+                            </span>
+                            <PortfolioTotal portfolio={p} enabled={open} />
                           </span>
                         </button>
+                        <TypeBadge type={p.type} />
                         <div className="flex items-center gap-0.5 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity">
                           <button
                             onClick={(e) => { e.stopPropagation(); setRenameTarget(p); setRenameValue(p.name); setError(null); }}
@@ -250,7 +275,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
                         placeholder={t('portfolioSwitcher.namePlaceholder', { defaultValue: 'Portföy adı' })}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') submitCreate();
-                          if (e.key === 'Escape') { setCreating(false); setNewName(''); setError(null); }
+                          if (e.key === 'Escape') { setCreating(false); setNewName(''); setNewType('SPOT'); setError(null); }
                         }}
                         maxLength={25}
                         className="flex-1 min-w-0 rounded-md bg-bg-base/80 border border-border-default px-2.5 py-1.5 text-sm text-fg placeholder:text-fg-subtle outline-none focus:border-accent focus:ring-1 focus:ring-accent/40 transition-colors"
@@ -264,12 +289,33 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
                         <Check className="h-3.5 w-3.5" />
                       </button>
                       <button
-                        onClick={() => { setCreating(false); setNewName(''); setError(null); }}
+                        onClick={() => { setCreating(false); setNewName(''); setNewType('SPOT'); setError(null); }}
                         className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted bg-bg-base/80 hover:bg-surface hover:text-fg transition border-none cursor-pointer"
                         aria-label={t('common.cancel')}
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
+                    </div>
+                    <div className="mt-2.5 grid grid-cols-2 gap-1 rounded-lg bg-bg-base/60 p-1 ring-1 ring-inset ring-border-default/50">
+                      {PORTFOLIO_TYPES.map(({ id, labelKey, Icon }) => {
+                        const selected = newType === id;
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => { setNewType(id); setError(null); }}
+                            aria-pressed={selected}
+                            className={`relative flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors border-none cursor-pointer ${
+                              selected
+                                ? 'text-accent bg-accent/15 ring-1 ring-inset ring-accent/40'
+                                : 'text-fg-muted bg-transparent hover:text-fg hover:bg-surface/60'
+                            }`}
+                          >
+                            <Icon className="h-3.5 w-3.5" />
+                            <span className="truncate">{t(labelKey)}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                     <div className="flex items-center gap-1.5 mt-2 px-0.5 text-[10px] text-fg-subtle font-mono">
                       <CornerDownLeft className="h-3 w-3" />
@@ -282,7 +328,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
                   <motion.button
                     key="cta"
                     type="button"
-                    onClick={() => { setCreating(true); setError(null); }}
+                    onClick={() => { setCreating(true); setNewType('SPOT'); setError(null); }}
                     whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.98 }}
                     initial={{ opacity: 0 }}

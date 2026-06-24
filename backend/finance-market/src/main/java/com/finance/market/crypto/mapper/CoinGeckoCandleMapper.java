@@ -36,6 +36,7 @@ public abstract class CoinGeckoCandleMapper {
     @Mapping(source = "totalVolume", target = "totalVolume")
     public abstract CoinGeckoSnapshotDto toSnapshotDto(CoinGeckoMarketDto dto);
 
+    /** Maps a batch of market rows; null/empty input yields an empty list. */
     public List<CoinGeckoSnapshotDto> toSnapshotDtos(List<CoinGeckoMarketDto> markets) {
         if (markets == null || markets.isEmpty()) {
             return Collections.emptyList();
@@ -51,6 +52,7 @@ public abstract class CoinGeckoCandleMapper {
     @Mapping(target = "volume", expression = "java(kline.volume() != null ? kline.volume().setScale(0, java.math.RoundingMode.HALF_UP).longValue() : null)")
     public abstract CoinGeckoCandleDto toCandleDto(BinanceKlineResponse kline, String coinId);
 
+    /** Maps a batch of Binance klines under one {@code coinId}; null/empty input yields an empty list. */
     public List<CoinGeckoCandleDto> toCandleDtos(List<BinanceKlineResponse> responses, String coinId) {
         if (responses == null || responses.isEmpty()) {
             return Collections.emptyList();

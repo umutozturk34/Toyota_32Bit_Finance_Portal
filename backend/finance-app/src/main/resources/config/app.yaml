@@ -16,6 +16,9 @@ app:
     news-max-in-memory-size-mb: 5
 
   async:
-    core-pool-size: 3
-    max-pool-size: 5
-    queue-capacity: 25
+    # One shared executor backs cold-start init, warm-ups, backfill and every @Async. Conservative headroom
+    # so bursts queue instead of hitting AbortPolicy (RejectedExecutionException). Pool separation is the
+    # real fix but out of scope here. Note: AdminTaskRunner caps concurrent admin tasks at core-pool-size.
+    core-pool-size: 4
+    max-pool-size: 8
+    queue-capacity: 200

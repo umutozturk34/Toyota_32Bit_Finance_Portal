@@ -31,6 +31,19 @@ public interface FundCandleRepository extends JpaRepository<FundCandle, Long> {
     List<Object[]> findCandleDateRangePerFund();
 
     /**
+     * The previous close (second-most-recent candle price) for every fund in ONE query, so a batch
+     * change-percent recompute resolves every fund's prior price at once instead of a per-fund
+     * prior-candle lookup (an N+1 across ~800 funds). Funds with a single candle have no previous
+     * close and are simply absent from the result.
+     *
+     * @return rows of {@code [fundCode, previousClosePrice]}
+     */
+    @Query(value = "SELECT fund_code, price FROM ("
+            + "SELECT fund_code, price, ROW_NUMBER() OVER (PARTITION BY fund_code ORDER BY candle_date DESC) AS rn "
+            + "FROM fund_candles) ranked WHERE ranked.rn = 2", nativeQuery = true)
+    List<Object[]> findPreviousClosePricePerFund();
+
+    /**
      * Reports the candle count held for every fund.
      *
      * @return rows of {@code [fundCode, Long count]}

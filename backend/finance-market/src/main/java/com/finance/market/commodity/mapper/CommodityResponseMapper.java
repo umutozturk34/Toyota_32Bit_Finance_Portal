@@ -44,6 +44,10 @@ public abstract class CommodityResponseMapper implements MarketMetadataBuilder<C
     /** Maps commodity OHLC history to generic candle responses, preserving order. */
     public abstract List<CandleResponse> toCommodityCandleResponses(List<CommodityCandle> candles);
 
+    /** Single OHLC candle → generic response; commodities carry no volume, so it is left unset. */
+    @Mapping(target = "volume", ignore = true)
+    public abstract CandleResponse toCommodityCandleResponse(CommodityCandle candle);
+
     /**
      * Builds the commodity-specific metadata block (USD prices, unit, OHLC and volume) nested
      * inside the unified asset response. Registered under the {@code "metadata"} qualifier so the

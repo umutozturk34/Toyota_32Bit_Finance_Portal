@@ -1,3 +1,5 @@
+import { AlertTriangle } from 'lucide-react';
+
 export default function PositionDerivativeChips({ meta, money, t, localeTag, entryDate }) {
   if (!meta) return null;
   const isLong = meta.direction === 'LONG';
@@ -52,6 +54,19 @@ export default function PositionDerivativeChips({ meta, money, t, localeTag, ent
         <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30">
           <span className="font-bold uppercase tracking-wide">{t('portfolio.derivatives.maxGain', 'Max Kazanç')}</span>
           <span className="font-mono">{money(meta.maxGainTry, 'TRY', { dateAt: entryDate })}</span>
+        </span>
+      )}
+      {/* A SHORT option's downside is what the premium-only "max gain" hides: a short CALL is unlimited, a short
+          PUT loses down to the strike. Surface it so a sold option doesn't look like pure upside. */}
+      {meta.direction === 'SHORT' && meta.contractKind === 'OPTION' && (
+        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] text-rose-400 bg-rose-500/10 border border-rose-500/40">
+          <AlertTriangle className="h-2.5 w-2.5" />
+          <span className="font-bold uppercase tracking-wide">{t('portfolio.derivatives.risk', 'Risk')}</span>
+          <span>
+            {meta.optionSide === 'CALL'
+              ? t('portfolio.derivatives.unlimitedLoss', 'Sınırsız zarar')
+              : t('portfolio.derivatives.lossToStrike', "Strike'a kadar zarar")}
+          </span>
         </span>
       )}
       {meta.currency && meta.currency !== 'TRY' && (

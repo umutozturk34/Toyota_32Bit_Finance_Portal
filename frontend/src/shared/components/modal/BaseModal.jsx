@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import IconButton from '../buttons/IconButton';
+import useOverlayDismiss from '../../hooks/useOverlayDismiss';
 
 const SIZE_CLASSES = {
   sm: 'max-w-sm',
@@ -29,6 +30,7 @@ export default function BaseModal({
 }) {
   const { t } = useTranslation();
   const closeText = closeLabel ?? t('common.close');
+  useOverlayDismiss(isOpen, onClose);
   return createPortal(
     <AnimatePresence>
       {isOpen && (

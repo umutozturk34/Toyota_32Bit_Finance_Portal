@@ -1,8 +1,5 @@
 import React, { useMemo, useRef, useEffect, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    LineChart, ChevronDown, ChevronUp, ScanSearch,
-} from 'lucide-react';
 import { useTheme } from '../../../shared/context/useTheme';
 import useAppStore from '../../../shared/stores/useAppStore';
 import useChartConfig from '../hooks/useChartConfig';
@@ -18,20 +15,22 @@ import ChartToolbar from './ChartToolbar';
 import ChartToolRail from './ChartToolRail';
 import ChartSidebar from './ChartSidebar';
 import ChartSubPanels from './ChartSubPanels';
-import DataWindowPanel from './DataWindowPanel';
 import ChartTextEditInput from './ChartTextEditInput';
+import ChartHoverLegend from './lightweight/ChartHoverLegend';
+import ChartLensStrip from './lightweight/ChartLensStrip';
+import ChartLensPanel from './lightweight/ChartLensPanel';
+import ChartTimeRangeBar from './lightweight/ChartTimeRangeBar';
+import ChartEmptyState from './lightweight/ChartEmptyState';
+import ChartTourAnchors from './lightweight/ChartTourAnchors';
 import { DEFAULT_DRAWING_COLOR } from '../lib/drawingTools';
 import { TABS, TIME_RANGES_FULL, TIME_RANGES_VIOP } from '../lib/chartConstants';
+import { priceDecimals } from '../../../shared/utils/formatters';
 import Card from '../../../shared/components/card';
-import DatePickerPopover from '../../../shared/components/form/DatePickerPopover';
-
-// Fixed resting spot for the static on-chart OHLC legend (top-left).
-const LEGEND_DEFAULT_CLASS = 'left-1 top-1 sm:left-2 sm:top-2';
 
 const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [], timeRange = '1Y', onTimeRangeChange, showSecondaryLines = true, onToggleSecondaryLines, sidebar = null }) => {
     const compareSymbol = compareDatas.length > 0 ? compareDatas.map(c => c.symbol).join(',') : null;
     const TIME_RANGES = assetType === 'VIOP' ? TIME_RANGES_VIOP : TIME_RANGES_FULL;
-    const { t, i18n } = useTranslation();
+    const { i18n } = useTranslation();
     const { isDark } = useTheme();
     const renderDrawingsRef = useRef(null);
     const textDoneRef = useRef(false);
@@ -141,12 +140,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
     }, [textEditState]);
 
     if (!data?.candles?.length) {
-        return (
-            <Card variant="elevated" radius="xl" padding="lg" backdropBlur interactive={false} className="flex flex-col items-center justify-center h-80">
-                <LineChart className="w-12 h-12 mb-3 text-fg-subtle" />
-                <p className="text-fg-muted text-sm">{t('chart.waitingForData')}</p>
-            </Card>
-        );
+        return <ChartEmptyState />;
     }
 
     // On-chart hover legend (TradingView-style): the hovered day's OHLC/price + every OPEN overlay indicator's
@@ -160,7 +154,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
       // Astronomical (hyperinflation-nominal) values would balloon the legend over the chart; compact them
       // like the axis. Small prices keep full 4/2-decimal precision — the whole point of the readout.
       if (Math.abs(n) >= 1_000_000) return `${hoverSym}${n.toLocaleString(hoverLocale, { notation: 'compact', maximumFractionDigits: 2 })}`;
-      return `${hoverSym}${n.toLocaleString(hoverLocale, { maximumFractionDigits: Math.abs(n) < 10 ? 4 : 2 })}`;
+      return `${hoverSym}${n.toLocaleString(hoverLocale, { maximumFractionDigits: priceDecimals(n) })}`;
     };
     // The legend reads the hovered candle, else falls back to the latest — so OHLC + indicators are ALWAYS shown.
     const lastCandle = data?.candles?.length ? data.candles[data.candles.length - 1] : null;
@@ -189,51 +183,16 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
     return (
         <div className="space-y-2 sm:space-y-3">
         {data?.candles?.length > 0 && !isFullscreen && (
-            <div data-tour="chart-lens">
-            {lensOpen ? (
-                <Card variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className="relative !overflow-hidden">
-                    <DataWindowPanel candles={data.candles} hover={crosshairData} assetType={assetType} variant="summary" />
-                    <button
-                        type="button"
-                        onClick={() => setLensOpen(false)}
-                        title={t('chart.dataWindow.collapse')}
-                        className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-md border-none bg-transparent text-fg-muted hover:text-fg hover:bg-surface transition-colors cursor-pointer"
-                    >
-                        <ChevronUp className="h-4 w-4" />
-                    </button>
-                </Card>
-            ) : (
-                <button
-                    type="button"
-                    onClick={() => setLensOpen(true)}
-                    className="w-full flex items-center justify-between gap-2 rounded-xl border border-border-default bg-surface/40 backdrop-blur px-4 py-2 cursor-pointer hover:bg-surface/60 transition-colors"
-                >
-                    <span className="inline-flex items-center gap-1.5 text-xs font-display font-bold uppercase tracking-[0.16em] text-fg-muted">
-                        <ScanSearch className="h-4 w-4 text-accent" />
-                        {t('chart.dataWindow.title')}
-                    </span>
-                    <ChevronDown className="h-4 w-4 text-fg-muted" />
-                </button>
-            )}
-            </div>
+            <ChartLensStrip
+                lensOpen={lensOpen}
+                setLensOpen={setLensOpen}
+                candles={data.candles}
+                crosshairData={crosshairData}
+                assetType={assetType}
+            />
         )}
         <Card ref={wrapperRef} variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className={`flex flex-col lg:flex-row !overflow-x-hidden !overflow-y-visible ${isFullscreen ? 'h-[100dvh] !rounded-none !overflow-y-auto' : 'min-h-[300px] sm:min-h-[380px] lg:min-h-[480px]'}`}>
-            <button
-                type="button"
-                data-tour="chart-drawing-open"
-                aria-hidden="true"
-                tabIndex={-1}
-                onClick={() => { setSidebarOpen(true); setActiveTab('drawings'); }}
-                style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}
-            />
-            <button
-                type="button"
-                data-tour-close="chart-drawing"
-                aria-hidden="true"
-                tabIndex={-1}
-                onClick={() => { setSidebarOpen(false); }}
-                style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}
-            />
+            <ChartTourAnchors setSidebarOpen={setSidebarOpen} setActiveTab={setActiveTab} />
             <ChartToolRail
                 activeTool={activeTool}
                 activeFibTool={showFibTab ? activeFibTool : null}
@@ -325,31 +284,14 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                     onToggleFullscreen={toggleFullscreen}
                     onResetView={resetView}
                 />
-                <div className="flex items-center gap-1 px-2 sm:px-3 py-1.5 border-b border-border-default bg-surface/40">
-                    <div className="shrink-0 mr-1">
-                        <DatePickerPopover
-                            compact
-                            value={pickedDateValue}
-                            minDate={dataDateBounds.min}
-                            maxDate={dataDateBounds.max}
-                            onChange={selectDate}
-                        />
-                    </div>
-                    <div className="flex items-center gap-1 flex-nowrap overflow-x-auto scrollbar-thin min-w-0">
-                        {TIME_RANGES.map(({ id, labelKey }) => {
-                            const isActive = timeRange === id;
-                            return (
-                                <button
-                                    key={id}
-                                    onClick={() => onTimeRangeChange?.(id)}
-                                    className={`shrink-0 min-h-[32px] px-2 sm:px-2.5 py-1 rounded-md text-[10px] sm:text-[11px] font-semibold tracking-wide border-none cursor-pointer transition-all duration-200 ${isActive ? 'bg-indigo-400/15 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.18)]' : 'bg-transparent text-fg-muted hover:text-fg hover:bg-surface'}`}
-                                >
-                                    {t(labelKey)}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
+                <ChartTimeRangeBar
+                    pickedDateValue={pickedDateValue}
+                    dataDateBounds={dataDateBounds}
+                    selectDate={selectDate}
+                    timeRanges={TIME_RANGES}
+                    timeRange={timeRange}
+                    onTimeRangeChange={onTimeRangeChange}
+                />
                 {/* overflow-hidden: clip the chart canvas to its box so a stale fullscreen-height canvas can't
                     inflate the container (or spill over the page) before the resize settles it back down. */}
                 <div className={`relative flex-1 overflow-hidden ${isFullscreen
@@ -393,53 +335,20 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                         className="absolute inset-0 w-full h-full pointer-events-none"
                         style={{ zIndex: 11 }}
                     />
-                    {legendVals && (
-                        <div className={`absolute ${LEGEND_DEFAULT_CLASS} z-[12] pointer-events-none max-w-[78%] sm:max-w-[calc(100%-1rem)] rounded-md border border-border-default bg-bg-base/85 backdrop-blur-sm px-1.5 sm:px-2.5 py-1 sm:py-1.5 shadow-lg`}>
-                            <div className="flex flex-wrap items-center gap-x-1.5 sm:gap-x-2.5 gap-y-0 sm:gap-y-0.5 font-mono text-[9px] sm:text-[10px] leading-tight">
-                                {legendDate && <span className="text-fg-subtle">{legendDate}</span>}
-                                {allowCandle && chartType === 'candle' ? (
-                                    <>
-                                        <span className="text-fg-subtle">O <span className="text-fg">{fmtHover(legendVals.open)}</span></span>
-                                        <span className="text-fg-subtle">H <span className="text-success">{fmtHover(legendVals.high)}</span></span>
-                                        <span className="text-fg-subtle">L <span className="text-danger">{fmtHover(legendVals.low)}</span></span>
-                                        <span className="text-fg-subtle">C <span className="text-fg">{fmtHover(legendVals.close)}</span></span>
-                                    </>
-                                ) : legendHasForexLegs ? (
-                                    <>
-                                        <span className="text-fg-subtle">{t('chart.toolbar.crosshair.sell')} <span className="text-fg">{fmtHover(legendVals.sellingPrice)}</span></span>
-                                        <span className="text-fg-subtle">{t('chart.toolbar.crosshair.buy')} <span className="text-fg">{fmtHover(legendVals.buyingPrice)}</span></span>
-                                        {legendVals.effectiveSellingPrice != null && legendVals.effectiveSellingPrice !== legendVals.sellingPrice && (
-                                            <span className="text-fg-subtle">{t('chart.toolbar.crosshair.effSell')} <span className="text-fg">{fmtHover(legendVals.effectiveSellingPrice)}</span></span>
-                                        )}
-                                        {legendVals.effectiveBuyingPrice != null && legendVals.effectiveBuyingPrice !== legendVals.buyingPrice && (
-                                            <span className="text-fg-subtle">{t('chart.toolbar.crosshair.effBuy')} <span className="text-fg">{fmtHover(legendVals.effectiveBuyingPrice)}</span></span>
-                                        )}
-                                    </>
-                                ) : (
-                                    <span className="text-fg-subtle">{t('chart.legend.price')} <span className="text-fg">{fmtHover(legendVals.close)}</span></span>
-                                )}
-                                {legendVals.bulletinPrice != null && (
-                                    <span className="text-fg-subtle">{t('chart.toolbar.crosshair.bulletin')} <span className="text-fg">{fmtHover(legendVals.bulletinPrice)}</span></span>
-                                )}
-                                {legendVals.changePercent != null && (
-                                    <span className={legendVals.changePercent >= 0 ? 'text-success' : 'text-danger'}>
-                                        {legendVals.changePercent >= 0 ? '+' : ''}{legendVals.changePercent.toFixed(2)}%
-                                    </span>
-                                )}
-                                {legendOverlayInds.map((ind) => (
-                                    <span key={ind.id} style={{ color: ind.color }}>{ind.type}{ind.period} {fmtHover(legendVals.overlays[ind.id])}</span>
-                                ))}
-                                {hasRSI && subValues?.rsi != null && (
-                                    <span style={{ color: rsiIndicator?.color || '#e91e63' }}>RSI {Number(subValues.rsi).toFixed(2)}</span>
-                                )}
-                                {hasMACD && subValues?.macd != null && (
-                                    // Colour each MACD value with its own line colour (MACD line vs signal) so the
-                                    // readout matches the sub-chart — signal '#f59e0b' mirrors useSubCharts.
-                                    <span className="text-fg-subtle">MACD <span style={{ color: macdIndicator?.color || '#06b6d4' }}>{Number(subValues.macd).toFixed(2)}</span>{subValues.signal != null && <> · <span style={{ color: '#f59e0b' }}>{Number(subValues.signal).toFixed(2)}</span></>}</span>
-                                )}
-                            </div>
-                        </div>
-                    )}
+                    <ChartHoverLegend
+                        legendVals={legendVals}
+                        legendDate={legendDate}
+                        fmtHover={fmtHover}
+                        allowCandle={allowCandle}
+                        chartType={chartType}
+                        legendHasForexLegs={legendHasForexLegs}
+                        legendOverlayInds={legendOverlayInds}
+                        hasRSI={hasRSI}
+                        subValues={subValues}
+                        rsiIndicator={rsiIndicator}
+                        hasMACD={hasMACD}
+                        macdIndicator={macdIndicator}
+                    />
                     <ChartTextEditInput
                         textEditState={textEditState}
                         isDark={isDark}
@@ -472,16 +381,13 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
 
             </div>
             {lensOpen && (data?.candles?.length > 0 || sidebar) && (
-                <div className={`w-full border-t border-border-default overscroll-contain max-h-[60dvh] overflow-y-auto scrollbar-thin xl:max-h-none xl:w-[340px] xl:shrink-0 xl:border-t-0 xl:border-l xl:overflow-y-auto ${isFullscreen ? '' : 'xl:absolute xl:inset-y-0 xl:right-0'}`}>
-                    {data?.candles?.length > 0 && (
-                        <DataWindowPanel candles={data.candles} hover={crosshairData} assetType={assetType} variant="analytics" />
-                    )}
-                    {sidebar && (
-                        <div className={`p-3 sm:p-4 space-y-3 ${data?.candles?.length > 0 ? 'border-t border-border-default' : ''}`}>
-                            {sidebar}
-                        </div>
-                    )}
-                </div>
+                <ChartLensPanel
+                    candles={data.candles}
+                    crosshairData={crosshairData}
+                    assetType={assetType}
+                    sidebar={sidebar}
+                    isFullscreen={isFullscreen}
+                />
             )}
             </div>
         </Card>

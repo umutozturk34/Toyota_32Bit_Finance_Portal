@@ -11,8 +11,9 @@ import { chartPalette } from '../../../shared/charts/echartsTheme';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { usePortfolioAllocation } from '../hooks/usePortfolioData';
 import Card from '../../../shared/components/card';
-import Spinner from '../../../shared/components/feedback/Spinner';
+import { Skeleton } from '../../../shared/components/feedback/Skeleton';
 import FilterTabs from '../../../shared/components/form/FilterTabs';
+import RangeSelector from '../../../shared/components/form/RangeSelector';
 import {
   ASSET_TYPE_CHART_COLORS as ASSET_TYPE_COLORS,
   ASSET_TYPE_TABS as TYPE_TABS,
@@ -29,6 +30,10 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
   const { isDark } = useTheme();
   const { format: money, formatCompact: moneyCompact, currency: displayCurrency, convert } = useMoney();
   const [activeTab, setActiveTab] = useSessionState('portfolio-alloc-tab', 'ALL');
+  // Open/closed/all filter: the pie normally mixes open positions (per type) with the closed-proceeds CASH slice,
+  // so the centre Total can't answer "how much is OPEN?". 'open' drops CASH (centre Total = total open value),
+  // 'closed' keeps only CASH (the realized proceeds), 'all' is the combined default.
+  const [posStatus, setPosStatus] = useSessionState('portfolio-alloc-status', 'all');
   // The CASH (closed-proceeds) slice carries per-entry/exit-date FX frames (costByCurrency /
   // realizedPnlByCurrency); in USD/EUR display use them so the cost+realized breakdown sits on matching
   // FX dates instead of today's spot. TRY/ORIGINAL display and non-cash slices are a no-op.
@@ -105,10 +110,14 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
     const items = activeTab === 'ALL' ? (allocation || []) : (assetData || []);
     return items.filter((i) => {
       const value = Number(i.valueTry);
-      if (i.label === 'CASH') return value !== 0;
+      const isCash = i.label === 'CASH';
+      // CASH = closed proceeds: present in 'all' and 'closed', dropped in 'open'.
+      if (isCash) return posStatus !== 'open' && value !== 0;
+      // 'closed' (ALL view) shows only the CASH slice; open type slices are dropped.
+      if (posStatus === 'closed' && activeTab === 'ALL') return false;
       return value > 0;
     });
-  }, [activeTab, allocation, assetData]);
+  }, [activeTab, allocation, assetData, posStatus]);
 
   const totalValue = useMemo(
     () => finalData.reduce((sum, item) => sum + Math.abs(displayValueOf(item)), 0),
@@ -235,20 +244,37 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
         <span className="text-sm font-semibold text-fg">{t('portfolio.allocation.title')}</span>
       </div>
 
-      <FilterTabs
-        items={TYPE_TABS.filter(({ id }) => id !== 'ALL' && availableTypes.has(id))
-          .map(({ id }) => ({ type: id, label: assetLabel(id) }))}
-        activeId={activeTab}
-        onSelect={setActiveTab}
-        allLabel={assetLabel('ALL')}
-        showAll
-        layoutId="alloc-tab"
-      />
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="max-w-full overflow-x-auto">
+          <FilterTabs
+            items={TYPE_TABS.filter(({ id }) => id !== 'ALL' && availableTypes.has(id))
+              .map(({ id }) => ({ type: id, label: assetLabel(id) }))}
+            activeId={activeTab}
+            onSelect={setActiveTab}
+            allLabel={assetLabel('ALL')}
+            showAll
+            layoutId="alloc-tab"
+          />
+        </div>
+        {!forPrint && activeTab === 'ALL' && (
+          <RangeSelector
+            value={posStatus}
+            onChange={setPosStatus}
+            size="sm"
+            layoutId="alloc-status"
+            options={[
+              { id: 'all', label: t('portfolio.positions.statusAll') },
+              { id: 'open', label: t('portfolio.positions.statusOpen') },
+              { id: 'closed', label: t('portfolio.positions.statusClosed') },
+            ]}
+          />
+        )}
+      </div>
 
       <Card variant="elevated" radius="2xl" padding="lg" backdropBlur interactive={false}>
         {loading ? (
           <div className="flex items-center justify-center" style={{ height: 'min(40vh, 260px)', minHeight: 200 }}>
-            <Spinner size="md" tone="accent" />
+            <Skeleton w="11rem" h="11rem" circle />
           </div>
         ) : seriesData.length === 0 ? (
           <div className="flex items-center justify-center text-sm text-fg-muted" style={{ height: 'min(40vh, 260px)', minHeight: 200 }}>
@@ -301,19 +327,24 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-fg truncate">{label}</p>
-                      {showBreakdown && (
+                      {/* Money goes in the subtitle (single value for a type, cost + realized breakdown for the
+                          closed-proceeds CASH slice) and the share % stays the lone right-aligned column — same row
+                          shape as RealizedPnlChart so the two side-by-side cards line up, and % is the headline an
+                          allocation legend should lead with. */}
+                      {showBreakdown ? (
                         <p className="text-[10px] font-mono mt-0.5 truncate" title={`${money(cost, frameBase)} · ${realized >= 0 ? '+' : '−'} ${money(Math.abs(realized), frameBase)}`}>
                           <span className="text-fg-muted">{moneyCompact(cost, frameBase)}</span>
                           <span className={realized >= 0 ? 'text-success' : 'text-danger'}>
                             {' '}{realized >= 0 ? '+' : '−'} {moneyCompact(Math.abs(realized), frameBase)}
                           </span>
                         </p>
+                      ) : (
+                        <p className="text-[10px] font-mono mt-0.5 truncate text-fg-muted" title={money(value, frameBase)}>
+                          {moneyCompact(value, frameBase)}
+                        </p>
                       )}
                     </div>
                     <span className="text-xs font-mono text-fg-muted shrink-0 tabular-nums">{formatSharePct(pct, value)}%</span>
-                    {!showBreakdown && (
-                      <span className={`text-xs font-mono font-semibold shrink-0 ${isCash ? (realized != null && realized < 0 ? 'text-danger' : 'text-success') : 'text-fg'}`} title={money(value, frameBase)}>{moneyCompact(value, frameBase)}</span>
-                    )}
                   </div>
                 );
               })}

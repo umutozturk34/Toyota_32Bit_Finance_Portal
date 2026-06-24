@@ -109,7 +109,8 @@ public class PortfolioUpdatedListener {
             if (line.totalValue() != null) total = total.add(line.totalValue());
             if (line.dailyPnl() != null) pnl = pnl.add(line.dailyPnl());
             rows.add(new PortfolioUpdatedPayload.Line(
-                    line.portfolioId(), line.name(), line.totalValue(), line.dailyPnl(), line.dailyPnlPercent()));
+                    line.portfolioId(), line.name(), line.type(),
+                    line.totalValue(), line.dailyPnl(), line.dailyPnlPercent()));
         }
         if (total.signum() <= 0) return null;
         return new PortfolioUpdatedPayload(total, pnl, aggregatePercent(total, pnl), rows.size(), rows, source);

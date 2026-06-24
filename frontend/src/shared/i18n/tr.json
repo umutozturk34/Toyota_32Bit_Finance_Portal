@@ -15,6 +15,8 @@
     "bonds": "Tahvil",
     "viop": "VİOP",
     "portfolio": "Portföy",
+    "allPortfolios": "Tüm Portföyler",
+    "newPortfolio": "Yeni Portföy",
     "watch": "Takip",
     "adminTrackedAssets": "Takip Edilen Varlıklar",
     "adminUsers": "Kullanıcılar",
@@ -29,9 +31,284 @@
     "search": "Ara",
     "overview": "Genel bakış",
     "analytics": "Analiz",
+    "learn": "Öğren",
     "groupMarkets": "Piyasalar",
     "groupMy": "Portföyüm",
-    "groupAdmin": "Yönetim"
+    "groupAdmin": "Yönetim",
+    "groupPreferences": "Hızlı ayarlar"
+  },
+  "learn": {
+    "title": "Finansal Okuryazarlık",
+    "subtitle": "Uygulamada geçen terimler — sade açıklamalar ve gerçek verilerle",
+    "searchPlaceholder": "Terim ara...",
+    "noResults": "Eşleşen terim yok.",
+    "learnMore": "Detaylı öğren",
+    "explainTerm": "{{term}} nedir?",
+    "chartSchematic": "Şematik gösterim (örnek)",
+    "strikeLabel": "Strike",
+    "dirtyLabel": "Kirli",
+    "cleanLabel": "Temiz",
+    "chartLive": "Gerçek veri — son yıllar",
+    "macroFallback": "Uygulamanın takip ettiği bir makro gösterge — canlı verisi aşağıda.",
+    "categories": {
+      "macroRates": "Makro & Faizler",
+      "technical": "Teknik Göstergeler",
+      "returnsRisk": "Getiri & Risk",
+      "bonds": "Tahvil & Bono",
+      "deposits": "Mevduat & Faiz",
+      "viop": "VİOP & Türev",
+      "general": "Genel"
+    },
+    "terms": {
+      "candlestick": {
+        "title": "Mum Grafiği",
+        "short": "Her dönemin açılış-kapanış-yüksek-düşük fiyatı.",
+        "long": "Her mum bir dönemi (gün/saat) temsil eder: gövde açılış ile kapanış arasını, fitiller en yüksek ve en düşüğü gösterir. Kapanış açılıştan yüksekse yeşil (yükseliş), düşükse kırmızı (düşüş). Fiyat hareketini tek bakışta okutur."
+      },
+      "ohlc": {
+        "title": "OHLC (Aç-Y-D-K)",
+        "short": "Açılış, Yüksek, Düşük, Kapanış.",
+        "long": "Bir dönemin dört temel fiyatı: Açılış (Open), en Yüksek (High), en Düşük (Low), Kapanış (Close). Mum ve bar grafiklerinin temelidir; teknik göstergelerin çoğu bu dört değerden hesaplanır."
+      },
+      "supportResistance": {
+        "title": "Destek & Direnç",
+        "short": "Fiyatın zorlandığı alt/üst seviyeler.",
+        "long": "Destek, fiyatın düşerken tutunma eğiliminde olduğu seviye; direnç ise yükselirken zorlandığı seviye. Bu seviyelerin kırılması genelde yeni bir hareketin habercisi sayılır."
+      },
+      "trend": {
+        "title": "Trend",
+        "short": "Fiyatın genel yönü.",
+        "long": "Fiyatın zaman içindeki baskın yönü: yükseliş (yükselen tepe ve dipler), düşüş (alçalan tepe ve dipler) ya da yatay. 'Trend dostundur' — yöne uygun işlem genelde daha güvenli kabul edilir."
+      },
+      "realVsNominal": {
+        "title": "Reel vs Nominal Getiri",
+        "short": "Enflasyon öncesi ve sonrası kazanç.",
+        "long": "Nominal getiri TL bazında kâr/zarardır; reel getiri ise enflasyon düşülmüş, gerçek alım gücü kazancıdır. %50 nominal getiri, %60 enflasyon ortamında reel olarak kayıp demektir."
+      },
+      "sharpe": {
+        "title": "Sharpe Oranı",
+        "short": "Alınan riske göre getiri.",
+        "long": "Bir yatırımın risksiz faizin üstündeki getirisinin, volatilitesine (riskine) bölümü. Yüksek Sharpe = aynı risk için daha çok getiri; farklı stratejileri 'riske göre' adil kıyaslar."
+      },
+      "diversification": {
+        "title": "Çeşitlendirme",
+        "short": "Yumurtaları tek sepete koymama.",
+        "long": "Sermayeyi farklı varlık, sektör ve para birimine dağıtarak tek bir varlığın kötü gidişinden portföyü koruma. Birbiriyle az ilişkili varlıklar toplam riski düşürür."
+      },
+      "bondVsBill": {
+        "title": "Tahvil vs Bono",
+        "short": "Vadesi uzun (tahvil) / kısa (bono).",
+        "long": "İkisi de bir borçlanma senedidir. Vadesi 1 yıldan UZUN olana tahvil, KISA olana (genelde iskontolu, kuponsuz) bono denir. Hazine bonosu kısa vadeli, devlet tahvili uzun vadeli devlet borçlanmasıdır."
+      },
+      "yield": {
+        "title": "Verim (Getiri Oranı)",
+        "short": "Tahvilin yıllık efektif getirisi.",
+        "long": "Bir tahvili bugünkü fiyatından alıp vadeye kadar tutarsan kazanacağın yıllık oran (vadeye kadar getiri). Fiyat düşerse verim artar, fiyat yükselirse verim düşer — ters ilişki."
+      },
+      "nominalValue": {
+        "title": "Nominal Değer",
+        "short": "Tahvilin yüz/itibari değeri (100).",
+        "long": "Tahvilin üzerinde yazılı, vadede ödenecek değer — genelde 100. Kupon bu değer üzerinden hesaplanır. Piyasa fiyatı nominalin altında (iskontolu) ya da üstünde (primli) olabilir."
+      },
+      "floatingRate": {
+        "title": "Değişken Faizli",
+        "short": "Kuponu periyodik güncellenen tahvil.",
+        "long": "Kupon oranı sabit olmayıp bir referansa (TLREF, ihale faizi) göre her dönem yenilenen tahvil. Faizler yükselirken kupon da artar, böylece fiyatı par'a yakın kalır; faiz riskini azaltır."
+      },
+      "sukuk": {
+        "title": "Kira Sertifikası (Sukuk)",
+        "short": "Faizsiz finans esaslı tahvil benzeri.",
+        "long": "Bir varlığın kira/gelir akışına dayanan, faizsiz finans ilkelerine uygun menkul kıymet. Devlet tahvilinin İslami muadilidir; sabit, değişken, TÜFE'ye endeksli ve altına dayalı türleri vardır."
+      },
+      "secondaryMarket": {
+        "title": "İkincil Piyasa",
+        "short": "İhraç sonrası alınıp satıldığı piyasa.",
+        "long": "Tahvilin ilk ihraçtan (birincil piyasa) sonra yatırımcılar arasında el değiştirdiği piyasa. Vadeyi beklemeden buradan satabilir ya da alabilirsin; fiyat arz-talep ve faizle değişir."
+      },
+      "margin": {
+        "title": "Teminat (Margin)",
+        "short": "Pozisyon için bloke edilen güvence.",
+        "long": "VİOP'ta pozisyon açmak için yatırılan güvence tutarı. Pozisyonun tamamını değil küçük bir oranını yatırırsın (kaldıraç). Zarar büyürse ek teminat (margin call) istenebilir."
+      },
+      "spread": {
+        "title": "Makas (Spread)",
+        "short": "Alış ile satış fiyatı farkı.",
+        "long": "En iyi alış (bid) ile en iyi satış (ask) fiyatı arasındaki fark. Dar makas yüksek likidite ve düşük işlem maliyeti, geniş makas düşük likidite demektir."
+      },
+      "liquidity": {
+        "title": "Likidite",
+        "short": "Hızlı ve fiyatı bozmadan alıp satabilme.",
+        "long": "Bir varlığı fiyatını fazla etkilemeden hızlıca nakde çevirebilme kolaylığı. Yüksek likidite = dar makas, kolay giriş-çıkış; düşük likidite = büyük fiyat sapması riski."
+      },
+      "marketCap": {
+        "title": "Piyasa Değeri",
+        "short": "Toplam değer = fiyat × adet.",
+        "long": "Bir varlığın/şirketin toplam piyasa değeri: güncel fiyat × dolaşımdaki adet. Hisselerde şirket büyüklüğünü, kriptoda projenin ölçeğini gösterir."
+      },
+      "movingAverage": {
+        "title": "Hareketli Ortalama",
+        "short": "Fiyatın belirli bir dönemdeki ortalaması.",
+        "long": "Son N günün ortalaması (SMA) ya da yakın günlere daha çok ağırlık veren üssel ortalama (EMA). Gürültüyü süzerek trendi gösterir; fiyat ortalamanın üstündeyse yükseliş, altındaysa düşüş eğilimi olarak okunur."
+      },
+      "rsi": {
+        "title": "RSI (Göreli Güç Endeksi)",
+        "short": "0–100 arası momentum göstergesi.",
+        "long": "Son dönemdeki kazanç ve kayıpları oranlayarak fiyatın 'aşırı alım' (70 üstü) ya da 'aşırı satım' (30 altı) olduğunu gösterir. Tek başına al-sat sinyali değildir; momentumun gücünü ölçer."
+      },
+      "macd": {
+        "title": "MACD",
+        "short": "İki ortalamanın farkıyla trend/momentum.",
+        "long": "Hızlı ve yavaş üssel ortalamaların farkı (MACD çizgisi), onun ortalaması (sinyal) ve aradaki fark (histogram). MACD sinyalin üstüne çıkınca yükseliş, altına inince düşüş momentumu olarak yorumlanır."
+      },
+      "volume": {
+        "title": "Hacim",
+        "short": "Belirli sürede el değiştiren miktar.",
+        "long": "Bir varlıkta işlem gören adet/tutar. Yüksek hacim bir fiyat hareketinin inandırıcılığını artırır; düşük hacimli hareketler daha kırılgandır. Trend dönüşleri genelde hacim artışıyla gelir."
+      },
+      "volatility": {
+        "title": "Volatilite (Oynaklık)",
+        "short": "Getirinin ne kadar dalgalandığı = risk.",
+        "long": "Fiyat/getirinin ortalaması etrafında ne kadar saçıldığı; genelde getirilerin standart sapmasıyla ölçülür. Yüksek volatilite hem daha çok kazanç hem daha çok kayıp ihtimali — yani risk demektir."
+      },
+      "return": {
+        "title": "Getiri",
+        "short": "Yatırımın yüzde kazanç/kaybı.",
+        "long": "(Güncel değer − maliyet) ÷ maliyet. 'Nominal' getiri TL bazında, 'reel' getiri enflasyondan arındırılmış kazançtır. Bu uygulamada portföy getirisi, koyduğun sermaye üzerinden kümülatif hesaplanır."
+      },
+      "drawdown": {
+        "title": "Maksimum Düşüş",
+        "short": "Zirveden dibe en büyük değer kaybı.",
+        "long": "Bir yatırımın gördüğü en yüksek değerden sonraki en derin düşüşün yüzdesi. Bir stratejinin 'en kötü anında' ne kadar kaybettirdiğini gösterir; risk toleransını ölçmek için getiriyle birlikte bakılır."
+      },
+      "benchmark": {
+        "title": "Kıyaslama (Benchmark)",
+        "short": "Getiriyi neyle karşılaştırdığın.",
+        "long": "Bir yatırımın başarısı tek başına değil bir ölçütle (enflasyon, mevduat faizi, TLREF, bir endeks) karşılaştırılarak değerlendirilir. 'Enflasyonu yendin mi?' sorusu bu uygulamadaki temel kıyaslamadır."
+      },
+      "coupon": {
+        "title": "Kupon",
+        "short": "Tahvilin periyodik faiz ödemesi.",
+        "long": "Tahvilin nominal değeri üzerinden belirli aralıklarla (genelde 6 ayda bir) ödenen faiz. Sabit kuponluda oran sabittir; değişken/TLREF'te her dönem güncellenir; TÜFE'ye endekslide kupon endekslenmiş anaparaya işler."
+      },
+      "maturity": {
+        "title": "Vade",
+        "short": "Tahvilin anaparayı geri ödediği tarih.",
+        "long": "Tahvilin sona erip nominal değerinin (genelde 100) geri ödendiği gün. Vade yaklaştıkça nominal tahvilin fiyatı 100'e yaklaşır; TÜFE/altın endekslilerde endeks/altın değerine itfa olur. 'Vadeye kalan gün' kalan süreyi gösterir."
+      },
+      "cpiLinked": {
+        "title": "TÜFE'ye Endeksli",
+        "short": "Anaparası enflasyonla büyüyen tahvil.",
+        "long": "Anaparası TÜFE endeksiyle güncellenen tahvil; ana getiri enflasyon korumasından gelir, üzerine küçük bir 'reel kupon' ödenir. Fiyatı 100 değil endeks değeridir (binlerce TL olabilir)."
+      },
+      "accruedCoupon": {
+        "title": "İşlemiş Kupon",
+        "short": "Bir sonraki kupona kadar biriken faiz.",
+        "long": "Son kupon ödemesinden bugüne biriken ama henüz ödenmemiş kupon faizi. Tahvili vadesinden önce satarsan bu birikmiş kupon da sana ödenir ('kirli fiyat' = temiz fiyat + işlemiş kupon)."
+      },
+      "par": {
+        "title": "İtfa / Par Değer",
+        "short": "Vadede ödenen nominal değer (100).",
+        "long": "Tahvilin nominal/yüz değeri, genelde 100. Vadede Hazine bu değeri otomatik geri öder ('itfa'). Düz TL tahviller par'a (100) itfa olurken endeksli/altın tahviller endeks/altın değerine itfa olur."
+      },
+      "discountBill": {
+        "title": "İskontolu Bono",
+        "short": "Kuponsuz, iskontoyla alınan kısa vadeli senet.",
+        "long": "Kupon ödemeyen, 100'ün altında (iskontolu) alınıp vadede 100'e itfa olan kısa vadeli Hazine bonosu. Tüm getiri alış fiyatı ile 100 arasındaki farktan gelir; fiyat vadeye doğru düzgünce 100'e yaklaşır."
+      },
+      "futures": {
+        "title": "Vadeli İşlem (VİOP)",
+        "short": "Gelecekte teslim üzerine sözleşme.",
+        "long": "Bir varlığı ileri bir tarihte bugünden belirlenen fiyattan alma/satma sözleşmesi. VİOP'ta endeks, döviz, emtia üzerine işlem yapılır; teminatla (kaldıraçlı) işlem görür, fiziki teslim genelde olmaz."
+      },
+      "leverage": {
+        "title": "Kaldıraç",
+        "short": "Az teminatla büyük pozisyon.",
+        "long": "Yatırdığın teminatın katı büyüklükte pozisyon taşıma. Kazancı da kaybı da büyütür: %1'lik hareket 10x kaldıraçta %10 kâr/zarar demektir. VİOP doğası gereği kaldıraçlıdır — yüksek risk."
+      },
+      "longShort": {
+        "title": "Uzun / Kısa Pozisyon",
+        "short": "Yükselişe (uzun) ya da düşüşe (kısa) oynama.",
+        "long": "'Uzun' pozisyon fiyat yükselince, 'kısa' pozisyon fiyat düşünce kazandırır. VİOP'ta kısa ile düşen piyasada da kâr edilebilir ya da mevcut pozisyon riske karşı korunabilir."
+      },
+      "allocation": {
+        "title": "Dağılım (Allocation)",
+        "short": "Portföyün varlıklara yüzde bölünüşü.",
+        "long": "Portföydeki değerin varlık tiplerine (hisse, kripto, döviz, emtia, VİOP) yüzde dağılımı. Çeşitlendirme riski azaltır; tek bir varlığa aşırı yoğunlaşmak riski artırır."
+      },
+      "perDateFx": {
+        "title": "Tarihe Göre Kur",
+        "short": "Her tutarı kendi tarihindeki kurla çevirme.",
+        "long": "USD/EUR gösteriminde maliyet alış tarihindeki, kapanan pozisyon çıkış tarihindeki, geçmiş her nokta kendi tarihindeki kurla çevrilir — bugünün kuruyla değil. Böylece döviz hareketi kâr/zarara doğru yansır."
+      },
+      "cleanDirtyPrice": {
+        "title": "Temiz & Kirli Fiyat",
+        "short": "Kupon dahil (kirli) ve hariç (temiz) fiyat.",
+        "long": "Kirli fiyat = temiz fiyat + işlemiş kupon. Borsa/EVDS kotasyonu çoğu TL tahvilde kirli fiyattır — alırken biriken işlemiş kuponu da ödersin; temiz fiyat ondan işlemiş kupon çıkarılmış halidir. TÜFE/altın tahvillerinde kotasyon zaten temizdir."
+      },
+      "goldBond": {
+        "title": "Altına Dayalı Tahvil",
+        "short": "Değeri gram altına endeksli Hazine senedi.",
+        "long": "Anaparası gram altına endeksli, altın cinsinden saklanan Hazine kira sertifikası/tahvili. Fiyatı 100 değil altın değeridir; ana getiri altın fiyatından gelir, üzerine küçük bir kupon ödenebilir. Bu uygulamada her zaman TL'ye çevrilerek gösterilir."
+      },
+      "deposit": {
+        "title": "Mevduat",
+        "short": "Bankaya vadeli yatırılan, faiz getiren para.",
+        "long": "Belirli bir vade ve sabit faizle bankaya yatırılan para. Vade sonunda anapara + net faiz ödenir; vade boyunca faiz oranı sabit kalır (piyasa sonradan değişse de). TL, USD ve EUR cinsinden açılabilir."
+      },
+      "simpleInterest": {
+        "title": "Basit Faiz",
+        "short": "Faiz yalnız anapara üzerinden işler.",
+        "long": "Mevduat faizi basit faizdir: faiz yalnızca anapara üzerinden, gün sayısına orantılı işler (anapara × oran × gün/365) — kazanılan faiz tekrar faize girmez (bileşik değil). Vade sonu net = anapara + brüt faiz − stopaj."
+      },
+      "withholding": {
+        "title": "Stopaj (Gelir Vergisi)",
+        "short": "Faiz gelirinden kesilen vergi.",
+        "long": "Mevduat faizinden, vadeye ve para birimine göre kaynağında kesilen gelir vergisi. Brüt faizden düşülür; eline geçen 'net' faizdir. Bu uygulama getiriyi stopaj sonrası net üzerinden hesaplar."
+      },
+      "option": {
+        "title": "Opsiyon",
+        "short": "Alma/satma HAKKI veren sözleşme.",
+        "long": "Sahibine, dayanak varlığı vade sonunda belirli fiyattan (kullanım/strike) alma (Call) ya da satma (Put) HAKKI veren — ama yükümlülük getirmeyen — sözleşme. Bu hak için baştan 'prim' ödenir; vadeli işlemden farkı, alıcının zararı ödediği primle sınırlıdır."
+      },
+      "callOption": {
+        "title": "Alım Opsiyonu (Call)",
+        "short": "Belirli fiyattan ALMA hakkı.",
+        "long": "Dayanak varlığı vade sonunda kullanım fiyatından (strike) satın alma hakkı. Fiyat strike'ın üstüne çıkarsa değer kazanır; altında kalırsa kullanılmaz ve alıcı yalnız ödediği primi kaybeder. Satıcı (kısa call) primi alır ama teorik olarak sınırsız risk taşır."
+      },
+      "putOption": {
+        "title": "Satım Opsiyonu (Put)",
+        "short": "Belirli fiyattan SATMA hakkı.",
+        "long": "Dayanak varlığı vade sonunda kullanım fiyatından satma hakkı. Fiyat strike'ın altına inerse değer kazanır (düşüşe karşı sigorta gibi); üstünde kalırsa kullanılmaz ve alıcı primini kaybeder."
+      },
+      "strikePrice": {
+        "title": "Kullanım Fiyatı (Strike)",
+        "short": "Opsiyonun alım/satım hakkını verdiği fiyat.",
+        "long": "Bir opsiyonun, dayanak varlığı alma (Call) ya da satma (Put) hakkı tanıdığı sabit fiyat. Vade sonunda piyasa fiyatı ile strike arasındaki fark opsiyonun iç değeridir; Call için piyasa > strike, Put için piyasa < strike kârlıdır."
+      },
+      "settlement": {
+        "title": "Uzlaşma & Vade Sonu",
+        "short": "Vade dolunca pozisyonun otomatik kapanışı.",
+        "long": "VİOP sözleşmeleri vade sonunda borsanın açıkladığı uzlaşma fiyatından kapanır (nakdi uzlaşma — fiziki teslim genelde yoktur). Bu uygulamada vadesi geçen pozisyonlar uzlaşma fiyatıyla otomatik kapatılır; opsiyonlarda bu fiyat vade sonundaki iç değerdir."
+      },
+      "valor": {
+        "title": "Valör",
+        "short": "İşlemin kaç günde gerçekleştiği/ödendiği.",
+        "long": "Bir alım-satımın gerçekleşip paranın el değiştirdiği gün farkı. Mevduatta/fonda \"satış valörü T+2\" demek, sattığında paranın 2 iş günü sonra hesabına geçmesi demektir. Valör ne kadar kısaysa paraya o kadar hızlı erişirsin."
+      },
+      "settlementT2": {
+        "title": "Takas (T+2)",
+        "short": "İşlemin tamamlanıp varlık ile paranın el değiştirdiği gün.",
+        "long": "Bir alım-satım yapıldığında menkul kıymetin ve paranın fiilen el değiştirmesi takas günüdür. BIST hisselerinde takas T+2’dir: bugün aldığın hisse 2 iş günü sonra hesabına gerçekten geçer, sattığında para 2 gün sonra kullanılabilir olur. Valör, aynı mantığın mevduat/fon karşılığıdır."
+      },
+      "tradingSession": {
+        "title": "Seans (İşlem Saati)",
+        "short": "Borsanın emir işleme aldığı saat aralığı.",
+        "long": "Borsanın/aracının alım-satım emirlerini işleme aldığı zaman penceresi. BIST pay piyasası yaklaşık 10:00–18:00 arası açıktır; fonlarda günlük bir kesim saati (ör. 09:00–13:30) vardır — o saatten sonraki emir ertesi güne sayılır. Seans dışında emir verebilirsin ama gerçekleşme bir sonraki seansa kalır."
+      }
+    },
+    "valorTradeDay": "İşlem",
+    "valorSettled": "Hesapta",
+    "countLabel": "konu"
   },
   "common": {
     "localeTag": "tr-TR",
@@ -53,6 +330,7 @@
     "close": "Kapat",
     "retry": "Tekrar dene",
     "back": "Geri",
+    "backToTop": "Yukarı çık",
     "addToPortfolio": "Portföye Ekle",
     "sortDefault": "Varsayılan",
     "previous": "Önceki",
@@ -437,7 +715,9 @@
   },
   "watchlistSection": {
     "fallbackName": "Takip Listesi",
-    "empty": "Henüz takip varlığı yok"
+    "empty": "Henüz takip varlığı yok",
+    "addAsset": "Varlık ekle",
+    "removeAsset": "Kaldır"
   },
   "beatersSection": {
     "title": "Gösterge Sıralaması",
@@ -704,6 +984,8 @@
   "bankRates": {
     "tabCurrency": "Döviz",
     "tabGold": "Altın",
+    "sectionTitle": "Banka Kurları",
+    "viewDetail": "{{code}} detayı",
     "buy": "Alış",
     "sell": "Satış",
     "spread": "Makas",
@@ -768,7 +1050,7 @@
       "AYAR_14": "14 Ayar Altın",
       "AYAR_18": "18 Ayar Altın",
       "AYAR_22_BILEZIK": "22 Ayar Bilezik",
-      "GUMUS": "Gümüş"
+      "GUMUS": "Gram Gümüş"
     }
   },
   "theme": {
@@ -982,6 +1264,18 @@
       "maturityLabel": "Vade Sonu",
       "couponDateLabel": "Kupon Tarihi",
       "daysSuffix": "g",
+      "cadence": {
+        "title": "Gözlemlenen kupon ritmi",
+        "everyDays": "~{{days}} günde bir",
+        "firstJump": "ilk sıçrama vade başından {{n}} gün sonra",
+        "jumpOnly": "Fiyat sıçraması: vade başından {{n}} gün sonra",
+        "labels": {
+          "monthly": "aylık",
+          "quarterly": "3 aylık",
+          "semiAnnual": "6 aylık",
+          "annual": "yıllık"
+        }
+      },
       "rateChangeButton": "Faiz Değişimi",
       "updateLabel": "Güncelle",
       "updateTitle": "Tahvil verilerini güncelle",
@@ -990,6 +1284,7 @@
       "updateErrorTitle": "Güncelleme Hatası",
       "activeOnlyLabel": "Açık bonolar",
       "activeOnlyTooltip": "Vade dolmamış bonolar",
+      "filterTypeLabel": "Tür",
       "priceChartTitle": "Fiyat geçmişi",
       "noPriceData": "Fiyat geçmişi yok",
       "rateChartTitle": "Kupon oranı geçmişi",
@@ -1006,8 +1301,11 @@
         "FLOATING_TLREF": "Değişken - TLREF",
         "FLOATING_CPI": "Değişken - TÜFE",
         "FLOATING_AUCTION": "Değişken - İhale",
+        "GOLD": "Altın",
         "SUKUK_FIXED": "Sukuk - Sabit",
-        "SUKUK_CPI": "Sukuk - TÜFE"
+        "SUKUK_FLOATING": "Sukuk - Değişken",
+        "SUKUK_CPI": "Sukuk - TÜFE",
+        "SUKUK_GOLD": "Sukuk - Altın"
       }
     },
     "empty": {
@@ -1033,6 +1331,23 @@
       "downloadPdfEmpty": "PDF için en az bir pozisyon gerekli",
       "downloadPdfError": "PDF indirilemedi. Lütfen tekrar deneyin.",
       "downloadPdfRateLimit": "Saatte en fazla 2 PDF indirebilirsin. Daha sonra tekrar dene."
+    },
+    "cost": {
+      "title": "Maliyet Dağılımı",
+      "subtitle": "Tip bazında maliyet — tipe tıkla, varlıkları gör (per-date kur)",
+      "totalCost": "Toplam Maliyet",
+      "empty": "Bu filtrede maliyet yok.",
+      "lots": "{{count}} lot",
+      "lots_other": "{{count}} lot",
+      "assets": "{{count}} varlık",
+      "assets_other": "{{count}} varlık",
+      "drillInto": "{{type}} varlıklarını gör"
+    },
+    "pnlByType": {
+      "title": "Kâr/Zarar Dağılımı",
+      "subtitle": "Toplam K/Z hangi varlık tipinden — tipe tıkla, varlıkları gör",
+      "total": "Toplam K/Z",
+      "empty": "Bu filtrede pozisyon yok."
     },
     "positions": {
       "searchPlaceholder": "Pozisyon ara...",
@@ -1080,7 +1395,7 @@
       "otherLabel": "Diğer",
       "realizedTitle": "Gerçekleşen K/Z",
       "realizedTotal": "Net K/Z",
-      "realizedEmpty": "Kapatılmış pozisyon yok",
+      "realizedEmpty": "Henüz realize edilmiş kâr/zarar yok",
       "empty": "Bu türde varlık bulunmuyor"
     },
     "performance": {
@@ -1149,7 +1464,9 @@
       "confirmBody": "pozisyon kalıcı silinecek. Bu işlem geri alınamaz.",
       "partialError": "{{failed}}/{{total}} pozisyon silinemedi. Diğerleri silindi.",
       "selectAcrossPages": "Tümünü seç ({{n}})",
-      "selectAcrossPagesTitle": "Tüm sayfalardaki pozisyonları seç"
+      "selectAcrossPagesTitle": "Tüm sayfalardaki pozisyonları seç",
+      "deletedTitle": "Silindi",
+      "deletedDesc": "{{count}} pozisyon silindi"
     },
     "sell": {
       "title": "{{code}} pozisyonunu sat",
@@ -1234,6 +1551,9 @@
       "strike": "Strike",
       "maxLoss": "Max Kayıp",
       "maxGain": "Max Kazanç",
+      "risk": "Risk",
+      "unlimitedLoss": "Sınırsız zarar",
+      "lossToStrike": "Strike'a kadar zarar",
       "call": "Call",
       "put": "Put",
       "future": "Vadeli",
@@ -1244,6 +1564,226 @@
       "realizedPnl": "Realize K/Z",
       "long": "LONG",
       "short": "SHORT"
+    },
+    "bonds": {
+      "title": "Tahvil",
+      "addAction": "Tahvil Ekle",
+      "empty": "Henüz tahvil yok",
+      "emptyHint": "Hazine tahvil/bonosu ekleyerek getiriyi takip et",
+      "statusSold": "SATILDI",
+      "redeemed": "İtfa edildi",
+      "marketAdd": {
+        "noPortfolioTitle": "Tahvil portföyü yok",
+        "noPortfolioHint": "Önce bir Mevduat & Tahvil portföyü oluştur"
+      },
+      "search": {
+        "title": "Tahvil Ekle",
+        "subtitle": "Hazine tahvil/bono serisi arayıp bu portföye ekle",
+        "placeholder": "Tahvil eklemek için ara...",
+        "addLabel": "Portföye ekle"
+      },
+      "col": {
+        "series": "Seri"
+      },
+      "coupon": {
+        "label": "Kupon",
+        "next": "Sonraki kupon",
+        "accrued": "İşlemiş kupon",
+        "daily": "Günlük kupon",
+        "none": "Kuponsuz",
+        "nominalValue": "Tahvil değeri",
+        "perYearShort": "%{{rate}} yıllık",
+        "cpiLinked": "TÜFE'ye Endeksli",
+        "tlref": "TLREF değişken",
+        "floating": "Değişken kupon",
+        "received": "Alınan kupon",
+        "breakdown": "Değer kırılımı",
+        "income": "Kupon geliri",
+        "payments": "{{count}} ödeme",
+        "payments_other": "{{count}} ödeme",
+        "perPayment": "ödeme başına",
+        "inPrice": "piyasa fiyatına dahil",
+        "indexNote": "TÜFE'ye endeksli — ana getiri endeks fiyatından gelir; kupon endeks değeri üzerinden işler.",
+        "goldNote": "Altına dayalı — ana getiri altın değerinden gelir; kupon altın değeri üzerinden işler.",
+        "scheduleReceived": "Alındı",
+        "scheduleBeforeEntry": "Alımdan önce",
+        "freq": {
+          "ANNUAL": "Yıllık",
+          "SEMI_ANNUAL": "6 Aylık",
+          "QUARTERLY": "3 Aylık",
+          "MONTHLY": "Aylık",
+          "ZERO_COUPON": "Kuponsuz"
+        }
+      },
+      "form": {
+        "titleAdd": "Tahvil Ekle",
+        "titleEdit": "Tahvili Düzenle",
+        "subtitle": "Hazine tahvil/bono bilgilerini gir",
+        "submitAdd": "Ekle",
+        "submitEdit": "Kaydet",
+        "totalCost": "Toplam maliyet",
+        "storedAsTry": "TL olarak saklanır",
+        "cpiPriceHint": "TÜFE'ye endeksli: fiyat 100 değil, endeks değeridir (~{{index}}). Giriş fiyatını endeks ölçeğinde gir.",
+        "discountNote": "Kuponsuz bono — getiri, fiyatın vadede 100'e (par) çıkmasından gelir. Kupon girilmez.",
+        "cpiCouponNote": "TÜFE'ye endeksli — düşük reel kupon endeksli anapara üzerinden ödenir; ana getiri endeks fiyatından gelir.",
+        "floatingNote": "Değişken kupon — TLREF/ihale + spread, her dönem resetlenir; oran tahvil verisinden gelir.",
+        "couponFromDb": "Kupon oranı tahvil verisinden gelir, değiştirilemez.",
+        "perPeriod": "dönemsel",
+        "freqInferred": "Sıklık tipten tahmin edilir — değiştirebilirsin",
+        "freqAutoDetect": "Dokunmazsan ödeme tarihlerindeki ani fiyat düşüşlerinden otomatik bulunur",
+        "annualApprox": "≈ %{{rate}} yıllık",
+        "fields": {
+          "series": "Seri",
+          "entryDate": "Giriş Tarihi",
+          "entryPrice": "Giriş Fiyatı",
+          "per100": "100 nominal başına",
+          "perUnit": "1 adet başına",
+          "priceHint": "100 TL nominal değer başına fiyat",
+          "priceSuggested": "Alış günü {{price}} · ±%10: {{low}} – {{high}}",
+          "priceReset": "öneriye dön",
+          "quantity": "Miktar",
+          "quantityPlaceholder": "örn. 1000",
+          "couponRate": "Kupon Oranı",
+          "couponSuggested": "önerilen %{{rate}}",
+          "couponPlaceholder": "örn. 25,50",
+          "couponHint": "Yayımlanan oran önerilir; üzerine kendi kupon oranını yazabilirsin"
+        },
+        "couponInfo": "Kupon: %{{rate}} (yıllık), {{frequency}}",
+        "maturityInfo": "İhraç {{start}} · Vade {{end}}",
+        "success": {
+          "titleAdd": "Tahvil eklendi",
+          "titleEdit": "Tahvil güncellendi",
+          "subtitle": "Portföyün güncellendi"
+        }
+      },
+      "picker": {
+        "placeholder": "Tahvil serisi ara...",
+        "clear": "Temizle",
+        "searching": "Aranıyor...",
+        "noResults": "Sonuç bulunamadı",
+        "couponShort": "Kupon %{{rate}}",
+        "maturityShort": "Vade {{date}}"
+      },
+      "sell": {
+        "title": "Tahvili sat",
+        "exitDate": "Çıkış Tarihi",
+        "exitPrice": "Çıkış Fiyatı",
+        "proceeds": "Tahsilat",
+        "confirm": "Sat"
+      },
+      "reopen": {
+        "title": "Tahvili yeniden aç"
+      },
+      "delete": {
+        "title": "Tahvili sil?",
+        "message": "Bu tahvil kalıcı olarak silinecek. Bu işlem geri alınamaz."
+      },
+      "detail": {
+        "open": "Tahvil detayı",
+        "goToPage": "{{code}} tahvil sayfasına git",
+        "positionTitle": "Pozisyon",
+        "couponTitle": "Kupon Bilgisi",
+        "currentPrice": "Güncel Fiyat",
+        "cleanPrice": "Temiz fiyat",
+        "dirtyPrice": "Kirli fiyat",
+        "redemptionValue": "İtfa (par)",
+        "returnToMaturity": "Vade getirisi",
+        "currentValue": "Güncel değer",
+        "frequencyLabel": "Kupon Sıklığı",
+        "annualCouponRate": "Kupon Oranı (yıllık)",
+        "maturityProgress": "Vade ilerlemesi",
+        "frequency": {
+          "ANNUAL": "Yılda bir",
+          "SEMI_ANNUAL": "6 ayda bir",
+          "QUARTERLY": "3 ayda bir",
+          "MONTHLY": "Ayda bir",
+          "ZERO_COUPON": "Kuponsuz"
+        },
+        "scheduleTitle": "Kupon Takvimi",
+        "scheduleHint": "Tahmini kupon tarihleri",
+        "scheduleEmpty": "Bu tahvil için kupon takvimi yok.",
+        "coupon": {
+          "past": "Geçti",
+          "upcoming": "Yaklaşan"
+        }
+      },
+      "errors": {
+        "seriesRequired": "Bir tahvil serisi seç",
+        "quantityInvalid": "Geçerli bir miktar gir",
+        "priceInvalid": "Geçerli bir fiyat gir",
+        "priceTooHigh": "100 nominal başına fiyat en fazla 100.000 olabilir",
+        "priceOutOfBand": "Fiyat, alış günü değerinin ±%10 bandında olmalı ({{low}} – {{high}})",
+        "couponInvalid": "Kupon oranı 0 ile {{max}} arasında olmalı",
+        "alreadyMatured": "Giriş tarihi tahvilin vade tarihinden önce olmalı",
+        "beforeIssue": "Giriş tarihi tahvilin ihraç tarihinden önce olamaz",
+        "exitAfterMaturity": "Çıkış tarihi tahvilin vade tarihinden sonra olamaz",
+        "dateRequired": "Tarih gir",
+        "exitBeforeEntry": "Çıkış tarihi giriş tarihinden önce olamaz",
+        "addFailed": "Tahvil eklenemedi",
+        "updateFailed": "Tahvil güncellenemedi",
+        "sellFailed": "Tahvil satılamadı",
+        "reopenFailed": "Tahvil yeniden açılamadı",
+        "deleteFailed": "Tahvil silinemedi"
+      }
+    },
+    "fixedIncome": {
+      "controls": {
+        "searchBonds": "Tahvil ara…",
+        "searchDeposits": "Mevduat ara…",
+        "profit": "Kârda",
+        "loss": "Zararda",
+        "sortMaturity": "Vade",
+        "sortPnl": "K/Z",
+        "sortValue": "Değer",
+        "sortEntry": "Giriş tarihi",
+        "sortStart": "Başlangıç",
+        "noMatch": "Bu filtrelere uyan pozisyon yok."
+      },
+      "totalValue": "Toplam Değer",
+      "totalCost": "Toplam Maliyet",
+      "profitLoss": "Kâr / Zarar",
+      "title": "Mevduat & Tahvil",
+      "subtitle": "Sabit getirili portföy",
+      "allocation": "Dağılım",
+      "asOf": "{{date}} itibarıyla",
+      "tryOnly": "TRY bazlı",
+      "tryOnlyHint": "Tahvil ve mevduat portföyü yalnızca TRY bazlıdır; Türkiye odaklıdır ve çapraz-kur (per-date FX) dönüşümü uygulanmaz.",
+      "couponsReceived": "Alınan kupon",
+      "depositSplit": "Mevduat",
+      "bondSplit": "Tahvil",
+      "countLabel": "{{count}} adet",
+      "countLabel_other": "{{count}} adet",
+      "empty": "Henüz mevduat veya tahvil eklenmedi.",
+      "chartTitle": "Sabit Getirili Değer",
+      "chartEmpty": "Bu dönem için veri yok.",
+      "modes": {
+        "total": "Toplam",
+        "deposit": "Mevduat",
+        "bond": "Tahvil"
+      },
+      "couponLabel": "Kupon",
+      "couponLegend": "Kupon ödemesi",
+      "redemption": "İtfa",
+      "cashflowTitle": "Nakit Akışı Takvimi",
+      "cashflowSubtitle": "Kupon ödemeleri + itfalar",
+      "cashflowEmpty": "Beklenen nakit akışı yok.",
+      "cashflowEmptyHint": "Kuponlu tahviller ve vadesi gelen mevduatlar burada görünür.",
+      "cashflowClickHint": "Ayrıntı için bir aya tıkla — o ay ne, ne kadar gelecek",
+      "cashflowMonthPayments": "{{month}} ödemeleri",
+      "depositMaturityLabel": "Mevduat vadesi",
+      "pnl": {
+        "title": "Kâr/Zarar vs Enflasyon",
+        "subtitle": "Maliyet dışı kazanç/kayıp, enflasyon eşiğiyle kıyas",
+        "pnlLabel": "K/Z",
+        "inflationLabel": "Enflasyon eşiği",
+        "beat": "Enflasyonu yendin",
+        "behind": "Enflasyonun altında",
+        "empty": "Bu dönem için veri yok."
+      }
+    },
+    "typeSwitcher": {
+      "spot": "Spot & VİOP",
+      "fixed": "Mevduat & Tahvil"
     }
   },
   "marketAddPosition": {
@@ -1273,6 +1813,7 @@
     "error": "Veri yüklenirken hata oluştu",
     "notFound": "Varlık bulunamadı",
     "addToPortfolio": "Portföye Ekle",
+    "priceChart": "Fiyat Grafiği",
     "priceLabel": "Fiyat",
     "changeLabel": "Değişim",
     "changeAmountTRY": "Değişim (TL)",
@@ -1296,10 +1837,16 @@
       "fundType": "Fon Türü",
       "categoryLabel": "Kategori",
       "riskLabel": "Risk",
+      "sellValor": "Satış Valörü",
+      "buybackValor": "Geri Alış Valörü",
+      "tradeHours": "İşlem Saati",
       "marketShareLabel": "Pazar Payı",
       "kapLinkLabel": "KAP'ta aç",
       "viewDetail": "Fon Detayını Görüntüle",
       "detailTitle": "Fon Detayı",
+      "sectionTitle": "Fon Künyesi",
+      "riskLow": "Düşük",
+      "riskHigh": "Yüksek",
       "allocationTitle": "Varlık Dağılımı",
       "allocationEmpty": "Dağılım verisi yok",
       "allocationOther": "Diğer",
@@ -1319,6 +1866,16 @@
       "priceTry": "Fiyat (TRY)",
       "priceUsd": "Fiyat (USD)",
       "price": "Fiyat ({{currency}})"
+    },
+    "stock": {
+      "sector": "Sektör",
+      "founded": "Kuruluş",
+      "city": "Merkez",
+      "exchange": "Borsa",
+      "indices": "Dahil Olduğu Endeksler",
+      "constituents": "İçindeki Hisseler",
+      "constituentSearch": "Hisse ara…",
+      "constituentNoMatch": "Eşleşen hisse yok"
     },
     "compareAction": "Karşılaştır"
   },
@@ -1384,7 +1941,7 @@
       "policyRate": "Politika Faizi",
       "tlrefRate": "TLREF",
       "tlrefIndex": "TLREF Endeksi",
-      "cpiIndex": "TÜFE",
+      "cpiIndex": "TÜFE (Enflasyon)",
       "ppiIndex": "Yİ-ÜFE",
       "depositTryTotal": "TL Mevduat",
       "depositUsdTotal": "USD Mevduat",
@@ -1594,6 +2151,7 @@
       "email": "E-posta",
       "signupDate": "Kayıt",
       "status": "Durum",
+      "roles": "Rol",
       "action": "İşlem"
     },
     "toast": {
@@ -1718,6 +2276,14 @@
       "chartDrawing": {
         "title": "Grafik üzerine çiz",
         "desc": "Soldaki her zaman açık çizim rayını kullan — trendline ile yön, Fibonacci ile geri çekilme, paralel kanallar ve yatay destek/direnç. Çizimlerin kaydedilir."
+      },
+      "stockDetail": {
+        "title": "Hisse detay künyesi",
+        "desc": "Grafiğin altında şirketin künyesi yer alır — sektör, kuruluş yılı, merkez ve dahil olduğu BIST endeksleri (ağırlığıyla). Her endeks chip'i kendi detay sayfasına gider."
+      },
+      "indexLeaderboard": {
+        "title": "Endeks bileşenleri",
+        "desc": "Bir endekste (örneğin BIST 100) grafiğin altında bileşen hisseler ağırlığa göre sıralı bir lider tablosu olarak çıkar — tek bakışta endeksi en çok hangi hisseler taşıyor görürsün, aratabilirsin."
       },
       "fundDetail": {
         "title": "Fon detay kartı",
@@ -1946,10 +2512,12 @@
     "history": "Geçmiş",
     "noHistory": "Henüz görev geçmişi yok",
     "taskToast": "Görev",
+    "apiKeyHint": "EVDS_API_KEY tanımlı değil — ortam değişkenini ayarlayın.",
     "status": {
       "RUNNING": "Çalışıyor",
       "COMPLETED": "Tamamlandı",
-      "FAILED": "Başarısız"
+      "FAILED": "Başarısız",
+      "API_KEY_MISSING": "API anahtarı yok"
     },
     "category": {
       "CRYPTO": "Kripto",
@@ -2245,8 +2813,22 @@
     "noSearchResults": "Aramayla eşleşen haber bulunamadı.",
     "emptyCategory": "Bu kategoride henüz haber bulunmuyor.",
     "readMore": "Devamını Oku",
+    "tags": {
+      "more": "+{{count}} daha",
+      "less": "daha az"
+    },
+    "mentionedAssets": "Bahsedilen varlıklar",
+    "filterByAsset": "Varlığa göre filtrele",
+    "assetSearch": "Varlık ara…",
+    "clearFilter": "Temizle",
+    "assetsSelected": "{{count}} seçili",
+    "filteredByAsset": "{{code}} ile ilgili haberler",
     "empty": "Haber yok",
     "refreshHint": "Haberler periyodik olarak güncellenir.",
+    "related": {
+      "title": "İlgili Haberler",
+      "viewAll": "Tümünü gör"
+    },
     "categories": {
       "ALL": "Tümü",
       "CRYPTO": "Kripto",
@@ -2270,8 +2852,7 @@
     "sendCode": "Mevcut adrese kod gönder",
     "sending": "gönderiliyor…",
     "codeArrow": "Kod →",
-    "sendHintBefore": "6 haneli kod",
-    "sendHintAfter": "adresine gönderilir; aşağıda kodu girince yeni adres aktive olur.",
+    "sendHint": "6 haneli onay kodu girdiğin yeni adrese gönderilir; aşağıda kodu girince yeni adres aktive olur.",
     "awaitingConfirmation": "Onay Bekleniyor",
     "expiresPrefix": "Geçerlilik",
     "expiresSuffix": "'a kadar",
@@ -2343,6 +2924,11 @@
     }
   },
   "analytics": {
+    "compare": {
+      "rangeCustom": "Özel",
+      "startDate": "Başlangıç",
+      "endDate": "Bitiş"
+    },
     "amount": "Tutar",
     "amountHint": "Ayarlardan görüntü para birimini değiştirebilirsin",
     "tabCompare": "Karşılaştır",
@@ -2393,6 +2979,7 @@
     "normalizedHintCompareIndex": "Makro seriler — başlangıçta 100'e endekslendi",
     "mixedCurrencyHint": "Farklı para birimlerindeki seriler {{currency}} bazında karşılaştırılıyor — para birimini değiştirebilirsin",
     "inflationFrameHint": "Enflasyon TRY endeksi — seriler TRY bazında karşılaştırılıyor",
+    "macroUnitLoadError": "Makro indikatör bilgisi yüklenemedi — bu oran serisi güvenli şekilde gizlendi; sayfayı yenileyip tekrar dene",
     "compareLevel": "Seviye",
     "compareCumulative": "Kümülatif",
     "compareAnnual": "Yıllık",
@@ -2453,6 +3040,14 @@
     "compareInfo": {
       "forwardFilledTooltip": "Son veri noktasından bugüne uzatıldı",
       "backfilledTooltip": "Aralık başına son bilinen değerle uzatıldı"
+    },
+    "compareVerdict": {
+      "gain": "Getirin",
+      "real": "Reel sonuç",
+      "best": "En iyi",
+      "worst": "En kötü",
+      "inflationSub": "Alım gücü eşiği",
+      "since": "Bu dönem · {{date}}'ten bugüne"
     },
     "returnsInCurrency": "Getiriler {{currency}} cinsinden",
     "simulationRunning": "Simülasyon hesaplanıyor...",
@@ -2555,6 +3150,100 @@
       "errorTitle": "Rapor oluşturulamadı",
       "footer": "Bu rapor Finance Portal tarafından otomatik olarak üretilmiştir. Değerler oluşturma anındaki anlık verileri yansıtır ve yatırım tavsiyesi içermez.",
       "page": "Sayfa {{page}} / {{total}}"
+    }
+  },
+  "deposits": {
+    "title": "Mevduat",
+    "addAction": "Mevduat Ekle",
+    "empty": "Henüz mevduat yok",
+    "emptyHint": "Vadeli mevduatını ekleyerek getiriyi takip et",
+    "fixedRate": "Sabit",
+    "term": {
+      "progress": "Vade ilerlemesi",
+      "daysLeft": "{{count}} gün kaldı",
+      "daysLeft_other": "{{count}} gün kaldı",
+      "matured": "Vade doldu"
+    },
+    "interest": {
+      "gross": "Brüt faiz",
+      "stopaj": "Stopaj",
+      "net": "Net faiz",
+      "maturityValue": "Vade değeri"
+    },
+    "cols": {
+      "deposit": "Mevduat",
+      "rate": "Oran",
+      "status": "Durum",
+      "start": "Başlangıç",
+      "maturity": "Vade",
+      "closed": "Kapanış",
+      "value": "Değer",
+      "pnl": "K/Z",
+      "actions": "İşlem"
+    },
+    "fields": {
+      "currency": "Para Birimi",
+      "principal": "Anapara",
+      "annualRate": "Yıllık Oran (%)",
+      "indicatorCode": "Gösterge Kodu",
+      "indicatorPlaceholder": "örn. TLREF",
+      "depositType": "Mevduat Türü",
+      "depositTypeCustom": "Özel oran",
+      "depositTypeNoRates": "Güncel mevduat oranı yok",
+      "rateOnDate": "{{date}} oranı: %{{rate}}",
+      "withholding": "Stopaj (%)",
+      "withholdingHint": "vadeye göre değişir",
+      "optional": "opsiyonel",
+      "startDate": "Başlangıç Tarihi",
+      "maturityDate": "Vade Tarihi",
+      "closedDate": "Kapanış Tarihi",
+      "currentValue": "Güncel Değer",
+      "pnl": "K/Z"
+    },
+    "form": {
+      "titleAdd": "Mevduat Ekle",
+      "titleEdit": "Mevduatı Düzenle",
+      "subtitle": "Vadeli mevduat bilgilerini gir",
+      "continue": "Devam Et",
+      "confirm": {
+        "heading": "Mevduatı onayla",
+        "sub": "Bilgileri kontrol et ve kaydet"
+      },
+      "success": {
+        "titleAdd": "Mevduat eklendi",
+        "titleEdit": "Mevduat güncellendi",
+        "subtitle": "Portföyün güncellendi"
+      }
+    },
+    "actions": {
+      "close": "Kapat",
+      "reopen": "Yeniden Aç"
+    },
+    "closeDialog": {
+      "title": "Mevduatı kapat?",
+      "hint": "Mevduatı vadesinden önce kapatabilirsin. Kapanış tarihine kadar olan getiri hesaplanır.",
+      "dateLabel": "Kapanış Tarihi",
+      "confirm": "Kapat"
+    },
+    "deleteDialog": {
+      "title": "Mevduatı sil?",
+      "message": "Bu mevduat kalıcı olarak silinecek. Bu işlem geri alınamaz."
+    },
+    "errors": {
+      "principalInvalid": "Geçerli bir anapara gir",
+      "currencyRequired": "Para birimi seç",
+      "rateInvalid": "Geçerli bir oran gir",
+      "withholdingInvalid": "Stopaj %0 ile %100 arasında olmalı",
+      "startRequired": "Başlangıç tarihi gir",
+      "startTooOld": "Başlangıç tarihi 2000'den eski olamaz",
+      "maturityRequired": "Vade tarihi gir",
+      "maturityAfterStart": "Vade tarihi başlangıçtan sonra olmalı",
+      "maturityTooFar": "Vade en fazla başlangıçtan 30 yıl sonra olabilir",
+      "addFailed": "Mevduat eklenemedi",
+      "updateFailed": "Mevduat güncellenemedi",
+      "closeFailed": "Mevduat kapatılamadı",
+      "deleteFailed": "Mevduat silinemedi",
+      "reopenFailed": "Mevduat yeniden açılamadı"
     }
   }
 }

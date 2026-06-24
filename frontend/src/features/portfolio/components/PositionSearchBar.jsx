@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PlusCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -15,11 +15,12 @@ function ViopAddFromSearch({ asset, onClose }) {
     queryFn: () => viopService.getByCode(asset.code),
     staleTime: 30_000,
   });
-  if (isLoading) return null;
-  if (isError || !viop || viop.price == null) {
-    onClose();
-    return null;
-  }
+  // Close from an effect, not during render, so the parent's setState isn't invoked while this child renders.
+  const missing = !isLoading && (isError || !viop || viop.price == null);
+  useEffect(() => {
+    if (missing) onClose();
+  }, [missing, onClose]);
+  if (isLoading || missing) return null;
   return (
     <MarketOpenDerivativeModal
       assetCode={viop.code || asset.code}

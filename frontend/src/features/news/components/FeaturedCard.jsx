@@ -6,6 +6,7 @@ import { Calendar, ChevronRight } from 'lucide-react';
 import { formatDateTimeShort } from '../../../shared/utils/formatters';
 import { CategoryBadge } from '../lib/newsConfig.jsx';
 import { getFallbackImage } from '../lib/newsConfig';
+import AssetMentionTags from './AssetMentionTags';
 import Card from '../../../shared/components/card';
 
 const cardVariants = {
@@ -57,7 +58,7 @@ export default function FeaturedCard({ article, index }) {
 
                 <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 min-w-0">
                     <div className="mb-2">
-                        <CategoryBadge category={article.category} />
+                        <CategoryBadge category={article.category} overlay />
                     </div>
                     <h3 className="text-fg text-base sm:text-lg font-bold leading-snug line-clamp-2 break-words group-hover:text-accent-bright transition-colors duration-150 drop-shadow-lg">
                         {article.title}
@@ -75,6 +76,11 @@ export default function FeaturedCard({ article, index }) {
                             {t('news.readMore')}
                         </span>
                     </div>
+                    {Array.isArray(article.assets) && article.assets.length > 0 && (
+                        <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                            <AssetMentionTags assets={article.assets} date={article.publishedAt} limit={4} />
+                        </div>
+                    )}
                 </div>
             </div>
         </Card>

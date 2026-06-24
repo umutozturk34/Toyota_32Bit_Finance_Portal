@@ -63,8 +63,10 @@ class NewsCategoryResolverTest {
 
     @Test
     void scoreBasedResolutionWithoutDefaultCategoryRequiresMinScore2() {
+        // A single keyword in the BODY (neutral title) stays below the min score → uncategorized. (A keyword in the
+        // TITLE is stronger evidence and is allowed to categorize — see titleKeywordsOutweighBodyKeywords.)
         NewsCategory result = NewsCategoryResolver.resolve(null,
-                "Piyasalarda emtia sektöründe gelişmeler", null);
+                "Piyasalarda günün gelişmeleri", "Tek bir emtia anlamında değiniliyor");
 
         assertThat(result).isNull();
     }
@@ -129,6 +131,49 @@ class NewsCategoryResolverTest {
     void emtiaKeywordsResolveCorrectly() {
         NewsCategory result = NewsCategoryResolver.resolve(null,
                 "Gram altın fiyatları ve spot altın ons altın rekor", null);
+
+        assertThat(result).isEqualTo(NewsCategory.EMTIA);
+    }
+
+    @Test
+    void corporateFilingClassifiedAsBorsaSirketleri() {
+        // Company-specific filings (title/trade-name change, capital increase, SPK application) are company news,
+        // not GENEL_FINANS — the corporate-filing signals now open the company-news gate and score it.
+        NewsCategory result = NewsCategoryResolver.resolve(null,
+                "Şirket SPK başvurusu yaptı",
+                "Ünvan değişikliği, sermaye artırımı ve SPK başvuru süreci tamamlandı");
+
+        assertThat(result).isEqualTo(NewsCategory.BORSA_SIRKETLERI);
+    }
+
+    @Test
+    void domesticBondNewsMentioningFedStillClassifiesAsBond() {
+        // A domestic Treasury-bond article that references the Fed only in passing must keep TAHVIL_BONO: a bare
+        // Fed mention is macro-policy context, not foreign-bond context, so it must not suppress the classification.
+        NewsCategory result = NewsCategoryResolver.resolve(null,
+                "Hazine tahvil ihalesinde gösterge faiz geriledi",
+                "Fed faiz kararı öncesi yurt içi tahvil faizleri düştü, gösterge tahvil getirisi indi");
+
+        assertThat(result).isEqualTo(NewsCategory.TAHVIL_BONO);
+    }
+
+    @Test
+    void domesticEurobondNewsMentioningFedStillClassifiesAsBond() {
+        // Eurobond/CDS recaps almost always reference the Fed; the article is still domestic bond news.
+        NewsCategory result = NewsCategoryResolver.resolve(null,
+                "Türkiye eurobond getirileri geriledi",
+                "Eurobond faizleri ve CDS primi Fed faiz beklentisiyle indi");
+
+        assertThat(result).isEqualTo(NewsCategory.TAHVIL_BONO);
+    }
+
+    @Test
+    void titleKeywordsOutweighBodyKeywords() {
+        // The headline is about oil (EMTIA); the body only mentions the stock market in passing. Title weighting
+        // makes the article's real topic win over the more-numerous body keywords (which would otherwise score higher).
+        NewsCategory result = NewsCategoryResolver.resolve(null,
+                "Brent petrol fiyatı varil başına sert yükseldi",
+                "Bu gelişme bist 100 endeks ve borsa istanbul seans işlemlerinde de konuşuldu");
 
         assertThat(result).isEqualTo(NewsCategory.EMTIA);
     }

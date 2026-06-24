@@ -15,15 +15,25 @@ public final class MarketProviderHelper {
     private MarketProviderHelper() {}
 
     /**
-     * Builds a sort from an API key (mapped through {@code fieldMapping}, falling back to the raw
-     * key); defaults to DESC and always sorts nulls last. Blank key yields unsorted.
+     * Builds a DETERMINISTIC sort. A blank {@code sortBy} falls back to the mapping's {@code "default"} field
+     * (or, absent that, the tiebreak field alone); an unmapped non-blank key passes through as a raw field.
+     * {@code tiebreakField} is ALWAYS appended as an ascending secondary key, so equal primary values — or a
+     * blank sort — never leave the row order to the database, which would otherwise return a different
+     * arbitrary order on each reload (the "cards shuffle on F5" bug). Primary direction defaults to DESC; nulls
+     * sort last.
      */
-    public static Sort buildSort(String sortBy, String direction, Map<String, String> fieldMapping) {
-        if (sortBy == null || sortBy.isBlank()) return Sort.unsorted();
-        String field = fieldMapping.getOrDefault(sortBy, sortBy);
+    public static Sort buildSort(String sortBy, String direction, Map<String, String> fieldMapping,
+                                 String tiebreakField) {
+        Sort.Order tiebreak = new Sort.Order(Sort.Direction.ASC, tiebreakField, Sort.NullHandling.NULLS_LAST);
+        boolean blank = sortBy == null || sortBy.isBlank();
+        String field = fieldMapping.get(blank ? "default" : sortBy);
+        if (field == null) {
+            if (blank) return Sort.by(tiebreak);
+            field = sortBy;
+        }
         Sort.Direction dir = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Sort.Order order = new Sort.Order(dir, field, Sort.NullHandling.NULLS_LAST);
-        return Sort.by(order);
+        Sort.Order primary = new Sort.Order(dir, field, Sort.NullHandling.NULLS_LAST);
+        return field.equals(tiebreakField) ? Sort.by(primary) : Sort.by(primary, tiebreak);
     }
 
     /** Replaces each response's name with its curated display name when one is mapped for the code. */

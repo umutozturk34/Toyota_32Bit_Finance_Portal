@@ -16,6 +16,7 @@ public class NewsSourceRefreshService {
 
     private final NewsSourceProcessingService newsSourceProcessingService;
 
+    /** Ingests the source on the {@code taskExecutor} pool; failures are logged and swallowed, never propagated to the caller. */
     @Async("taskExecutor")
     public void processSourceAsync(NewsSource source) {
         try {

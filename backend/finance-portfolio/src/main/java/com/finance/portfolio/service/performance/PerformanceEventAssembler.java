@@ -55,6 +55,7 @@ public class PerformanceEventAssembler {
         return List.of();
     }
 
+    /** Markers for an already-detected window: add events carry entry value/notional, sell events the exit proceeds. */
     public List<PerformanceEvent> tradeEvents(TradeWindow trades) {
         List<PerformanceEvent> events = new ArrayList<>();
         trades.spotAdded().forEach(p -> events.add(spotEvent(p, PerformanceEventType.POSITION_ADDED, p.entryValue())));
@@ -66,6 +67,7 @@ public class PerformanceEventAssembler {
         return events;
     }
 
+    /** Trades whose entry/exit date lands in {@code (prevTime, currentTime]}, bucketed for a caller that builds its own markers. */
     public TradeWindow detectTrades(List<PortfolioPosition> positions,
                                      List<DerivativePosition> derivatives,
                                      LocalDateTime prevTime, LocalDateTime currentTime) {

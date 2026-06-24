@@ -41,14 +41,30 @@ public class MarketSessionScheduler {
     public void scanTransitions() {
         Instant now = clock.instant();
         for (SessionMarket market : SessionMarket.values()) {
-            Optional<MarketSession> currentOpt = resolver.resolve(market, now);
-            if (currentOpt.isEmpty()) continue;
-            MarketSession current = currentOpt.get();
-            Optional<MarketSession> previous = tracker.previous(market);
-            tracker.update(market, current);
-            if (previous.isEmpty() || previous.get() == current) continue;
-            dispatchTransition(market, current);
+            // Isolate each market: a failure for one must not abort the remaining scans.
+            try {
+                scanMarket(market, now);
+            } catch (RuntimeException ex) {
+                log.warn("Market session scan failed market={}: {}", market, ex.getMessage());
+            }
         }
+    }
+
+    private void scanMarket(SessionMarket market, Instant now) {
+        Optional<MarketSession> currentOpt = resolver.resolve(market, now);
+        if (currentOpt.isEmpty()) return;
+        MarketSession current = currentOpt.get();
+        Optional<MarketSession> previous = tracker.previous(market);
+        if (previous.isEmpty()) {
+            // First observation seeds the tracker without notifying.
+            tracker.update(market, current);
+            return;
+        }
+        if (previous.get() == current) return;
+        // Dispatch first; only advance the tracker after a successful fanout so a transient
+        // dispatch failure leaves the edge intact for the next scan instead of dropping it.
+        dispatchTransition(market, current);
+        tracker.update(market, current);
     }
 
     private void dispatchTransition(SessionMarket market, MarketSession current) {

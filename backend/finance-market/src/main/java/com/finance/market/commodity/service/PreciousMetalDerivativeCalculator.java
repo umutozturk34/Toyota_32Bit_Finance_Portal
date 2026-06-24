@@ -88,10 +88,12 @@ public class PreciousMetalDerivativeCalculator {
                 .forEach(rule -> applyRule(rule, source, usdTryForPrevious));
     }
 
+    /** Rebuilds the candle series of every configured derivative from its source's candles. */
     public void refreshDerivativeCandles() {
         rules.forEach(this::refreshCandlesFromRule);
     }
 
+    /** Rebuilds only the candle series of derivatives driven by {@code sourceCode} (after that source refreshes). */
     public void refreshDerivativeCandlesForSource(String sourceCode) {
         rules.stream()
                 .filter(rule -> rule.getSourceCode().equals(sourceCode))

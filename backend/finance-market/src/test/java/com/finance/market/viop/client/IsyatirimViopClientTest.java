@@ -312,4 +312,19 @@ class IsyatirimViopClientTest {
         assertThat(points).hasSize(1);
         assertThat(points.get(0).close()).isEqualByComparingTo("35.25");
     }
+
+    @Test
+    void should_skipNullElementEntry_when_chartResponseHasNullCells() {
+        // Arrange: İş Yatırım emits [null, x] / [x, null] rows on missing candles.
+        String body = "{\"data\":[[null,35.15],[1714665600000,null],[1714665600000,35.25]]}";
+        IsyatirimViopClient client = build(client(respond(body, MediaType.APPLICATION_JSON)));
+
+        // Act
+        List<ViopHistoryPoint> points = client.fetchHistory("F_X", ViopHistoryResolution.DAILY,
+                Instant.now().minusSeconds(86400), Instant.now());
+
+        // Assert
+        assertThat(points).hasSize(1);
+        assertThat(points.get(0).close()).isEqualByComparingTo("35.25");
+    }
 }

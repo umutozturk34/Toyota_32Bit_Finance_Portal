@@ -4,8 +4,11 @@ export const BOND_TYPE_COLORS = {
     FLOATING_TLREF: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
     FLOATING_CPI: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
     FLOATING_AUCTION: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    GOLD: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
     SUKUK_FIXED: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+    SUKUK_FLOATING: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
     SUKUK_CPI: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+    SUKUK_GOLD: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
 };
 
 export const CHART_LINE_COLORS = {

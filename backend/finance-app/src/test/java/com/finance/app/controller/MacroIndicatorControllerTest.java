@@ -122,7 +122,7 @@ class MacroIndicatorControllerTest {
         List<MacroIndicatorPoint> points = List.of(point);
         List<MacroIndicatorPointResponse> pointResponses =
                 List.of(new MacroIndicatorPointResponse(LocalDate.now(), new BigDecimal("1.23")));
-        when(queryService.findByCode("CPI")).thenReturn(indicator);
+        when(queryService.findByPublicId("CPI")).thenReturn(indicator);
         when(queryService.history(indicator, from, to)).thenReturn(points);
         when(assembler.toPointResponses(points)).thenReturn(pointResponses);
 
@@ -137,7 +137,7 @@ class MacroIndicatorControllerTest {
     void shouldDefaultToFromMinus5Years_whenFromIsNull() {
         LocalDate to = LocalDate.of(2024, 12, 31);
         LocalDate expectedFrom = to.minusYears(5);
-        when(queryService.findByCode("CPI")).thenReturn(indicator);
+        when(queryService.findByPublicId("CPI")).thenReturn(indicator);
         when(queryService.history(indicator, expectedFrom, to)).thenReturn(List.of());
         when(assembler.toPointResponses(List.of())).thenReturn(List.of());
 
@@ -149,7 +149,7 @@ class MacroIndicatorControllerTest {
     @Test
     void shouldDefaultToToToday_whenToIsNull() {
         LocalDate from = LocalDate.of(2020, 1, 1);
-        when(queryService.findByCode("CPI")).thenReturn(indicator);
+        when(queryService.findByPublicId("CPI")).thenReturn(indicator);
         when(queryService.history(org.mockito.ArgumentMatchers.eq(indicator),
                 org.mockito.ArgumentMatchers.eq(from),
                 org.mockito.ArgumentMatchers.any(LocalDate.class)))
@@ -166,7 +166,7 @@ class MacroIndicatorControllerTest {
 
     @Test
     void shouldDefaultBothBounds_whenBothNull() {
-        when(queryService.findByCode("CPI")).thenReturn(indicator);
+        when(queryService.findByPublicId("CPI")).thenReturn(indicator);
         when(queryService.history(org.mockito.ArgumentMatchers.eq(indicator),
                 org.mockito.ArgumentMatchers.any(LocalDate.class),
                 org.mockito.ArgumentMatchers.any(LocalDate.class)))

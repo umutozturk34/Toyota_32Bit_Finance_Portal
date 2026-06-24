@@ -39,6 +39,10 @@ public class MacroIndicatorController {
     private final Translator translator;
     private final MacroProperties macroProperties;
 
+    /**
+     * Lists macro indicators; narrowed to a single {@code category}, or to the prominent set when
+     * {@code prominentOnly} is true (which takes precedence over {@code category}).
+     */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<MacroIndicatorResponse>> list(
@@ -49,13 +53,17 @@ public class MacroIndicatorController {
                 assembler.toResponses(indicators));
     }
 
+    /**
+     * Returns the point history for the indicator identified by {@code code}. An omitted {@code to}
+     * defaults to today, and an omitted {@code from} to the configured trailing-years window before it.
+     */
     @GetMapping("/{code}/history")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<MacroIndicatorPointResponse>> history(
-            @PathVariable @Size(max = 32) String code,
+            @PathVariable @Size(max = 64) String code,
             @RequestParam(required = false) LocalDate from,
             @RequestParam(required = false) LocalDate to) {
-        MacroIndicator indicator = queryService.findByCode(code);
+        MacroIndicator indicator = queryService.findByPublicId(code);
         LocalDate effectiveTo = to == null ? LocalDate.now() : to;
         LocalDate effectiveFrom = from == null
                 ? effectiveTo.minusYears(macroProperties.defaultHistoryYears()) : from;

@@ -14,6 +14,7 @@ import {
 import { usePositionCloseForm, formatDateLabel, todayIso } from '../hooks/usePositionCloseForm';
 import { resolveNativeCurrency } from '../lib/positionFormHelpers';
 import { sanitizeNumberInput, MAX_MONEY, LOT_DECIMALS, PRICE_DECIMALS } from '../../../shared/utils/numberInput';
+import { visibleDecimals } from '../../../shared/utils/formatters';
 
 export default function CloseDerivativePositionDialog({ portfolioId, position, onClose }) {
   const entryDateIso = position?.entryDate ? String(position.entryDate).slice(0, 10) : null;
@@ -326,7 +327,7 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
           />
           {priceDelta != null && (
             <p className={`text-[10px] font-mono ${priceDelta >= 0 ? 'text-success' : 'text-danger'}`}>
-              {priceDelta >= 0 ? '▲' : '▼'} {Math.abs(priceDelta).toFixed(2)}% {t('portfolio.sell.vsEntry', { defaultValue: 'giriş fiyatına göre' })}
+              {priceDelta >= 0 ? '▲' : '▼'} {Math.abs(priceDelta).toFixed(visibleDecimals(Math.abs(priceDelta), 2))}% {t('portfolio.sell.vsEntry', { defaultValue: 'giriş fiyatına göre' })}
             </p>
           )}
         </div>
@@ -346,7 +347,7 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
               </div>
               {realizedPnlPercent != null && (
                 <div className={`font-mono text-[10px] ${realizedPnl >= 0 ? 'text-emerald-400/80' : 'text-rose-400/80'}`}>
-                  {realizedPnl >= 0 ? '+' : ''}{realizedPnlPercent.toFixed(2)}%
+                  {realizedPnl >= 0 ? '+' : ''}{realizedPnlPercent.toFixed(visibleDecimals(realizedPnlPercent, 2))}%
                 </div>
               )}
             </div>

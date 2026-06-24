@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import IconButton from '../buttons/IconButton';
+import useOverlayDismiss from '../../hooks/useOverlayDismiss';
 import useMediaQuery from '../../hooks/useMediaQuery';
 
 const cx = (...parts) => parts.filter(Boolean).join(' ');
@@ -34,6 +35,7 @@ export default function SideDrawer({
   const sideConfig = SIDES[side] ?? SIDES.right;
   const isMobile = useMediaQuery('(max-width: 639px)');
   const resolvedWidth = isMobile ? '100dvw' : width;
+  useOverlayDismiss(open, onClose);
   return (
     <AnimatePresence>
       {open && (
@@ -43,7 +45,7 @@ export default function SideDrawer({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
-            className="fixed inset-0 z-[55] bg-black/40"
+            className="fixed inset-0 z-[55] modal-overlay"
             onClick={onClose}
           />
           <motion.aside

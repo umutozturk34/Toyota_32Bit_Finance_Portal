@@ -28,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -101,6 +100,10 @@ public class PortfolioSummaryService {
                 .toList();
     }
 
+    /**
+     * Position rows filtered (status/type/search), sorted, then paged in memory — filtering precedes
+     * pagination so a {@code closed} or {@code assetType} match on a later page is never dropped.
+     */
     @Transactional(readOnly = true)
     public PagedResponse<PositionResponse> getPositionsPaged(Long portfolioId, String search,
                                                                String assetType, String sortBy, String direction,
@@ -147,6 +150,12 @@ public class PortfolioSummaryService {
         return r.exitDate() != null;
     }
 
+    /**
+     * Headline figures in TRY, optionally scoped to one asset type. A null/blank type covers the whole
+     * portfolio and folds open-derivative notional+PnL into the totals; a {@code VIOP} filter reports
+     * derivatives only; any other type reports spot for that type alone. Real (inflation-adjusted) return
+     * excludes VIOP, while the per-currency frames span both.
+     */
     @Transactional(readOnly = true)
     public PortfolioSummaryResponse getSummary(Long portfolioId, String assetType) {
         List<PortfolioPosition> positions = positionRowBuilder.filterByType(
@@ -381,6 +390,7 @@ public class PortfolioSummaryService {
                 currentPrice, openEntryValue, openMarketValue, totalPnl, pnlPercent, frames);
     }
 
+    /** Allocation slices for the portfolio; {@code mode} selects the breakdown (asset-type vs realized-P/L) and {@code limit} caps the slices. */
     @Transactional(readOnly = true)
     public List<AllocationItem> getAllocation(Long portfolioId, String mode, String assetTypeFilter, Integer limit) {
         return allocationCalculator.compute(portfolioId, mode, assetTypeFilter, limit);

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { SPRING } from '../../utils/animations';
 
 export default function FilterTabs({ items, activeId, onSelect, allLabel, allCount, showAll = true, layoutId = 'filter-tab' }) {
   const { t } = useTranslation();
@@ -23,7 +24,7 @@ export default function FilterTabs({ items, activeId, onSelect, allLabel, allCou
                 layoutId={layoutId}
                 className="absolute inset-0 rounded-xl bg-accent/12 shadow-sm shadow-accent/10"
                 style={{ borderRadius: 12 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                transition={SPRING.tab}
               />
             )}
             <span className="relative z-10 flex items-center gap-1.5">

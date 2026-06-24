@@ -49,9 +49,13 @@ public class NotificationStreamRegistry {
     /** Opens a new emitter for the user, wires its lifecycle callbacks and sends an init event. */
     public SseEmitter register(String userSub) {
         SseEmitter emitter = new SseEmitter(streamProperties.emitterTimeoutMs());
-        CopyOnWriteArrayList<SseEmitter> list = emitters.asMap()
-                .computeIfAbsent(userSub, k -> new CopyOnWriteArrayList<>());
-        list.add(emitter);
+        // Single atomic remap closes the eviction TOCTOU: a concurrent evict can't drop the list
+        // between a computeIfAbsent and a separate add, since add happens inside the remap.
+        emitters.asMap().compute(userSub, (k, existing) -> {
+            CopyOnWriteArrayList<SseEmitter> l = existing != null ? existing : new CopyOnWriteArrayList<>();
+            l.add(emitter);
+            return l;
+        });
         emitter.onCompletion(() -> drop(userSub, emitter));
         emitter.onTimeout(() -> drop(userSub, emitter));
         emitter.onError(t -> drop(userSub, emitter));

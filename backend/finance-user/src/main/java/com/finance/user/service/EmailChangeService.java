@@ -111,11 +111,13 @@ public class EmailChangeService {
         log.info("Email change confirmed user={}", userSub);
     }
 
+    /** Discards any pending change for the user; a no-op when none is outstanding. */
     @Transactional
     public void cancel(String userSub) {
         repository.findById(userSub).ifPresent(repository::delete);
     }
 
+    /** The user's outstanding change (target address and expiry), or empty when none is pending. */
     public Optional<PendingState> currentPending(String userSub) {
         return repository.findById(userSub).map(r -> new PendingState(r.getNewEmail(), r.getExpiresAt()));
     }

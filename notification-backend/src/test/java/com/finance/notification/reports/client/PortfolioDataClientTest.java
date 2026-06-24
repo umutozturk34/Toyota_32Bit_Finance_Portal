@@ -1,10 +1,8 @@
 package com.finance.notification.reports.client;
 
-import com.finance.common.dto.response.PagedResponse;
 import com.finance.notification.reports.dto.PerformanceSeriesPoint;
 import com.finance.notification.reports.dto.PortfolioReportBundle;
 import com.finance.notification.reports.dto.ReportAllocation;
-import com.finance.notification.reports.dto.ReportPosition;
 import com.finance.notification.reports.dto.ReportSummary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -5,7 +5,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../features/auth/useAuth';
 import { getChangeClass } from '../../utils/formatters';
 import { containerVariants } from '../../utils/animations';
-import LoadingState from '../feedback/LoadingState';
+import { Skeleton } from '../feedback/Skeleton';
 import ErrorState from '../feedback/ErrorState';
 import EmptyState from '../feedback/EmptyState';
 import PageHeader from '../layout/PageHeader';
@@ -17,6 +17,36 @@ import MarketAddPositionModal from '../../../features/portfolio/components/Marke
 import FilterTabs from '../form/FilterTabs';
 import { toast } from '../feedback/toastBus';
 import useMarketListData from '../../hooks/useMarketListData';
+
+// A placeholder that mirrors a real asset card's structure and OUTER dimensions (the size="sm" AssetCard: rounded
+// border + md padding), so the loading grid reads as the same cards materialising — not an oversized "showcase"
+// behind the real ones. A page with a differently-shaped card can pass its own via renderCardSkeleton.
+function DefaultCardSkeleton() {
+  return (
+    <div className="rounded-xl border border-border-default bg-bg-elevated/50 p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <Skeleton w="45%" h="0.85rem" />
+          <Skeleton w="80%" h="0.6rem" />
+        </div>
+        <Skeleton w="2.75rem" h="1.1rem" className="rounded-md" />
+      </div>
+      <div className="mt-3 space-y-1.5">
+        <Skeleton w="52%" h="1.3rem" className="rounded-md" />
+        <Skeleton w="36%" h="0.75rem" />
+      </div>
+      <div className="mt-3 space-y-2 border-t border-border-default pt-3">
+        {[0, 1, 2].map((j) => (
+          <div key={j} className="flex items-center justify-between">
+            <Skeleton w="30%" h="0.65rem" />
+            <Skeleton w="22%" h="0.65rem" />
+          </div>
+        ))}
+      </div>
+      <div className="mt-3"><Skeleton w="58%" h="0.6rem" /></div>
+    </div>
+  );
+}
 
 export default function MarketListPage({
   title,
@@ -33,7 +63,7 @@ export default function MarketListPage({
   filterConfig,
   adminTriggers,
   renderCard,
-  loadingMessage,
+  renderCardSkeleton,
   errorMessage,
   emptyMessage,
   emptyHint,
@@ -83,16 +113,18 @@ export default function MarketListPage({
     handler: () => handleTrigger(t.key, t.fn, t.successMsg, t.refetchDelay),
   }));
 
-  if (isLoading && items.length === 0) return <LoadingState message={loadingMessage} />;
-  if (error) return <ErrorState message={errorMessage} onRetry={refetch} />;
+  if (error && items.length === 0) return <ErrorState message={errorMessage} onRetry={refetch} />;
 
   const cardRenderer = (asset) => renderCard(asset, {
     cls: getChangeClass(asset.changePercent),
     setBuyTarget,
   });
 
+  // Keyed on the full query identity so the grid re-staggers on every sort/filter/page/search change (not just
+  // first mount) — a re-sort lands as one beat instead of hard-swapping the cards.
+  const gridKey = JSON.stringify(effectiveQueryParams);
   const grid = (
-    <motion.div variants={containerVariants(0.06)} initial="hidden" animate="show" className={gridClass}>
+    <motion.div key={gridKey} variants={containerVariants(0.06)} initial="hidden" animate="show" className={gridClass}>
       {items.map(cardRenderer)}
     </motion.div>
   );
@@ -150,6 +182,14 @@ export default function MarketListPage({
       </div>
 
       {preGridChildren}
+
+      {isLoading && items.length === 0 && (
+        <div className={gridClass} aria-hidden="true">
+          {Array.from({ length: 12 }).map((_, i) => (
+            renderCardSkeleton ? <div key={i}>{renderCardSkeleton()}</div> : <DefaultCardSkeleton key={i} />
+          ))}
+        </div>
+      )}
 
       {items.length > 0 && (animatePresence ? <AnimatePresence>{grid}</AnimatePresence> : grid)}
 

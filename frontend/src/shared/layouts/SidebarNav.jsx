@@ -338,7 +338,7 @@ function SidebarNav({ structure, t, collapsed, isMobile, isActive, expandedGroup
 
   return (
     <LayoutGroup id={navId}>
-      <nav className="flex-1 overflow-y-auto overflow-x-visible px-2 py-2 scrollbar-auto-hide">
+      <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-visible px-2 py-2 scrollbar-auto-hide">
       {renderable.map((node) => {
         if (node.kind === 'divider') {
           return <SectionDivider key={node.key} />;

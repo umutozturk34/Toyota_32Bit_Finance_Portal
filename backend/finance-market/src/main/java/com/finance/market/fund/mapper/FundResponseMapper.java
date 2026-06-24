@@ -89,6 +89,8 @@ public abstract class FundResponseMapper implements MarketMetadataBuilder<Fund, 
                 fund.getReturnYtd(),
                 fund.getReturn3y(),
                 fund.getReturn5y(),
+                fund.getIsinCode(),
+                fund.getKapLink(),
                 allocations
         );
     }

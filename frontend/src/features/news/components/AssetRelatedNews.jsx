@@ -50,7 +50,7 @@ function RelatedNewsCard({ article, mentions, codeTerm, onOpen }) {
         <div className="absolute inset-0 bg-gradient-to-t from-bg-elevated/85 via-transparent to-transparent" />
         <div className="absolute bottom-2 left-2.5 max-w-[calc(100%-1.25rem)]">
           {mentions ? (
-            <span className="inline-flex items-center rounded-md border border-accent/40 bg-black/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-bright shadow-sm backdrop-blur-sm truncate">
+            <span className="inline-flex items-center rounded-md border border-accent/60 bg-black/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm truncate">
               {bareCode(codeTerm)}
             </span>
           ) : (

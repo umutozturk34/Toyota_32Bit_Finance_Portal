@@ -185,6 +185,32 @@ class AssetReturnsServiceTest {
     }
 
     @Test
+    void shouldAnnualizeCryptoVolatilityOn365_whileStockUses252() {
+        // Arrange — one identical varying TRY series feeds a STOCK and a CRYPTO. Volatility is the daily-return
+        // std × √(trading days/year); crypto trades 7/24 (365) vs the stock's exchange calendar (252), so the
+        // SAME price path must read √(365/252) ≈ 1.2× more volatile for the crypto.
+        LocalDate today = LocalDate.now();
+        List<HistoryPoint> series = List.of(
+                point(today.minusDays(20), "100"),
+                point(today.minusDays(15), "110"),
+                point(today.minusDays(10), "104"),
+                point(today.minusDays(5), "118"),
+                point(today, "112"));
+        wireStock("AAA", series);
+        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.CRYPTO)).thenReturn(List.of("BTC"));
+        when(trackedAssetQueryService.getDisplayNameMap(TrackedAssetType.CRYPTO)).thenReturn(Map.of("BTC", "BTC"));
+
+        // Act
+        AssetReturnsResponse response = service.getReturns();
+        BigDecimal stockVol = periodOf(response, "AAA", "1M").volatility();
+        BigDecimal cryptoVol = periodOf(response, "BTC", "1M").volatility();
+
+        // Assert — identical daily-return std, only the annualization factor differs: crypto/stock == √(365/252).
+        assertThat(cryptoVol.doubleValue() / stockVol.doubleValue())
+                .isCloseTo(Math.sqrt(365.0 / 252.0), within(0.01));
+    }
+
+    @Test
     void shouldExposeFxFiguresAsSeparateRanking_whenRatesAvailable() {
         // Arrange — a stock that DOUBLES in TRY over 1Y, but whose USD value is flat (the lira halved against
         // the dollar over the same span): TRY ranking reads +100%, USD ranking ~0% — proof each currency is its

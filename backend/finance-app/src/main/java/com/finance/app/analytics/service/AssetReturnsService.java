@@ -65,7 +65,12 @@ public class AssetReturnsService {
     // 0 in the response; the frontend trims trailing precision per magnitude for display.
     private static final int PRICE_SCALE = 6;
     private static final int PCT_SCALE = 2;
+    // Annualization factor for volatility is √(trading days per year). Most spot assets follow the ~252-day
+    // exchange calendar; crypto trades every calendar day (7/24), so its daily-return series is annualized on
+    // 365 instead (see tradingDaysPerYear) — using 252 for a 7/24 asset understates its volatility by
+    // √(365/252) ≈ 1.2× and can read it a risk band too low.
     private static final int TRADING_DAYS_PER_YEAR = 252;
+    private static final int CRYPTO_DAYS_PER_YEAR = 365;
     private static final int MIN_POINTS_FOR_VOLATILITY = 4;
     // ±30-day tolerance for "does the asset's history cover this window" — mirrors the beater. A window whose
     // start the data doesn't reach within this many days is dropped, not ranked on a shorter span.
@@ -152,9 +157,10 @@ public class AssetReturnsService {
             for (Currency ccy : FX_CURRENCIES) {
                 fxSeries.put(ccy, convertSeriesTo(series, ccy));
             }
+            int annualizationDays = tradingDaysPerYear(asset.type());
             Map<String, PeriodReturn> periods = new LinkedHashMap<>();
             for (ReturnPeriod period : ReturnPeriod.values()) {
-                PeriodReturn pr = computePeriod(series, fxSeries, period, today);
+                PeriodReturn pr = computePeriod(series, fxSeries, period, today, annualizationDays);
                 if (pr != null) {
                     periods.put(period.token(), pr);
                 }
@@ -185,22 +191,23 @@ public class AssetReturnsService {
      */
     private PeriodReturn computePeriod(List<HistoryPoint> trySeries,
                                        Map<Currency, List<HistoryPoint>> fxSeries,
-                                       ReturnPeriod period, LocalDate end) {
-        Figures tryFigures = figuresFor(trySeries, period, end);
+                                       ReturnPeriod period, LocalDate end, int annualizationDays) {
+        Figures tryFigures = figuresFor(trySeries, period, end, annualizationDays);
         if (tryFigures == null) {
             return null;
         }
         return new PeriodReturn(
                 tryFigures.returnPct(), tryFigures.returnValue(), tryFigures.priceThen(),
                 tryFigures.priceNow(), tryFigures.volatility(), tryFigures.riskLevel(),
-                currencyFigures(fxSeries.get(Currency.USD), period, end),
-                currencyFigures(fxSeries.get(Currency.EUR), period, end));
+                currencyFigures(fxSeries.get(Currency.USD), period, end, annualizationDays),
+                currencyFigures(fxSeries.get(Currency.EUR), period, end, annualizationDays));
     }
 
     /** {@link PeriodReturn.CurrencyFigures} for one FX-converted series, or null when it can't form the pair. */
     private static PeriodReturn.CurrencyFigures currencyFigures(List<HistoryPoint> series,
-                                                                ReturnPeriod period, LocalDate end) {
-        Figures f = figuresFor(series, period, end);
+                                                                ReturnPeriod period, LocalDate end,
+                                                                int annualizationDays) {
+        Figures f = figuresFor(series, period, end, annualizationDays);
         if (f == null) {
             return null;
         }
@@ -242,7 +249,8 @@ public class AssetReturnsService {
      * or the series doesn't reach the window start within the ±30-day tolerance. Currency-agnostic: the same
      * math runs over the TRY series and over each FX-converted series.
      */
-    private static Figures figuresFor(List<HistoryPoint> series, ReturnPeriod period, LocalDate notAfter) {
+    private static Figures figuresFor(List<HistoryPoint> series, ReturnPeriod period, LocalDate notAfter,
+                                      int annualizationDays) {
         if (series == null || series.size() < 2) {
             return null;
         }
@@ -275,7 +283,7 @@ public class AssetReturnsService {
             returnPct = NEAR_TOTAL_LOSS_PCT;
         }
         BigDecimal returnValue = priceNow.subtract(priceThen).setScale(PRICE_SCALE, RoundingMode.HALF_UP);
-        BigDecimal volatility = annualizedVolatilityPct(series, start, anchor);
+        BigDecimal volatility = annualizedVolatilityPct(series, start, anchor, annualizationDays);
         return new Figures(
                 returnPct, returnValue,
                 priceThen.setScale(PRICE_SCALE, RoundingMode.HALF_UP),
@@ -324,10 +332,22 @@ public class AssetReturnsService {
     }
 
     /**
-     * Annualized volatility (%) over the window: the sample standard deviation of daily log returns × √252 ×
-     * 100. Null when fewer than {@link #MIN_POINTS_FOR_VOLATILITY} usable points fall inside the window.
+     * Trading days per year for annualizing volatility. Crypto trades every calendar day (7/24/365), so its
+     * daily-return series carries ~365 observations a year; the other spot types follow the ~252-day exchange
+     * calendar. The √(days) factor must match the series' real observation frequency — using 252 for a 7/24
+     * asset understates its annualized volatility by √(365/252) ≈ 1.2× and can read it a risk band too low.
      */
-    private static BigDecimal annualizedVolatilityPct(List<HistoryPoint> series, LocalDate start, LocalDate end) {
+    private static int tradingDaysPerYear(AnalyticsInstrumentType type) {
+        return type == AnalyticsInstrumentType.CRYPTO ? CRYPTO_DAYS_PER_YEAR : TRADING_DAYS_PER_YEAR;
+    }
+
+    /**
+     * Annualized volatility (%) over the window: the sample standard deviation of daily log returns ×
+     * √{@code annualizationDays} × 100. Null when fewer than {@link #MIN_POINTS_FOR_VOLATILITY} usable points
+     * fall inside the window.
+     */
+    private static BigDecimal annualizedVolatilityPct(List<HistoryPoint> series, LocalDate start, LocalDate end,
+                                                      int annualizationDays) {
         List<Double> prices = new ArrayList<>();
         for (HistoryPoint p : series) {
             if (p.date() == null || p.value() == null) {
@@ -349,7 +369,7 @@ public class AssetReturnsService {
         double variance = logReturns.stream()
                 .mapToDouble(r -> (r - mean) * (r - mean))
                 .sum() / (logReturns.size() - 1);
-        double annualized = Math.sqrt(variance) * Math.sqrt(TRADING_DAYS_PER_YEAR) * 100.0;
+        double annualized = Math.sqrt(variance) * Math.sqrt(annualizationDays) * 100.0;
         return BigDecimal.valueOf(annualized).setScale(PCT_SCALE, RoundingMode.HALF_UP);
     }
 

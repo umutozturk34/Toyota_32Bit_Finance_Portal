@@ -2200,7 +2200,12 @@
       "editAction": "Edit",
       "savedTitle": "Profile updated",
       "savedBody": "Your new identity details have been saved",
-      "usernameHint": "3-32 characters; letters, digits, dot, underscore or hyphen."
+      "usernameHint": "3-32 characters; letters, digits, dot, underscore or hyphen.",
+      "errors": {
+        "usernameRequired": "Username is required.",
+        "usernameLength": "Username must be 3-32 characters.",
+        "usernamePattern": "Only letters, digits, dot, underscore or hyphen are allowed."
+      }
     }
   },
   "keycloakAction": {

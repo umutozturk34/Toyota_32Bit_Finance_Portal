@@ -47,10 +47,13 @@ export const visibleDecimals = (value, base, cap = 8) => {
 // and the metadata/money formatting so a value never renders different ways across surfaces. A sub-1 price
 // (fund NAV like 0,4631, cheap crypto/forex) keeps 4 significant decimals (≥1 ticks in kuruş, so 2 is exact),
 // and a sub-0.001 value gets 6. Trailing zeros are trimmed by the minDecimals floor at the format step.
-export const priceDecimals = (value) => {
+export const priceDecimals = (value, { forex = false } = {}) => {
     const n = Math.abs(Number(value));
     if (!Number.isFinite(n) || n === 0) return 2;
     if (n < 0.001) return 6;
+    // A forex rate carries sub-kuruş precision (e.g. 32,5432) even at magnitude >=1, where the generic
+    // ladder collapses it to 2 — so a forex surface keeps 4, matching the precise list/card display.
+    if (forex) return 4;
     if (n < 1) return 4;
     return 2;
 };

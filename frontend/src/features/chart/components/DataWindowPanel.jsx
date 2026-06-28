@@ -62,7 +62,7 @@ export default function DataWindowPanel({ candles, hover, assetType, variant = '
 
   if (!a) return null;
 
-  const money = (v) => (v == null ? '—' : `${symbol}${formatPrice(v, { locale, minDecimals: 2, maxDecimals: priceDecimals(v) })}`);
+  const money = (v) => (v == null ? '—' : `${symbol}${formatPrice(v, { locale, minDecimals: 2, maxDecimals: priceDecimals(v, { forex: assetType === 'FOREX' }) })}`);
   const pct1 = (v) => (v == null ? '—' : `${v.toLocaleString(locale, { maximumFractionDigits: 1 })}%`);
   const compactPct = (v, signed = true) => {
     if (v == null) return '—';

@@ -8,6 +8,11 @@ export const portfolioService = {
     return res.data.data;
   },
 
+  getLimits: async () => {
+    const res = await api.get(`${BASE}/limits`);
+    return res.data.data;
+  },
+
   create: async ({ name, type } = {}) => {
     const res = await api.post(BASE, { name, type });
     return res.data.data;

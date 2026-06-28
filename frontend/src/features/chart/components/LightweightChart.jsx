@@ -154,7 +154,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
       // Astronomical (hyperinflation-nominal) values would balloon the legend over the chart; compact them
       // like the axis. Small prices keep full 4/2-decimal precision — the whole point of the readout.
       if (Math.abs(n) >= 1_000_000) return `${hoverSym}${n.toLocaleString(hoverLocale, { notation: 'compact', maximumFractionDigits: 2 })}`;
-      return `${hoverSym}${n.toLocaleString(hoverLocale, { maximumFractionDigits: priceDecimals(n) })}`;
+      return `${hoverSym}${n.toLocaleString(hoverLocale, { maximumFractionDigits: priceDecimals(n, { forex: isForex }) })}`;
     };
     // The legend reads the hovered candle, else falls back to the latest — so OHLC + indicators are ALWAYS shown.
     const lastCandle = data?.candles?.length ? data.candles[data.candles.length - 1] : null;

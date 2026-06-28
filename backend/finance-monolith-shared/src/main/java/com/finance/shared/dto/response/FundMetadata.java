@@ -30,6 +30,8 @@ public record FundMetadata(
         BigDecimal returnYtd,
         BigDecimal return3y,
         BigDecimal return5y,
+        String isinCode,
+        String kapLink,
         List<AllocationEntry> allocations
 ) implements MarketAssetMetadata {
 

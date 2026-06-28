@@ -13,6 +13,16 @@ import EmailChangeSection from '../settings/EmailChangeSection';
 
 const PROFILE_KEY = ['user', 'profile'];
 
+const USERNAME_RE = /^[a-zA-Z0-9._-]+$/;
+
+function usernameErrorKey(value) {
+  const v = (value || '').trim();
+  if (!v) return 'profile.identity.errors.usernameRequired';
+  if (v.length < 3 || v.length > 32) return 'profile.identity.errors.usernameLength';
+  if (!USERNAME_RE.test(v)) return 'profile.identity.errors.usernamePattern';
+  return null;
+}
+
 function Section({ icon: Icon, title, children, accent = 'text-accent' }) {
   return (
     <div className="space-y-2.5">
@@ -58,6 +68,7 @@ function IdentityForm({ profile, onSaved }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
+  const [usernameErr, setUsernameErr] = useState(null);
   const [draft, setDraft] = useState({
     username: profile?.username || '',
     firstName: profile?.firstName || '',
@@ -75,7 +86,10 @@ function IdentityForm({ profile, onSaved }) {
   }
 
   const { username, firstName, lastName } = draft;
-  const setUsername = (v) => setDraft((d) => ({ ...d, username: v }));
+  const setUsername = (v) => {
+    setDraft((d) => ({ ...d, username: v }));
+    if (usernameErr) setUsernameErr(usernameErrorKey(v));
+  };
   const setFirstName = (v) => setDraft((d) => ({ ...d, firstName: v }));
   const setLastName = (v) => setDraft((d) => ({ ...d, lastName: v }));
 
@@ -118,6 +132,12 @@ function IdentityForm({ profile, onSaved }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const err = usernameErrorKey(username);
+    if (err) {
+      setUsernameErr(err);
+      return;
+    }
+    setUsernameErr(null);
     if (!dirty) {
       setEditing(false);
       return;
@@ -130,12 +150,12 @@ function IdentityForm({ profile, onSaved }) {
   };
 
   return (
-    <form className="space-y-2" onSubmit={handleSubmit}>
+    <form className="space-y-2" onSubmit={handleSubmit} noValidate>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <FormField label={t('profile.identity.firstName')} value={firstName} onChange={setFirstName} maxLength={25} />
-        <FormField label={t('profile.identity.lastName')} value={lastName} onChange={setLastName} maxLength={25} />
+        <FormField label={t('profile.identity.firstName')} value={firstName} onChange={setFirstName} maxLength={64} />
+        <FormField label={t('profile.identity.lastName')} value={lastName} onChange={setLastName} maxLength={64} />
       </div>
-      <FormField label={t('profile.identity.username')} value={username} onChange={setUsername} mono pattern="^[a-zA-Z0-9._-]+$" minLength={3} maxLength={25} required />
+      <FormField label={t('profile.identity.username')} value={username} onChange={setUsername} mono maxLength={32} error={usernameErr ? t(usernameErr) : null} />
       <p className="text-[10px] text-fg-subtle leading-relaxed px-1">
         {t('profile.identity.usernameHint')}
       </p>
@@ -173,7 +193,7 @@ function ReadField({ label, value, mono }) {
   );
 }
 
-function FormField({ label, value, onChange, mono, ...inputProps }) {
+function FormField({ label, value, onChange, mono, error, ...inputProps }) {
   return (
     <label className="block min-w-0">
       <span className="text-[9px] font-mono uppercase tracking-[0.14em] text-fg-subtle">{label}</span>
@@ -181,9 +201,11 @@ function FormField({ label, value, onChange, mono, ...inputProps }) {
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`mt-1 w-full min-w-0 rounded-lg border border-border-default bg-bg-elevated px-3 py-2 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 ${mono ? 'font-mono' : ''}`}
+        aria-invalid={error ? 'true' : undefined}
+        className={`mt-1 w-full min-w-0 rounded-lg border bg-bg-elevated px-3 py-2 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 ${error ? 'border-danger focus:border-danger focus:ring-danger/20' : 'border-border-default focus:border-accent focus:ring-accent/20'} ${mono ? 'font-mono' : ''}`}
         {...inputProps}
       />
+      {error && <span className="mt-1 block text-[10px] text-danger">{error}</span>}
     </label>
   );
 }

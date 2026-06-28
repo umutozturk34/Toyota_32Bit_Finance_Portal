@@ -96,7 +96,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         const priceSamples = candleData.flatMap(c => [c.open, c.high, c.low, c.close,
             c.sellingPrice, c.buyingPrice, c.bulletinPrice].filter(v => v != null && v > 0));
         const minPrice = priceSamples.length ? Math.min(...priceSamples) : 1;
-        const pricePrec = priceDecimals(minPrice);
+        const pricePrec = priceDecimals(minPrice, { forex: assetType === 'FOREX' });
         const priceFormat = { type: 'price', precision: pricePrec, minMove: 10 ** -pricePrec };
         if (chartType === 'candle') {
             const candleSeries = chart.addSeries(CandlestickSeries, {

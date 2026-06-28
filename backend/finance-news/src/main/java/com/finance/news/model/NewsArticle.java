@@ -3,9 +3,6 @@ package com.finance.news.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
-
-import com.finance.news.model.NewsSource;
-
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.Set;

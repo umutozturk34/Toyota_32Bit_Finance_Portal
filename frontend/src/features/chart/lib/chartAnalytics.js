@@ -8,6 +8,10 @@
 // capability set and analyze() is the one-call facade the live panel (and any future asset surface) renders from.
 
 const TRADING_DAYS = 252;
+// Crypto trades 7/24, so its daily-return series carries ~365 observations a year and annualizes on 365, not
+// the 252-day exchange calendar — mirrors backend AssetReturnsService.tradingDaysPerYear so the Lens reads the
+// same crypto volatility/risk as the returns ranking (using 252 would understate it by √(365/252) ≈ 1.2×).
+const CRYPTO_TRADING_DAYS = 365;
 // Mirror backend AssetReturnsService risk bands so the chart panel and the returns ranking agree.
 const RISK_LOW_MAX = 25;
 const RISK_MEDIUM_MAX = 55;
@@ -41,8 +45,12 @@ export function periodReturn(candles, i) {
   return { value: cur - start, percent: ((cur - start) / start) * 100 };
 }
 
-/** Annualized volatility (%) over the whole series: sample stddev of daily log returns × √252 × 100. */
-export function annualizedVolatility(candles) {
+/**
+ * Annualized volatility (%) over the whole series: sample stddev of daily log returns × √(trading days) × 100.
+ * Crypto annualizes on 365 (7/24 trading) and everything else on the 252-day exchange calendar, matching the
+ * backend so the Lens reads the same volatility/risk band as the returns ranking.
+ */
+export function annualizedVolatility(candles, assetType) {
   if (!candles?.length) return null;
   const closes = [];
   for (let k = 0; k < candles.length; k++) {
@@ -54,7 +62,8 @@ export function annualizedVolatility(candles) {
   for (let k = 1; k < closes.length; k++) logReturns.push(Math.log(closes[k] / closes[k - 1]));
   const mean = logReturns.reduce((s, r) => s + r, 0) / logReturns.length;
   const variance = logReturns.reduce((s, r) => s + (r - mean) ** 2, 0) / (logReturns.length - 1);
-  return Math.sqrt(variance) * Math.sqrt(TRADING_DAYS) * 100;
+  const days = assetType === 'CRYPTO' ? CRYPTO_TRADING_DAYS : TRADING_DAYS;
+  return Math.sqrt(variance) * Math.sqrt(days) * 100;
 }
 
 /** Map an annualized volatility % to a risk band (same thresholds as the backend). */
@@ -242,7 +251,7 @@ export function describeCandles(candles, assetType) {
 export function analyzeSeries(candles, assetType) {
   if (!candles?.length) return null;
   const capabilities = describeCandles(candles, assetType);
-  const vol = annualizedVolatility(candles);
+  const vol = annualizedVolatility(candles, assetType);
   const hl = periodHighLow(candles, null);
   return {
     capabilities,

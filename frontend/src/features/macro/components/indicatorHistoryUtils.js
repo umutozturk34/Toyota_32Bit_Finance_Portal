@@ -55,7 +55,7 @@ export function buildOption(seriesData, normalize, isDark, localeTag = localeTag
       return [new Date(p.date).getTime(), plotted, raw, pct];
     });
     return {
-      name: ind.code,
+      name: ind.name || ind.code,
       type: 'line',
       smooth: data.length < 200,
       showSymbol: false,

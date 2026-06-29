@@ -90,9 +90,14 @@ export default function IndicatorHistoryModal({ indicator, onClose }) {
       // today since it stays officially in force between publication dates.
       let pts = backFillToWindowStart(source, bounds.from);
       pts = forwardFillToToday(pts);
-      return { ...s, indicator: { ...s.indicator, unit: displayUnit }, points: pts };
+      // Chart legend/tooltip must read the localized indicator name ("TÜFE (Enflasyon)"), never the raw EVDS
+      // code or the internal label key ("cpiIndex"); buildOption falls back to code only when this is absent.
+      const seriesName = s.indicator.label
+        ? t(`marketOverview.macro.${s.indicator.label}`, { defaultValue: s.indicator.name || s.indicator.code })
+        : (s.indicator.name || s.indicator.code);
+      return { ...s, indicator: { ...s.indicator, unit: displayUnit, name: seriesName }, points: pts };
     });
-  }, [rawSeriesData, bounds.from, activeView, displayUnit]);
+  }, [rawSeriesData, bounds.from, activeView, displayUnit, t]);
 
   const localeTag = t('common.localeTag');
   const option = useMemo(

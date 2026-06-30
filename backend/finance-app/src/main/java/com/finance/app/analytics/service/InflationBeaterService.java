@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -347,28 +348,39 @@ public class InflationBeaterService {
      */
     private BigDecimal computeIndexGrowthPct(String code, LocalDate start, LocalDate end) {
         List<HistoryPoint> points = historyService.getMacroSeries(code,
-                start.minusMonths(2), end.plusMonths(1));
+                start.minusMonths(3), end.plusMonths(1));
         if (points.size() < 2) return BigDecimal.ZERO;
-        HistoryPoint baseline = null;
         HistoryPoint latest = null;
         for (HistoryPoint p : points) {
             if (p.date() == null || p.value() == null) continue;
             if (!p.date().isAfter(end) && (latest == null || p.date().isAfter(latest.date()))) {
                 latest = p;
             }
-            if (!p.date().isAfter(start) && (baseline == null || p.date().isAfter(baseline.date()))) {
+        }
+        if (latest == null) return BigDecimal.ZERO;
+        // Anchor the baseline SYMMETRICALLY to the latest published observation minus the window span — NOT the raw
+        // calendar start. CPI publishes ~1 month late, so `latest` (newest obs on/before end) lags `end` by a month
+        // or more; pinning the baseline at `start` then measures a SHORTER span than requested — for a 1Y window the
+        // Jun-2025→May-2026 index (11 months) reads 30.82% instead of the true 12-month YoY 32.62%. Pulling the
+        // baseline back to latest.date − span (May-2025) keeps both ends at the same publication recency, so the
+        // Beater and the Compare verdict (which reads this cached figure) agree on the real YoY.
+        LocalDate anchor = latest.date().minusDays(ChronoUnit.DAYS.between(start, end));
+        HistoryPoint baseline = null;
+        for (HistoryPoint p : points) {
+            if (p.date() == null || p.value() == null) continue;
+            if (!p.date().isAfter(anchor) && (baseline == null || p.date().isAfter(baseline.date()))) {
                 baseline = p;
             }
         }
         if (baseline == null) {
             for (HistoryPoint p : points) {
                 if (p.date() == null || p.value() == null) continue;
-                if (!p.date().isBefore(start) && (baseline == null || p.date().isBefore(baseline.date()))) {
+                if (!p.date().isBefore(anchor) && (baseline == null || p.date().isBefore(baseline.date()))) {
                     baseline = p;
                 }
             }
         }
-        if (baseline == null || latest == null) return BigDecimal.ZERO;
+        if (baseline == null) return BigDecimal.ZERO;
         BigDecimal first = baseline.value();
         BigDecimal last = latest.value();
         if (first.signum() <= 0) return BigDecimal.ZERO;

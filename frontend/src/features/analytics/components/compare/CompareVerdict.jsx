@@ -40,12 +40,21 @@ export default function CompareVerdict({
     () => seriesData.find((s) => s.indicator?.type === 'MACRO_INFLATION'),
     [seriesData],
   );
+  // The verdict's CPI growth must be PUBLICATION-LAG aware so Compare matches the Beater (which already anchors
+  // symmetrically and reads correct). CPI publishes ~1 month late, so the raw chart-series window (seriesWindowPct)
+  // pins the baseline at the calendar start and reads ~11 months of index for a "1Y" span — the 30.82-vs-32.61
+  // under-report. Priority: the Beater-cached authoritative return when a Beater window is pinned (exact match);
+  // else the symmetric-anchor hook (useComparePeriodInflation → true YoY); the raw-series pct is a last resort only.
+  const cpiCode = cpiSeries?.indicator?.code;
+  const cpiAuthoritative = cpiCode != null ? authoritativeReturns?.[cpiCode] : null;
   const cpiFromSeries = cpiSeries
     ? seriesWindowPct(cpiSeries.indicator, cpiSeries.points, sharedBaselineDate, authoritativeReturns)
     : null;
-  const wantFetch = isTry && !levelMode && cpiFromSeries == null && seriesData.length > 0;
+  const wantFetch = isTry && !levelMode && cpiAuthoritative == null && seriesData.length > 0;
   const fetchedCpi = useComparePeriodInflation({ enabled: wantFetch, baselineDate: sharedBaselineDate, endDate });
-  const cpiPct = cpiFromSeries != null ? cpiFromSeries : (isTry ? fetchedCpi : null);
+  const cpiPct = cpiAuthoritative != null
+    ? Number(cpiAuthoritative)
+    : (isTry ? (fetchedCpi != null ? fetchedCpi : cpiFromSeries) : null);
 
   // Comparable = the value lines (assets + portfolio); rate-like indices (CPI/PPI, bond yields) are the
   // benchmark, never a "subject" whose return we headline.

@@ -51,7 +51,10 @@ export default function PnlByTypeChart({ portfolioId }) {
       const key = groupByType ? p?.assetType : p?.assetCode;
       if (!key) return;
       const { isNonTryFrame, costFrame, framePnl, entryValueTry } = positionFrame(p, { convert, resolveTarget });
-      const useFrame = isNonTryFrame && framePnl != null;
+      // ORIGINAL rolls up in TRY: a cross-type aggregate can't sum mixed native currencies (USD crypto + TRY stock),
+      // so only a concrete display currency (USD/EUR) uses the per-date native frame; ORIGINAL (and TRY) defer to the
+      // backend TRY figures — matching targetCurrency above and the allocation card.
+      const useFrame = displayCurrency !== 'ORIGINAL' && isNonTryFrame && framePnl != null;
       const cost = useFrame ? costFrame : entryValueTry;
       const pnl = useFrame ? framePnl : Number(p.pnlTry);
       if (!Number.isFinite(cost) || cost <= 0 || !Number.isFinite(pnl)) return;
@@ -65,7 +68,7 @@ export default function PnlByTypeChart({ portfolioId }) {
       map.set(key, prev);
     });
     return [...map.values()].sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
-  }, [rows, convert, resolveTarget, groupByType]);
+  }, [rows, convert, resolveTarget, groupByType, displayCurrency]);
 
   const totalPnl = useMemo(() => items.reduce((s, a) => s + a.pnl, 0), [items]);
   const totalCost = useMemo(() => items.reduce((s, a) => s + a.cost, 0), [items]);

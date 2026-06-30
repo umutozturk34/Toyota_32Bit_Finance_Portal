@@ -45,7 +45,11 @@ export default function CostBreakdownChart({ portfolioId }) {
       const key = groupByType ? p?.assetType : p?.assetCode;
       if (!key) return;
       const { isNonTryFrame, costFrame, entryValueTry } = positionFrame(p, { convert, resolveTarget });
-      const cost = isNonTryFrame && costFrame != null ? costFrame : entryValueTry;
+      // ORIGINAL shows each asset in its OWN native currency, but a cross-type aggregate can't sum mixed natives
+      // (a USD crypto bar beside a TRY stock bar), so it rolls up in TRY — matching targetCurrency above and the
+      // allocation card. A concrete display currency (USD/EUR) instead converts every leg to that one currency at
+      // per-date FX, which IS summable.
+      const cost = displayCurrency !== 'ORIGINAL' && isNonTryFrame && costFrame != null ? costFrame : entryValueTry;
       if (!Number.isFinite(cost) || cost <= 0) return;
       const prev = map.get(key)
         || { key, type: p.assetType, code: groupByType ? null : p.assetCode,
@@ -56,7 +60,7 @@ export default function CostBreakdownChart({ portfolioId }) {
       map.set(key, prev);
     });
     return [...map.values()].sort((a, b) => b.cost - a.cost);
-  }, [rows, convert, resolveTarget, groupByType]);
+  }, [rows, convert, resolveTarget, groupByType, displayCurrency]);
 
   const total = useMemo(() => items.reduce((s, a) => s + a.cost, 0), [items]);
   const max = items.length > 0 ? items[0].cost : 0;

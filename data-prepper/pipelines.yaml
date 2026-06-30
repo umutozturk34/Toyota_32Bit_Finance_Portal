@@ -81,3 +81,47 @@ metrics-pipeline:
         index: "notification-metrics"
         index_type: custom
         routes: ["notification-route"]
+
+# Traces: the collector now ALSO forwards spans here over OTLP (it still writes the raw
+# finance-traces / notification-traces indices directly for Discover). otel_traces builds the
+# otel-v1-apm-span-* index (trace list + span timeline) and service_map builds
+# otel-v1-apm-service-map (the service graph) — the two indices OpenSearch Observability ->
+# Trace Analytics reads. Single Data Prepper instance, so service_map needs no peer-forwarder.
+otel-trace-pipeline:
+  source:
+    otel_trace_source:
+      ssl: false
+      port: 21890
+  sink:
+    - pipeline:
+        name: "raw-trace-pipeline"
+    - pipeline:
+        name: "service-map-pipeline"
+
+raw-trace-pipeline:
+  source:
+    pipeline:
+      name: "otel-trace-pipeline"
+  processor:
+    - otel_traces:
+  sink:
+    - opensearch:
+        hosts: ["https://opensearch:9200"]
+        username: "${OPENSEARCH_USERNAME}"
+        password: "${OPENSEARCH_PASSWORD}"
+        insecure: true
+        index_type: trace-analytics-raw
+
+service-map-pipeline:
+  source:
+    pipeline:
+      name: "otel-trace-pipeline"
+  processor:
+    - service_map:
+  sink:
+    - opensearch:
+        hosts: ["https://opensearch:9200"]
+        username: "${OPENSEARCH_USERNAME}"
+        password: "${OPENSEARCH_PASSWORD}"
+        insecure: true
+        index_type: trace-analytics-service-map

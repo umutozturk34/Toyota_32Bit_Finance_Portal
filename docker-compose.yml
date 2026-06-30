@@ -422,6 +422,7 @@ services:
       - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
     expose:
       - "21891"
+      - "21890"
     depends_on:
       kafka:
         condition: service_healthy

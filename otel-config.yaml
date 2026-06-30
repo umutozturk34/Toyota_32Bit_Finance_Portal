@@ -134,6 +134,14 @@ exporters:
     tls:
       insecure: true
 
+  # Traces are ALSO forwarded to Data Prepper (otel_trace_source on 21890) so it can build the
+  # Trace Analytics indices (otel-v1-apm-span-* + service map). The opensearch/traces-* exporters
+  # above keep writing the raw finance-traces / notification-traces indices for Discover.
+  otlp/dataprepper-traces:
+    endpoint: data-prepper:21890
+    tls:
+      insecure: true
+
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
@@ -154,10 +162,10 @@ service:
       exporters: [routing/traces]
     traces/finance:
       receivers: [routing/traces]
-      exporters: [opensearch/traces-finance]
+      exporters: [opensearch/traces-finance, otlp/dataprepper-traces]
     traces/notification:
       receivers: [routing/traces]
-      exporters: [opensearch/traces-notification]
+      exporters: [opensearch/traces-notification, otlp/dataprepper-traces]
 
     metrics:
       receivers: [otlp]

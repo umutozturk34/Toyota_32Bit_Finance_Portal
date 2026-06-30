@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { RANGE_OPTIONS } from './rangeSelectorOptions';
 
 const SIZES = {
@@ -6,7 +5,7 @@ const SIZES = {
   md: { container: 'p-1 rounded-xl gap-0.5', item: 'rounded-lg px-3 py-1.5 text-[11px] font-semibold', highlight: 'rounded-lg' },
 };
 
-export default function RangeSelector({ value, onChange, layoutId, size = 'sm', options = RANGE_OPTIONS, idMap }) {
+export default function RangeSelector({ value, onChange, size = 'sm', options = RANGE_OPTIONS, idMap }) {
   const sz = SIZES[size];
   const resolved = idMap ? options.map((o) => ({ ...o, id: idMap[o.id] ?? o.id })) : options;
   return (
@@ -20,13 +19,13 @@ export default function RangeSelector({ value, onChange, layoutId, size = 'sm', 
             onClick={() => onChange(id)}
             className={`relative shrink-0 ${sz.item} transition-all border-none cursor-pointer bg-transparent`}
           >
-            {active && (
-              <motion.span
-                layoutId={layoutId}
-                className={`absolute inset-0 ${sz.highlight} bg-accent/15`}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              />
-            )}
+            {/* CSS opacity highlight instead of a framer-motion layoutId pill — the shared-layout pill chased its
+                document position on unrelated reflows (e.g. switching display currency) and overlapped the row
+                next to it. An always-mounted per-button span only cross-fades, so it stays put on reflow. */}
+            <span
+              aria-hidden
+              className={`pointer-events-none absolute inset-0 ${sz.highlight} bg-accent/15 transition-opacity duration-200 ${active ? 'opacity-100' : 'opacity-0'}`}
+            />
             <span className={`relative z-10 ${active ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
               {label}
             </span>
